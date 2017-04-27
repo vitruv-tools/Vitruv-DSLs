@@ -1,45 +1,45 @@
 package mir.reactions.reactionsAllElementTypesToAllElementTypes.simpleChangesTests;
 
-import allElementTypes.Root;
+import allElementTypes.NonRoot;
 import mir.routines.simpleChangesTests.RoutinesFacade;
 import org.eclipse.xtext.xbase.lib.Extension;
+import tools.vitruv.dsls.reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor;
 import tools.vitruv.extensions.dslsruntime.reactions.AbstractReactionRealization;
 import tools.vitruv.extensions.dslsruntime.reactions.AbstractRepairRoutineRealization;
 import tools.vitruv.extensions.dslsruntime.reactions.ReactionExecutionState;
 import tools.vitruv.extensions.dslsruntime.reactions.structure.CallHierarchyHaving;
 import tools.vitruv.framework.change.echange.EChange;
-import tools.vitruv.framework.change.echange.compound.RemoveAndDeleteRoot;
-import tools.vitruv.framework.change.echange.root.RemoveRootEObject;
+import tools.vitruv.framework.change.echange.eobject.CreateEObject;
 import tools.vitruv.framework.userinteraction.UserInteracting;
 
 @SuppressWarnings("all")
-class DeleteRootTestReaction extends AbstractReactionRealization {
-  public DeleteRootTestReaction(final UserInteracting userInteracting) {
+class NonRootCreatedReaction extends AbstractReactionRealization {
+  public NonRootCreatedReaction(final UserInteracting userInteracting) {
     super(userInteracting);
   }
   
   public void executeReaction(final EChange change) {
-    RemoveRootEObject<Root> typedChange = ((RemoveAndDeleteRoot<Root>)change).getRemoveChange();
-    Root oldValue = typedChange.getOldValue();
+    CreateEObject<NonRoot> typedChange = (CreateEObject<NonRoot>)change;
+    NonRoot affectedEObject = typedChange.getAffectedEObject();
     mir.routines.simpleChangesTests.RoutinesFacade routinesFacade = new mir.routines.simpleChangesTests.RoutinesFacade(this.executionState, this);
-    mir.reactions.reactionsAllElementTypesToAllElementTypes.simpleChangesTests.DeleteRootTestReaction.ActionUserExecution userExecution = new mir.reactions.reactionsAllElementTypesToAllElementTypes.simpleChangesTests.DeleteRootTestReaction.ActionUserExecution(this.executionState, this);
-    userExecution.callRoutine1(oldValue, routinesFacade);
+    mir.reactions.reactionsAllElementTypesToAllElementTypes.simpleChangesTests.NonRootCreatedReaction.ActionUserExecution userExecution = new mir.reactions.reactionsAllElementTypesToAllElementTypes.simpleChangesTests.NonRootCreatedReaction.ActionUserExecution(this.executionState, this);
+    userExecution.callRoutine1(affectedEObject, routinesFacade);
   }
   
   public static Class<? extends EChange> getExpectedChangeType() {
-    return RemoveAndDeleteRoot.class;
+    return CreateEObject.class;
   }
   
   private boolean checkChangeProperties(final EChange change) {
-    RemoveRootEObject<Root> relevantChange = ((RemoveAndDeleteRoot<Root>)change).getRemoveChange();
-    if (!(relevantChange.getOldValue() instanceof Root)) {
+    CreateEObject<NonRoot> relevantChange = (CreateEObject<NonRoot>)change;
+    if (!(relevantChange.getAffectedEObject() instanceof NonRoot)) {
     	return false;
     }
     return true;
   }
   
   public boolean checkPrecondition(final EChange change) {
-    if (!(change instanceof RemoveAndDeleteRoot)) {
+    if (!(change instanceof CreateEObject)) {
     	return false;
     }
     getLogger().debug("Passed change type check of reaction " + this.getClass().getName());
@@ -56,8 +56,9 @@ class DeleteRootTestReaction extends AbstractReactionRealization {
       super(reactionExecutionState);
     }
     
-    public void callRoutine1(final Root oldValue, @Extension final RoutinesFacade _routinesFacade) {
-      _routinesFacade.deleteRoot(oldValue);
+    public void callRoutine1(final NonRoot affectedEObject, @Extension final RoutinesFacade _routinesFacade) {
+      SimpleChangesTestsExecutionMonitor _instance = SimpleChangesTestsExecutionMonitor.getInstance();
+      _instance.set(SimpleChangesTestsExecutionMonitor.ChangeType.CreateEObject);
     }
   }
 }
