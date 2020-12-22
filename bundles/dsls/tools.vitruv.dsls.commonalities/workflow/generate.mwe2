@@ -1,44 +1,18 @@
-module tools.vitruv.dsls.commonalities.GenerateCommonalitiesLanguage
+module generate
 
 import org.eclipse.xtext.xtext.generator.*
 import org.eclipse.xtext.xtext.generator.model.project.*
 import org.eclipse.xtext.xtext.generator.model.annotations.GeneratedClassAnnotation
 import org.eclipse.emf.mwe2.ecore.EcoreGenerator
-import org.eclipse.emf.mwe.utils.StandaloneSetup
-import org.eclipse.emf.mwe.utils.DirectoryCleaner
 
 var rootPath = ".."
 var testRootPath = "${rootPath}/../../tests/dsls"
 var baseName = "tools.vitruv.dsls.commonalities"
 var basePath = "${rootPath}/${baseName}"
 var testBasePath = "${testRootPath}/${baseName}"
-var languageElementsModel = "platform:/resource/tools.vitruv.dsls.commonalities/model/LanguageElements.genmodel"
+var languageElementsModel = "platform:/resource/${baseName}/model/LanguageElements.genmodel"
 
 Workflow {
-
-	component = DirectoryCleaner {
-		directory = "${basePath}/src-gen"
-	}
-
-	component = DirectoryCleaner {
-		directory = "${basePath}/model-gen"
-	}
-
-	component = DirectoryCleaner {
-		directory = "${basePath}.ui/src-gen"
-	}
-
-	component = DirectoryCleaner {
-		directory = "${basePath}.ide/src-gen"
-	}
-
-	component = DirectoryCleaner {
-		directory = "${testBasePath}.tests/src-gen"
-	}
-
-	component = DirectoryCleaner {
-		directory = "${testBasePath}.ui.tests/src-gen"
-	}
 
 	component = XtextGenerator {
 		configuration = {
@@ -80,8 +54,9 @@ Workflow {
 	}
 
 	component = EcoreGenerator {
-		srcPath = "platform:/resource/tools.vitruv.dsls.commonalities/src"
+		srcPath = "platform:/resource/${baseName}/src"
 		genModel = languageElementsModel
 		generateCustomClasses = false
 	}
+
 }
