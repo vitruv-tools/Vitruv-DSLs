@@ -10,7 +10,7 @@
 		<relativePath>../tools.vitruv.dsls.parent</relativePath>
 	</parent>
 	
-	<artifactId>tools.vitruv.updatesite</artifactId>
+	<artifactId>tools.vitruv.dsls.updatesite</artifactId>
 	<name>Vitruv DSLs Update Site</name>
 	<packaging>eclipse-repository</packaging>
 	

@@ -18,7 +18,7 @@
 		<module>bundles</module>
 		<module>tests</module>
 		<module>features</module>
-		<module>releng/tools.vitruv.updatesite</module>
+		<module>releng/tools.vitruv.dsls.updatesite</module>
 	</modules>
 
 </project>
