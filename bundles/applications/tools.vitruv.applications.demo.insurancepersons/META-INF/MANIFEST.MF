@@ -5,9 +5,10 @@ Bundle-SymbolicName: tools.vitruv.applications.demo.insurancepersons;singleton:=
 Automatic-Module-Name: tools.vitruv.applications.demo.insurancepersons
 Bundle-Version: 2.1.0.qualifier
 Bundle-Vendor: vitruv.tools
-Export-Package: tools.vitruv.applications.demo.insurancepersons
-Require-Bundle: tools.vitruv.framework.applications,
- tools.vitruv.extensions.dslsruntime.reactions;visibility:=reexport,
- tools.vitruv.domains.demo,
+Export-Package: tools.vitruv.applications.demo.insurancepersons.insurance2persons,
+ tools.vitruv.applications.demo.insurancepersons.persons2insurance
+Require-Bundle: tools.vitruv.extensions.dslsruntime.reactions;visibility:=reexport,
+ edu.kit.ipd.sdq.metamodels.persons;bundle-version="1.6.1",
+ edu.kit.ipd.sdq.metamodels.insurance;bundle-version="1.6.1",
  edu.kit.ipd.sdq.activextendannotations
 Bundle-RequiredExecutionEnvironment: JavaSE-11
