@@ -40,14 +40,14 @@ jobs:
         env: 
           MAVEN_OPTS: -Djansi.force=true
       - name: Publish Nightly Update Site
-        if: github.ref == 'refs/heads/master' && github.repository_owner == 'vitruv-tools'
+        if: github.ref == 'refs/heads/main' && github.repository_owner == 'vitruv-tools'
         uses: peaceiris/actions-gh-pages@v3
         with:
           deploy_key: ${{ secrets.UPDATE_SITE_DEPLOY_KEY }}
           external_repository: vitruv-tools/updatesite
           destination_dir: nightly/dsls
           publish_dir: releng/tools.vitruv.dsls.updatesite/target/repository
-          publish_branch: master
+          publish_branch: main
       - name: Determine Release Version
         if: startsWith(github.ref, 'refs/tags/releases/') && github.repository_owner == 'vitruv-tools'
         id: releaseVersion
@@ -62,5 +62,5 @@ jobs:
           external_repository: vitruv-tools/updatesite
           destination_dir: release/framework/${{ steps.releaseVersion.outputs.tag }}
           publish_dir: releng/tools.vitruv.updatesite.aggregated/target/final
-          publish_branch: master
+          publish_branch: main
           
