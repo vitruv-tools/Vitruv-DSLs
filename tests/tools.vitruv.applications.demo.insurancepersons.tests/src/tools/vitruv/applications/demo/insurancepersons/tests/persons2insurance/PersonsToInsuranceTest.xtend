@@ -10,7 +10,6 @@ import org.junit.jupiter.api.BeforeEach
 import java.nio.file.Path
 import tools.vitruv.testutils.VitruvApplicationTest
 import tools.vitruv.applications.demo.insurancepersons.persons2insurance.PersonsToInsuranceChangePropagationSpecification
-import tools.vitruv.applications.demo.insurancepersons.insurance2persons.InsuranceToPersonsChangePropagationSpecification
 
 import static org.hamcrest.CoreMatchers.*
 import static org.hamcrest.MatcherAssert.assertThat

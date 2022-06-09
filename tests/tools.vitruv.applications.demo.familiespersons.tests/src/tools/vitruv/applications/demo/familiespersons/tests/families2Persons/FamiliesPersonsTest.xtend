@@ -20,7 +20,6 @@ import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import tools.vitruv.applications.demo.familiespersons.families2persons.FamiliesToPersonsChangePropagationSpecification
 import tools.vitruv.applications.demo.familiespersons.families2persons.FamiliesToPersonsHelper
-import tools.vitruv.applications.demo.familiespersons.persons2families.PersonsToFamiliesChangePropagationSpecification
 import tools.vitruv.testutils.VitruvApplicationTest
 
 import static org.hamcrest.CoreMatchers.*

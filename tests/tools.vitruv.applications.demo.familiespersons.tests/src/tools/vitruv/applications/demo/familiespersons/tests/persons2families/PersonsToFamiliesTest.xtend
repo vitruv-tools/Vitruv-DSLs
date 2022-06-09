@@ -16,7 +16,6 @@ import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import tools.vitruv.applications.demo.familiespersons.families2persons.FamiliesToPersonsChangePropagationSpecification
 import tools.vitruv.applications.demo.familiespersons.persons2families.PersonsToFamiliesChangePropagationSpecification
 import tools.vitruv.applications.demo.familiespersons.persons2families.PersonsToFamiliesHelper
 import tools.vitruv.testutils.TestUserInteraction.MultipleChoiceInteractionDescription
