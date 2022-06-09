@@ -8,7 +8,7 @@
 		<version>2.1.0-SNAPSHOT</version>
 		<relativePath>../tools.vitruv.dsls.parent</relativePath>
 	</parent>
-	<artifactId>tools.vitruv.workflow</artifactId>
+	<artifactId>tools.vitruv.dsls.workflow</artifactId>
 	<name>Vitruv DSLs Metamodel Generation Workflow</name>
 	<packaging>eclipse-plugin</packaging>
 </project>
