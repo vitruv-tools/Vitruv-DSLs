@@ -3,10 +3,10 @@ package tools.vitruv.applications.demo.familiespersons.families2persons
 import edu.kit.ipd.sdq.activextendannotations.Utility
 import edu.kit.ipd.sdq.metamodels.families.Family
 import edu.kit.ipd.sdq.metamodels.families.Member
-import static extension tools.vitruv.domains.demo.families.FamiliesUtil.getFamily
 import edu.kit.ipd.sdq.metamodels.persons.Male
 import edu.kit.ipd.sdq.metamodels.persons.Person
 import edu.kit.ipd.sdq.metamodels.persons.Female
+import static extension edu.kit.ipd.sdq.metamodels.families.FamiliesUtil.getFamily
 
 @Utility
 class FamiliesToPersonsHelper {
