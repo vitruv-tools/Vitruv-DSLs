@@ -13,7 +13,7 @@ var qualifiedLanguageName = "${projectName}.${languageName}"
 // This variable is adapted by the Maven build
 var workspaceRoot = "../../"
 var rootPath = "${workspaceRoot}/bundles/"
-var testRootPath = "${workspaceRoot}/tests/dsls"
+var testRootPath = "${workspaceRoot}/tests"
 var testBasePath = "${testRootPath}/${projectName}"
 
 Workflow {

@@ -6,7 +6,7 @@ var projectName = "tools.vitruv.dsls.mappings"
 // This variable is adapted by the Maven build
 var workspaceRoot = "../../"
 var basePath = "${workspaceRoot}/bundles/${projectName}"
-var testBasePath = "${workspaceRoot}/tests/dsls/${projectName}"
+var testBasePath = "${workspaceRoot}/tests/${projectName}"
 
 Workflow {
 

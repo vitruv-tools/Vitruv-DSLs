@@ -6,7 +6,7 @@ import org.eclipse.emf.mwe.utils.DirectoryCleaner
 var workspaceRoot = "../../"
 var projectName = "tools.vitruv.dsls.reactions"
 var basePath = "${workspaceRoot}/bundles/${projectName}"
-var testBasePath = "${workspaceRoot}/tests/dsls/${projectName}"
+var testBasePath = "${workspaceRoot}/tests/${projectName}"
 
 Workflow {
 
