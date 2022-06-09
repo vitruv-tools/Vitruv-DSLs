@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Vitruv Families-Persons Demo Application
+Bundle-SymbolicName: tools.vitruv.applications.demo.familiespersons;singleton:=true
+Automatic-Module-Name: tools.vitruv.applications.demo.familiespersons
+Bundle-Version: 2.1.0.qualifier
+Bundle-Vendor: vitruv.tools
+Export-Package: tools.vitruv.applications.demo.familiespersons.families2persons,
+ tools.vitruv.applications.demo.familiespersons.persons2families
+Require-Bundle: tools.vitruv.extensions.dslsruntime.reactions;visibility:=reexport,
+ edu.kit.ipd.sdq.metamodels.families;bundle-version="1.6.1",
+ edu.kit.ipd.sdq.metamodels.persons;bundle-version="1.6.1",
+ edu.kit.ipd.sdq.activextendannotations
+Bundle-RequiredExecutionEnvironment: JavaSE-11

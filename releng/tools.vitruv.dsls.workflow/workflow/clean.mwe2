@@ -1,0 +1,22 @@
+module clean
+
+import org.eclipse.emf.mwe.utils.DirectoryCleaner
+
+// This variable is adapted by the Maven build
+var workspaceRoot = "../../"
+
+Workflow {
+
+	component = DirectoryCleaner {
+		directory = "${workspaceRoot}/bundles/tools.vitruv.extensions.dslsruntime.commonalities/src-gen"
+	}
+	
+	component = DirectoryCleaner {
+		directory = "${workspaceRoot}/bundles/tools.vitruv.extensions.dslsruntime.reactions/src-gen"
+	}
+	
+	component = DirectoryCleaner {
+		directory = "${workspaceRoot}/bundles/tools.vitruv.dsls.common/src-gen"
+	}
+
+}

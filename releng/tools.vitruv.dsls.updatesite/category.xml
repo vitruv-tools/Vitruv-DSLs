@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature url="features/tools.vitruv.extensions.dslsruntime.feature_2.1.0.qualifier.jar" id="tools.vitruv.extensions.dslsruntime.feature" version="2.1.0.qualifier">
+      <category name="Vitruv Change"/>
+   </feature>
+   <feature id="tools.vitruv.extensions.dslsruntime.feature.source" version="2.1.0.qualifier">
+      <category name="Vitruv Change"/>
+   </feature>
+   <feature url="features/tools.vitruv.dsls.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.feature" version="2.1.0.qualifier">
+      <category name="Vitruv Change"/>
+   </feature>
+   <feature id="tools.vitruv.dsls.feature.source" version="2.1.0.qualifier">
+      <category name="Vitruv Change"/>
+   </feature>
+   <feature url="features/tools.vitruv.applications.demo.familiespersons.feature_2.1.0.qualifier.jar" id="tools.vitruv.applications.demo.familiespersons.feature" version="2.1.0.qualifier">
+      <category name="Vitruv Demos"/>
+   </feature>
+   <feature id="tools.vitruv.applications.demo.familiespersons.feature.source" version="2.1.0.qualifier">
+      <category name="Vitruv Demos"/>
+   </feature>
+   <category-def name="Vitruv DSLs" label="Vitruv Consistency Specification Languages">
+      <description>
+         The Vitruv languages for consistency preservation
+      </description>
+   </category-def>
+   <category-def name="Vitruv Demos" label="Vitruv Demos">
+      <description>
+         Demo domains and applications for the Vitruv framework
+      </description>
+   </category-def>
+</site>
