@@ -19,11 +19,8 @@ import org.junit.jupiter.params.provider.MethodSource
 import tools.vitruv.applications.demo.familiespersons.families2persons.FamiliesToPersonsChangePropagationSpecification
 import tools.vitruv.applications.demo.familiespersons.persons2families.PersonsToFamiliesChangePropagationSpecification
 import tools.vitruv.applications.demo.familiespersons.persons2families.PersonsToFamiliesHelper
-import tools.vitruv.domains.demo.families.FamiliesDomainProvider
-import tools.vitruv.domains.demo.persons.PersonsDomainProvider
 import tools.vitruv.testutils.TestUserInteraction.MultipleChoiceInteractionDescription
 import tools.vitruv.testutils.VitruvApplicationTest
-import tools.vitruv.testutils.domains.DomainUtil
 
 import static org.hamcrest.CoreMatchers.*
 import static org.hamcrest.MatcherAssert.assertThat
@@ -66,14 +63,13 @@ class PersonsToFamiliesTest extends VitruvApplicationTest {
 	final static String LAST_NAME_3 = "Müller"
 
 	// Model Paths
-	final static Path PERSONS_MODEL = DomainUtil.getModelFileName('model/persons', new PersonsDomainProvider)
-	final static Path FAMILIES_MODEL = DomainUtil.getModelFileName('model/families', new FamiliesDomainProvider)
+	final static Path PERSONS_MODEL = Path.of('model/persons.persons')
+	final static Path FAMILIES_MODEL = Path.of('model/families.families')
 
 	/**Set the correct set of reactions and routines for this test suite
 	 */
 	override protected getChangePropagationSpecifications() {
-		return #[new FamiliesToPersonsChangePropagationSpecification(),
-			new PersonsToFamiliesChangePropagationSpecification()]
+		return #[new PersonsToFamiliesChangePropagationSpecification()]
 	}
 
 

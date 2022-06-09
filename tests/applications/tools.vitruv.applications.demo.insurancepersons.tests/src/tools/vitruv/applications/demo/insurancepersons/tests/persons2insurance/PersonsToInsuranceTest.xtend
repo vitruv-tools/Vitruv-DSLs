@@ -9,9 +9,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.BeforeEach
 import java.nio.file.Path
 import tools.vitruv.testutils.VitruvApplicationTest
-import tools.vitruv.testutils.domains.DomainUtil
-import tools.vitruv.domains.demo.insurance.InsuranceDomainProvider
-import tools.vitruv.domains.demo.persons.PersonsDomainProvider
 import tools.vitruv.applications.demo.insurancepersons.persons2insurance.PersonsToInsuranceChangePropagationSpecification
 import tools.vitruv.applications.demo.insurancepersons.insurance2persons.InsuranceToPersonsChangePropagationSpecification
 
@@ -27,14 +24,13 @@ class PersonsToInsuranceTest extends VitruvApplicationTest {
 	static val FEMALE_NAME_2 = "Berta Mustermann"
 	static val FEMALE_NAME_3 = "Berta Musterfrau"
 	// Model Paths
-	final static Path PERSONS_MODEL = DomainUtil.getModelFileName('model/persons', new PersonsDomainProvider)
-	final static Path INSURANCE_MODEL = DomainUtil.getModelFileName('model/insurance', new InsuranceDomainProvider)
+	final static Path PERSONS_MODEL = Path.of('model/persons.persons')
+	final static Path INSURANCE_MODEL = Path.of('model/insurance.insurance')
 
 	/**Set the correct set of reactions and routines for this test suite
 	 */
 	override protected getChangePropagationSpecifications() {
-		return #[new InsuranceToPersonsChangePropagationSpecification(),
-			new PersonsToInsuranceChangePropagationSpecification()]
+		return #[new PersonsToInsuranceChangePropagationSpecification()]
 	}
 
 	/**Before each test a new {@link PersonRegister} is created as starting point.

@@ -3,11 +3,8 @@ package tools.vitruv.applications.demo.insurancepersons.tests.insurance2persons
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.nio.file.Path
-import tools.vitruv.domains.demo.persons.PersonsDomainProvider
 import tools.vitruv.testutils.VitruvApplicationTest
-import tools.vitruv.testutils.domains.DomainUtil
 import tools.vitruv.applications.demo.insurancepersons.insurance2persons.InsuranceToPersonsChangePropagationSpecification
-import tools.vitruv.domains.demo.insurance.InsuranceDomainProvider
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceFactory
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceDatabase
 import edu.kit.ipd.sdq.metamodels.persons.PersonRegister
@@ -27,8 +24,8 @@ class InsuranceToPersonsTest extends VitruvApplicationTest {
 	static val FEMALE_NAME_3 = "Berta Musterfrau"
 	static val SPECIAL_CHAR_NAME = "Berta? Müster-frau"
 	// Model Paths
-	final static Path PERSONS_MODEL = DomainUtil.getModelFileName('model/persons', new PersonsDomainProvider)
-	final static Path INSURANCE_MODEL = DomainUtil.getModelFileName('model/insurance', new InsuranceDomainProvider)
+	final static Path PERSONS_MODEL = Path.of('model/persons.persons')
+	final static Path INSURANCE_MODEL = Path.of('model/insurance.insurance')
 
 	override protected getChangePropagationSpecifications() {
 		return #[new InsuranceToPersonsChangePropagationSpecification()]
