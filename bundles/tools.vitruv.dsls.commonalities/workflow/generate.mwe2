@@ -6,8 +6,8 @@ import org.eclipse.xtext.xtext.generator.model.annotations.GeneratedClassAnnotat
 import org.eclipse.emf.mwe2.ecore.EcoreGenerator
 
 // This variable is adapted by the Maven build
-var workspaceRoot = "../../../"
-var rootPath = "${workspaceRoot}/bundles/dsls/"
+var workspaceRoot = "../../"
+var rootPath = "${workspaceRoot}/bundles/"
 var testRootPath = "${workspaceRoot}/tests/dsls"
 var baseName = "tools.vitruv.dsls.commonalities"
 var basePath = "${rootPath}/${baseName}"
