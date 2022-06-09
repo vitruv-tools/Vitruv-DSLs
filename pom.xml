@@ -14,7 +14,7 @@
 
 	<modules>
 		<module>releng/tools.vitruv.dsls.dependencywrapper</module>
-		<module>releng/tools.vitruv.workflow</module>
+		<module>releng/tools.vitruv.dsls.workflow</module>
 		<module>bundles</module>
 		<module>tests</module>
 		<module>features</module>

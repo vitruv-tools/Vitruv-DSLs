@@ -9,6 +9,6 @@
 		<relativePath>../tools.vitruv.dsls.parent</relativePath>
 	</parent>
 	<artifactId>tools.vitruv.workflow</artifactId>
-	<name>Vitruv Metamodel Generation Workflow</name>
+	<name>Vitruv DSLs Metamodel Generation Workflow</name>
 	<packaging>eclipse-plugin</packaging>
 </project>
