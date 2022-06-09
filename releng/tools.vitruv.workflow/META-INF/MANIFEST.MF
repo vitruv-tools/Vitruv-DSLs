@@ -6,3 +6,4 @@ Bundle-Version: 2.1.0.qualifier
 Bundle-Vendor: vitruv.tools
 Automatic-Module-Name: tools.vitruv.workflow
 Bundle-RequiredExecutionEnvironment: JavaSE-11
+Require-Bundle: tools.vitruv.framework.correspondence

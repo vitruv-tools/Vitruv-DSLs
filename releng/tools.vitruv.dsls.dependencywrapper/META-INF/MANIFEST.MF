@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: tools.vitruv.dsls.dependencywrapper
+Bundle-SymbolicName: tools.vitruv.dsls.dependencywrapper
+Automatic-Module-Name: tools.vitruv.dsls.dependencywrapper
+Bundle-Version: 2.1.0.qualifier
+Require-Bundle: tools.vitruv.framework.domains,
+ tools.vitruv.framework.change,
+ tools.vitruv.framework.change.echange,
+ tools.vitruv.framework.propagation,
+ tools.vitruv.framework.util,
+ edu.kit.ipd.sdq.metamodels.families,
+ edu.kit.ipd.sdq.metamodels.insurance,
+ edu.kit.ipd.sdq.metamodels.persons
+Bundle-Vendor: tools.vitruv
