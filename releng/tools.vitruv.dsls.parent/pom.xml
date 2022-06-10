@@ -113,7 +113,7 @@
 				</property>
 			</activation>
 			<properties>
-				<vitruv.framework.url>file://${vitruv.framework.path}/releng/tools.vitruv.updatesite.aggregated/target/final</vitruv.framework.url>
+				<vitruv.framework.url>file://${vitruv.framework.path}/releng/tools.vitruv.updatesite/target/repository</vitruv.framework.url>
 			</properties>
 		</profile>
 		
