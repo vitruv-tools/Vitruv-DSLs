@@ -19,5 +19,7 @@ Require-Bundle: tools.vitruv.dsls.commonalities,
  org.objectweb.asm;bundle-version="[9.1.0,9.2.0)";resolution:=optional,
  tools.vitruv.testutils.metamodels,
  edu.kit.ipd.sdq.activextendannotations,
+ edu.kit.ipd.sdq.commons.util.eclipse,
+ edu.kit.ipd.sdq.commons.util.java,
  org.eclipse.core.runtime
 Bundle-Vendor: vitruv.tools
