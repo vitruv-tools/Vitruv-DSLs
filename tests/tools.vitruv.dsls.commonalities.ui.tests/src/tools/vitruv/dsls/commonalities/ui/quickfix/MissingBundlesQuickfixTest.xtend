@@ -22,7 +22,7 @@ import java.util.Set
 import javax.inject.Inject
 import static tools.vitruv.dsls.commonalities.ui.quickfix.XtextAssertions.getCurrentlyOpenedXtextDocument
 import org.eclipse.xtext.ui.testing.util.IResourcesSetupUtil
-import tools.vitruv.testutils.xtext.BugFixedAbstractQuickfixTest
+import tools.vitruv.dsls.commonalities.ui.util.BugFixedAbstractQuickfixTest
 
 @DisplayName("quick fixes for missing bundles")
 @ExtendWith(InjectionExtension, TestProjectManager)

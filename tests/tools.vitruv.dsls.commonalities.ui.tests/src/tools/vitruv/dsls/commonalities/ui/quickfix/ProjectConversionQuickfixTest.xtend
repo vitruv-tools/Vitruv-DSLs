@@ -18,7 +18,7 @@ import static extension tools.vitruv.dsls.common.ui.ProjectAccess.*
 import java.util.List
 import org.eclipse.pde.core.project.IBundleProjectDescription
 import org.eclipse.xtext.ui.testing.util.IResourcesSetupUtil
-import tools.vitruv.testutils.xtext.BugFixedAbstractQuickfixTest
+import tools.vitruv.dsls.commonalities.ui.util.BugFixedAbstractQuickfixTest
 import org.eclipse.xtext.ui.XtextProjectHelper
 import org.eclipse.xtext.ui.editor.XtextEditor
 import org.eclipse.core.resources.IFile
