@@ -19,7 +19,7 @@ import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.RoutineCallParam
 import tools.vitruv.extensions.dslruntime.commonalities.matching.ParticipationObjects
 
 import static com.google.common.base.Preconditions.*
-import static tools.vitruv.framework.util.XtendAssertHelper.*
+import static tools.vitruv.extensions.dslruntime.commonalities.helper.XtendAssertHelper.*
 
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.ReactionsGeneratorConventions.*
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.intermediatemodel.IntermediateModelHelper.*
