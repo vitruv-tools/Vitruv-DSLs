@@ -18,12 +18,13 @@
 	</properties>
 
 	<repositories>
-		<!-- The aggreated Vitruv updatesite to resolve all its dependencies -->
+		<!-- The aggregated Vitruv updatesite to resolve all its dependencies -->
 		<repository>
 			<id>Vitruv</id>
 			<layout>p2</layout>
 			<url>https://vitruv-tools.github.io/updatesite/nightly/</url>
 		</repository>
+		<!-- The specific Vitruv framework updatesite to be potentially overwritten by local builds -->
 		<repository>
 			<id>Vitruv Framework</id>
 			<layout>p2</layout>
