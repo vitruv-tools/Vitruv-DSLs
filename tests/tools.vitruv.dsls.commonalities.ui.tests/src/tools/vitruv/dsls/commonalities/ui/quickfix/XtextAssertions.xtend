@@ -14,8 +14,8 @@ import org.hamcrest.Matcher
 import org.eclipse.xtext.ui.editor.model.IXtextDocument
 import static org.eclipse.xtext.ui.editor.utils.EditorUtils.getActiveXtextEditor
 import org.eclipse.swt.widgets.Display
-import tools.vitruv.framework.util.Capture
-import static extension tools.vitruv.framework.util.Capture.*
+import tools.vitruv.testutils.Capture
+import static extension tools.vitruv.testutils.Capture.*
 import java.util.ArrayList
 
 @Singleton

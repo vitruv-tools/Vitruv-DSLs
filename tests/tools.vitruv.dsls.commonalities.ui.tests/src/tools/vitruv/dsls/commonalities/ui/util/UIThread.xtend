@@ -2,8 +2,8 @@ package tools.vitruv.dsls.commonalities.ui.util
 
 import edu.kit.ipd.sdq.activextendannotations.Utility
 import org.eclipse.swt.widgets.Display
-import tools.vitruv.framework.util.Capture
-import static extension tools.vitruv.framework.util.Capture.*
+import tools.vitruv.testutils.Capture
+import static extension tools.vitruv.testutils.Capture.*
 import java.util.concurrent.Callable
 
 @Utility
