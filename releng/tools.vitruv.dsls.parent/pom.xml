@@ -13,7 +13,8 @@
 	<packaging>pom</packaging>
 
 	<properties>
-		<vitruv.framework.url>https://vitruv-tools.github.io/updatesite/nightly/framework/</vitruv.framework.url>
+		<!-- A local updatesite for the framework can be specified by overwriting these properties. It defaults to the Vitruv updatesite. -->
+		<vitruv.framework.url>https://vitruv-tools.github.io/updatesite/nightly/</vitruv.framework.url>
 	</properties>
 
 	<repositories>
@@ -97,6 +98,18 @@
 	</build>
 
 	<profiles>
+		<profile>
+			<id>local-framework</id>
+			<activation>
+				<property>
+					<name>vitruv.framework.path</name>
+				</property>
+			</activation>
+			<properties>
+				<vitruv.framework.url>file://${vitruv.framework.path}/releng/tools.vitruv.updatesite.aggregated/target/final</vitruv.framework.url>
+			</properties>
+		</profile>
+		
 		<profile>
 			<id>dsls-generation</id>
 			<activation>
