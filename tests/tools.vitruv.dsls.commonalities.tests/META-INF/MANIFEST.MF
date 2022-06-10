@@ -9,7 +9,7 @@ Bundle-ActivationPolicy: lazy
 Export-Package: tools.vitruv.dsls.commonalities.tests.util,
  tools.vitruv.dsls.commonalities.tests;x-internal=true
 Require-Bundle: tools.vitruv.dsls.commonalities,
- tools.vitruv.testutils,
+ tools.vitruv.testutils.vsum,
  org.eclipse.xtext.testing,
  org.eclipse.xtext.xbase.testing,
  org.hamcrest.core,
