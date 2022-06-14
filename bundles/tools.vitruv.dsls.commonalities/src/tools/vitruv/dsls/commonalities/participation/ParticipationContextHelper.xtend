@@ -10,7 +10,7 @@ import tools.vitruv.dsls.commonalities.language.Participation
 import tools.vitruv.dsls.commonalities.language.ParticipationClass
 import tools.vitruv.dsls.commonalities.language.SimpleReferenceMapping
 
-import static tools.vitruv.framework.util.XtendAssertHelper.*
+import static tools.vitruv.extensions.dslruntime.commonalities.helper.XtendAssertHelper.*
 
 import static extension tools.vitruv.dsls.commonalities.language.extensions.CommonalitiesLanguageModelExtensions.*
 

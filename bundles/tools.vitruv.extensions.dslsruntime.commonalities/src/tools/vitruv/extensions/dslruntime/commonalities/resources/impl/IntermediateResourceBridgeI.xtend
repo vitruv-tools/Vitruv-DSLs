@@ -11,7 +11,7 @@ import tools.vitruv.extensions.dslsruntime.reactions.helper.PersistenceHelper
 import tools.vitruv.extensions.dslsruntime.reactions.helper.ReactionsCorrespondenceHelper
 
 import static com.google.common.base.Preconditions.*
-import static tools.vitruv.framework.util.XtendAssertHelper.*
+import static tools.vitruv.extensions.dslruntime.commonalities.helper.XtendAssertHelper.*
 
 // TODO remove once resources are handled by domains
 class IntermediateResourceBridgeI extends IntermediateResourceBridgeImpl {

@@ -27,7 +27,7 @@ import tools.vitruv.extensions.dslruntime.commonalities.BooleanResult
 import tools.vitruv.extensions.dslruntime.commonalities.matching.ParticipationMatcher
 
 import static com.google.common.base.Preconditions.*
-import static tools.vitruv.framework.util.XtendAssertHelper.*
+import static tools.vitruv.extensions.dslruntime.commonalities.helper.XtendAssertHelper.*
 
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.ReactionsGeneratorConventions.*
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.util.JvmTypeProviderHelper.*

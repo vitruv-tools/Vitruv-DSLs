@@ -17,7 +17,7 @@ import org.eclipse.xtext.resource.FileExtensionProvider
 import org.hamcrest.MatcherAssert
 import org.junit.jupiter.api.Test
 import org.eclipse.xtext.ui.testing.util.IResourcesSetupUtil
-import tools.vitruv.testutils.xtext.BugFixedAbstractEditorTest
+import tools.vitruv.dsls.commonalities.ui.util.BugFixedAbstractEditorTest
 
 @ExtendWith(InjectionExtension, TestProjectManager)
 @InjectWith(CommonalitiesLanguageUiInjectorProvider)

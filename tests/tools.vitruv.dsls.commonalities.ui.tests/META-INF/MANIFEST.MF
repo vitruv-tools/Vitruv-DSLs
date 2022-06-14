@@ -8,7 +8,7 @@ Automatic-Module-Name: tools.vitruv.dsls.commonalities.ui.tests
 Bundle-ActivationPolicy: lazy
 Require-Bundle: tools.vitruv.dsls.commonalities,
  tools.vitruv.dsls.commonalities.ui,
- tools.vitruv.testutils,
+ tools.vitruv.testutils.vsum,
  tools.vitruv.testutils.metamodels,
  org.eclipse.xtext.testing,
  org.eclipse.xtext.ui.testing,
@@ -20,6 +20,7 @@ Require-Bundle: tools.vitruv.dsls.commonalities,
  org.eclipse.core.runtime,
  org.eclipse.ui.workbench;resolution:=optional,
  edu.kit.ipd.sdq.activextendannotations,
+ edu.kit.ipd.sdq.commons.util.eclipse,
  tools.vitruv.dsls.reactions.ui
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: tools.vitruv.dsls.commonalities.ui.quickfix;x-internal=true,

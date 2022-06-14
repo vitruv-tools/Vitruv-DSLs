@@ -15,7 +15,7 @@ import tools.vitruv.framework.correspondence.CorrespondenceModel
 import tools.vitruv.framework.propagation.ResourceAccess
 
 import static com.google.common.base.Preconditions.*
-import static tools.vitruv.framework.util.XtendAssertHelper.*
+import static tools.vitruv.extensions.dslruntime.commonalities.helper.XtendAssertHelper.*
 
 /**
  * Matches participation classes to their objects according to the specified
