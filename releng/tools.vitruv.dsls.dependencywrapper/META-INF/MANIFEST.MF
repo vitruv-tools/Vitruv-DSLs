@@ -8,7 +8,6 @@ Require-Bundle: tools.vitruv.framework.domains,
  tools.vitruv.framework.change,
  tools.vitruv.framework.change.echange,
  tools.vitruv.framework.propagation,
- tools.vitruv.framework.util,
  edu.kit.ipd.sdq.metamodels.families,
  edu.kit.ipd.sdq.metamodels.insurance,
  edu.kit.ipd.sdq.metamodels.persons
