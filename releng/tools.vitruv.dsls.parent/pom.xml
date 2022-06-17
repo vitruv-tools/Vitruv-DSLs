@@ -38,12 +38,12 @@
 		<repository>
 			<id>SDQ Commons</id>
 			<layout>p2</layout>
-			<url>https://kit-sdq.github.io/updatesite/release/commons/2.0.0/</url>
+			<url>https://kit-sdq.github.io/updatesite/release/commons/</url>
 		</repository>
 		<repository>
 			<id>XAnnotations</id>
 			<layout>p2</layout>
-			<url>https://kit-sdq.github.io/updatesite/release/xannotations/1.5.0/</url>
+			<url>https://kit-sdq.github.io/updatesite/release/xannotations/</url>
 		</repository>
 	</repositories>
 
