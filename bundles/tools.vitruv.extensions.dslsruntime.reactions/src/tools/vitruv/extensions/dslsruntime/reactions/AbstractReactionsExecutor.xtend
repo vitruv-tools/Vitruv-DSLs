@@ -8,7 +8,7 @@ import tools.vitruv.change.correspondence.CorrespondenceModel
 import tools.vitruv.framework.propagation.ResourceAccess
 import java.util.List
 import tools.vitruv.framework.propagation.impl.AbstractChangePropagationSpecification
-import tools.vitruv.framework.change.MetamodelDescriptor
+import tools.vitruv.change.composite.MetamodelDescriptor
 
 abstract class AbstractReactionsExecutor extends AbstractChangePropagationSpecification {
 	static val LOGGER = Logger.getLogger(AbstractReactionsExecutor);

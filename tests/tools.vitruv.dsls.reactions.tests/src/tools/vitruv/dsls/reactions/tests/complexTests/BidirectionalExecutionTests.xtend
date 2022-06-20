@@ -3,9 +3,9 @@ package tools.vitruv.dsls.reactions.tests.complexTests
 import allElementTypes.Root
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import tools.vitruv.framework.change.description.CompositeContainerChange
-import tools.vitruv.framework.change.description.PropagatedChange
-import tools.vitruv.framework.change.description.VitruviusChange
+import tools.vitruv.change.composite.description.CompositeContainerChange
+import tools.vitruv.change.composite.description.PropagatedChange
+import tools.vitruv.change.composite.description.VitruviusChange
 import tools.vitruv.change.atomic.eobject.CreateEObject
 import tools.vitruv.change.atomic.feature.reference.ReplaceSingleValuedEReference
 

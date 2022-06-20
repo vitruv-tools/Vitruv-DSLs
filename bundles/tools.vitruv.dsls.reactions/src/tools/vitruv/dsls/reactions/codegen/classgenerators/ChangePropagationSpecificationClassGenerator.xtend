@@ -12,7 +12,7 @@ import tools.vitruv.framework.propagation.ChangePropagationSpecification
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators.*
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsElementsCompletionChecker.isReferenceable
 import java.util.Set
-import tools.vitruv.framework.change.MetamodelDescriptor
+import tools.vitruv.change.composite.MetamodelDescriptor
 
 class ChangePropagationSpecificationClassGenerator extends ClassGenerator {
 	final ReactionsSegment reactionsSegment;

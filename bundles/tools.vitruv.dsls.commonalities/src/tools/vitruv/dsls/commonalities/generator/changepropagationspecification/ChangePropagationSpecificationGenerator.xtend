@@ -30,7 +30,7 @@ import tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators
 import static com.google.common.base.Preconditions.checkState
 import org.eclipse.emf.common.util.URI
 import tools.vitruv.dsls.commonalities.language.Concept
-import tools.vitruv.framework.change.MetamodelDescriptor
+import tools.vitruv.change.composite.MetamodelDescriptor
 
 class ChangePropagationSpecificationGenerator implements SubGenerator {
 	@Inject extension GenerationContext generationContext
