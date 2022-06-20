@@ -5,9 +5,9 @@ import tools.vitruv.extensions.dslsruntime.reactions.IReactionRealization
 import tools.vitruv.framework.userinteraction.UserInteractor
 import tools.vitruv.change.atomic.EChange
 import tools.vitruv.change.correspondence.CorrespondenceModel
-import tools.vitruv.framework.propagation.ResourceAccess
+import tools.vitruv.change.propagation.ResourceAccess
 import java.util.List
-import tools.vitruv.framework.propagation.impl.AbstractChangePropagationSpecification
+import tools.vitruv.change.propagation.impl.AbstractChangePropagationSpecification
 import tools.vitruv.change.composite.MetamodelDescriptor
 
 abstract class AbstractReactionsExecutor extends AbstractChangePropagationSpecification {

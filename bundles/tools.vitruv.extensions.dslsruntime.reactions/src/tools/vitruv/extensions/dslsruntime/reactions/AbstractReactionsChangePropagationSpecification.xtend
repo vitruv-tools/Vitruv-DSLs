@@ -1,6 +1,6 @@
 package tools.vitruv.extensions.dslsruntime.reactions
 
-import tools.vitruv.framework.propagation.impl.CompositeChangePropagationSpecification
+import tools.vitruv.change.propagation.impl.CompositeChangePropagationSpecification
 import tools.vitruv.change.composite.MetamodelDescriptor
 
 /**

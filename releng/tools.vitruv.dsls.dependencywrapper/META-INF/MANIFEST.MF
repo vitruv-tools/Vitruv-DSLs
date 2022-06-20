@@ -7,7 +7,7 @@ Bundle-Version: 2.1.0.qualifier
 Require-Bundle: tools.vitruv.framework.domains,
  tools.vitruv.change.composite,
  tools.vitruv.change.atomic,
- tools.vitruv.framework.propagation,
+ tools.vitruv.change.propagation,
  edu.kit.ipd.sdq.metamodels.families,
  edu.kit.ipd.sdq.metamodels.insurance,
  edu.kit.ipd.sdq.metamodels.persons

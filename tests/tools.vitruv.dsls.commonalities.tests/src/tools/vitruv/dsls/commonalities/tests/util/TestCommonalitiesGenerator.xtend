@@ -37,7 +37,7 @@ import static com.google.common.base.Preconditions.checkState
 import org.eclipse.core.runtime.Platform
 import static org.hamcrest.MatcherAssert.assertThat
 import static tools.vitruv.testutils.matchers.ModelMatchers.hasNoErrors
-import tools.vitruv.framework.propagation.ChangePropagationSpecification
+import tools.vitruv.change.propagation.ChangePropagationSpecification
 import java.util.ArrayList
 import java.util.Set
 import tools.vitruv.dsls.commonalities.generator.changepropagationspecification.ChangePropagationSpecificationConstants

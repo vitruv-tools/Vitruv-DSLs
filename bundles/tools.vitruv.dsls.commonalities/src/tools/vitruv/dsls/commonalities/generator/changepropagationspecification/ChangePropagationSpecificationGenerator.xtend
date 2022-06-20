@@ -17,12 +17,12 @@ import org.eclipse.xtext.xbase.compiler.JvmModelGenerator
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import tools.vitruv.dsls.commonalities.generator.GenerationContext
 import tools.vitruv.dsls.commonalities.generator.SubGenerator
-import tools.vitruv.framework.propagation.impl.CompositeChangePropagationSpecification
+import tools.vitruv.change.propagation.impl.CompositeChangePropagationSpecification
 
 import static extension tools.vitruv.dsls.commonalities.generator.changepropagationspecification.ChangePropagationSpecificationConstants.*
 import static extension tools.vitruv.dsls.commonalities.language.extensions.CommonalitiesLanguageModelExtensions.*
 import static extension tools.vitruv.dsls.commonalities.generator.intermediatemodel.IntermediateModelConstants.getIntermediateMetamodelPackageClassName
-import tools.vitruv.framework.propagation.ChangePropagationSpecification
+import tools.vitruv.change.propagation.ChangePropagationSpecification
 import java.util.HashSet
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.ReactionsGeneratorConventions.*
 import tools.vitruv.dsls.reactions.language.toplevelelements.TopLevelElementsFactory
