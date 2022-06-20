@@ -7,7 +7,7 @@ import org.eclipse.xtext.common.types.JvmOperation
 import static tools.vitruv.dsls.reactions.api.generator.ReactionsLanguageGeneratorConstants.*;
 import tools.vitruv.dsls.reactions.language.toplevelelements.PreconditionCodeBlock
 import tools.vitruv.extensions.dslsruntime.reactions.AbstractReactionRealization
-import tools.vitruv.framework.change.echange.EChange
+import tools.vitruv.change.atomic.EChange
 import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.*;
 import tools.vitruv.dsls.reactions.language.toplevelelements.Reaction
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators.*

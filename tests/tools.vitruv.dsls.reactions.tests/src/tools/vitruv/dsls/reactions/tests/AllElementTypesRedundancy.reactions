@@ -1,8 +1,8 @@
 import tools.vitruv.dsls.reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor
 import static tools.vitruv.dsls.reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor.ChangeType.*;
 import org.eclipse.emf.ecore.change.FeatureChange
-import tools.vitruv.framework.change.echange.^root.RootEChange
-import tools.vitruv.framework.change.echange.eobject.EObjectExistenceEChange
+import tools.vitruv.change.atomic.^root.RootEChange
+import tools.vitruv.change.atomic.eobject.EObjectExistenceEChange
 import static extension tools.vitruv.testutils.metamodels.TestMetamodelsPathFactory.allElementTypes
 
 import "http://tools.vitruv.testutils.metamodels.allElementTypes" as minimal 

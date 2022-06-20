@@ -10,7 +10,7 @@ import tools.vitruv.extensions.dslsruntime.reactions.ReactionExecutionState
 import org.eclipse.emf.ecore.EClass
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment
 import tools.vitruv.dsls.reactions.language.inputTypes.InputTypesPackage
-import tools.vitruv.framework.change.echange.EChange
+import tools.vitruv.change.atomic.EChange
 import tools.vitruv.dsls.common.elements.MetaclassReference
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsLanguageHelper.*;
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators.*;

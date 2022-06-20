@@ -4,7 +4,7 @@ import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.xtend2.lib.StringConcatenationClient
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.*
-import tools.vitruv.framework.change.echange.feature.single.ReplaceSingleValuedFeatureEChange
+import tools.vitruv.change.atomic.feature.single.ReplaceSingleValuedFeatureEChange
 import org.eclipse.xtend.lib.annotations.Accessors
 
 class AtomicChangeTypeRepresentation extends ChangeTypeRepresentation {

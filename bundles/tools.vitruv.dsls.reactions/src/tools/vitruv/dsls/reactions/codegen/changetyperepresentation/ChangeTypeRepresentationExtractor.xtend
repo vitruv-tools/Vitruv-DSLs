@@ -2,13 +2,13 @@ package tools.vitruv.dsls.reactions.codegen.changetyperepresentation
 
 import org.eclipse.emf.ecore.EClass
 import tools.vitruv.dsls.reactions.language.toplevelelements.Trigger
-import tools.vitruv.framework.change.echange.EChange
-import tools.vitruv.framework.change.echange.feature.reference.ReferencePackage
-import tools.vitruv.framework.change.echange.root.RootPackage
+import tools.vitruv.change.atomic.EChange
+import tools.vitruv.change.atomic.feature.reference.ReferencePackage
+import tools.vitruv.change.atomic.root.RootPackage
 import tools.vitruv.dsls.reactions.language.ModelElementChange
-import tools.vitruv.framework.change.echange.eobject.EobjectPackage
+import tools.vitruv.change.atomic.eobject.EobjectPackage
 import tools.vitruv.dsls.reactions.language.ModelAttributeChange
-import tools.vitruv.framework.change.echange.feature.attribute.AttributePackage
+import tools.vitruv.change.atomic.feature.attribute.AttributePackage
 import tools.vitruv.dsls.reactions.language.ModelAttributeRemovedChange
 import tools.vitruv.dsls.reactions.language.ModelAttributeReplacedChange
 import tools.vitruv.dsls.reactions.language.ModelAttributeInsertedChange
