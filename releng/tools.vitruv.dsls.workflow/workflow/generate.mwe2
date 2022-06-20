@@ -11,7 +11,7 @@ Workflow {
 	bean = StandaloneSetup {
 		scanClassPath = true
 		platformUri = workspaceRoot 
-		registerGenModelFile = "platform:/resource/tools.vitruv.framework.correspondence/metamodel/correspondence.genmodel"
+		registerGenModelFile = "platform:/resource/tools.vitruv.change.correspondence/metamodel/correspondence.genmodel"
 	}
 	
 	component = EcoreGenerator {

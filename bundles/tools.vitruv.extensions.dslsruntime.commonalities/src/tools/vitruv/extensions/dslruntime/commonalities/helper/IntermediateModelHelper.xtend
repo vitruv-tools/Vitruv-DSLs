@@ -4,7 +4,7 @@ import edu.kit.ipd.sdq.activextendannotations.Utility
 import org.eclipse.emf.ecore.EObject
 import tools.vitruv.extensions.dslruntime.commonalities.intermediatemodelbase.Intermediate
 import tools.vitruv.extensions.dslruntime.commonalities.resources.IntermediateResourceBridge
-import tools.vitruv.framework.correspondence.CorrespondenceModel
+import tools.vitruv.change.correspondence.CorrespondenceModel
 
 import static com.google.common.base.Preconditions.*
 

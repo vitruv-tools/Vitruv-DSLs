@@ -12,7 +12,7 @@ import tools.vitruv.extensions.dslsruntime.reactions.helper.PersistenceHelper
 import tools.vitruv.extensions.dslsruntime.reactions.helper.ReactionsCorrespondenceHelper
 import tools.vitruv.extensions.dslsruntime.reactions.structure.CallHierarchyHaving
 import tools.vitruv.extensions.dslsruntime.reactions.structure.Loggable
-import tools.vitruv.framework.correspondence.CorrespondenceModel
+import tools.vitruv.change.correspondence.CorrespondenceModel
 import tools.vitruv.framework.userinteraction.UserInteractor
 import tools.vitruv.framework.propagation.ResourceAccess
 import org.eclipse.emf.common.util.URI

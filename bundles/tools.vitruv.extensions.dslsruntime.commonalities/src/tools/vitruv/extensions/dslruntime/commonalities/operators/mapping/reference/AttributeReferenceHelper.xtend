@@ -3,7 +3,7 @@ package tools.vitruv.extensions.dslruntime.commonalities.operators.mapping.refer
 import edu.kit.ipd.sdq.activextendannotations.Utility
 import org.eclipse.emf.ecore.EObject
 import tools.vitruv.extensions.dslruntime.commonalities.intermediatemodelbase.Intermediate
-import tools.vitruv.framework.correspondence.CorrespondenceModel
+import tools.vitruv.change.correspondence.CorrespondenceModel
 
 import static extension tools.vitruv.extensions.dslruntime.commonalities.helper.IntermediateModelHelper.*
 

@@ -11,7 +11,7 @@ import tools.vitruv.extensions.dslruntime.commonalities.intermediatemodelbase.In
 import tools.vitruv.extensions.dslruntime.commonalities.resources.IntermediateResourceBridge
 import tools.vitruv.extensions.dslruntime.commonalities.resources.ResourcesFactory
 import tools.vitruv.extensions.dslsruntime.reactions.helper.ReactionsCorrespondenceHelper
-import tools.vitruv.framework.correspondence.CorrespondenceModel
+import tools.vitruv.change.correspondence.CorrespondenceModel
 import tools.vitruv.framework.propagation.ResourceAccess
 
 import static com.google.common.base.Preconditions.*

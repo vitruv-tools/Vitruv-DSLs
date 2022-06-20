@@ -7,7 +7,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.xbase.lib.Functions.Function1
 import tools.vitruv.dsls.reactions.meta.correspondence.reactions.ReactionsCorrespondence
 import tools.vitruv.extensions.dslsruntime.reactions.ReactionsCorrespondenceModelViewFactory
-import tools.vitruv.framework.correspondence.CorrespondenceModel
+import tools.vitruv.change.correspondence.CorrespondenceModel
 
 final class ReactionsCorrespondenceHelper {
 

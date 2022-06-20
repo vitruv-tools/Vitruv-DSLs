@@ -1,10 +1,10 @@
 package tools.vitruv.extensions.dslsruntime.reactions;
 
 import tools.vitruv.dsls.reactions.meta.correspondence.reactions.ReactionsCorrespondence;
-import tools.vitruv.framework.correspondence.CorrespondenceModelView;
-import tools.vitruv.framework.correspondence.CorrespondenceModelViewFactory;
-import tools.vitruv.framework.correspondence.InternalCorrespondenceModel;
-import tools.vitruv.framework.correspondence.impl.CorrespondenceModelViewImpl;
+import tools.vitruv.change.correspondence.CorrespondenceModelView;
+import tools.vitruv.change.correspondence.CorrespondenceModelViewFactory;
+import tools.vitruv.change.correspondence.InternalCorrespondenceModel;
+import tools.vitruv.change.correspondence.impl.CorrespondenceModelViewImpl;
 import tools.vitruv.dsls.reactions.meta.correspondence.reactions.ReactionsFactory;
 
 public class ReactionsCorrespondenceModelViewFactory implements
