@@ -1,6 +1,6 @@
 package tools.vitruv.extensions.dslsruntime.reactions
 
-import tools.vitruv.framework.userinteraction.UserInteractor
+import tools.vitruv.change.interaction.UserInteractor
 import tools.vitruv.change.correspondence.CorrespondenceModel
 import tools.vitruv.change.propagation.ChangePropagationObservable
 import org.eclipse.xtend.lib.annotations.Data

@@ -1,7 +1,7 @@
 package tools.vitruv.extensions.dslsruntime.reactions.correspondenceFailHandler
 
 import org.eclipse.emf.ecore.EObject
-import tools.vitruv.framework.userinteraction.UserInteractor
+import tools.vitruv.change.interaction.UserInteractor
 
 class CorrespondenceFailDoNothing extends AbstractCorrespondenceFailHandler {
 	final boolean abortEffect;

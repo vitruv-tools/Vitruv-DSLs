@@ -4,7 +4,7 @@ import tools.vitruv.extensions.dslsruntime.reactions.IReactionRealization
 import tools.vitruv.extensions.dslsruntime.reactions.structure.CallHierarchyHaving
 import tools.vitruv.change.atomic.EChange
 import org.eclipse.xtend.lib.annotations.Accessors
-import tools.vitruv.framework.userinteraction.UserInteractor
+import tools.vitruv.change.interaction.UserInteractor
 
 abstract class AbstractReactionRealization extends CallHierarchyHaving implements IReactionRealization {
 	val AbstractRepairRoutinesFacade routinesFacade;

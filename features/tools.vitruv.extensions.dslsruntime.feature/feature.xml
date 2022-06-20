@@ -29,7 +29,7 @@
       <import plugin="tools.vitruv.framework.change"/>
       <import plugin="tools.vitruv.change.propagation"/>
       <import plugin="tools.vitruv.framework.domains"/>
-      <import plugin="tools.vitruv.framework.userinteraction"/>
+      <import plugin="tools.vitruv.change.interaction"/>
       <import plugin="org.eclipse.emf.ecore.xmi"/>
       <import plugin="edu.kit.ipd.sdq.commons.util.java"/>
    </requires>

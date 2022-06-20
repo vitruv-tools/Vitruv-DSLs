@@ -5,7 +5,7 @@ import org.eclipse.xtext.common.types.JvmFormalParameter
 import org.eclipse.emf.ecore.EObject
 import java.util.ArrayList
 import org.eclipse.xtext.common.types.JvmTypeReference
-import tools.vitruv.framework.userinteraction.UserInteractor
+import tools.vitruv.change.interaction.UserInteractor
 import tools.vitruv.extensions.dslsruntime.reactions.ReactionExecutionState
 import org.eclipse.emf.ecore.EClass
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment

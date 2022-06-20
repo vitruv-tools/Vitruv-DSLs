@@ -1,8 +1,8 @@
 package tools.vitruv.extensions.dslsruntime.reactions.correspondenceFailHandler
 
 import org.eclipse.emf.ecore.EObject
-import tools.vitruv.framework.userinteraction.UserInteractor
-import tools.vitruv.framework.userinteraction.UserInteractionOptions.WindowModality
+import tools.vitruv.change.interaction.UserInteractor
+import tools.vitruv.change.interaction.UserInteractionOptions.WindowModality
 
 class CorrespondenceFailCustomDialog extends AbstractCorrespondenceFailHandler {
 	final boolean abortEffect;

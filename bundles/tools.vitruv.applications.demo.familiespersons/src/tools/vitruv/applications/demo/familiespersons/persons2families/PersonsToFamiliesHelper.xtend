@@ -7,8 +7,8 @@ import edu.kit.ipd.sdq.metamodels.persons.Person
 import edu.kit.ipd.sdq.metamodels.persons.PersonRegister
 import java.util.ArrayList
 import java.util.Collection
-import tools.vitruv.framework.userinteraction.UserInteractionOptions.WindowModality
-import tools.vitruv.framework.userinteraction.UserInteractor
+import tools.vitruv.change.interaction.UserInteractionOptions.WindowModality
+import tools.vitruv.change.interaction.UserInteractor
 
 enum FamilyRole {
 	Parent,

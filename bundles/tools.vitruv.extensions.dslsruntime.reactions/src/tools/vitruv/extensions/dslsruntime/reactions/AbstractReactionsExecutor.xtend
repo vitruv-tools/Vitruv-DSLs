@@ -2,7 +2,7 @@ package tools.vitruv.extensions.dslsruntime.reactions
 
 import org.apache.log4j.Logger
 import tools.vitruv.extensions.dslsruntime.reactions.IReactionRealization
-import tools.vitruv.framework.userinteraction.UserInteractor
+import tools.vitruv.change.interaction.UserInteractor
 import tools.vitruv.change.atomic.EChange
 import tools.vitruv.change.correspondence.CorrespondenceModel
 import tools.vitruv.change.propagation.ResourceAccess

@@ -1,7 +1,7 @@
 package tools.vitruv.extensions.dslsruntime.reactions
 
 import org.eclipse.emf.ecore.EObject
-import tools.vitruv.framework.userinteraction.UserInteractor
+import tools.vitruv.change.interaction.UserInteractor
 
 interface CorrespondenceFailHandler {
 	/** 
