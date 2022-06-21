@@ -5,9 +5,9 @@ Bundle-SymbolicName: tools.vitruv.dsls.dependencywrapper
 Automatic-Module-Name: tools.vitruv.dsls.dependencywrapper
 Bundle-Version: 2.1.0.qualifier
 Require-Bundle: tools.vitruv.framework.domains,
- tools.vitruv.framework.change,
- tools.vitruv.framework.change.echange,
- tools.vitruv.framework.propagation,
+ tools.vitruv.change.composite,
+ tools.vitruv.change.atomic,
+ tools.vitruv.change.propagation,
  edu.kit.ipd.sdq.metamodels.families,
  edu.kit.ipd.sdq.metamodels.insurance,
  edu.kit.ipd.sdq.metamodels.persons

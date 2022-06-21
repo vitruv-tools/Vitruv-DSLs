@@ -2,13 +2,13 @@ package tools.vitruv.extensions.dslsruntime.reactions
 
 import org.apache.log4j.Logger
 import tools.vitruv.extensions.dslsruntime.reactions.IReactionRealization
-import tools.vitruv.framework.userinteraction.UserInteractor
-import tools.vitruv.framework.change.echange.EChange
-import tools.vitruv.framework.correspondence.CorrespondenceModel
-import tools.vitruv.framework.propagation.ResourceAccess
+import tools.vitruv.change.interaction.UserInteractor
+import tools.vitruv.change.atomic.EChange
+import tools.vitruv.change.correspondence.CorrespondenceModel
+import tools.vitruv.change.propagation.ResourceAccess
 import java.util.List
-import tools.vitruv.framework.propagation.impl.AbstractChangePropagationSpecification
-import tools.vitruv.framework.change.MetamodelDescriptor
+import tools.vitruv.change.propagation.impl.AbstractChangePropagationSpecification
+import tools.vitruv.change.composite.MetamodelDescriptor
 
 abstract class AbstractReactionsExecutor extends AbstractChangePropagationSpecification {
 	static val LOGGER = Logger.getLogger(AbstractReactionsExecutor);

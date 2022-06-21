@@ -4,8 +4,8 @@ import org.eclipse.xtend2.lib.StringConcatenationClient
 import java.util.List
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 import org.eclipse.xtend.lib.annotations.Accessors
-import tools.vitruv.framework.change.echange.feature.FeatureEChange
-import tools.vitruv.framework.change.echange.root.RootEChange
+import tools.vitruv.change.atomic.feature.FeatureEChange
+import tools.vitruv.change.atomic.root.RootEChange
 
 class ChangeSequenceRepresentation {
 	@Accessors(PUBLIC_GETTER)

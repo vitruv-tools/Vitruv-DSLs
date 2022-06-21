@@ -5,7 +5,7 @@ import org.eclipse.core.resources.IFile
 import org.eclipse.core.resources.IProject
 import org.eclipse.emf.common.util.URI
 import static edu.kit.ipd.sdq.commons.util.org.eclipse.emf.common.util.URIUtil.getIFileForEMFUri
-import static extension tools.vitruv.framework.propagation.ProjectMarker.getProjectRootFolder
+import static extension tools.vitruv.change.propagation.ProjectMarker.getProjectRootFolder
 import java.nio.file.Path
 import static edu.kit.ipd.sdq.commons.util.org.eclipse.emf.common.util.URIUtil.createFileURI
 

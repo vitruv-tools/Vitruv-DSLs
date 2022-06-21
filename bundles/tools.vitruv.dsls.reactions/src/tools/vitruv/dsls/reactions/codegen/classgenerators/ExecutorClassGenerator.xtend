@@ -13,7 +13,7 @@ import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsImpo
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsElementsCompletionChecker.isReferenceable
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsElementsCompletionChecker.isComplete
 import java.util.Set
-import tools.vitruv.framework.change.MetamodelDescriptor
+import tools.vitruv.change.composite.MetamodelDescriptor
 
 class ExecutorClassGenerator extends ClassGenerator {
 	final ReactionsSegment reactionsSegment;

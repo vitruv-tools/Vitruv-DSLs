@@ -1,7 +1,7 @@
 package tools.vitruv.extensions.dslsruntime.reactions.effects
 
 import org.eclipse.emf.ecore.EObject
-import tools.vitruv.framework.correspondence.CorrespondenceModel
+import tools.vitruv.change.correspondence.CorrespondenceModel
 import tools.vitruv.extensions.dslsruntime.reactions.helper.ReactionsCorrespondenceHelper
 import org.eclipse.emf.ecore.util.EcoreUtil
 import org.apache.log4j.Logger
