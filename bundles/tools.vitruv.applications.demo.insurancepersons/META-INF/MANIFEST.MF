@@ -8,7 +8,7 @@ Bundle-Vendor: vitruv.tools
 Export-Package: tools.vitruv.applications.demo.insurancepersons.insurance2persons,
  tools.vitruv.applications.demo.insurancepersons.persons2insurance
 Require-Bundle: tools.vitruv.extensions.dslsruntime.reactions;visibility:=reexport,
- edu.kit.ipd.sdq.metamodels.persons;bundle-version="1.6.1",
- edu.kit.ipd.sdq.metamodels.insurance;bundle-version="1.6.1",
+ edu.kit.ipd.sdq.metamodels.persons,
+ edu.kit.ipd.sdq.metamodels.insurance,
  edu.kit.ipd.sdq.activextendannotations
 Bundle-RequiredExecutionEnvironment: JavaSE-11
