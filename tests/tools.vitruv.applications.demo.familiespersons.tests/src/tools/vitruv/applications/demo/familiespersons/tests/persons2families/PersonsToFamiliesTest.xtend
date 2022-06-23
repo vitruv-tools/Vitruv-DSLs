@@ -73,7 +73,7 @@ class PersonsToFamiliesTest extends VitruvApplicationTest {
 
 	@BeforeEach
 	def disableTransitiveChangePropagation() {
-		virtualModel.transitivePropagationEnabled = false
+		virtualModel.transitiveChangePropagationEnabled = false
 	}
 	
 	var boolean preferParent = false
