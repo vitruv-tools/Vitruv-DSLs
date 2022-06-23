@@ -32,6 +32,11 @@ class PersonsToInsuranceTest extends VitruvApplicationTest {
 		return #[new PersonsToInsuranceChangePropagationSpecification()]
 	}
 
+	@BeforeEach
+	def disableTransitiveChangePropagation() {
+		virtualModel.transitivePropagationEnabled = false
+	}
+
 	/**Before each test a new {@link PersonRegister} is created as starting point.
 	 * This is checked by several assertions to ensure correct preconditions for the tests. 
 	 */

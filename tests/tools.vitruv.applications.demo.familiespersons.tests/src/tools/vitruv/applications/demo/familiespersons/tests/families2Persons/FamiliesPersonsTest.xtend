@@ -94,6 +94,11 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 		return #[new FamiliesToPersonsChangePropagationSpecification()]
 	}
 
+	@BeforeEach
+	def disableTransitiveChangePropagation() {
+		virtualModel.transitivePropagationEnabled = false
+	}
+	
 	/**Before each test a new {@link FamilyRegister} is created as starting point.
 	 * This is checked by several assertions to ensure correct preconditions for the tests.
 	 */
