@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertThrows
 import static org.junit.jupiter.api.Assertions.assertTrue
 import static tools.vitruv.testutils.matchers.ModelMatchers.*
+import tools.vitruv.change.propagation.ChangePropagationMode
 
 enum PositionPreference {
 	Parent,
@@ -71,7 +72,11 @@ class PersonsToFamiliesTest extends VitruvApplicationTest {
 		return #[new PersonsToFamiliesChangePropagationSpecification()]
 	}
 
-
+	@BeforeEach
+	def disableTransitiveChangePropagation() {
+		virtualModel.changePropagationMode = ChangePropagationMode.SINGLE_STEP
+	}
+	
 	var boolean preferParent = false
 
 	def void decideParentOrChild(PositionPreference preference) {

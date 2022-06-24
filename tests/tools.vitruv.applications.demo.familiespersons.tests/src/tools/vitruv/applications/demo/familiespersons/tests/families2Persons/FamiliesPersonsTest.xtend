@@ -27,6 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertThrows
 import static tools.vitruv.testutils.matchers.ModelMatchers.*
+import tools.vitruv.change.propagation.ChangePropagationMode
 
 enum MemberRole {
 	Father,
@@ -94,6 +95,11 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 		return #[new FamiliesToPersonsChangePropagationSpecification()]
 	}
 
+	@BeforeEach
+	def disableTransitiveChangePropagation() {
+		virtualModel.changePropagationMode = ChangePropagationMode.SINGLE_STEP
+	}
+	
 	/**Before each test a new {@link FamilyRegister} is created as starting point.
 	 * This is checked by several assertions to ensure correct preconditions for the tests.
 	 */

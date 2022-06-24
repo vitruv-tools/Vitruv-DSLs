@@ -15,6 +15,7 @@ import static org.hamcrest.CoreMatchers.*
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static tools.vitruv.testutils.matchers.ModelMatchers.*
+import tools.vitruv.change.propagation.ChangePropagationMode
 
 class InsuranceToPersonsTest extends VitruvApplicationTest {
 	static val MALE_NAME = "Max Mustermann"
@@ -29,6 +30,11 @@ class InsuranceToPersonsTest extends VitruvApplicationTest {
 
 	override protected getChangePropagationSpecifications() {
 		return #[new InsuranceToPersonsChangePropagationSpecification()]
+	}
+
+	@BeforeEach
+	def disableTransitiveChangePropagation() {
+		virtualModel.changePropagationMode = ChangePropagationMode.SINGLE_STEP
 	}
 
 	/**Before each test a new {@link InsuranceDatabase} is created as starting point.
