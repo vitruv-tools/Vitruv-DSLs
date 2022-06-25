@@ -28,10 +28,11 @@
       <import plugin="tools.vitruv.change.correspondence"/>
       <import plugin="tools.vitruv.change.composite"/>
       <import plugin="tools.vitruv.change.propagation"/>
-      <import plugin="tools.vitruv.framework.domains"/>
       <import plugin="tools.vitruv.change.interaction"/>
       <import plugin="org.eclipse.emf.ecore.xmi"/>
       <import plugin="edu.kit.ipd.sdq.commons.util.java"/>
+      <import plugin="edu.kit.ipd.sdq.activextendannotations"/>
+      <import plugin="edu.kit.ipd.sdq.commons.util.emf"/>
    </requires>
 
    <plugin
