@@ -12,9 +12,9 @@ in reaction to changes in minimal
 execute actions in minimal
 
 /*
- * Creates the model for comparing the further test model with.
+ * Inserts the model for comparing the further test model with.
  */
-reaction CreateRootTest {
+reaction InsertRootTest {
 	after element minimal::Root inserted as root
 	call createRoot(newValue)
 }
@@ -35,7 +35,7 @@ routine createRoot(minimal::Root rootElement) {
 	}
 }
 
-reaction DeleteRootTest {
+reaction RemoveRootTest {
 	after element minimal::Root removed as root
 	call deleteRoot(oldValue)
 }
@@ -116,9 +116,9 @@ routine replaceIdentifiedId(minimal::Identified identified, String value) {
 }
 
 /*
- * CreateNonRootEObjectInList
+ * InsertNonRootEObjectInList
  */
-reaction CreatedNonRootEObjectInList {
+reaction InsertedNonRootEObjectInList {
 	after element minimal::NonRoot inserted in minimal::Root[multiValuedContainmentEReference]
 	call insertNonRoot(affectedEObject, newValue)
 }
@@ -143,9 +143,9 @@ routine insertNonRoot(minimal::Root rootElement, minimal::NonRoot insertedNonRoo
 }
 
 /*
- * DeleteNonRootEObjectInList
+ * RemoveNonRootEObjectInList
  */
-reaction DeletedNonRootEObjectInList {
+reaction RemovedNonRootEObjectInList {
 	after element minimal::NonRoot removed from minimal::Root[multiValuedContainmentEReference]
 	call removeNonRoot(oldValue)
 }

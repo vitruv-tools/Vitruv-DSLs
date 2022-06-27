@@ -15,7 +15,7 @@ execute actions in persons
 
 //========== FAMILY-REGISTER ==========
 //Creation of a {@link PersonRegister} after a {@link FamilyRegister} was created.
-reaction CreatedFamilyRegister {
+reaction InsertedFamilyRegister {
 	after element families::FamilyRegister inserted as root
 	call createPersonRegister(newValue)
 }

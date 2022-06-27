@@ -11,7 +11,7 @@ reactions: personsToInsurance
 in reaction to changes in persons
 execute actions in insurance
 
-reaction CreatedPersonRegister {
+reaction InsertedPersonRegister {
 	after element persons::PersonRegister inserted as root
 	call createInsuranceDatabase(newValue)
 }
@@ -40,7 +40,7 @@ routine deleteInsuranceDatabase(persons::PersonRegister personsRegister) {
 	}
 }
 
-reaction CreatedPerson {
+reaction InsertedPerson {
 	after element persons::Person inserted in persons::PersonRegister[persons]
 	call createInsuranceClient(newValue)
 }
