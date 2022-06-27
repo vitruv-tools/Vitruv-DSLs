@@ -20,9 +20,6 @@ import tools.vitruv.dsls.reactions.language.ElementRemovalAsRootChangeType
 import tools.vitruv.dsls.reactions.language.ElementInsertionInListChangeType
 import tools.vitruv.dsls.reactions.language.ElementRemovalFromListChangeType
 import tools.vitruv.dsls.reactions.language.ElementReplacementChangeType
-import tools.vitruv.dsls.reactions.language.ElementCreationAndInsertionChangeType
-import tools.vitruv.dsls.reactions.language.ElementDeletionAndRemovalChangeType
-import tools.vitruv.dsls.reactions.language.ElementDeletionAndCreationAndReplacementChangeType
 import tools.vitruv.dsls.reactions.language.ElementRootChangeType
 import tools.vitruv.dsls.reactions.language.ElementExistenceChangeType
 import tools.vitruv.dsls.reactions.language.ElementReferenceChangeType
@@ -154,24 +151,4 @@ final class ChangeTypeRepresentationExtractor {
 		val affectedValue = null; 
 		return #[new AtomicChangeTypeRepresentation(name, clazz.instanceClass, affectedEObject, affectedValue, false, false, null, false)];
 	}
-	
-	private static def dispatch Iterable<AtomicChangeTypeRepresentation> generateChangeTypeRepresentation(ElementCreationAndInsertionChangeType modelElementChange, EClass elementClass) {
-		val createChanges = generateChangeTypeRepresentation(modelElementChange.createChange, elementClass);
-		val insertChanges = generateChangeTypeRepresentation(modelElementChange.insertChange, elementClass);
-		return createChanges + insertChanges;
-	}
-	
-	private static def dispatch Iterable<AtomicChangeTypeRepresentation> generateChangeTypeRepresentation(ElementDeletionAndRemovalChangeType modelElementChange, EClass elementClass) {
-		val removeChanges = generateChangeTypeRepresentation(modelElementChange.removeChange, elementClass);
-		val deleteChanges = generateChangeTypeRepresentation(modelElementChange.deleteChange, elementClass);
-		return removeChanges + deleteChanges;
-	}
-
-	private static def dispatch Iterable<AtomicChangeTypeRepresentation> generateChangeTypeRepresentation(ElementDeletionAndCreationAndReplacementChangeType modelElementChange, EClass elementClass) {
-		val createChanges = generateChangeTypeRepresentation(modelElementChange.createChange, elementClass);
-		val replaceChanges = generateChangeTypeRepresentation(modelElementChange.replacedChange, elementClass);
-		val deleteChanges = generateChangeTypeRepresentation(modelElementChange.deleteChange, elementClass);
-		return createChanges + replaceChanges + deleteChanges
-	}
-	
 }

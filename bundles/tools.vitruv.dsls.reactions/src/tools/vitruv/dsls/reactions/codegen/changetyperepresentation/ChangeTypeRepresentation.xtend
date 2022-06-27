@@ -4,8 +4,8 @@ import org.eclipse.xtend2.lib.StringConcatenationClient
 
 /**
  * This class is responsible for representing the relevant change information for generating reactions
- * code, both for atomic (see {@link AtomicChangeTypeRepresentation}) and compound (see {@link CompoundChangeTypeRepresentation})
- * changes. The information for the changes are extracted by the {@link ChangeTypeRepresentationExtractor} from 
+ * code for atomic (see {@link AtomicChangeTypeRepresentation}) changes. 
+ * The information for the changes are extracted by the {@link ChangeTypeRepresentationExtractor} from 
  * a {@link Trigger} of the reactions language.
  */
 abstract class ChangeTypeRepresentation {

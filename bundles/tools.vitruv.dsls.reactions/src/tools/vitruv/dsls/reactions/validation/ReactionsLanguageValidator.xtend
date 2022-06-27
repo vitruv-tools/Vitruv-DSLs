@@ -15,10 +15,7 @@ import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment
 import tools.vitruv.dsls.reactions.language.ModelElementChange
 import tools.vitruv.dsls.reactions.language.ElementReferenceChangeType
 import org.eclipse.emf.ecore.EClass
-import tools.vitruv.dsls.reactions.language.ElementCreationAndInsertionChangeType
 import tools.vitruv.dsls.reactions.language.ElementChangeType
-import tools.vitruv.dsls.reactions.language.ElementDeletionAndRemovalChangeType
-import tools.vitruv.dsls.reactions.language.ElementDeletionAndCreationAndReplacementChangeType
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsFile
 import tools.vitruv.dsls.reactions.scoping.ReactionsImportScopeHelper
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsImport
@@ -427,12 +424,6 @@ class ReactionsLanguageValidator extends AbstractReactionsLanguageValidator {
 		var ElementChangeType atomicChangeType = null;
 		if (elementChangeType instanceof ElementReferenceChangeType) {
 			atomicChangeType = elementChangeType;
-		} else if (elementChangeType instanceof ElementCreationAndInsertionChangeType) {
-			atomicChangeType = elementChangeType.insertChange;
-		} else if (elementChangeType instanceof ElementDeletionAndRemovalChangeType) {
-			atomicChangeType = elementChangeType.removeChange;
-		} else if (elementChangeType instanceof ElementDeletionAndCreationAndReplacementChangeType) {
-			atomicChangeType = elementChangeType.replacedChange;
 		}
 		if (atomicChangeType instanceof ElementReferenceChangeType) {
 			val featureType = atomicChangeType.feature?.feature?.EType as EClass;
