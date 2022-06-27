@@ -15,7 +15,7 @@ execute actions in minimal
  * Creates the model for comparing the further test model with.
  */
 reaction CreateRootTest {
-	after element minimal::Root created and inserted as root
+	after element minimal::Root inserted as root
 	call createRoot(newValue)
 }
 
@@ -36,7 +36,7 @@ routine createRoot(minimal::Root rootElement) {
 }
 
 reaction DeleteRootTest {
-	after element minimal::Root deleted and removed as root
+	after element minimal::Root removed as root
 	call deleteRoot(oldValue)
 }
 
@@ -119,7 +119,7 @@ routine replaceIdentifiedId(minimal::Identified identified, String value) {
  * CreateNonRootEObjectInList
  */
 reaction CreatedNonRootEObjectInList {
-	after element minimal::NonRoot created and inserted in minimal::Root[multiValuedContainmentEReference]
+	after element minimal::NonRoot inserted in minimal::Root[multiValuedContainmentEReference]
 	call insertNonRoot(affectedEObject, newValue)
 }
 
@@ -146,7 +146,7 @@ routine insertNonRoot(minimal::Root rootElement, minimal::NonRoot insertedNonRoo
  * DeleteNonRootEObjectInList
  */
 reaction DeletedNonRootEObjectInList {
-	after element minimal::NonRoot deleted and removed from minimal::Root[multiValuedContainmentEReference]
+	after element minimal::NonRoot removed from minimal::Root[multiValuedContainmentEReference]
 	call removeNonRoot(oldValue)
 }
 
@@ -357,7 +357,7 @@ routine createNonRootObjectContainer(minimal::Root rootElement, minimal::NonRoot
  * Initializes the nonRootObjectContainer for second model
  */
 reaction AddNonRootObjectToHelperContainer {
-	after element minimal::NonRoot created and inserted in minimal::NonRootObjectContainerHelper[nonRootObjectsContainment]
+	after element minimal::NonRoot inserted in minimal::NonRootObjectContainerHelper[nonRootObjectsContainment]
 	call createNonRootInContainer(affectedEObject, newValue)
 }
 
@@ -378,7 +378,7 @@ routine createNonRootInContainer(minimal::NonRootObjectContainerHelper container
 }
 
 reaction RemovedNonRootObjectFromHelperContainer {
-	after element minimal::NonRoot deleted and removed from minimal::NonRootObjectContainerHelper[nonRootObjectsContainment]
+	after element minimal::NonRoot removed from minimal::NonRootObjectContainerHelper[nonRootObjectsContainment]
 	call deleteNonRootFromContainer(oldValue)
 }
 

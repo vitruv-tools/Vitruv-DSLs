@@ -12,7 +12,7 @@ in reaction to changes in insurance
 execute actions in persons
 
 reaction CreatedInsuranceDatabase {
-	after element insurance::InsuranceDatabase created and inserted as root
+	after element insurance::InsuranceDatabase inserted as root
 	call createPersonRegister(newValue)
 }
 
@@ -40,7 +40,7 @@ routine deletePersonRegister(insurance::InsuranceDatabase insuranceDatabase) {
 }
 	
 reaction CreatedClient {
-	after element insurance::InsuranceClient created and inserted in insurance::InsuranceDatabase[insuranceclient]
+	after element insurance::InsuranceClient inserted in insurance::InsuranceDatabase[insuranceclient]
 	call createPerson(newValue)
 }
 

@@ -16,7 +16,7 @@ execute actions in persons
 //========== FAMILY-REGISTER ==========
 //Creation of a {@link PersonRegister} after a {@link FamilyRegister} was created.
 reaction CreatedFamilyRegister {
-	after element families::FamilyRegister created and inserted as root
+	after element families::FamilyRegister inserted as root
 	call createPersonRegister(newValue)
 }
 routine createPersonRegister(families::FamilyRegister familyRegister) {
@@ -71,26 +71,31 @@ reaction CreatedMother {
 	}
 }
 
-//New member for the position of the son was newly created and inserted, so a corresponding person has to be created.
-reaction CreatedAndInsertedSon {
-	after element families::Member created and inserted in families::Family[sons]
-	call createMale(newValue, affectedEObject)
-}
-//New member for the position of the son already existed before, so old correspondences have to be updated.
+//New member for the position of the son was inserted. Create new son if not existed before, and update correspondences.
 reaction InsertedSon {
 	after element families::Member inserted in families::Family[sons]
-	call existingMemberBecameSon_updateNameAndCorrespondencesOfCorrespondingMale(newValue, affectedEObject)
+	call {
+	    createOrFindMale(newValue, affectedEObject)
+	    existingMemberBecameSon_updateNameAndCorrespondencesOfCorrespondingMale(newValue, affectedEObject)
+	}
 }
 
-//New member for the position of the daughter was newly created and inserted, so a corresponding person has to be created.
-reaction CreatedAndInsertedDaughter {
-	after element families::Member created and inserted in families::Family[daughters]
-	call createFemale(newValue, affectedEObject)
-}
-//New member for the position of the daughter already existed before, so old correspondences have to be updated.
+//New member for the position of the daughter was inserted. Create new daughter if not existed before, and update correspondences.
 reaction InsertedDaughter {
 	after element families::Member inserted in families::Family[daughters]
-	call existingMemberBecameDaughter_updateNameAndCorrespondencesOfCorrespondingFemale(newValue, affectedEObject)
+	call {
+	    createOrFindFemale(newValue, affectedEObject)
+	    existingMemberBecameDaughter_updateNameAndCorrespondencesOfCorrespondingFemale(newValue, affectedEObject)
+	}
+}
+
+routine createOrFindMale(families::Member newMember, families::Family family) {
+    match {
+        require absence of persons::Male corresponding to newMember
+    }
+    action {
+        call createMale(newMember, family)
+    }
 }
 
 //Checks whether the newFather was actually just created (has no corresponding person) or not.
@@ -120,6 +125,15 @@ routine createMale(families::Member newMember, families::Family family) {
 		add correspondence between newMember and person
 		add correspondence between family and person
 	}
+}
+
+routine createOrFindFemale(families::Member newMember, families::Family family) {
+    match {
+        require absence of persons::Female corresponding to newMember
+    }
+    action {
+        call createFemale(newMember, family)
+    }
 }
 
 //Checks whether the newMother was actually just created (has no corresponding person) or not.
