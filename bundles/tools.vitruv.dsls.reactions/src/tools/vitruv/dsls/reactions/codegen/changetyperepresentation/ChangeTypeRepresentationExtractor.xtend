@@ -27,24 +27,24 @@ import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsLang
 import org.eclipse.emf.ecore.EcorePackage
 
 final class ChangeTypeRepresentationExtractor {
-	static val CREATE_CHANGE_NAME = "createChange";
-	static val DELET_CHANGE_NAME = "deleteChange";
-	static val INSERT_CHANGE_NAME = "insertChange";
-	static val REMOVE_CHANGE_NAME = "removeChange";
-	static val REPLACE_CHANGE_NAME = "replaceChange";
-	static val GENERAL_CHANGE_NAME = "change";
+	static val CREATE_CHANGE_NAME = "createChange"
+	static val DELET_CHANGE_NAME = "deleteChange"
+	static val INSERT_CHANGE_NAME = "insertChange"
+	static val REMOVE_CHANGE_NAME = "removeChange"
+	static val REPLACE_CHANGE_NAME = "replaceChange"
+	static val GENERAL_CHANGE_NAME = "change"
 	
-	static def dispatch ChangeSequenceRepresentation extractChangeSequenceRepresentation(Trigger trigger) {
-		val atomicChange = new AtomicChangeTypeRepresentation(GENERAL_CHANGE_NAME, EChange, null, null, false, false, null, false);
-		return new ChangeSequenceRepresentation(#[atomicChange]);
+	static def dispatch ChangeTypeRepresentation extractChangeType(Trigger trigger) {
+		val atomicChange = new ChangeTypeRepresentation(GENERAL_CHANGE_NAME, EChange, null, null, false, false, null, false)
+		return atomicChange
 	}
 	
-	static def dispatch ChangeSequenceRepresentation extractChangeSequenceRepresentation(ModelAttributeChange modelAttributeChange) {
-		var hasOldValue = false;
-		var hasNewValue = false;
-		var hasIndex = false;
-		var EClass clazz = null;
-		var name = "";
+	static def dispatch ChangeTypeRepresentation extractChangeType(ModelAttributeChange modelAttributeChange) {
+		var hasOldValue = false
+		var hasNewValue = false
+		var hasIndex = false
+		var EClass clazz = null
+		var name = ""
 		switch (modelAttributeChange) {
 			ModelAttributeInsertedChange: {
 				clazz = AttributePackage.Literals.INSERT_EATTRIBUTE_VALUE
@@ -60,36 +60,34 @@ final class ChangeTypeRepresentationExtractor {
 			}
 			ModelAttributeReplacedChange: {
 				clazz = AttributePackage.Literals.REPLACE_SINGLE_VALUED_EATTRIBUTE
-				hasOldValue = true;
-				hasNewValue = true;
+				hasOldValue = true
+				hasNewValue = true
 				name = REPLACE_CHANGE_NAME
 			}
 		}
 		val affectedEObject = modelAttributeChange.feature.metaclass.javaClassName
 		val affectedValue = modelAttributeChange.feature.feature.EType.javaClassName
-		val affectedFeature = modelAttributeChange.feature.feature;
-		val atomicChange = new AtomicChangeTypeRepresentation(name, clazz.instanceClass, affectedEObject, affectedValue, hasOldValue, hasNewValue, affectedFeature, hasIndex);
-		return new ChangeSequenceRepresentation(#[atomicChange]);
+		val affectedFeature = modelAttributeChange.feature.feature
+		val atomicChange = new ChangeTypeRepresentation(name, clazz.instanceClass, affectedEObject, affectedValue, hasOldValue, hasNewValue, affectedFeature, hasIndex)
+		return atomicChange
 	}
 			
-	static def dispatch ChangeSequenceRepresentation extractChangeSequenceRepresentation(ModelElementChange modelElementChange) {
-		var atomicChanges = newArrayList;
+	static def dispatch ChangeTypeRepresentation extractChangeType(ModelElementChange modelElementChange) {
 		if (modelElementChange?.changeType === null) {
-			atomicChanges += new AtomicChangeTypeRepresentation(GENERAL_CHANGE_NAME, EChange, null, null, false, false, null, false);
+			return new ChangeTypeRepresentation(GENERAL_CHANGE_NAME, EChange, null, null, false, false, null, false)
 		} else {
-			atomicChanges += generateChangeTypeRepresentation(modelElementChange.changeType, modelElementChange.elementType?.metaclass)
+			return generateChangeTypeRepresentation(modelElementChange.changeType, modelElementChange.elementType?.metaclass)
 		}
-		return new ChangeSequenceRepresentation(atomicChanges);
 	}	
 	
-	private static def dispatch Iterable<AtomicChangeTypeRepresentation> generateChangeTypeRepresentation(ElementRootChangeType modelElementChange, EClass elementClass) {
-		var EClass clazz = null;
-		var hasNewValue = false;
-		var name = "";
+	private static def dispatch ChangeTypeRepresentation generateChangeTypeRepresentation(ElementRootChangeType modelElementChange, EClass elementClass) {
+		var EClass clazz = null
+		var hasNewValue = false
+		var name = ""
 		switch (modelElementChange) {
 			ElementInsertionAsRootChangeType: {
 				clazz = RootPackage.Literals.INSERT_ROOT_EOBJECT
-				hasNewValue = true;
+				hasNewValue = true
 				name = INSERT_CHANGE_NAME
 			}
 			ElementRemovalAsRootChangeType: {
@@ -97,17 +95,17 @@ final class ChangeTypeRepresentationExtractor {
 				name = REMOVE_CHANGE_NAME
 			}
 		} 
-		val affectedEObject = null;
+		val affectedEObject = null
 		val affectedValue = if (elementClass !== null) elementClass.javaClassName else EObject.canonicalName
-		return #[new AtomicChangeTypeRepresentation(name, clazz.instanceClass, affectedEObject, affectedValue, !hasNewValue, hasNewValue, null, true)];
+		return new ChangeTypeRepresentation(name, clazz.instanceClass, affectedEObject, affectedValue, !hasNewValue, hasNewValue, null, true)
 	}
 	
-	private static def dispatch Iterable<AtomicChangeTypeRepresentation> generateChangeTypeRepresentation(ElementReferenceChangeType modelElementChange, EClass elementClass) {
-		var hasOldValue = false;
-		var hasNewValue = false;
-		var hasIndex = false;
-		var EClass clazz = null;
-		var name = "";
+	private static def dispatch ChangeTypeRepresentation generateChangeTypeRepresentation(ElementReferenceChangeType modelElementChange, EClass elementClass) {
+		var hasOldValue = false
+		var hasNewValue = false
+		var hasIndex = false
+		var EClass clazz = null
+		var name = ""
 		switch (modelElementChange) {
 			ElementInsertionInListChangeType: {
 				clazz = ReferencePackage.Literals.INSERT_EREFERENCE
@@ -123,20 +121,21 @@ final class ChangeTypeRepresentationExtractor {
 			}
 			ElementReplacementChangeType: {
 				clazz = ReferencePackage.Literals.REPLACE_SINGLE_VALUED_EREFERENCE
-				hasOldValue = true;
-				hasNewValue = true;
+				hasOldValue = true
+				hasNewValue = true
 				name = REPLACE_CHANGE_NAME
 			}
 		}
-		val affectedEObject = modelElementChange.feature?.metaclass?.javaClassName;
-		val affectedValue = if (elementClass !== null) elementClass.javaClassName else modelElementChange.feature?.feature?.EType?.javaClassName;
-		val affectedFeature = modelElementChange.feature?.feature; 
-		return #[new AtomicChangeTypeRepresentation(name, clazz.instanceClass, affectedEObject, affectedValue, hasOldValue, hasNewValue, affectedFeature, hasIndex)];
+		val affectedEObject = modelElementChange.feature?.metaclass?.javaClassName
+		val affectedValue = if (elementClass !== null) elementClass.javaClassName else modelElementChange.feature?.feature?.EType?.javaClassName
+		
+		val affectedFeature = modelElementChange.feature?.feature
+		return new ChangeTypeRepresentation(name, clazz.instanceClass, affectedEObject, affectedValue, hasOldValue, hasNewValue, affectedFeature, hasIndex)
 	}
 	
-	private static def dispatch Iterable<AtomicChangeTypeRepresentation> generateChangeTypeRepresentation(ElementExistenceChangeType modelElementChange, EClass elementClass) {
-		var EClass clazz = null;
-		var name = "";
+	private static def dispatch ChangeTypeRepresentation generateChangeTypeRepresentation(ElementExistenceChangeType modelElementChange, EClass elementClass) {
+		var EClass clazz = null
+		var name = ""
 		switch (modelElementChange) {
 			ElementCreationChangeType: {
 				clazz = EobjectPackage.Literals.CREATE_EOBJECT
@@ -147,8 +146,8 @@ final class ChangeTypeRepresentationExtractor {
 				name = DELET_CHANGE_NAME
 			}
 		}
-		val affectedEObject = if (elementClass !== null) elementClass.javaClassName else EcorePackage.eINSTANCE.EObject.javaClassName;
-		val affectedValue = null; 
-		return #[new AtomicChangeTypeRepresentation(name, clazz.instanceClass, affectedEObject, affectedValue, false, false, null, false)];
+		val affectedEObject = if (elementClass !== null) elementClass.javaClassName else EcorePackage.eINSTANCE.EObject.javaClassName
+		val affectedValue = null
+		return new ChangeTypeRepresentation(name, clazz.instanceClass, affectedEObject, affectedValue, false, false, null, false)
 	}
 }
