@@ -26,8 +26,8 @@ execute actions in families
 // Creation/ deletion of a registers
 // =================================
 
-reaction CreatedPersonRegister {
-	after element persons::PersonRegister created and inserted as root
+reaction InsertedPersonRegister {
+	after element persons::PersonRegister inserted as root
 	call createFamilyRegister(newValue)
 }
 
@@ -59,8 +59,8 @@ routine deleteFamilyRegister(persons::PersonRegister deletedPersonsRegister) {
 // New creation of a member
 // ========================
 
-reaction CreatedPerson {
-	after element persons::Person created and inserted in persons::PersonRegister[persons]
+reaction InsertedPerson {
+	after element persons::Person inserted in persons::PersonRegister[persons]
 	call insertAsParentOrChild(newValue)
 }
 
