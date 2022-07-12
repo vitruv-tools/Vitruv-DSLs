@@ -1,0 +1,433 @@
+import tools.vitruv.applications.demo.insurancefamilies.insurance2families.FamilyRole;
+import edu.kit.ipd.sdq.metamodels.families.Family
+import edu.kit.ipd.sdq.metamodels.insurance.Gender
+
+import static tools.vitruv.applications.demo.insurancefamilies.insurance2families.InsuranceToFamiliesHelper.assertValidName;
+import static tools.vitruv.applications.demo.insurancefamilies.insurance2families.InsuranceToFamiliesHelper.askUserWhetherClientIsParentOrChild;
+import static tools.vitruv.applications.demo.insurancefamilies.insurance2families.InsuranceToFamiliesHelper.askUserWhichFamilyToInsertTheMemberIn;
+import static tools.vitruv.applications.demo.insurancefamilies.insurance2families.InsuranceToFamiliesHelper.askUserWhetherClientIsParentOrChildDuringRenaming;
+
+import static extension tools.vitruv.applications.demo.insurancefamilies.insurance2families.InsuranceToFamiliesHelper.getInsuranceDatabase;
+import static extension tools.vitruv.applications.demo.insurancefamilies.insurance2families.InsuranceToFamiliesHelper.getLastName;
+import static extension tools.vitruv.applications.demo.insurancefamilies.insurance2families.InsuranceToFamiliesHelper.getFirstName;
+import static tools.vitruv.applications.demo.insurancefamilies.insurance2families.InsuranceToFamiliesHelper.sameLastName;
+import static tools.vitruv.applications.demo.insurancefamilies.insurance2families.InsuranceToFamiliesHelper.noParent;
+import static extension edu.kit.ipd.sdq.metamodels.families.FamiliesUtil.getMembers
+
+import "edu.kit.ipd.sdq.metamodels.families" as families
+import "edu.kit.ipd.sdq.metamodels.insurance" as insurance
+
+reactions: insuranceToFamilies
+in reaction to changes in insurance
+execute actions in families
+
+// === Insurance Database ===
+
+reaction CreatedInsuranceDatabase {
+	after element insurance::InsuranceDatabase created and inserted as root
+	call createFamilyRegister(newValue)
+}
+
+reaction DeleteInsuranceDatabase {
+	after element insurance::InsuranceDatabase deleted
+	call deleteFamilyRegister(affectedEObject)
+}
+
+routine createFamilyRegister(insurance::InsuranceDatabase insuranceDatabase) {
+	action {
+		val familyRegister = create families::FamilyRegister and initialize {
+			persistProjectRelative(insuranceDatabase, familyRegister, "model/families.families")
+		}
+		add correspondence between familyRegister and insuranceDatabase
+	}
+}
+
+routine deleteFamilyRegister(insurance::InsuranceDatabase insuranceDatabase) {
+	match {
+		val familyRegister = retrieve families::FamilyRegister corresponding to insuranceDatabase
+	}
+	action {
+		delete familyRegister
+	}
+}
+
+// === Insurance Client ===
+
+reaction CreatedInsuranceClient {
+	after element insurance::InsuranceClient created and inserted in insurance::InsuranceDatabase[insuranceclient]
+	call insertAsParentOrChild(newValue)
+}
+
+reaction DeletedInsuranceClient {
+	after element insurance::InsuranceClient deleted
+	call deleteMember(affectedEObject)
+}
+
+reaction ChangedGender {
+	after attribute replaced at insurance::InsuranceClient[gender]
+	call changeGender(affectedEObject)
+}
+
+reaction ChangedName {
+	after attribute replaced at insurance::InsuranceClient[name]
+		with oldValue !== null && !oldValue.equals(newValue)
+	call changeNames(affectedEObject, oldValue)
+}
+
+routine insertAsParentOrChild(insurance::InsuranceClient insertedClient) {
+	match {
+		check { assertValidName(insertedClient) true}
+	}
+	action {
+		call {
+			val FamilyRole role = askUserWhetherClientIsParentOrChild(userInteractor, insertedClient)
+			switch role {
+				case FamilyRole.Child: createChild(insertedClient)
+				case FamilyRole.Parent: createParent(insertedClient)
+			}
+		}
+	}
+}
+
+routine createChild(insurance::InsuranceClient insertedClient) {
+	match {
+		val insuranceDatabase = retrieve families::FamilyRegister corresponding to insertedClient.insuranceDatabase
+	}
+	action {
+		call {
+			val Iterable<Family> matchingFamilies = insuranceDatabase.families.filter(sameLastName(insertedClient))
+			val Family familyToInsertInto = if (matchingFamilies.empty) null else askUserWhichFamilyToInsertTheMemberIn(userInteractor, insertedClient, matchingFamilies)
+		    if (familyToInsertInto === null) {
+		        createChildInNewFamily(insertedClient)
+		    } else {
+		        createChildInExistingFamily(insertedClient, familyToInsertInto)
+		    }
+		}
+	}
+}
+
+routine createParent(insurance::InsuranceClient insertedClient) {
+	match {
+		val insuranceDatabase = retrieve families::FamilyRegister corresponding to insertedClient.insuranceDatabase
+	}
+	action {
+		call {
+			val Iterable<Family> matchingFamilies = insuranceDatabase.families.filter(sameLastName(insertedClient)).filter(noParent(insertedClient))
+			val Family familyToInsertInto = if (matchingFamilies.empty) null else askUserWhichFamilyToInsertTheMemberIn(userInteractor, insertedClient, matchingFamilies)
+			if (familyToInsertInto === null) {
+				createParentInNewFamily(insertedClient)
+			} else {
+				createParentInExistingFamily(insertedClient, familyToInsertInto)
+			}
+		}
+	}
+}
+
+routine createChildInNewFamily(insurance::InsuranceClient insertedClient) {
+	match {
+		val insuranceDatabase = retrieve families::FamilyRegister corresponding to insertedClient.insuranceDatabase
+	}
+	action {
+		val newFamily = create families::Family and initialize {
+			newFamily.lastName = insertedClient.lastName
+		}
+		update insuranceDatabase {
+			insuranceDatabase.families += newFamily
+		}
+		call createChildInExistingFamily(insertedClient, newFamily)
+	}
+}
+
+routine createParentInNewFamily(insurance::InsuranceClient insertedClient) {
+	match {
+		val insuranceDatabase = retrieve families::FamilyRegister corresponding to insertedClient.insuranceDatabase
+	}
+	action {
+		val newFamily = create families::Family and initialize {
+			newFamily.lastName = insertedClient.lastName
+		}
+		update insuranceDatabase {
+			insuranceDatabase.families += newFamily
+		}
+		call createParentInExistingFamily(insertedClient, newFamily)
+	}
+}
+
+routine createChildInExistingFamily(insurance::InsuranceClient insertedClient, families::Family familyToInsertInto) {
+	action {
+		val newMember = create families::Member and initialize {
+			newMember.firstName = insertedClient.firstName
+		}
+		update familyToInsertInto {
+			switch insertedClient.gender {
+				case Gender.MALE: familyToInsertInto.sons += newMember
+				case Gender.FEMALE: familyToInsertInto.daughters += newMember
+			}
+		}
+		add correspondence between insertedClient and familyToInsertInto
+		add correspondence between insertedClient and newMember
+	}
+}
+
+routine createParentInExistingFamily(insurance::InsuranceClient insertedClient, families::Family familyToInsertInto) {
+	action {
+		val newMember = create families::Member and initialize {
+			newMember.firstName = insertedClient.firstName
+		}
+		update familyToInsertInto {
+			switch insertedClient.gender {
+				case Gender.MALE: familyToInsertInto.father = newMember
+				case Gender.FEMALE: familyToInsertInto.mother = newMember
+			}
+		}
+		add correspondence between insertedClient and familyToInsertInto
+		add correspondence between insertedClient and newMember
+	}
+}
+
+routine deleteMember(insurance::InsuranceClient insuranceClient){
+	match {
+		val member = retrieve families::Member corresponding to insuranceClient
+		val family = retrieve families::Family corresponding to insuranceClient
+	}
+	action {
+		remove correspondence between insuranceClient and member
+		remove correspondence between insuranceClient and family
+		delete member
+		call deleteFamilyIfEmpty(family)
+	}
+}
+
+routine deleteFamilyIfEmpty(families::Family family) {
+	match {
+		check family.father === null
+		check family.mother === null
+		check family.sons.empty
+		check family.daughters.empty
+	}
+	action {
+		delete family
+	}
+}
+
+routine changeGender(insurance::InsuranceClient insuranceClient) {
+	match {
+		val member = retrieve families::Member corresponding to insuranceClient
+		val family = retrieve families::Family corresponding to insuranceClient
+	}
+	action {
+		call {
+			val newGender = insuranceClient.gender;
+			val wasParent = family.father == member || family.mother == member
+			
+			if(wasParent){
+				switch newGender {
+					case Gender.MALE: {
+						if(family.father !== null && family.father != member){
+							throw new IllegalArgumentException("Family can't have two fathers.")
+						}
+						
+						// switch mother to father 
+						if(family.father === null){
+							family.father = member
+							family.mother = null
+						}
+					}
+					case Gender.FEMALE: {
+						if(family.mother !== null && family.mother != member){
+							throw new IllegalArgumentException("Family can't have two mothers.")
+						}
+						
+						// switch father to mother
+						if(family.mother === null){
+							family.mother = member
+							family.father = null
+						}
+					}
+					default: throw new IllegalArgumentException("Gender of client is unknown.")
+				}
+			} else {
+				switch newGender {
+					case Gender.MALE: {
+						val wasDaughterBefore = family.daughters -= member
+						if(wasDaughterBefore){
+							family.sons += member
+						}
+					}
+					case Gender.FEMALE: {
+						val wasSonBefore = family.sons -= member
+						if(wasSonBefore){
+							family.daughters += member
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+routine changeNames(insurance::InsuranceClient renamedClient, String oldFullName) {
+	match {
+		check { assertValidName(renamedClient) true}
+		val oldFamily = retrieve families::Family corresponding to renamedClient
+		val correspondingMember = retrieve families::Member corresponding to renamedClient
+	}
+	action {
+		// Update firstname
+		update correspondingMember {
+			correspondingMember.firstName = renamedClient.firstName
+		}
+		// Update lastname and/or role
+		call reactToLastnameAndFamilyRoleChanges(renamedClient, oldFullName)
+	}
+}
+
+routine reactToLastnameAndFamilyRoleChanges(insurance::InsuranceClient renamedClient, String oldFullname) {
+	match {
+		val oldFamily = retrieve families::Family corresponding to renamedClient
+		val correspondingMember = retrieve families::Member corresponding to renamedClient
+	}
+	action {
+		call {
+			val boolean wasChildBeforeRenaming = correspondingMember.familySon === oldFamily || correspondingMember.familyDaughter === oldFamily
+			val boolean isSupposedToBeAChild = askUserWhetherClientIsParentOrChildDuringRenaming(userInteractor, oldFullname, renamedClient.name, wasChildBeforeRenaming) == FamilyRole.Child
+
+			// If neither the lastname, nor the role of the member inside the family changed,
+			// then only the firstname changed and nothing else must be done.
+			if ((wasChildBeforeRenaming !== isSupposedToBeAChild) || (oldFamily.lastName != renamedClient.lastName)){
+				if (oldFamily.members.size == 1) {
+					// If the member is alone in its family just rename the oldFamily
+					// and maybe adjust the role of the member which is no problem
+					// since the member is alone.
+					oldFamily.lastName = renamedClient.lastName
+					// and re-insert member as either child or parent if role is supposed to change
+					if (wasChildBeforeRenaming !== isSupposedToBeAChild) {
+						if (isSupposedToBeAChild) {
+							switch renamedClient {
+								case Gender.MALE: oldFamily.father = correspondingMember
+								case Gender.FEMALE: oldFamily.mother = correspondingMember
+							}
+						} else {
+							switch renamedClient {
+								case Gender.MALE: oldFamily.sons += correspondingMember
+								case Gender.FEMALE: oldFamily.daughters += correspondingMember
+							}
+						}
+					}
+				} else {
+					// If the member is not alone move it to
+					// a different family depending on lastname and supposed role
+					if (isSupposedToBeAChild) {
+						insertExistingMemberIntoUserChosenFamilyAsChild(renamedClient)
+					} else {
+						insertExistingMemberIntoUserChosenFamilyAsParent(renamedClient)
+					}
+				}
+			}
+		}
+	}
+}
+
+routine insertExistingMemberIntoUserChosenFamilyAsParent(insurance::InsuranceClient renamedClient) {
+	match {
+		val insuranceDatabase = retrieve families::FamilyRegister corresponding to renamedClient.insuranceDatabase
+		val correspondingMember = retrieve families::Member corresponding to renamedClient
+	}
+	action {
+		call {
+			val Iterable<Family> matchingFamilies = insuranceDatabase.families.filter(sameLastName(renamedClient)).filter(noParent(renamedClient))
+			val Family chosenFamily = if (matchingFamilies.empty) null else askUserWhichFamilyToInsertTheMemberIn(userInteractor, renamedClient, matchingFamilies)
+			if (chosenFamily === null) {
+				insertExistingMemberIntoNewFamilyAsParent(renamedClient)
+			} else {
+				insertExistingMemberIntoExistingFamilyAsParent(renamedClient, chosenFamily)
+			}
+		}
+	}
+}
+
+routine insertExistingMemberIntoUserChosenFamilyAsChild(insurance::InsuranceClient renamedClient) {
+	match {
+		val insuranceDatabase = retrieve families::FamilyRegister corresponding to renamedClient.insuranceDatabase
+		val correspondingMember = retrieve families::Member corresponding to renamedClient
+	}
+	action {
+		call {
+			val Iterable<Family> matchingFamilies = insuranceDatabase.families.filter(sameLastName(renamedClient))
+			val Family chosenFamily = if (matchingFamilies.empty) null else askUserWhichFamilyToInsertTheMemberIn(userInteractor, renamedClient, matchingFamilies)
+			if (chosenFamily === null) {
+				insertExistingMemberIntoNewFamilyAsChild(renamedClient)
+			} else {
+				insertExistingMemberIntoExistingFamilyAsChild(renamedClient, chosenFamily)
+			}
+		}
+	}
+}
+
+routine insertExistingMemberIntoNewFamilyAsParent(insurance::InsuranceClient renamedClient) {
+	match {
+		val insuranceDatabase = retrieve families::FamilyRegister corresponding to renamedClient.insuranceDatabase
+		val correspondingMember = retrieve families::Member corresponding to renamedClient
+	}
+	action {
+		val familyToInsertInto = create families::Family and initialize {
+			familyToInsertInto.lastName = renamedClient.lastName
+		}
+		update insuranceDatabase {
+			insuranceDatabase.families += familyToInsertInto
+		}
+		call insertExistingMemberIntoExistingFamilyAsParent(renamedClient, familyToInsertInto)
+	}
+}
+
+routine insertExistingMemberIntoNewFamilyAsChild(insurance::InsuranceClient renamedClient) {
+	match {
+		val insuranceDatabase = retrieve families::FamilyRegister corresponding to renamedClient.insuranceDatabase
+		val correspondingMember = retrieve families::Member corresponding to renamedClient
+	}
+	action {
+		val familyToInsertInto = create families::Family and initialize {
+			familyToInsertInto.lastName = renamedClient.lastName
+		}
+		update insuranceDatabase {
+			insuranceDatabase.families += familyToInsertInto
+		}
+		call insertExistingMemberIntoExistingFamilyAsChild(renamedClient, familyToInsertInto)
+	}
+}
+
+routine insertExistingMemberIntoExistingFamilyAsParent(insurance::InsuranceClient renamedClient, families::Family familyToInsertInto) {
+	match {
+		val oldFamily = retrieve families::Family corresponding to renamedClient
+		val correspondingMember = retrieve families::Member corresponding to renamedClient
+	}
+	action {
+		update familyToInsertInto {
+			switch renamedClient.gender {
+				case Gender.MALE: familyToInsertInto.father = correspondingMember
+				case Gender.FEMALE: familyToInsertInto.mother = correspondingMember
+			}
+		}
+		remove correspondence between renamedClient and oldFamily
+		add correspondence between renamedClient and familyToInsertInto
+		//correspondence between renamedClient and correspondingMember does already exist
+	}
+}
+
+routine insertExistingMemberIntoExistingFamilyAsChild(insurance::InsuranceClient renamedClient, families::Family familyToInsertInto) {
+	match {
+		val oldFamily = retrieve families::Family corresponding to renamedClient
+		val correspondingMember = retrieve families::Member corresponding to renamedClient
+	}
+	action {
+		update familyToInsertInto {
+			switch renamedClient {
+				case Gender.MALE: familyToInsertInto.sons += correspondingMember
+				case Gender.FEMALE: familyToInsertInto.daughters += correspondingMember
+			}
+		}
+		remove correspondence between renamedClient and oldFamily
+		add correspondence between renamedClient and familyToInsertInto
+		//correspondence between renamedClient and correspondingMember does already exist
+	}
+}

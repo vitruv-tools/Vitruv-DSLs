@@ -1,0 +1,213 @@
+import static extension edu.kit.ipd.sdq.metamodels.families.FamiliesUtil.getMembers
+import static extension edu.kit.ipd.sdq.metamodels.families.FamiliesUtil.getRegister
+
+import static extension tools.vitruv.applications.demo.insurancefamilies.families2insurance.FamiliesToInsuranceHelper.getInsuranceClientName
+import static extension tools.vitruv.applications.demo.insurancefamilies.families2insurance.FamiliesToInsuranceHelper.assertValidFirstname
+import static extension tools.vitruv.applications.demo.insurancefamilies.families2insurance.FamiliesToInsuranceHelper.assertMale
+import static extension tools.vitruv.applications.demo.insurancefamilies.families2insurance.FamiliesToInsuranceHelper.assertFemale
+import static extension tools.vitruv.applications.demo.insurancefamilies.families2insurance.FamiliesToInsuranceHelper.isMaleToGender
+
+import "edu.kit.ipd.sdq.metamodels.families" as families
+import "edu.kit.ipd.sdq.metamodels.insurance" as insurance
+
+reactions: familiesToInsurance
+in reaction to changes in families
+execute actions in insurance
+
+// === FAMILY-REGISTER ===
+
+reaction CreatedFamilyREgister {
+	after element families::FamilyRegister created and inserted as root
+	call createInsuranceDatabase(newValue)
+}
+
+reaction DeletedFamilyRegister {
+	after element families::FamilyRegister deleted
+	call deleteInsuranceDatabase(affectedEObject)
+}
+
+routine createInsuranceDatabase(families::FamilyRegister familyRegister) {
+	action {
+		val insuranceDatabase = create insurance::InsuranceDatabase and initialize {
+			persistProjectRelative(familyRegister, insuranceDatabase, "model/insurance.insurance")
+		}
+		add correspondence between familyRegister and insuranceDatabase
+	}
+}
+
+routine deleteInsuranceDatabase(families::FamilyRegister familyRegister) {
+	match {
+		val insuranceDatabase = retrieve insurance::InsuranceDatabase corresponding to familyRegister
+	}
+	action {
+		delete insuranceDatabase
+	}
+}
+
+// === FAMILY ===
+
+reaction DeletedFamily {
+	after element families::Family deleted
+	call affectedEObject.members.forEach[deleteInsuranceClient()]
+}
+
+reaction ChangedLastName {
+	after attribute replaced at families::Family[lastName]
+	call affectedEObject.members.forEach[updateInsuranceClientName(it)]
+}
+
+reaction CreatedFather {
+	after element families::Member replaced at families::Family[father]
+		with newValue !== null
+	call {
+		tryUpdateNameAndCorrespondencesAfterMemberBecameMale(newValue, affectedEObject)
+		tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, true)
+	}
+}
+
+reaction CreatedMother {
+	after element families::Member replaced at families::Family[mother]
+		with newValue !== null
+	call {
+		tryUpdateNameAndCorrespondencesAfterMemberBecameFemale(newValue, affectedEObject)
+		tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, false)
+	}
+}
+
+reaction CreatedAndInsertedSon {
+	after element families::Member created and inserted in families::Family[sons]
+	call tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, true)
+}
+
+reaction InsertedSon {
+	after element families::Member inserted in families::Family[sons]
+	call tryUpdateNameAndCorrespondencesAfterMemberBecameMale(newValue, affectedEObject)
+}
+
+reaction CreatedAndInsertedDaughter {
+	after element families::Member created and inserted in families::Family[daughters]
+	call tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, false)
+}
+
+reaction InsertedDaughter {
+	after element families::Member inserted in families::Family[daughters]
+	call tryUpdateNameAndCorrespondencesAfterMemberBecameFemale(newValue, affectedEObject)
+}
+
+// Checks whether the member was actually just created (has no corresponding person) or not.
+// Only continues if member is a newly created member.
+routine tryCreateInsuranceClientFromNewMember(families::Member newMember, families::Family family, Boolean isMale) {
+	match {
+		require absence of insurance::InsuranceClient corresponding to newMember
+	}
+	action {
+		call createInsuranceClient(newMember, family, isMale)
+	}
+}
+
+// Creates corresponding insurance client and sets up correspondences
+routine createInsuranceClient(families::Member newMember, families::Family family, Boolean isMale) {
+	match {
+		check { assertValidFirstname(newMember) true }
+		val insuranceDatabase = retrieve insurance::InsuranceDatabase corresponding to family.register
+	}
+	action {
+		val insuranceClient = create insurance::InsuranceClient and initialize {
+			insuranceClient.name = newMember.insuranceClientName
+			insuranceClient.gender = isMale.isMaleToGender;
+			// ignore: socialSecurityNumber
+		}
+		update insuranceDatabase {
+			insuranceDatabase.insuranceclient += insuranceClient
+		}
+		add correspondence between newMember and insuranceClient
+		add correspondence between family and insuranceClient
+	}
+}
+
+// Checks if member already existed (as male), and breaks if not
+// Updates name and correspondences
+routine tryUpdateNameAndCorrespondencesAfterMemberBecameMale(families::Member newMale, families::Family newFamily) {
+	match {
+		val correspondingInsuranceClient = retrieve insurance::InsuranceClient corresponding to newMale
+		with { assertMale(correspondingInsuranceClient) true }
+	}
+	action {
+		call updateNameAndCorrespondencesOfCorrespondingInsuranceClient(newMale, newFamily)
+	}
+}
+
+// Checks if member already existed (as female), and breaks if not
+// Updates name and correspondences
+routine tryUpdateNameAndCorrespondencesAfterMemberBecameFemale(families::Member newFemale, families::Family newFamily) {
+	match {
+		val correspondingInsuranceClient = retrieve insurance::InsuranceClient corresponding to newFemale
+		with { assertFemale(correspondingInsuranceClient) true }
+	}
+	action {
+		call updateNameAndCorrespondencesOfCorrespondingInsuranceClient(newFemale, newFamily)
+	}
+}
+
+routine updateNameAndCorrespondencesOfCorrespondingInsuranceClient(families::Member newMember, families::Family newFamily) {
+	match {
+		val correspondingInsuranceClient = retrieve insurance::InsuranceClient corresponding to newMember
+		val oldFamily = retrieve families::Family corresponding to correspondingInsuranceClient
+	}
+	action {
+		update correspondingInsuranceClient {
+			correspondingInsuranceClient.name = newMember.insuranceClientName
+		}
+		remove correspondence between correspondingInsuranceClient and oldFamily
+		add correspondence between correspondingInsuranceClient and newFamily
+		call deleteFamilyIfEmpty(oldFamily)
+	}
+}
+
+// === MEMBER ===
+
+reaction ChangedFirstName {
+	after attribute replaced at families::Member[firstName]
+	call updateInsuranceClientName(affectedEObject)
+}
+
+reaction DeletedMember {
+	after element families::Member deleted
+	call deleteInsuranceClient(affectedEObject)
+}
+
+routine updateInsuranceClientName(families::Member member) {
+	match {
+		check { assertValidFirstname(member) true}
+		val insuranceClient = retrieve insurance::InsuranceClient corresponding to member
+	}
+	action {
+		update insuranceClient {
+			insuranceClient.name = member.insuranceClientName
+		}
+	}
+}
+
+routine deleteInsuranceClient(families::Member member) {
+	match {
+		val insuranceClient = retrieve insurance::InsuranceClient corresponding to member
+		val family = retrieve families::Family corresponding to insuranceClient
+	}
+	action {
+		remove correspondence between member and insuranceClient
+		remove correspondence between family and insuranceClient
+		delete insuranceClient
+		call deleteFamilyIfEmpty(family)
+	}
+}
+
+// === MISC ===
+
+routine deleteFamilyIfEmpty(families::Family family) {
+	match {
+		check family.members.size == 0
+	}
+	action {
+		call family.register.families.^remove(family)
+	}
+}
