@@ -43,7 +43,7 @@
          unpack="false"/>
 
    <plugin
-         id="tools.vitruv.extensions.dslsruntime.reactions"
+         id="tools.vitruv.dsls.reactions.runtime"
          download-size="0"
          install-size="0"
          version="0.0.0"

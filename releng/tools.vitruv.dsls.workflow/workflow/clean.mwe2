@@ -12,7 +12,7 @@ Workflow {
 	}
 	
 	component = DirectoryCleaner {
-		directory = "${workspaceRoot}/bundles/tools.vitruv.extensions.dslsruntime.reactions/src-gen"
+		directory = "${workspaceRoot}/bundles/tools.vitruv.dsls.reactions.runtime/src-gen"
 	}
 	
 	component = DirectoryCleaner {

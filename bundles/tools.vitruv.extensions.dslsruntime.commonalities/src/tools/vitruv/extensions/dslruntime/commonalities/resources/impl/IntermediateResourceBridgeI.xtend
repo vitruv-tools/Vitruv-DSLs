@@ -7,8 +7,8 @@ import org.eclipse.emf.ecore.EObject
 import tools.vitruv.extensions.dslruntime.commonalities.intermediatemodelbase.Intermediate
 import tools.vitruv.extensions.dslruntime.commonalities.resources.Resource
 import tools.vitruv.extensions.dslruntime.commonalities.resources.ResourcesPackage
-import tools.vitruv.extensions.dslsruntime.reactions.helper.PersistenceHelper
-import tools.vitruv.extensions.dslsruntime.reactions.helper.ReactionsCorrespondenceHelper
+import tools.vitruv.dsls.reactions.runtime.helper.PersistenceHelper
+import tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper
 
 import static com.google.common.base.Preconditions.*
 import static tools.vitruv.extensions.dslruntime.commonalities.helper.XtendAssertHelper.*

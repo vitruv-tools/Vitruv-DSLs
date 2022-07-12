@@ -7,10 +7,10 @@ import org.eclipse.xtext.common.types.JvmVisibility
 import tools.vitruv.dsls.common.ClassNameGenerator
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment
-import tools.vitruv.extensions.dslsruntime.reactions.AbstractRepairRoutinesFacade
-import tools.vitruv.extensions.dslsruntime.reactions.AbstractRoutinesFacadesProvider
-import tools.vitruv.extensions.dslsruntime.reactions.RoutinesFacadeExecutionState
-import tools.vitruv.extensions.dslsruntime.reactions.structure.ReactionsImportPath
+import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutinesFacade
+import tools.vitruv.dsls.reactions.runtime.AbstractRoutinesFacadesProvider
+import tools.vitruv.dsls.reactions.runtime.RoutinesFacadeExecutionState
+import tools.vitruv.dsls.reactions.runtime.structure.ReactionsImportPath
 
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators.*
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsImportsHelper.*

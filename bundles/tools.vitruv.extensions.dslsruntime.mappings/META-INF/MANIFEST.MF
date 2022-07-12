@@ -7,6 +7,6 @@ Bundle-Version: 2.1.0.qualifier
 Bundle-Vendor: vitruv.tools
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Require-Bundle: edu.kit.ipd.sdq.activextendannotations,
- tools.vitruv.extensions.dslsruntime.reactions;visibility:=reexport
+ tools.vitruv.dsls.reactions.runtime;visibility:=reexport
 Export-Package: tools.vitruv.extensions.dslsruntime.mappings.marker,
  tools.vitruv.extensions.dslsruntime.mappings.updates

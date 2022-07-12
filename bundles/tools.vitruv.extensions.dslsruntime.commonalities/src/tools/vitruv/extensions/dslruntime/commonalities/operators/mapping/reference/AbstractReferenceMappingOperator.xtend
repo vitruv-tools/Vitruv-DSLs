@@ -1,6 +1,6 @@
 package tools.vitruv.extensions.dslruntime.commonalities.operators.mapping.reference
 
-import tools.vitruv.extensions.dslsruntime.reactions.ReactionExecutionState
+import tools.vitruv.dsls.reactions.runtime.ReactionExecutionState
 
 import static com.google.common.base.Preconditions.*
 

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<genmodel:GenModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:genmodel="http://www.eclipse.org/emf/2002/GenModel"
+    modelDirectory="/tools.vitruv.dsls.reactions.runtime/src-gen" modelPluginID="tools.vitruv.dsls.reactions.runtime"
+    modelName="Reactions_correspondence" editPluginClass="tools.vitruv.dsls.reactions.runtime.reactions.provider.Reactions_correspondenceEditPlugin"
+    editorPluginClass="tools.vitruv.dsls.reactions.runtime.reactions.presentation.Reactions_correspondenceEditorPlugin"
+    rootExtendsClass="org.eclipse.emf.ecore.impl.MinimalEObjectImpl$Container" testSuiteClass="tools.vitruv.dsls.reactions.runtime.reactions.tests.Reactions_correspondenceAllTests"
+    importerID="org.eclipse.emf.importer.ecore" complianceLevel="8.0" copyrightFields="false"
+    editPluginID="tools.vitruv.dsls.reactions.runtime.edit" editorPluginID="tools.vitruv.dsls.reactions.runtime.editor"
+    usedGenPackages="../../tools.vitruv.change.correspondence/metamodel/correspondence.genmodel#//correspondence"
+    importOrganizing="true">
+  <foreignModel>reactions_correspondence.ecore</foreignModel>
+  <genPackages prefix="Correspondence" basePackage="tools.vitruv.dsls.reactions.runtime"
+      disposableProviderFactory="true" ecorePackage="reactions_correspondence.ecore#/">
+    <genClasses ecoreClass="reactions_correspondence.ecore#//ReactionsCorrespondence"/>
+  </genPackages>
+</genmodel:GenModel>

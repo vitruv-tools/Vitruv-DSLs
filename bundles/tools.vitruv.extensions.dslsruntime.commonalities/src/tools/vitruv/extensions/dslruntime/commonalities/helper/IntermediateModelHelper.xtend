@@ -8,7 +8,7 @@ import tools.vitruv.change.correspondence.CorrespondenceModel
 
 import static com.google.common.base.Preconditions.*
 
-import static extension tools.vitruv.extensions.dslsruntime.reactions.helper.ReactionsCorrespondenceHelper.*
+import static extension tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper.*
 
 @Utility
 class IntermediateModelHelper {

@@ -21,8 +21,8 @@ Workflow {
 	}
 	
 	component = EcoreGenerator {
-		srcPath = "platform:/resource/tools.vitruv.extensions.dslsruntime.reactions/src-gen"
-		genModel = "platform:/resource/tools.vitruv.extensions.dslsruntime.reactions/model/reactions_correspondence.genmodel"
+		srcPath = "platform:/resource/tools.vitruv.dsls.reactions.runtime/src-gen"
+		genModel = "platform:/resource/tools.vitruv.dsls.reactions.runtime/model/reactions_correspondence.genmodel"
 		generateCustomClasses = false
 	}
 
