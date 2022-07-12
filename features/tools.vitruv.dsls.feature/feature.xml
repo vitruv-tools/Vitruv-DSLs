@@ -31,7 +31,7 @@
       <import plugin="org.eclipse.pde.ui"/>
       <import plugin="org.eclipse.ui.ide"/>
       <import plugin="org.eclipse.xtext.common.types"/>
-      <import plugin="tools.vitruv.extensions.dslsruntime.mappings"/>
+      <import plugin="tools.vitruv.dsls.mappings.runtime"/>
       <import plugin="org.eclipse.xtext.xtext.generator"/>
       <import plugin="org.eclipse.xtext.xbase.lib" version="2.14.0" match="greaterOrEqual"/>
       <import plugin="org.eclipse.xtext.util"/>

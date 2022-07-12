@@ -1,4 +1,4 @@
-package tools.vitruv.extensions.dslsruntime.mappings.updates
+package tools.vitruv.dsls.mappings.runtime.updates
 
 class SimpleMappingUpdateTransformation implements MappingUpdateTransformation {
 	// just return the same value

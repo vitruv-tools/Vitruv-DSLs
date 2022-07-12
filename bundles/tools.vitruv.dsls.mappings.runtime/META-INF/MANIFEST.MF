@@ -1,12 +1,12 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Vitruv Extension Mappings Language Runtime
-Bundle-SymbolicName: tools.vitruv.extensions.dslsruntime.mappings;singleton:=true
-Automatic-Module-Name: tools.vitruv.extensions.dslsruntime.mappings
+Bundle-SymbolicName: tools.vitruv.dsls.mappings.runtime;singleton:=true
+Automatic-Module-Name: tools.vitruv.dsls.mappings.runtime
 Bundle-Version: 2.1.0.qualifier
 Bundle-Vendor: vitruv.tools
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Require-Bundle: edu.kit.ipd.sdq.activextendannotations,
  tools.vitruv.dsls.reactions.runtime;visibility:=reexport
-Export-Package: tools.vitruv.extensions.dslsruntime.mappings.marker,
- tools.vitruv.extensions.dslsruntime.mappings.updates
+Export-Package: tools.vitruv.dsls.mappings.runtime.marker,
+ tools.vitruv.dsls.mappings.runtime.updates

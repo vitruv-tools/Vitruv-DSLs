@@ -1,4 +1,4 @@
-package tools.vitruv.extensions.dslsruntime.mappings.updates
+package tools.vitruv.dsls.mappings.runtime.updates
 
 interface MappingUpdateSource extends AbstractMappingUpdateParameter {
 	def MappingUpdateTransformation transfromation()

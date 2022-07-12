@@ -4,7 +4,7 @@ import tools.vitruv.dsls.mappings.validation.MappingsLanguageValidator
 import tools.vitruv.dsls.mappings.mappingsLanguage.MappingsFile
 import tools.vitruv.dsls.common.ui.validation.ProjectValidation
 import org.eclipse.xtext.validation.Check
-import tools.vitruv.extensions.dslsruntime.mappings.marker.RuntimeProjectMarker
+import tools.vitruv.dsls.mappings.runtime.marker.RuntimeProjectMarker
 
 class MappingsLanguageEclipseValidator extends MappingsLanguageValidator {
 	@Check(NORMAL)

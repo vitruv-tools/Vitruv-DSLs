@@ -1,4 +1,4 @@
-package tools.vitruv.extensions.dslsruntime.mappings.updates
+package tools.vitruv.dsls.mappings.runtime.updates
 
 import java.util.function.Function
 import org.eclipse.emf.ecore.EObject
