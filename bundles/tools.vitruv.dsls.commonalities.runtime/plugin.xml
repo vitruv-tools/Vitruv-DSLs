@@ -17,7 +17,7 @@
    <extension point="org.eclipse.emf.ecore.generated_package">
       <!-- @generated Resources -->
       <package
-            uri="http://vitruv.tools/dsls/commonalities/runtime/resources"
+            uri="http://vitruv.tools/metamodels/dsls/commonalities/runtime/resources"
             class="tools.vitruv.dsls.commonalities.runtime.resources.ResourcesPackage"
             genModel="model/RuntimeMetamodels.genmodel"/>
    </extension>
@@ -26,16 +26,8 @@
          point="org.eclipse.emf.ecore.factory_override">
       <factory
             class="tools.vitruv.dsls.commonalities.runtime.resources.impl.ResourceOverwrittenFactory"
-            uri="http://vitruv.tools/dsls/commonalities/runtime/resources">
+            uri="http://vitruv.tools/metamodels/dsls/commonalities/runtime/resources">
       </factory>
-   </extension>
-
-   <extension point="org.eclipse.emf.ecore.generated_package">
-      <!-- @generated IntermediateModelBase -->
-      <package
-            uri="http://vitruv.tools/dsls/commonalities/runtime/intermediatemodelbase"
-            class="tools.vitruv.dsls.commonalities.runtime.intermediatemodelbase.IntermediateModelBasePackage"
-            genModel="model/RuntimeMetamodels.genmodel"/>
    </extension>
 
 </plugin>
