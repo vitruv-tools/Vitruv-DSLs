@@ -23,7 +23,7 @@ import tools.vitruv.dsls.commonalities.language.CommonalityReference
 import tools.vitruv.dsls.commonalities.language.elements.EClassAdapter
 import tools.vitruv.dsls.commonalities.language.elements.EDataTypeAdapter
 import tools.vitruv.dsls.reactions.api.generator.ReferenceClassNameAdapter
-import tools.vitruv.extensions.dslruntime.commonalities.intermediatemodelbase.IntermediateModelBasePackage
+import tools.vitruv.dsls.commonalities.runtime.intermediatemodelbase.IntermediateModelBasePackage
 
 import static org.eclipse.emf.ecore.ETypedElement.UNBOUNDED_MULTIPLICITY
 

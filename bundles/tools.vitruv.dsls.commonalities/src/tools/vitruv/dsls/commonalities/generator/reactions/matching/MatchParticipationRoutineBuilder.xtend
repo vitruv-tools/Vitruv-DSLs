@@ -22,11 +22,11 @@ import tools.vitruv.dsls.commonalities.participation.ReferenceContainment
 import tools.vitruv.dsls.reactions.builder.FluentReactionsSegmentBuilder
 import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder
 import tools.vitruv.dsls.reactions.builder.TypeProvider
-import tools.vitruv.extensions.dslruntime.commonalities.BooleanResult
-import tools.vitruv.extensions.dslruntime.commonalities.intermediatemodelbase.IntermediateModelBasePackage
-import tools.vitruv.extensions.dslruntime.commonalities.matching.ContainmentContext
-import tools.vitruv.extensions.dslruntime.commonalities.matching.ParticipationMatcher
-import tools.vitruv.extensions.dslruntime.commonalities.matching.ParticipationObjects
+import tools.vitruv.dsls.commonalities.runtime.BooleanResult
+import tools.vitruv.dsls.commonalities.runtime.intermediatemodelbase.IntermediateModelBasePackage
+import tools.vitruv.dsls.commonalities.runtime.matching.ContainmentContext
+import tools.vitruv.dsls.commonalities.runtime.matching.ParticipationMatcher
+import tools.vitruv.dsls.commonalities.runtime.matching.ParticipationObjects
 
 import static com.google.common.base.Preconditions.*
 

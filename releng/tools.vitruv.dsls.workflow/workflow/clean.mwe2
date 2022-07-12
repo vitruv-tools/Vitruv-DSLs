@@ -8,7 +8,7 @@ var workspaceRoot = "../../"
 Workflow {
 
 	component = DirectoryCleaner {
-		directory = "${workspaceRoot}/bundles/tools.vitruv.extensions.dslsruntime.commonalities/src-gen"
+		directory = "${workspaceRoot}/bundles/tools.vitruv.dsls.commonalities.runtime/src-gen"
 	}
 	
 	component = DirectoryCleaner {

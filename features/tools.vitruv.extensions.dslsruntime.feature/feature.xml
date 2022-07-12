@@ -50,14 +50,14 @@
          unpack="false"/>
 
    <plugin
-         id="tools.vitruv.extensions.dslsruntime.commonalities"
+         id="tools.vitruv.dsls.commonalities.runtime"
          download-size="0"
          install-size="0"
          version="0.0.0"
          unpack="false"/>
 
    <plugin
-         id="tools.vitruv.extensions.dslsruntime.commonalities.operators"
+         id="tools.vitruv.dsls.commonalities.runtime.operators"
          download-size="0"
          install-size="0"
          version="0.0.0"

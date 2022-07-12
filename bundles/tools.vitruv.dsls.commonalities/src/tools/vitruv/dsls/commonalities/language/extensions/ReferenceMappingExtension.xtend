@@ -3,8 +3,8 @@ package tools.vitruv.dsls.commonalities.language.extensions
 import edu.kit.ipd.sdq.activextendannotations.Utility
 import org.eclipse.xtext.common.types.JvmDeclaredType
 import tools.vitruv.dsls.commonalities.language.OperatorReferenceMapping
-import tools.vitruv.extensions.dslruntime.commonalities.operators.CommonalitiesOperatorConventions
-import tools.vitruv.extensions.dslruntime.commonalities.operators.mapping.reference.ReferenceMappingOperator
+import tools.vitruv.dsls.commonalities.runtime.operators.CommonalitiesOperatorConventions
+import tools.vitruv.dsls.commonalities.runtime.operators.mapping.reference.ReferenceMappingOperator
 
 import static extension tools.vitruv.dsls.commonalities.util.JvmAnnotationHelper.*
 

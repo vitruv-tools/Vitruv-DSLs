@@ -3,7 +3,7 @@ package tools.vitruv.dsls.commonalities.language.elements
 import org.eclipse.emf.common.util.DelegatingEList.UnmodifiableEList
 import org.eclipse.emf.ecore.EClass
 import tools.vitruv.dsls.commonalities.language.elements.impl.ResourceMetaclassImpl
-import tools.vitruv.extensions.dslruntime.commonalities.resources.ResourcesPackage
+import tools.vitruv.dsls.commonalities.runtime.resources.ResourcesPackage
 
 import static com.google.common.base.Preconditions.*
 

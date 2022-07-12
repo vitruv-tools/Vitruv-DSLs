@@ -1,7 +1,7 @@
 package tools.vitruv.dsls.commonalities.scoping
 
 import com.google.inject.Singleton
-import tools.vitruv.extensions.dslruntime.commonalities.operators.participation.relation.IParticipationRelationOperator
+import tools.vitruv.dsls.commonalities.runtime.operators.participation.relation.IParticipationRelationOperator
 
 import org.eclipse.xtend.lib.annotations.Delegate
 import org.eclipse.xtext.scoping.IScopeProvider
@@ -14,6 +14,6 @@ class ParticipationRelationOperatorScopeProvider implements IScopeProvider {
 	@Inject
 	new(OperatorScopeProvider.Factory factory) {
 		delegate = factory.forOperatorType(IParticipationRelationOperator)
-			.withDefaultImports("tools.vitruv.extensions.dslruntime.commonalities.operators.participation.relation._")
+			.withDefaultImports("tools.vitruv.dsls.commonalities.runtime.operators.participation.relation._")
 	}
 }

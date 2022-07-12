@@ -9,9 +9,9 @@ import tools.vitruv.dsls.commonalities.language.Participation
 import tools.vitruv.dsls.commonalities.language.ParticipationCondition
 import tools.vitruv.dsls.commonalities.participation.Containment
 import tools.vitruv.dsls.commonalities.participation.ReferenceContainment
-import tools.vitruv.extensions.dslruntime.commonalities.operators.CommonalitiesOperatorConventions
-import tools.vitruv.extensions.dslruntime.commonalities.operators.participation.condition.ContainmentOperator
-import tools.vitruv.extensions.dslruntime.commonalities.operators.participation.condition.ParticipationConditionOperator
+import tools.vitruv.dsls.commonalities.runtime.operators.CommonalitiesOperatorConventions
+import tools.vitruv.dsls.commonalities.runtime.operators.participation.condition.ContainmentOperator
+import tools.vitruv.dsls.commonalities.runtime.operators.participation.condition.ParticipationConditionOperator
 
 import static extension tools.vitruv.dsls.commonalities.language.extensions.CommonalitiesLanguageElementExtension.*
 import static extension tools.vitruv.dsls.commonalities.language.extensions.OperandExtension.*

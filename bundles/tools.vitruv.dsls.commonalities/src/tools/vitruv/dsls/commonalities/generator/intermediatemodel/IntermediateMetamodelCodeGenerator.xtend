@@ -17,7 +17,7 @@ import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EPackage
 import org.eclipse.emf.ecore.plugin.EcorePlugin
 import tools.vitruv.dsls.commonalities.generator.SubGenerator
-import tools.vitruv.extensions.dslruntime.commonalities.intermediatemodelbase.IntermediateModelBasePackage
+import tools.vitruv.dsls.commonalities.runtime.intermediatemodelbase.IntermediateModelBasePackage
 
 import static extension tools.vitruv.dsls.commonalities.generator.intermediatemodel.IntermediateModelConstants.*
 import static java.lang.System.lineSeparator

@@ -5,7 +5,7 @@ import org.eclipse.xtext.validation.Check
 import tools.vitruv.dsls.commonalities.language.CommonalityFile
 import static tools.vitruv.dsls.commonalities.language.LanguagePackage.Literals.*
 import tools.vitruv.dsls.common.ui.validation.ProjectValidation
-import tools.vitruv.extensions.dslruntime.commonalities.marker.RuntimeProjectMarker
+import tools.vitruv.dsls.commonalities.runtime.marker.RuntimeProjectMarker
 import tools.vitruv.dsls.common.elements.MetamodelImport
 
 /**

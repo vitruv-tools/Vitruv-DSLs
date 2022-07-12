@@ -13,7 +13,7 @@ import tools.vitruv.dsls.commonalities.language.ParticipationClassOperand
 import tools.vitruv.dsls.commonalities.language.ReferencedParticipationAttributeOperand
 import tools.vitruv.dsls.commonalities.language.elements.Attribute
 import tools.vitruv.dsls.reactions.builder.TypeProvider
-import tools.vitruv.extensions.dslruntime.commonalities.operators.AttributeOperand
+import tools.vitruv.dsls.commonalities.runtime.operators.AttributeOperand
 
 import static tools.vitruv.dsls.commonalities.generator.reactions.util.EmfAccessExpressions.*
 
