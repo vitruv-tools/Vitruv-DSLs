@@ -112,23 +112,8 @@ ElementRemovalFromListChangeType:
 ElementReplacementChangeType:
 	'replaced' 'at' ElementReferenceChangeType;
 
-// *********** Compound element changes ***********
-
-ElementCreationAndInsertionChangeType:
-	createChange=ElementCreationChangeType 'and' insertChange=ElementInsertionChangeType;
-
-ElementDeletionAndRemovalChangeType:
-	deleteChange=ElementDeletionChangeType 'and' removeChange=ElementRemovalChangeType;
-	
-ElementDeletionAndCreationAndReplacementChangeType:
-	deleteChange=ElementDeletionChangeType 'and' createChange=ElementCreationChangeType 'and' replacedChange=ElementReplacementChangeType;
-
 ElementChangeType returns ElementChangeType:
-	ElementExistenceChangeType | ElementUsageChangeType | ElementCompoundChangeType;
-
-ElementCompoundChangeType returns ElementCompoundChangeType:
-	ElementCreationAndInsertionChangeType | ElementDeletionAndRemovalChangeType | ElementDeletionAndCreationAndReplacementChangeType;
-
+	ElementExistenceChangeType | ElementUsageChangeType;
 
 // ***************************************
 // *********** REPAIR ROUTINES ***********

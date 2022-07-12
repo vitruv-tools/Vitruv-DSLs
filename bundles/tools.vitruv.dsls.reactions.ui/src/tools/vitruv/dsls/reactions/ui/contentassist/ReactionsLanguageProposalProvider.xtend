@@ -14,7 +14,6 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.Assignment
 import tools.vitruv.dsls.reactions.language.ModelAttributeChange
 import tools.vitruv.dsls.reactions.language.ModelElementChange
-import tools.vitruv.dsls.reactions.language.ElementCompoundChangeType
 import tools.vitruv.dsls.reactions.language.toplevelelements.Matcher
 import tools.vitruv.dsls.reactions.language.toplevelelements.ActionStatement
 
@@ -66,8 +65,7 @@ class ReactionsLanguageProposalProvider extends AbstractReactionsLanguageProposa
 		ICompletionProposalAcceptor acceptor) {
 		val realKeyword = "inserted in";
 		val firstKeywordSegment = "inserted";
-		val Iterable<Class<?>> relevantContexts = #[ModelAttributeChange, ModelElementChange,
-			ElementCompoundChangeType];
+		val Iterable<Class<?>> relevantContexts = #[ModelAttributeChange, ModelElementChange];
 		return replaceKeywordIfMatched(keyword, context, acceptor, firstKeywordSegment, realKeyword, relevantContexts);
 	}
 
@@ -75,8 +73,7 @@ class ReactionsLanguageProposalProvider extends AbstractReactionsLanguageProposa
 		ICompletionProposalAcceptor acceptor) {
 		val realKeyword = "removed from";
 		val firstKeywordSegment = "removed";
-		val Iterable<Class<?>> relevantContexts = #[ModelAttributeChange, ModelElementChange,
-			ElementCompoundChangeType];
+		val Iterable<Class<?>> relevantContexts = #[ModelAttributeChange, ModelElementChange];
 		return replaceKeywordIfMatched(keyword, context, acceptor, firstKeywordSegment, realKeyword, relevantContexts);
 	}
 
@@ -84,8 +81,7 @@ class ReactionsLanguageProposalProvider extends AbstractReactionsLanguageProposa
 		ICompletionProposalAcceptor acceptor) {
 		val realKeyword = "replaced at";
 		val firstKeywordSegment = "replaced";
-		val Iterable<Class<?>> relevantContexts = #[ModelAttributeChange, ModelElementChange,
-			ElementCompoundChangeType];
+		val Iterable<Class<?>> relevantContexts = #[ModelAttributeChange, ModelElementChange];
 		return replaceKeywordIfMatched(keyword, context, acceptor, firstKeywordSegment, realKeyword, relevantContexts);
 	}
 
@@ -93,7 +89,7 @@ class ReactionsLanguageProposalProvider extends AbstractReactionsLanguageProposa
 		ICompletionProposalAcceptor acceptor) {
 		val realKeyword = "removed as root";
 		val firstKeywordSegment = "removed";
-		val Iterable<Class<?>> relevantContexts = #[ModelElementChange, ElementCompoundChangeType];
+		val Iterable<Class<?>> relevantContexts = #[ModelElementChange];
 		return replaceKeywordIfMatched(keyword, context, acceptor, firstKeywordSegment, realKeyword, relevantContexts);
 	}
 
@@ -101,7 +97,7 @@ class ReactionsLanguageProposalProvider extends AbstractReactionsLanguageProposa
 		ICompletionProposalAcceptor acceptor) {
 		val realKeyword = "inserted as root";
 		val firstKeywordSegment = "inserted";
-		val Iterable<Class<?>> relevantContexts = #[ModelElementChange, ElementCompoundChangeType];
+		val Iterable<Class<?>> relevantContexts = #[ModelElementChange];
 		return replaceKeywordIfMatched(keyword, context, acceptor, firstKeywordSegment, realKeyword, relevantContexts);
 	}
 
