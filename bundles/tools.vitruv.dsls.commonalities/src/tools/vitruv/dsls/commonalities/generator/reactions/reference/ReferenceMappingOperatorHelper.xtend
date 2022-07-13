@@ -11,8 +11,8 @@ import tools.vitruv.dsls.commonalities.generator.reactions.operator.OperatorCont
 import tools.vitruv.dsls.commonalities.language.OperatorReferenceMapping
 import tools.vitruv.dsls.commonalities.language.ParticipationClass
 import tools.vitruv.dsls.reactions.builder.TypeProvider
-import tools.vitruv.extensions.dslruntime.commonalities.operators.mapping.reference.AttributeReferenceHelper
-import tools.vitruv.extensions.dslruntime.commonalities.operators.mapping.reference.IReferenceMappingOperator
+import tools.vitruv.dsls.commonalities.runtime.operators.mapping.reference.AttributeReferenceHelper
+import tools.vitruv.dsls.commonalities.runtime.operators.mapping.reference.IReferenceMappingOperator
 
 import static com.google.common.base.Preconditions.*
 

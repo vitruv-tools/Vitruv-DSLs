@@ -11,7 +11,7 @@ import tools.vitruv.dsls.commonalities.language.SimpleAttributeMapping
 import tools.vitruv.dsls.commonalities.language.elements.Classifier
 import tools.vitruv.dsls.commonalities.language.elements.ClassifierProvider
 
-import static tools.vitruv.extensions.dslruntime.commonalities.helper.XtendAssertHelper.*
+import static tools.vitruv.dsls.commonalities.runtime.helper.XtendAssertHelper.*
 
 import static extension tools.vitruv.dsls.commonalities.language.extensions.AttributeMappingExtension.*
 import static extension tools.vitruv.dsls.commonalities.language.extensions.CommonalitiesLanguageElementExtension.*

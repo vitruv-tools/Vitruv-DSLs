@@ -5,7 +5,7 @@ import org.eclipse.xtext.xbase.XFeatureCall
 import org.eclipse.xtext.xbase.XbaseFactory
 import tools.vitruv.dsls.commonalities.language.Concept
 import tools.vitruv.dsls.reactions.builder.TypeProvider
-import tools.vitruv.extensions.dslruntime.commonalities.IntermediateModelManagement
+import tools.vitruv.dsls.commonalities.runtime.IntermediateModelManagement
 
 import static tools.vitruv.dsls.commonalities.generator.reactions.util.ReactionsHelper.*
 
@@ -28,6 +28,6 @@ class IntermediateModelHelper {
 	}
 
 	private static def getMetadataModelKey(Concept concept) {
-		return tools.vitruv.extensions.dslruntime.commonalities.helper.IntermediateModelHelper.getMetadataModelKey(concept.name)
+		return tools.vitruv.dsls.commonalities.runtime.helper.IntermediateModelHelper.getMetadataModelKey(concept.name)
 	}
 }

@@ -10,8 +10,8 @@ import org.eclipse.xtext.xbase.XExpression
 import org.eclipse.xtext.xbase.XVariableDeclaration
 import org.eclipse.xtext.xbase.XbaseFactory
 import tools.vitruv.dsls.reactions.builder.TypeProvider
-import tools.vitruv.extensions.dslruntime.commonalities.matching.ContainmentContext
-import tools.vitruv.extensions.dslruntime.commonalities.operators.mapping.reference.IReferenceMappingOperator
+import tools.vitruv.dsls.commonalities.runtime.matching.ContainmentContext
+import tools.vitruv.dsls.commonalities.runtime.operators.mapping.reference.IReferenceMappingOperator
 
 import static com.google.common.base.Preconditions.*
 import static tools.vitruv.dsls.commonalities.generator.reactions.util.EmfAccessExpressions.*

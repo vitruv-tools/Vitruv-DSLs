@@ -4,7 +4,7 @@ import tools.vitruv.dsls.commonalities.language.elements.Classifier
 import tools.vitruv.dsls.commonalities.language.elements.WellKnownClassifiers
 import tools.vitruv.dsls.commonalities.language.impl.CommonalityAttributeImpl
 
-import static tools.vitruv.extensions.dslruntime.commonalities.helper.XtendAssertHelper.*
+import static tools.vitruv.dsls.commonalities.runtime.helper.XtendAssertHelper.*
 
 import static extension tools.vitruv.dsls.commonalities.language.extensions.CommonalitiesLanguageModelExtensions.*
 

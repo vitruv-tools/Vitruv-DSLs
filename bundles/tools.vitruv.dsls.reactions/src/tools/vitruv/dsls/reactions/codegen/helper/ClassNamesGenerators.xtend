@@ -5,7 +5,7 @@ import static extension tools.vitruv.dsls.reactions.util.ReactionsLanguageUtil.*
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment
 import tools.vitruv.dsls.reactions.language.toplevelelements.Routine
 import tools.vitruv.dsls.reactions.language.toplevelelements.Reaction
-import tools.vitruv.extensions.dslsruntime.reactions.structure.ReactionsImportPath
+import tools.vitruv.dsls.reactions.runtime.structure.ReactionsImportPath
 import edu.kit.ipd.sdq.activextendannotations.Utility
 import tools.vitruv.dsls.common.ClassNameGenerator
 

@@ -5,7 +5,7 @@ import org.eclipse.xtext.common.types.JvmGenericType
 import org.eclipse.xtext.common.types.JvmVisibility
 import org.eclipse.xtext.common.types.JvmOperation
 import tools.vitruv.dsls.reactions.language.toplevelelements.PreconditionCodeBlock
-import tools.vitruv.extensions.dslsruntime.reactions.AbstractReactionRealization
+import tools.vitruv.dsls.reactions.runtime.AbstractReactionRealization
 import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.*;
 import tools.vitruv.dsls.reactions.language.toplevelelements.Reaction
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators.*

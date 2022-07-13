@@ -7,7 +7,7 @@ Bundle-Version: 2.1.0.qualifier
 Bundle-Vendor: vitruv.tools
 Export-Package: tools.vitruv.applications.demo.familiespersons.families2persons,
  tools.vitruv.applications.demo.familiespersons.persons2families
-Require-Bundle: tools.vitruv.extensions.dslsruntime.reactions;visibility:=reexport,
+Require-Bundle: tools.vitruv.dsls.reactions.runtime;visibility:=reexport,
  edu.kit.ipd.sdq.metamodels.families,
  edu.kit.ipd.sdq.metamodels.persons,
  edu.kit.ipd.sdq.activextendannotations

@@ -21,7 +21,7 @@ import tools.vitruv.dsls.commonalities.language.SimpleReferenceMapping
 import tools.vitruv.dsls.commonalities.language.elements.Metaclass
 
 import static tools.vitruv.dsls.commonalities.language.LanguagePackage.Literals.*
-import static tools.vitruv.extensions.dslruntime.commonalities.helper.XtendAssertHelper.*
+import static tools.vitruv.dsls.commonalities.runtime.helper.XtendAssertHelper.*
 
 import static extension tools.vitruv.dsls.commonalities.language.extensions.CommonalitiesLanguageModelExtensions.*
 import static extension tools.vitruv.dsls.commonalities.participation.ParticipationContextHelper.*

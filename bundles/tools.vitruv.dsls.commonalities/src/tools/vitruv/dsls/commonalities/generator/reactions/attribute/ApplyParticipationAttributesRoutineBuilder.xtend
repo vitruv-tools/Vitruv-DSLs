@@ -11,7 +11,7 @@ import tools.vitruv.dsls.commonalities.generator.reactions.util.ReactionsSegment
 import tools.vitruv.dsls.commonalities.language.Participation
 import tools.vitruv.dsls.reactions.builder.FluentReactionsSegmentBuilder
 import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder
-import tools.vitruv.extensions.dslruntime.commonalities.matching.ParticipationObjects
+import tools.vitruv.dsls.commonalities.runtime.matching.ParticipationObjects
 
 import static com.google.common.base.Preconditions.*
 
