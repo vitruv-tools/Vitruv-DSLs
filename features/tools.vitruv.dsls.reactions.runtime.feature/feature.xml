@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
-      id="tools.vitruv.dsls.runtime.feature"
+      id="tools.vitruv.dsls.reactions.runtime.feature"
       label="%featureName"
       version="2.1.0.qualifier"
       provider-name="%providerName"
@@ -29,35 +29,11 @@
       <import plugin="tools.vitruv.change.composite"/>
       <import plugin="tools.vitruv.change.propagation"/>
       <import plugin="tools.vitruv.change.interaction"/>
-      <import plugin="org.eclipse.emf.ecore.xmi"/>
-      <import plugin="edu.kit.ipd.sdq.commons.util.java"/>
-      <import plugin="edu.kit.ipd.sdq.activextendannotations"/>
       <import plugin="edu.kit.ipd.sdq.commons.util.emf"/>
    </requires>
 
    <plugin
-         id="tools.vitruv.dsls.mappings.runtime"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
          id="tools.vitruv.dsls.reactions.runtime"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="tools.vitruv.dsls.commonalities.runtime"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="tools.vitruv.dsls.commonalities.runtime.operators"
          download-size="0"
          install-size="0"
          version="0.0.0"
