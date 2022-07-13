@@ -1,15 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/tools.vitruv.dsls.runtime.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.runtime.feature" version="2.1.0.qualifier">
+   <feature url="features/tools.vitruv.dsls.reactions.runtime.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.reactions.runtime.feature" version="2.1.0.qualifier">
+      <category name="Vitruv DSLs Runtime"/>
+   </feature>
+   <feature id="tools.vitruv.dsls.reactions.runtime.feature.source" version="2.1.0.qualifier">
+      <category name="Vitruv DSLs Runtime"/>
+   </feature>
+   <feature url="features/tools.vitruv.dsls.mappings.runtime.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.mappings.runtime.feature" version="2.1.0.qualifier">
+      <category name="Vitruv DSLs Runtime"/>
+   </feature>
+   <feature id="tools.vitruv.dsls.mappings.runtime.feature.source" version="2.1.0.qualifier">
+      <category name="Vitruv DSLs Runtime"/>
+   </feature>
+   <feature url="features/tools.vitruv.dsls.commonalities.runtime.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.commonalities.runtime.feature" version="2.1.0.qualifier">
+      <category name="Vitruv DSLs Runtime"/>
+   </feature>
+   <feature id="tools.vitruv.dsls.commonalities.runtime.feature.source" version="2.1.0.qualifier">
+      <category name="Vitruv DSLs Runtime"/>
+   </feature>
+   <feature url="features/tools.vitruv.dsls.reactions.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.reactions.feature" version="2.1.0.qualifier">
       <category name="Vitruv DSLs"/>
    </feature>
-   <feature id="tools.vitruv.dsls.runtime.feature.source" version="2.1.0.qualifier">
+   <feature id="tools.vitruv.dsls.reactions.feature.source" version="2.1.0.qualifier">
       <category name="Vitruv DSLs"/>
    </feature>
-   <feature url="features/tools.vitruv.dsls.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.feature" version="2.1.0.qualifier">
+   <feature url="features/tools.vitruv.dsls.mappings.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.mappings.feature" version="2.1.0.qualifier">
       <category name="Vitruv DSLs"/>
    </feature>
-   <feature id="tools.vitruv.dsls.feature.source" version="2.1.0.qualifier">
+   <feature id="tools.vitruv.dsls.mappings.feature.source" version="2.1.0.qualifier">
+      <category name="Vitruv DSLs"/>
+   </feature>
+   <feature url="features/tools.vitruv.dsls.commonalities.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.commonalities.feature" version="2.1.0.qualifier">
+      <category name="Vitruv DSLs"/>
+   </feature>
+   <feature id="tools.vitruv.dsls.commonalities.feature.source" version="2.1.0.qualifier">
       <category name="Vitruv DSLs"/>
    </feature>
    <feature url="features/tools.vitruv.applications.demo.familiespersons.feature_2.1.0.qualifier.jar" id="tools.vitruv.applications.demo.familiespersons.feature" version="2.1.0.qualifier">
@@ -18,9 +42,14 @@
    <feature id="tools.vitruv.applications.demo.familiespersons.feature.source" version="2.1.0.qualifier">
       <category name="Vitruv Demos"/>
    </feature>
+   <category-def name="Vitruv DSLs Runtime" label="Vitruv Consistency Specification Languages Runtimes">
+      <description>
+         The runtimes for Vitruv languages for consistency specification
+      </description>
+   </category-def>
    <category-def name="Vitruv DSLs" label="Vitruv Consistency Specification Languages">
       <description>
-         The Vitruv languages for consistency preservation
+         The Vitruv languages for consistency specification
       </description>
    </category-def>
    <category-def name="Vitruv Demos" label="Vitruv Demos">
