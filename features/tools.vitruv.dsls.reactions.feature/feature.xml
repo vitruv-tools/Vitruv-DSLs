@@ -19,8 +19,13 @@
       %license
    </license>
 
+   <includes
+         id="tools.vitruv.dsls.common.feature"
+         version="0.0.0"/>
+
    <requires>
       <import plugin="edu.kit.ipd.sdq.activextendannotations"/>
+      <import plugin="tools.vitruv.dsls.common"/>
       <import plugin="tools.vitruv.dsls.reactions.runtime"/>
       <import plugin="org.eclipse.xtext.xbase"/>
       <import plugin="org.eclipse.xtext.ui"/>
@@ -38,6 +43,7 @@
       <import plugin="org.apache.log4j"/>
       <import plugin="org.eclipse.xtext.ide"/>
       <import plugin="org.eclipse.xtext.xbase.ide"/>
+      <import plugin="tools.vitruv.dsls.common.ui"/>
       <import plugin="org.eclipse.xtext.ui.shared"/>
       <import plugin="org.eclipse.xtext.ui.codetemplates.ui"/>
       <import plugin="org.eclipse.xtext.common.types.ui"/>
@@ -47,8 +53,6 @@
       <import plugin="org.eclipse.ui.editors"/>
       <import plugin="org.eclipse.ui"/>
       <import plugin="org.eclipse.jdt.debug.ui"/>
-      <import plugin="tools.vitruv.dsls.common"/>
-      <import plugin="tools.vitruv.dsls.common.ui"/>
    </requires>
 
    <plugin
