@@ -16,7 +16,7 @@ jobs:
         with:
           path: cbsapplications
           repository: vitruv-tools/Vitruv-Applications-ComponentBasedSystems
-          ref: master
+          ref: main
           fetch-depth: 0
       - name: Checkout Matching Applications Branches
         run: |
