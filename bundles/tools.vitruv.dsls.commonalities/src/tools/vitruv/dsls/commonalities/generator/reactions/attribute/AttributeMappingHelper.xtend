@@ -19,7 +19,7 @@ import tools.vitruv.dsls.commonalities.language.SimpleAttributeMapping
 import tools.vitruv.dsls.reactions.builder.TypeProvider
 
 import static tools.vitruv.dsls.commonalities.generator.reactions.util.EmfAccessExpressions.*
-import static tools.vitruv.extensions.dslruntime.commonalities.helper.XtendAssertHelper.*
+import static tools.vitruv.dsls.commonalities.runtime.helper.XtendAssertHelper.*
  
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.ReactionsGeneratorConventions.*
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.util.XbaseHelper.*

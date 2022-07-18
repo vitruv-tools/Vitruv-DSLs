@@ -12,7 +12,7 @@ import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsLang
 import org.eclipse.xtext.common.types.JvmMember
 import org.eclipse.xtext.common.types.JvmConstructor
 import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.*;
-import tools.vitruv.extensions.dslsruntime.reactions.structure.CallHierarchyHaving
+import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
 import tools.vitruv.dsls.reactions.language.CreateCorrespondence
 import java.util.List
 import tools.vitruv.dsls.reactions.language.toplevelelements.Routine
@@ -21,7 +21,7 @@ import java.util.ArrayList
 import tools.vitruv.dsls.reactions.language.RoutineCallStatement
 import tools.vitruv.dsls.reactions.language.MatcherCheckStatement
 import tools.vitruv.dsls.reactions.language.toplevelelements.MatcherStatement
-import tools.vitruv.extensions.dslsruntime.reactions.AbstractRepairRoutineRealization
+import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization
 import tools.vitruv.dsls.reactions.language.CreateModelElement
 import tools.vitruv.dsls.reactions.language.RetrieveModelElement
 import tools.vitruv.dsls.reactions.language.DeleteModelElement

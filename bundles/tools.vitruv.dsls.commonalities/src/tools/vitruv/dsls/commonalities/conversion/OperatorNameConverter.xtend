@@ -3,7 +3,7 @@ package tools.vitruv.dsls.commonalities.conversion
 import org.eclipse.xtext.conversion.IValueConverter
 import org.eclipse.xtext.conversion.ValueConverterException
 import org.eclipse.xtext.nodemodel.INode
-import tools.vitruv.extensions.dslruntime.commonalities.operators.CommonalitiesOperatorConventions
+import tools.vitruv.dsls.commonalities.runtime.operators.CommonalitiesOperatorConventions
 
 /**
  * Converts operator names from their language notation (like ‘=’) to their type names 

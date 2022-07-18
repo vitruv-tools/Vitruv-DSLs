@@ -26,7 +26,7 @@ import tools.vitruv.dsls.commonalities.language.elements.Domain
 import tools.vitruv.dsls.commonalities.language.elements.EClassAdapter
 import tools.vitruv.dsls.commonalities.language.elements.EFeatureAdapter
 import tools.vitruv.dsls.commonalities.language.elements.ResourceMetaclass
-import tools.vitruv.extensions.dslruntime.commonalities.resources.ResourcesPackage
+import tools.vitruv.dsls.commonalities.runtime.resources.ResourcesPackage
 
 import static com.google.common.base.Preconditions.*
 

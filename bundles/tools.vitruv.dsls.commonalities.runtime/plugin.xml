@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+
+<!--
+-->
+
+<plugin>
+
+   <extension point="org.eclipse.emf.ecore.generated_package">
+      <!-- @generated RuntimeMetamodels -->
+      <package
+            uri="http://vitruv.tools/metamodels/dsls/commonalities/runtime/intermediatemodelbase"
+            class="tools.vitruv.dsls.commonalities.runtime.intermediatemodelbase.IntermediateModelBasePackage"
+            genModel="model/RuntimeMetamodels.genmodel"/>
+   </extension>
+
+   <extension point="org.eclipse.emf.ecore.generated_package">
+      <!-- @generated Resources -->
+      <package
+            uri="http://vitruv.tools/metamodels/dsls/commonalities/runtime/resources"
+            class="tools.vitruv.dsls.commonalities.runtime.resources.ResourcesPackage"
+            genModel="model/RuntimeMetamodels.genmodel"/>
+   </extension>
+
+   <extension
+         point="org.eclipse.emf.ecore.factory_override">
+      <factory
+            class="tools.vitruv.dsls.commonalities.runtime.resources.impl.ResourceOverwrittenFactory"
+            uri="http://vitruv.tools/metamodels/dsls/commonalities/runtime/resources">
+      </factory>
+   </extension>
+
+</plugin>

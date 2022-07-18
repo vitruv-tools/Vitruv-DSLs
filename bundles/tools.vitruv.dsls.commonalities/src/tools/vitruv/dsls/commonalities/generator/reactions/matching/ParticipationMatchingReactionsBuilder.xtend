@@ -23,18 +23,18 @@ import tools.vitruv.dsls.reactions.builder.FluentReactionBuilder.RoutineCallBuil
 import tools.vitruv.dsls.reactions.builder.FluentReactionsSegmentBuilder
 import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder
 import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.RoutineCallParameter
-import tools.vitruv.extensions.dslruntime.commonalities.BooleanResult
-import tools.vitruv.extensions.dslruntime.commonalities.matching.ParticipationMatcher
+import tools.vitruv.dsls.commonalities.runtime.BooleanResult
+import tools.vitruv.dsls.commonalities.runtime.matching.ParticipationMatcher
 
 import static com.google.common.base.Preconditions.*
-import static tools.vitruv.extensions.dslruntime.commonalities.helper.XtendAssertHelper.*
+import static tools.vitruv.dsls.commonalities.runtime.helper.XtendAssertHelper.*
 
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.ReactionsGeneratorConventions.*
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.util.JvmTypeProviderHelper.*
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.util.ReactionsHelper.*
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.util.XbaseHelper.*
 import static extension tools.vitruv.dsls.commonalities.language.extensions.CommonalitiesLanguageModelExtensions.*
-import tools.vitruv.extensions.dslruntime.commonalities.resources.ResourcesPackage
+import tools.vitruv.dsls.commonalities.runtime.resources.ResourcesPackage
 
 /**
  * Generates the reactions and routines that match participations in given

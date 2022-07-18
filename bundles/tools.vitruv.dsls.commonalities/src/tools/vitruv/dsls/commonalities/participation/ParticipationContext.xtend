@@ -10,7 +10,7 @@ import org.eclipse.xtend.lib.annotations.ToString
 import tools.vitruv.dsls.commonalities.language.Participation
 import tools.vitruv.dsls.commonalities.language.ParticipationClass
 
-import static tools.vitruv.extensions.dslruntime.commonalities.helper.XtendAssertHelper.*
+import static tools.vitruv.dsls.commonalities.runtime.helper.XtendAssertHelper.*
 
 import static extension tools.vitruv.dsls.commonalities.language.extensions.CommonalitiesLanguageModelExtensions.*
 import static extension tools.vitruv.dsls.commonalities.participation.ParticipationContextHelper.*

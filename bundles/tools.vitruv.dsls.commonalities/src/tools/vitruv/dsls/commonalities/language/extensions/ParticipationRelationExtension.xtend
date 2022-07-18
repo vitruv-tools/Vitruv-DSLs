@@ -5,9 +5,9 @@ import org.eclipse.xtext.common.types.JvmDeclaredType
 import tools.vitruv.dsls.commonalities.language.ParticipationRelation
 import tools.vitruv.dsls.commonalities.participation.Containment
 import tools.vitruv.dsls.commonalities.participation.ReferenceContainment
-import tools.vitruv.extensions.dslruntime.commonalities.operators.CommonalitiesOperatorConventions
-import tools.vitruv.extensions.dslruntime.commonalities.operators.participation.relation.ContainmentOperator
-import tools.vitruv.extensions.dslruntime.commonalities.operators.participation.relation.ParticipationRelationOperator
+import tools.vitruv.dsls.commonalities.runtime.operators.CommonalitiesOperatorConventions
+import tools.vitruv.dsls.commonalities.runtime.operators.participation.relation.ContainmentOperator
+import tools.vitruv.dsls.commonalities.runtime.operators.participation.relation.ParticipationRelationOperator
 
 import static extension tools.vitruv.dsls.commonalities.language.extensions.ParticipationPartExtension.*
 

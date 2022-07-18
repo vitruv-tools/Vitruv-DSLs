@@ -16,10 +16,10 @@ import tools.vitruv.dsls.reactions.builder.FluentReactionsSegmentBuilder
 import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder
 import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.ActionStatementBuilder
 import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.RoutineCallParameter
-import tools.vitruv.extensions.dslruntime.commonalities.matching.ParticipationObjects
+import tools.vitruv.dsls.commonalities.runtime.matching.ParticipationObjects
 
 import static com.google.common.base.Preconditions.*
-import static tools.vitruv.extensions.dslruntime.commonalities.helper.XtendAssertHelper.*
+import static tools.vitruv.dsls.commonalities.runtime.helper.XtendAssertHelper.*
 
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.ReactionsGeneratorConventions.*
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.intermediatemodel.IntermediateModelHelper.*

@@ -6,18 +6,18 @@ import org.eclipse.xtext.common.types.JvmConstructor
 import org.eclipse.xtext.common.types.JvmOperation
 import org.eclipse.xtext.common.types.JvmVisibility
 import tools.vitruv.dsls.reactions.language.toplevelelements.Routine
-import tools.vitruv.extensions.dslsruntime.reactions.AbstractRepairRoutinesFacade
-import tools.vitruv.extensions.dslsruntime.reactions.RoutinesFacadesProvider
-import tools.vitruv.extensions.dslsruntime.reactions.structure.ReactionsImportPath
+import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutinesFacade
+import tools.vitruv.dsls.reactions.runtime.RoutinesFacadesProvider
+import tools.vitruv.dsls.reactions.runtime.structure.ReactionsImportPath
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators.*
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsImportsHelper.*
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
 import org.eclipse.xtext.common.types.JvmGenericType
 import tools.vitruv.dsls.common.ClassNameGenerator
-import tools.vitruv.extensions.dslsruntime.reactions.ReactionExecutionState
-import tools.vitruv.extensions.dslsruntime.reactions.structure.CallHierarchyHaving
-import tools.vitruv.extensions.dslsruntime.reactions.RoutinesFacadeExecutionState
+import tools.vitruv.dsls.reactions.runtime.ReactionExecutionState
+import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
+import tools.vitruv.dsls.reactions.runtime.RoutinesFacadeExecutionState
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsElementsCompletionChecker.isReferenceable
 
 class RoutineFacadeClassGenerator extends ClassGenerator {

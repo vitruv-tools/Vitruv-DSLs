@@ -16,7 +16,7 @@ import tools.vitruv.dsls.commonalities.participation.ParticipationContext
 import tools.vitruv.dsls.reactions.builder.FluentReactionsSegmentBuilder
 import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder
 import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.RoutineCallParameter
-import tools.vitruv.extensions.dslruntime.commonalities.BooleanResult
+import tools.vitruv.dsls.commonalities.runtime.BooleanResult
 
 import static com.google.common.base.Preconditions.*
 

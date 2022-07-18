@@ -4,7 +4,7 @@ import org.eclipse.emf.ecore.EReference
 
 import org.eclipse.xtext.scoping.impl.ImportedNamespaceAwareLocalScopeProvider
 import java.util.List
-import tools.vitruv.extensions.dslruntime.commonalities.operators.CommonalitiesOperatorConventions
+import tools.vitruv.dsls.commonalities.runtime.operators.CommonalitiesOperatorConventions
 import static extension edu.kit.ipd.sdq.commons.util.java.lang.IterableUtil.*
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.scoping.IScope

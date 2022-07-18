@@ -13,7 +13,7 @@ import org.eclipse.xtext.xbase.XExpression
 import org.eclipse.xtext.xbase.XbaseFactory
 import tools.vitruv.dsls.commonalities.util.EMFJavaTypesUtil
 import tools.vitruv.dsls.reactions.builder.TypeProvider
-import tools.vitruv.extensions.dslruntime.commonalities.EmfAccess
+import tools.vitruv.dsls.commonalities.runtime.EmfAccess
 
 import static tools.vitruv.dsls.commonalities.generator.reactions.util.XbaseCollectionHelper.*
 
