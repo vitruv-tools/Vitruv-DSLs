@@ -29,7 +29,7 @@ class InsuranceFamiliesViewFactory extends TestViewFactory {
 		validateView(createInsuranceView, viewValidation)
 	}
 	
-	def void validateFamilyViewView((View)=>void viewValidation){
+	def void validateFamilyView((View)=>void viewValidation){
 		validateView(createFamilyView, viewValidation)
 	}
 }

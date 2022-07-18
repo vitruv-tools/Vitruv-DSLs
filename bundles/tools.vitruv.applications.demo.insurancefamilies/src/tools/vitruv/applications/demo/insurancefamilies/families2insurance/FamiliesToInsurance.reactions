@@ -17,7 +17,7 @@ execute actions in insurance
 // === FAMILY-REGISTER ===
 
 reaction CreatedFamilyREgister {
-	after element families::FamilyRegister created and inserted as root
+	after element families::FamilyRegister inserted as root
 	call createInsuranceDatabase(newValue)
 }
 
@@ -75,7 +75,7 @@ reaction CreatedMother {
 }
 
 reaction CreatedAndInsertedSon {
-	after element families::Member created and inserted in families::Family[sons]
+	after element families::Member inserted in families::Family[sons]
 	call tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, true)
 }
 
@@ -85,7 +85,7 @@ reaction InsertedSon {
 }
 
 reaction CreatedAndInsertedDaughter {
-	after element families::Member created and inserted in families::Family[daughters]
+	after element families::Member inserted in families::Family[daughters]
 	call tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, false)
 }
 

@@ -42,6 +42,19 @@ class InsuranceToFamiliesHelper {
 		return [family|if(insuranceClient.gender === Gender.MALE) family.father === null else family.mother === null]
 	}
 	
+	def static void informUserAboutReplacementOfClient(UserInteractor userInteractor, InsuranceClient insuranceClient, Family oldFamily){
+		var StringBuilder message = new StringBuilder()
+			.append("Insurance Client ")
+			.append(insuranceClient.name)
+			.append(" has been replaced by another insurance client in his family (")
+			.append(oldFamily.lastName)
+			.append("). Please decide in which family and role ")
+			.append(insuranceClient.name)
+			.append(" should be.")
+		
+		userInteractor.notificationDialogBuilder.message(message.toString()).title("Insurance Client has been replaced in his original family").startInteraction()
+	}
+	
 	def static FamilyRole askUserWhetherClientIsParentOrChild(UserInteractor userInteractor, InsuranceClient insuranceClient) {
 
 		val StringBuilder parentOrChildMessageBuilder = new StringBuilder()

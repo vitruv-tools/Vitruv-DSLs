@@ -10,7 +10,7 @@ import edu.kit.ipd.sdq.metamodels.families.Family
 @Utility
 class FamiliesQueryUtil {
 	
-	static def FamilyRegister claimFamiliesModel(View view) {
+	static def FamilyRegister claimFamilyRegister(View view) {
 		view.getRootObjects(FamilyRegister).claimOne
 	}
 	
