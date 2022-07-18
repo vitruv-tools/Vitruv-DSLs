@@ -6,7 +6,7 @@ import tools.vitruv.dsls.reactions.language.toplevelelements.Reaction
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment
 import tools.vitruv.dsls.reactions.language.toplevelelements.Routine
 import tools.vitruv.dsls.reactions.language.toplevelelements.RoutineOverrideImportPath
-import tools.vitruv.extensions.dslsruntime.reactions.structure.ReactionsImportPath
+import tools.vitruv.dsls.reactions.runtime.structure.ReactionsImportPath
 
 import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.*
 import tools.vitruv.dsls.reactions.language.toplevelelements.TopLevelElementsPackage

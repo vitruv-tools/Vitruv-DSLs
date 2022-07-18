@@ -3,7 +3,7 @@ package tools.vitruv.dsls.reactions.codegen.classgenerators
 import tools.vitruv.dsls.reactions.codegen.classgenerators.ClassGenerator
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.common.types.JvmVisibility
-import tools.vitruv.extensions.dslsruntime.reactions.structure.CallHierarchyHaving
+import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
 import org.eclipse.xtext.common.types.JvmOperation
 import tools.vitruv.dsls.reactions.language.toplevelelements.CodeBlock
 import tools.vitruv.dsls.reactions.language.Taggable
@@ -11,7 +11,7 @@ import tools.vitruv.dsls.reactions.language.ExistingElementReference
 import org.eclipse.xtext.common.types.JvmTypeReference
 import tools.vitruv.dsls.reactions.language.toplevelelements.RoutineCallBlock
 import tools.vitruv.dsls.reactions.language.MatcherCheckStatement
-import tools.vitruv.extensions.dslsruntime.reactions.AbstractRepairRoutineRealization
+import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization
 import tools.vitruv.dsls.reactions.language.RetrieveModelElement
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider

@@ -8,7 +8,7 @@ import tools.vitruv.dsls.commonalities.generator.reactions.util.ReactionsSegment
 import tools.vitruv.dsls.commonalities.language.ParticipationClass
 import tools.vitruv.dsls.reactions.builder.FluentReactionsSegmentBuilder
 import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder
-import tools.vitruv.extensions.dslruntime.commonalities.resources.ResourcesPackage
+import tools.vitruv.dsls.commonalities.runtime.resources.ResourcesPackage
 
 import static com.google.common.base.Preconditions.*
 import static tools.vitruv.dsls.commonalities.generator.reactions.ReactionsGeneratorConventions.*

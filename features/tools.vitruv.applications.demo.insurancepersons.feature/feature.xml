@@ -20,7 +20,7 @@
    </license>
 
    <requires>
-      <import plugin="tools.vitruv.extensions.dslsruntime.reactions"/>
+      <import plugin="tools.vitruv.dsls.reactions.runtime"/>
       <import plugin="edu.kit.ipd.sdq.metamodels.persons"/>
       <import plugin="edu.kit.ipd.sdq.metamodels.insurance"/>
       <import plugin="edu.kit.ipd.sdq.activextendannotations"/>

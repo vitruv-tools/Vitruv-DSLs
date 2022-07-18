@@ -16,7 +16,7 @@ import tools.vitruv.dsls.reactions.language.toplevelelements.TopLevelElementsPac
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment
 import tools.vitruv.dsls.reactions.language.toplevelelements.Routine
 import tools.vitruv.dsls.reactions.language.toplevelelements.RoutineOverrideImportPath
-import tools.vitruv.extensions.dslsruntime.reactions.structure.ReactionsImportPath
+import tools.vitruv.dsls.reactions.runtime.structure.ReactionsImportPath
 
 import static extension tools.vitruv.dsls.reactions.util.ReactionsLanguageUtil.*
 import static com.google.common.base.Preconditions.*

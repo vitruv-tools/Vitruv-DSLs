@@ -10,8 +10,8 @@ import tools.vitruv.dsls.commonalities.language.Concept
 import tools.vitruv.dsls.reactions.builder.FluentReactionsSegmentBuilder
 import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder
 import tools.vitruv.dsls.reactions.builder.TypeProvider
-import tools.vitruv.extensions.dslruntime.commonalities.IntermediateModelManagement
-import tools.vitruv.extensions.dslruntime.commonalities.intermediatemodelbase.IntermediateModelBasePackage
+import tools.vitruv.dsls.commonalities.runtime.IntermediateModelManagement
+import tools.vitruv.dsls.commonalities.runtime.intermediatemodelbase.IntermediateModelBasePackage
 
 import static com.google.common.base.Preconditions.*
 import static tools.vitruv.dsls.commonalities.generator.reactions.ReactionsGeneratorConventions.*
