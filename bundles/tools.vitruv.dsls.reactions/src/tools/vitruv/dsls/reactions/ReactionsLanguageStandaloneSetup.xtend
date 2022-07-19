@@ -9,10 +9,15 @@ import org.eclipse.emf.ecore.plugin.EcorePlugin
  * Initialization support for running Xtext languages without Equinox extension registry.
  */
 class ReactionsLanguageStandaloneSetup extends ReactionsLanguageStandaloneSetupGenerated {
-
-	def static void doSetup() {
-		// Makes ECore register our custom implementations of EPackages
+	
+	override createInjectorAndDoEMFRegistration() {
+		// Register metamodels from plugin.xml explicitly when not running in Equinox environment
 		EcorePlugin.ExtensionProcessor.process(null)
+		return super.createInjectorAndDoEMFRegistration()
+	}
+	
+	def static void doSetup() {
 		new ReactionsLanguageStandaloneSetup().createInjectorAndDoEMFRegistration()
 	}
+	
 }
