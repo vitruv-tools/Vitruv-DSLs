@@ -17,11 +17,12 @@ reaction InsertedInsuranceDatabase {
 }
 
 routine createPersonRegister(insurance::InsuranceDatabase insuranceDatabase) {
-	action {
-		val personRegister = create persons::PersonRegister and initialize {
-			persistProjectRelative(insuranceDatabase, personRegister, "model/persons.persons")
-		}
-		add correspondence between personRegister and insuranceDatabase
+	create {
+		val personRegister = new persons::PersonRegister
+	}
+	update {
+		persistProjectRelative(insuranceDatabase, personRegister, "model/persons.persons")
+		addCorrespondenceBetween(personRegister, insuranceDatabase)
 	}
 }
 
@@ -34,8 +35,9 @@ routine deletePersonRegister(insurance::InsuranceDatabase insuranceDatabase) {
 	match {
 		val personRegister = retrieve persons::PersonRegister corresponding to insuranceDatabase
 	}
-	action {
-		delete personRegister
+	update {
+		deleteObject(personRegister)
+		removeCorrespondenceBetween(personRegister, insuranceDatabase)
 	}
 }
 	
@@ -45,13 +47,11 @@ reaction InsertedClient {
 }
 
 routine createPerson(insurance::InsuranceClient client) {
-	action {
-		call {
-			switch client.gender {
-				case Gender.MALE : createMalePerson(client)
-				case Gender.FEMALE : createFemalePerson(client)
-				default : throw new IllegalArgumentException("Unknown gender for persons")
-			}
+	update {
+		switch client.gender {
+			case Gender.MALE : createMalePerson(client)
+			case Gender.FEMALE : createFemalePerson(client)
+			default : throw new IllegalArgumentException("Unknown gender for persons")
 		}
 	}
 }
@@ -60,14 +60,13 @@ routine createMalePerson(insurance::InsuranceClient client) {
 	match {
 		val personRegister = retrieve persons::PersonRegister corresponding to client.insuranceDatabase
 	}
-	action {
-		val newPerson = create persons::Male and initialize {
-			newPerson.fullName = client.name
-		}
-		update personRegister {
-			personRegister.persons += newPerson
-		} 
-		add correspondence between client and newPerson
+	create {
+		val newPerson = new persons::Male
+	}
+	update {
+		newPerson.fullName = client.name
+		personRegister.persons += newPerson
+		addCorrespondenceBetween(client, newPerson)
 	}
 }
 
@@ -75,14 +74,13 @@ routine createFemalePerson(insurance::InsuranceClient client) {
 	match {
 		val personRegister = retrieve persons::PersonRegister corresponding to client.insuranceDatabase
 	}
-	action {
-		val newPerson = create persons::Female and initialize {
-			newPerson.fullName = client.name
-		}
-		update personRegister {
-			personRegister.persons += newPerson
-		}
-		add correspondence between client and newPerson
+	create {
+		val newPerson = new persons::Female
+	}
+	update {
+		newPerson.fullName = client.name
+		personRegister.persons += newPerson
+		addCorrespondenceBetween(client, newPerson)
 	}
 }
 
@@ -95,10 +93,8 @@ routine changeFullName(insurance::InsuranceClient client) {
 	match {
 		val person = retrieve persons::Person corresponding to client
 	}
-	action {
-		update person {
-			person.fullName = client.name
-		}
+	update {
+		person.fullName = client.name
 	}
 }
 
@@ -111,21 +107,19 @@ routine changeGender(insurance::InsuranceClient client) {
 	match {
 		val person = retrieve persons::Person corresponding to client
 	}
-	action {
-		call {
-			switch client.gender {
-				case Gender.MALE :
-					if (!(person instanceof Male)) {
-						deletePerson(client)
-						createMalePerson(client)
-					}
-				case Gender.FEMALE :
-					if (!(person instanceof Female)) {
-						deletePerson(client)
-						createFemalePerson(client)
-					}
-				default : throw new IllegalArgumentException("Gender of client is unknown.")
-			}
+	update {
+		switch client.gender {
+			case Gender.MALE :
+				if (!(person instanceof Male)) {
+					deletePerson(client)
+					createMalePerson(client)
+				}
+			case Gender.FEMALE :
+				if (!(person instanceof Female)) {
+					deletePerson(client)
+					createFemalePerson(client)
+				}
+			default : throw new IllegalArgumentException("Gender of client is unknown.")
 		}
 	}
 }
@@ -139,8 +133,8 @@ routine deletePerson(insurance::InsuranceClient client) {
 	match {
 		val person = retrieve persons::Person corresponding to client
 	}
-	action {
-		remove correspondence between client and person
-		delete person
+	update {
+		deleteObject(person)
+		removeCorrespondenceBetween(client, person)
 	}
 }
