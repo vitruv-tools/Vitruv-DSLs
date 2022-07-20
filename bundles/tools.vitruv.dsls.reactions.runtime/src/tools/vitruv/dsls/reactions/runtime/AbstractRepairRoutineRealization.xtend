@@ -14,6 +14,7 @@ import tools.vitruv.change.correspondence.CorrespondenceModel
 import tools.vitruv.change.interaction.UserInteractor
 import tools.vitruv.change.propagation.ResourceAccess
 import org.eclipse.emf.common.util.URI
+import static com.google.common.base.Preconditions.checkState
 
 abstract class AbstractRepairRoutineRealization extends CallHierarchyHaving implements RepairRoutine {
 	val AbstractRepairRoutinesFacade routinesFacade;
@@ -86,14 +87,9 @@ abstract class AbstractRepairRoutineRealization extends CallHierarchyHaving impl
 		) {
 			val retrievedElements = getCorrespondingElements(correspondenceSource,
 				elementClass, correspondencePreconditionMethod, tag);
-			if (retrievedElements.size > 1) {
-				CorrespondenceFailHandlerFactory.createExceptionHandler().handle(retrievedElements, correspondenceSource,
-					elementClass, executionState.userInteractor);
-			}
-			if (asserted && retrievedElements.size == 0) {
-				CorrespondenceFailHandlerFactory.createExceptionHandler().handle(retrievedElements, correspondenceSource,
-					elementClass, executionState.userInteractor);
-			}
+			checkState(retrievedElements.size <= 1 && (!asserted || retrievedElements.size == 1),
+				"There were (%s) corresponding elements of type %s for: %s, which are: %s", 
+				retrievedElements.size, elementClass.simpleName, correspondenceSource, retrievedElements)
 			val retrievedElement = if (!retrievedElements.empty) retrievedElements.get(0) else null;
 			return retrievedElement;
 		}
