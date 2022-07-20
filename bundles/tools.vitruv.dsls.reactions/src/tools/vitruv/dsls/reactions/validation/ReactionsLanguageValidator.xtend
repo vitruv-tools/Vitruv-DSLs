@@ -9,7 +9,6 @@ import tools.vitruv.dsls.reactions.language.toplevelelements.TopLevelElementsPac
 import java.util.HashMap
 import tools.vitruv.dsls.reactions.language.toplevelelements.Routine
 import tools.vitruv.dsls.reactions.language.RetrieveModelElement
-import tools.vitruv.dsls.reactions.language.CreateModelElement
 import tools.vitruv.dsls.reactions.language.toplevelelements.Reaction
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment
 import tools.vitruv.dsls.reactions.language.ModelElementChange
@@ -24,6 +23,8 @@ import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsElem
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsImportsHelper.*
 import static extension tools.vitruv.dsls.reactions.util.ReactionsLanguageUtil.*
 import tools.vitruv.dsls.reactions.language.LanguagePackage
+import tools.vitruv.dsls.reactions.language.toplevelelements.CreateBlock
+import tools.vitruv.dsls.common.elements.ElementsPackage
 
 /**
  * This class contains custom validation rules. 
@@ -313,27 +314,15 @@ class ReactionsLanguageValidator extends AbstractReactionsLanguageValidator {
 	}
 
 	@Check
-	def checkCreateElementName(CreateModelElement element) {
-		if (!element.name.nullOrEmpty && element.name.startsWith("_")) {
-			error("Element names must not start with an underscore.",
-				LanguagePackage.Literals.CREATE_MODEL_ELEMENT__NAME);
+	def checkCreateElementName(CreateBlock createBlock) {
+		for (element : createBlock.createStatements) {
+			if (!element.name.nullOrEmpty && element.name.startsWith("_")) {
+				error("Element names must not start with an underscore.",
+					ElementsPackage.Literals.NAMED_METACLASS_REFERENCE__NAME);
+			}
 		}
 	}
 
-//	@Check
-//	def checkEffects(Effect effect) {
-//		if (effect.impact.codeBlock === null && !effect.impact..filter(CorrespondingModelElementCreate).nullOrEmpty) {
-//			warning("Created elements must be initialized and inserted into the target model in the execute block.",
-//				TopLevelElementsPackage.Literals.EFFECT__CODE_BLOCK);
-//		}
-//	}
-//	@Check
-//	def checkEffectInput(RoutineInput effectInput) {
-//		if (!effectInput.javaInputElements.empty) {
-//			warning("Using plain Java elements is discouraged. Try to use model elements and make list inputs to single valued input of other effect that is called for each element.",
-//				TopLevelElementsPackage.Literals.ROUTINE_INPUT__JAVA_INPUT_ELEMENTS);
-//		}
-//	}
 	@Check
 	def checkRoutine(Routine routine) {
 		if (routine.name.startsWith("_")) {

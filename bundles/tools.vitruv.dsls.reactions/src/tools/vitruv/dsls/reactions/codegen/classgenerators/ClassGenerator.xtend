@@ -9,6 +9,8 @@ import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
 import java.util.HashMap
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
+import static extension edu.kit.ipd.sdq.commons.util.java.lang.IterableUtil.mapFixed
+import org.eclipse.xtext.common.types.JvmVisibility
 
 /**
  * JVM Model inference should happen in two phases:
@@ -35,7 +37,7 @@ abstract class ClassGenerator extends TypesBuilderExtensionProvider implements I
 
 	def JvmGenericType generateEmptyClass()
 
-	def JvmGenericType generateBody() {}
+	def JvmGenericType generateBody()
 
 	override JvmOperation getOrGenerateMethod(EObject contextObject, String methodName, JvmTypeReference returnType,
 		Procedure1<? super JvmOperation> initializer) {
@@ -68,5 +70,24 @@ abstract class ClassGenerator extends TypesBuilderExtensionProvider implements I
 		} else {
 			return documentation
 		}
+	}
+	
+	protected def generateElementsContainerClass(String qualifiedClassName, Iterable<AccessibleElement> elements) {
+		generateUnassociatedClass(qualifiedClassName) [
+			val retrievedElementParameters = generateMethodInputParameters(elements)
+			members += retrievedElementParameters.mapFixed[
+				toField(name, parameterType) => [
+					final = true
+					visibility = JvmVisibility.PUBLIC
+				]
+			]
+			members += toConstructor [
+				visibility = JvmVisibility.PUBLIC
+				parameters += retrievedElementParameters
+				body = '''
+				«FOR parameter : parameters»this.«parameter.name» = «parameter.name»;
+				«ENDFOR»'''
+			]
+		]
 	}
 }

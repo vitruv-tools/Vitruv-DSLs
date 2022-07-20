@@ -14,8 +14,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.Assignment
 import tools.vitruv.dsls.reactions.language.ModelAttributeChange
 import tools.vitruv.dsls.reactions.language.ModelElementChange
-import tools.vitruv.dsls.reactions.language.toplevelelements.Matcher
-import tools.vitruv.dsls.reactions.language.toplevelelements.ActionStatement
+import tools.vitruv.dsls.reactions.language.toplevelelements.MatchBlock
 
 /**
  * See https://www.eclipse.org/Xtext/documentation/304_ide_concepts.html#content-assist
@@ -38,10 +37,6 @@ class ReactionsLanguageProposalProvider extends AbstractReactionsLanguageProposa
 		matchedKeyword = keyword.matchRetrieve(context, acceptor) || matchedKeyword;
 		matchedKeyword = keyword.matchRequireAbsenceOf(context, acceptor) || matchedKeyword;
 		matchedKeyword = keyword.matchCorrespondingTo(context, acceptor) || matchedKeyword;
-		matchedKeyword = keyword.matchTaggedWith(context, acceptor) || matchedKeyword;
-		matchedKeyword = keyword.matchAndInitialize(context, acceptor) || matchedKeyword;
-		matchedKeyword = keyword.matchAddCorrespondenceBetween(context, acceptor) || matchedKeyword;
-		matchedKeyword = keyword.matchRemoveCorrespondenceBetween(context, acceptor) || matchedKeyword;
 		if(!matchedKeyword) super.completeKeyword(keyword, context, acceptor);
 	}
 
@@ -105,7 +100,7 @@ class ReactionsLanguageProposalProvider extends AbstractReactionsLanguageProposa
 		ICompletionProposalAcceptor acceptor) {
 		val realKeywords = #["retrieve", "retrieve optional", "retrieve asserted", "retrieve many"];
 		val firstKeywordSegment = "retrieve";
-		val Iterable<Class<?>> relevantContexts = #[Matcher];
+		val Iterable<Class<?>> relevantContexts = #[MatchBlock];
 		return realKeywords.forall[replaceKeywordIfMatched(keyword, context, acceptor, firstKeywordSegment, it, relevantContexts)];
 	}
 	
@@ -113,7 +108,7 @@ class ReactionsLanguageProposalProvider extends AbstractReactionsLanguageProposa
 		ICompletionProposalAcceptor acceptor) {
 		val realKeyword = "require absence of";
 		val firstKeywordSegment = "require";
-		val Iterable<Class<?>> relevantContexts = #[Matcher];
+		val Iterable<Class<?>> relevantContexts = #[MatchBlock];
 		return replaceKeywordIfMatched(keyword, context, acceptor, firstKeywordSegment, realKeyword, relevantContexts, true);
 	}
 
@@ -121,41 +116,7 @@ class ReactionsLanguageProposalProvider extends AbstractReactionsLanguageProposa
 		ICompletionProposalAcceptor acceptor) {
 		val realKeyword = "corresponding to";
 		val firstKeywordSegment = "corresponding";
-		val Iterable<Class<?>> relevantContexts = #[Matcher];
-		return replaceKeywordIfMatched(keyword, context, acceptor, firstKeywordSegment, realKeyword, relevantContexts);
-	}
-
-	private def boolean matchTaggedWith(Keyword keyword, ContentAssistContext context,
-		ICompletionProposalAcceptor acceptor) {
-		val realKeyword = "tagged with";
-		val firstKeywordSegment = "tagged";
-		val Iterable<Class<?>> relevantContexts = #[Matcher, ActionStatement];
-		// Before "tagged value" an Xtend code block can occur, such that the context can be
-		// a node deep in the Xtend block AST -> recursive resolution necessary
-		return replaceKeywordIfMatched(keyword, context, acceptor, firstKeywordSegment, realKeyword, relevantContexts, true);
-	}
-	
-	private def boolean matchAndInitialize(Keyword keyword, ContentAssistContext context,
-		ICompletionProposalAcceptor acceptor) {
-		val realKeyword = "and initialize";
-		val firstKeywordSegment = "and";
-		val Iterable<Class<?>> relevantContexts = #[ActionStatement];
-		return replaceKeywordIfMatched(keyword, context, acceptor, firstKeywordSegment, realKeyword, relevantContexts);
-	}
-	
-	private def boolean matchAddCorrespondenceBetween(Keyword keyword, ContentAssistContext context,
-		ICompletionProposalAcceptor acceptor) {
-		val realKeyword = "add correspondence between";
-		val firstKeywordSegment = "add";
-		val Iterable<Class<?>> relevantContexts = #[ActionStatement];
-		return replaceKeywordIfMatched(keyword, context, acceptor, firstKeywordSegment, realKeyword, relevantContexts);
-	}
-
-	private def boolean matchRemoveCorrespondenceBetween(Keyword keyword, ContentAssistContext context,
-		ICompletionProposalAcceptor acceptor) {
-		val realKeyword = "remove correspondence between";
-		val firstKeywordSegment = "remove";
-		val Iterable<Class<?>> relevantContexts = #[ActionStatement];
+		val Iterable<Class<?>> relevantContexts = #[MatchBlock];
 		return replaceKeywordIfMatched(keyword, context, acceptor, firstKeywordSegment, realKeyword, relevantContexts);
 	}
 	

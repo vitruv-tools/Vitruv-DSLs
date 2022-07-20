@@ -42,9 +42,10 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//Routine/overrideImportPath"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute TopLevelElements.ecore#//Routine/name"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//Routine/input"/>
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//Routine/matcher"/>
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//Routine/action"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//Routine/matchBlock"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//Routine/createBlock"/>
       <genFeatures property="None" notify="false" createChild="false" ecoreFeature="ecore:EReference TopLevelElements.ecore#//Routine/reactionsSegment"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//Routine/updateBlock"/>
     </genClasses>
     <genClasses ecoreClass="TopLevelElements.ecore#//RoutineOverrideImportPath">
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//RoutineOverrideImportPath/reactionsSegment"/>
@@ -54,14 +55,14 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//RoutineInput/modelInputElements"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//RoutineInput/javaInputElements"/>
     </genClasses>
-    <genClasses ecoreClass="TopLevelElements.ecore#//Matcher">
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//Matcher/matcherStatements"/>
+    <genClasses ecoreClass="TopLevelElements.ecore#//MatchBlock">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//MatchBlock/matchStatements"/>
     </genClasses>
-    <genClasses ecoreClass="TopLevelElements.ecore#//MatcherStatement"/>
-    <genClasses ecoreClass="TopLevelElements.ecore#//Action">
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//Action/actionStatements"/>
+    <genClasses ecoreClass="TopLevelElements.ecore#//MatchStatement"/>
+    <genClasses ecoreClass="TopLevelElements.ecore#//CreateBlock">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//CreateBlock/createStatements"/>
     </genClasses>
-    <genClasses ecoreClass="TopLevelElements.ecore#//ActionStatement"/>
+    <genClasses ecoreClass="TopLevelElements.ecore#//UpdateBlock"/>
     <genClasses ecoreClass="TopLevelElements.ecore#//CodeBlock">
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//CodeBlock/code"/>
     </genClasses>
