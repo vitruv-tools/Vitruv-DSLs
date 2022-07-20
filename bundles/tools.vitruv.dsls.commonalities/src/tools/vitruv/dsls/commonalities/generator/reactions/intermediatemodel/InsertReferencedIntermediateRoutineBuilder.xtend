@@ -53,8 +53,8 @@ class InsertReferencedIntermediateRoutineBuilder extends ReactionsGenerationHelp
 				].match [
 					vall(REFERENCING_INTERMEDIATE).retrieveAsserted(referencingCommonality.changeClass)
 						.correspondingTo(REFERENCE_ROOT)
-				].action [
-					update(REFERENCING_INTERMEDIATE) [
+				].update [
+					execute [
 						insertFeatureValue(variable(REFERENCING_INTERMEDIATE), reference.correspondingEReference,
 							variable(REFERENCED_INTERMEDIATE))
 					]

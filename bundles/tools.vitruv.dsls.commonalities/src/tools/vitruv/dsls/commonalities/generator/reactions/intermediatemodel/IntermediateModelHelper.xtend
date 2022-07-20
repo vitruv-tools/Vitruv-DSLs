@@ -9,8 +9,6 @@ import tools.vitruv.dsls.commonalities.runtime.IntermediateModelManagement
 
 import static tools.vitruv.dsls.commonalities.generator.reactions.util.ReactionsHelper.*
 
-import static extension tools.vitruv.dsls.commonalities.generator.reactions.util.JvmTypeProviderHelper.*
-
 @Utility
 class IntermediateModelHelper {
 

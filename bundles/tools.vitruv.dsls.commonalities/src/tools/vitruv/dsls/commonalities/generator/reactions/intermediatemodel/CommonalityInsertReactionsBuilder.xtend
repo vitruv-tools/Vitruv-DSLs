@@ -28,7 +28,6 @@ import tools.vitruv.dsls.commonalities.participation.ReferenceContainment
 import tools.vitruv.dsls.reactions.builder.FluentReactionBuilder.RoutineCallBuilder
 import tools.vitruv.dsls.reactions.builder.FluentReactionsSegmentBuilder
 import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder
-import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.ActionStatementBuilder
 import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.RoutineCallParameter
 import tools.vitruv.dsls.reactions.builder.TypeProvider
 
@@ -40,6 +39,8 @@ import static extension tools.vitruv.dsls.commonalities.generator.reactions.util
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.util.ReactionsHelper.*
 import static extension tools.vitruv.dsls.commonalities.language.extensions.CommonalitiesLanguageModelExtensions.*
 import static extension tools.vitruv.dsls.commonalities.participation.ParticipationContextHelper.*
+import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.UpdateStatementBuilder
+import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.CreateStatementBuilder
 
 class CommonalityInsertReactionsBuilder extends ReactionsSubGenerator {
 
@@ -191,11 +192,14 @@ class CommonalityInsertReactionsBuilder extends ReactionsSubGenerator {
 							.taggedWith(externalParticipationClass.correspondenceTag)
 					]
 				}
-			].action [
+			].create [
 				// Create and initialize the (non-singleton) participation objects:
 				val classes = managedClasses
+				createParticipationObjects(classes)			
+			].update [
+				val classes = managedClasses
 				val containments = participationContext.managedContainments
-				val Consumer<ActionStatementBuilder> correspondenceSetup = [
+				val Consumer<UpdateStatementBuilder> correspondenceSetup = [
 					// Correspondences between participation objects and intermediate:
 					managedClasses.forEach [ contextClass |
 						assertTrue(!contextClass.isExternal)
@@ -203,7 +207,7 @@ class CommonalityInsertReactionsBuilder extends ReactionsSubGenerator {
 					]
 				]
 				val applyAttributes = true
-				createParticipationObjects(segment, participationContext, classes, containments, applyAttributes,
+				initializeParticipationObjects(segment, participationContext, classes, containments, applyAttributes,
 					correspondenceSetup)
 			]
 	}
@@ -222,11 +226,14 @@ class CommonalityInsertReactionsBuilder extends ReactionsSubGenerator {
 				requireAbsenceOf(singletonEClass).correspondingTo [
 					getEClass(singletonEClass)
 				]
-			].action [
+			].create [
 				// Instantiates the singleton object and all of its containers:
 				val classes = participationContext.rootClasses // Singleton root classes
+				createParticipationObjects(classes)
+			].update [
+				val classes = participationContext.rootClasses // Singleton root classes
 				val containments = participationContext.rootContainments
-				val Consumer<ActionStatementBuilder> correspondenceSetup = [
+				val Consumer<UpdateStatementBuilder> correspondenceSetup = [
 					// The ResourceBridge requires a correspondence with an Intermediate for some of its tasks. For
 					// this purpose we add a correspondence with the first intermediate for which the singleton gets
 					// created for:
@@ -247,20 +254,27 @@ class CommonalityInsertReactionsBuilder extends ReactionsSubGenerator {
 				// We don't need to apply intermediate attributes to the singleton objects, because singleton objects
 				// should not be used inside mappings:
 				val applyAttributes = false
-				createParticipationObjects(segment, participationContext, classes, containments, applyAttributes,
+				initializeParticipationObjects(segment, participationContext, classes, containments, applyAttributes,
 					correspondenceSetup)
 			]
 	}
+	
+	private def createParticipationObjects(extension CreateStatementBuilder it, Iterable<ContextClass> classes) {
+		classes.forEach [ contextClass |
+			createParticipationObject(contextClass.participationClass)
+		]
+		
+	}
 
-	private def createParticipationObjects(extension ActionStatementBuilder it, FluentReactionsSegmentBuilder segment,
+	private def initializeParticipationObjects(extension UpdateStatementBuilder it, FluentReactionsSegmentBuilder segment,
 		ParticipationContext participationContext, Iterable<ContextClass> classes,
 		Iterable<ContextContainment<?>> containments, boolean applyAttributes,
-		Consumer<ActionStatementBuilder> correspondenceSetup) {
+		Consumer<UpdateStatementBuilder> correspondenceSetup) {
 		val participation = participationContext.participation
 
 		// Create and initialize the participation objects:
 		classes.forEach [ contextClass |
-			createParticipationObject(contextClass.participationClass)
+			initializeParticipationObject(contextClass.participationClass)
 		]
 
 		// Setup correspondences:
@@ -311,7 +325,7 @@ class CommonalityInsertReactionsBuilder extends ReactionsSubGenerator {
 		}
 	}
 
-	private def insertCommonalityParticipationClasses(extension ActionStatementBuilder it,
+	private def insertCommonalityParticipationClasses(extension UpdateStatementBuilder it,
 		Participation participation, FluentReactionsSegmentBuilder segment) {
 		assertTrue(participation.isCommonalityParticipation)
 		for (participationClass : participation.rootContainerClasses) {
@@ -322,36 +336,39 @@ class CommonalityInsertReactionsBuilder extends ReactionsSubGenerator {
 		}
 	}
 
-	private def createParticipationObject(extension ActionStatementBuilder actionBuilder,
+	private def createParticipationObject(extension CreateStatementBuilder createBuilder,
 		ParticipationClass participationClass) {
 		val corresponding = participationClass.correspondingVariableName
-		vall(corresponding).create(participationClass.changeClass) => [
-			val initializers = participationClass.initializers
-			if (!initializers.empty) {
-				andInitialize [ typeProvider |
-					initializers.toBlockExpression(typeProvider)
-				]
-			}
-		]
+		vall(corresponding).create(participationClass.changeClass)
+	}
+	
+	private def initializeParticipationObject(extension UpdateStatementBuilder updateBuilder,
+		ParticipationClass participationClass) {
+		val initializers = participationClass.initializers
+		if (!initializers.empty) {
+			execute [ typeProvider |
+				initializers.toBlockExpression(typeProvider)
+			]
+		}
 	}
 
-	private def addIntermediateCorrespondence(extension ActionStatementBuilder actionBuilder,
+	private def addIntermediateCorrespondence(extension UpdateStatementBuilder updateBuilder,
 		ParticipationClass participationClass) {
 		addCorrespondenceBetween(INTERMEDIATE).and(participationClass.correspondingVariableName)
 			.taggedWith(participationClass.correspondenceTag)
 	}
 
-	private def setupResourceBridgeCorrespondences(extension ActionStatementBuilder actionBuilder,
+	private def setupResourceBridgeCorrespondences(extension UpdateStatementBuilder updateBuilder,
 		Iterable<ContextContainment<?>> containments) {
 		containments.filter[container.participationClass.isForResource].forEach [
 			assertTrue(!container.isExternal && !contained.isExternal)
 			val resourceClass = container.participationClass
 			val containedClass = contained.participationClass
-			actionBuilder.addResourceBridgeCorrespondence(resourceClass, containedClass)
+			updateBuilder.addResourceBridgeCorrespondence(resourceClass, containedClass)
 		]
 	}
 
-	private def addResourceBridgeCorrespondence(extension ActionStatementBuilder actionBuilder,
+	private def addResourceBridgeCorrespondence(extension UpdateStatementBuilder updateBuilder,
 		ParticipationClass resourceClass, ParticipationClass containedClass) {
 		val resourceBridge = resourceClass.correspondingVariableName
 		val containedObject = containedClass.correspondingVariableName
@@ -381,15 +398,14 @@ class CommonalityInsertReactionsBuilder extends ReactionsSubGenerator {
 		]
 	}
 
-	private def executePostInitializers(extension ActionStatementBuilder actionBuilder,
+	private def executePostInitializers(extension UpdateStatementBuilder updateBuilder,
 		ParticipationContext participationContext, Iterable<ContextClass> contextClasses) {
 		contextClasses.forEach [ contextClass |
 			val postInitializers = participationContext.getPostInitializers(contextClass)
 			if (!postInitializers.empty) {
-				val participationClass = contextClass.participationClass
-				update(participationClass.correspondingVariableName, [ typeProvider |
+				execute[ typeProvider |
 					postInitializers.toBlockExpression(typeProvider)
-				])
+				]
 			}
 		]
 	}
@@ -410,7 +426,7 @@ class CommonalityInsertReactionsBuilder extends ReactionsSubGenerator {
 							.correspondingTo.affectedEObject
 							.taggedWith(participationClass.correspondenceTag)
 					]
-				].action [
+				].update [
 					participationContext.managedClasses.forEach [ contextClass |
 						val participationClass = contextClass.participationClass
 						delete(participationClass.correspondingVariableName)
@@ -448,7 +464,7 @@ class CommonalityInsertReactionsBuilder extends ReactionsSubGenerator {
 				.input[
 					model(commonality.changeClass, INTERMEDIATE)
 				]
-				.action [
+				.update [
 					matchingRoutines.forEach [ matchingRoutine |
 						call(matchingRoutine, new RoutineCallParameter(INTERMEDIATE))
 					]

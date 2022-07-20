@@ -57,8 +57,8 @@ class ApplyParticipationAttributesRoutineBuilder extends ReactionsGenerationHelp
 					model(commonality.changeClass, INTERMEDIATE)
 					plain(ParticipationObjects, PARTICIPATION_OBJECTS)
 				]
-				.action [
-					update(INTERMEDIATE) [ extension typeProvider |
+				.update [
+					execute [ extension typeProvider |
 						XbaseFactory.eINSTANCE.createXBlockExpression => [
 							val participationObjectVars = participation.getParticipationObjectVars(
 								variable(PARTICIPATION_OBJECTS), typeProvider)
