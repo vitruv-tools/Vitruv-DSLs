@@ -19,15 +19,6 @@ Workflow {
 		to = "platform:/resource/org.eclipse.emf.ecore/model/Ecore.ecore"
 	}
 	
-	bean = StandaloneSetup {
-		scanClassPath = true
-		registerGeneratedEPackage = "org.eclipse.xtext.xbase.XbasePackage"
-		registerGenModelFile = "platform:/resource/org.eclipse.xtext.xbase/model/Xbase.genmodel"
-		registerGenModelFile = "platform:/resource/tools.vitruv.dsls.common/model/CommonLanguageElements.genmodel"
-		registerGenModelFile = "platform:/resource/tools.vitruv.dsls.reactions/model/TopLevelElements.genmodel"
-		registerGenModelFile = "platform:/resource/tools.vitruv.dsls.reactions/model/InputTypes.genmodel"
-    }
-
 	component = XtextGenerator {
 		configuration = {
 			project = StandardProjectConfig {
