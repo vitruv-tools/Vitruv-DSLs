@@ -31,11 +31,11 @@ import tools.vitruv.dsls.common.elements.MetaclassReference
 import tools.vitruv.dsls.common.elements.MetaclassEAttributeReference
 import tools.vitruv.dsls.common.elements.MetaclassEReferenceReference
 import org.eclipse.xtext.formatting2.AbstractFormatter2
-import tools.vitruv.dsls.reactions.language.toplevelelements.UpdateBlock
 import tools.vitruv.dsls.reactions.language.toplevelelements.CreateBlock
 import tools.vitruv.dsls.reactions.language.toplevelelements.MatchBlock
 import tools.vitruv.dsls.reactions.language.toplevelelements.MatchStatement
 import tools.vitruv.dsls.reactions.language.MatchCheckStatement
+import tools.vitruv.dsls.reactions.language.toplevelelements.CodeBlock
 
 class ReactionsLanguageFormatter extends AbstractFormatter2 {
 	
@@ -158,7 +158,7 @@ class ReactionsLanguageFormatter extends AbstractFormatter2 {
 		creator.createStatements.forEach[formatMetaclassReference(document)]
 	}
 	
-	def void formatUpdateBlock(UpdateBlock update, extension IFormattableDocument document) {
+	def void formatUpdateBlock(CodeBlock update, extension IFormattableDocument document) {
 		update.code?.formatIndividually(document)
 	}
 

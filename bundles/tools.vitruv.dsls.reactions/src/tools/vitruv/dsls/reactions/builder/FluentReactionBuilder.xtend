@@ -22,7 +22,7 @@ import tools.vitruv.dsls.reactions.language.toplevelelements.TopLevelElementsFac
 import static com.google.common.base.Preconditions.*
 import tools.vitruv.dsls.common.elements.ElementsFactory
 import tools.vitruv.dsls.reactions.language.LanguageFactory
-import tools.vitruv.dsls.reactions.language.toplevelelements.RoutineCallBlock
+import tools.vitruv.dsls.reactions.language.toplevelelements.CodeBlock
 
 class FluentReactionBuilder extends FluentReactionsSegmentChildBuilder {
 
@@ -247,7 +247,7 @@ class FluentReactionBuilder extends FluentReactionsSegmentChildBuilder {
 
 		def private addRoutineCall(FluentRoutineBuilder routineBuilder, RoutineCallParameter... parameters) {
 			if (reaction.callRoutine === null) {
-				reaction.callRoutine = TopLevelElementsFactory.eINSTANCE.createReactionRoutineCall => [
+				reaction.callRoutine = TopLevelElementsFactory.eINSTANCE.createCodeBlock => [
 					code = routineCall(routineBuilder, parameters)
 				]
 			} else {
@@ -276,7 +276,7 @@ class FluentReactionBuilder extends FluentReactionsSegmentChildBuilder {
 				routineInitializer)
 		}
 
-		def private routineCall(RoutineCallBlock routineCall, FluentRoutineBuilder routineBuilder,
+		def private routineCall(CodeBlock routineCall, FluentRoutineBuilder routineBuilder,
 			RoutineCallParameter... parameters) {
 			(XbaseFactory.eINSTANCE.createXFeatureCall => [
 				explicitOperationCall = true

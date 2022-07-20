@@ -7,10 +7,10 @@ import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
 import org.eclipse.xtext.common.types.JvmGenericType
-import tools.vitruv.dsls.reactions.language.toplevelelements.UpdateBlock
 import static com.google.common.base.Preconditions.checkArgument
 import static com.google.common.base.Preconditions.checkNotNull
 import org.eclipse.xtend2.lib.StringConcatenationClient
+import tools.vitruv.dsls.reactions.language.toplevelelements.CodeBlock
 
 /**
  * Generates for an {@link UpdateBlock} of a routine a class with a method (with the name defined in 
@@ -22,7 +22,7 @@ class UpdateBlockClassGenerator extends StepExecutionClassGenerator {
 	static val ROUTINES_FACADE_CLASS_PARAMETER_NAME = "_routinesFacade"
 
 	val String qualifiedClassName
-	val UpdateBlock updateBlock
+	val CodeBlock updateBlock
 	val JvmTypeReference routinesFacadeClassReference
 	val Iterable<AccessibleElement> accessibleElements
 
@@ -39,7 +39,7 @@ class UpdateBlockClassGenerator extends StepExecutionClassGenerator {
 	 * @param routinesFacadeClassReference a type reference to the facade class for calling other routines
 	 * @param accessibleElements the elements to be passed to the generated {@code match} method, must not be {@code null}
 	 */
-	new(TypesBuilderExtensionProvider typesBuilderExtensionProvider, String qualifiedClassName, UpdateBlock updateBlock,
+	new(TypesBuilderExtensionProvider typesBuilderExtensionProvider, String qualifiedClassName, CodeBlock updateBlock,
 		JvmTypeReference routinesFacadeClassReference, Iterable<AccessibleElement> accessibleElements) {
 		super(typesBuilderExtensionProvider)
 		checkArgument(!qualifiedClassName.nullOrEmpty, "class name must not be null or empty")

@@ -37,8 +37,8 @@ Reaction returns toplevelelements::Reaction:
 		callRoutine=ReactionRoutineCall
 	'}';
 	
-ReactionRoutineCall returns toplevelelements::ReactionRoutineCall:
-	RoutineCallBlock;
+ReactionRoutineCall returns toplevelelements::CodeBlock:
+	'call' CodeBlock;
 
 // *********** TRIGGER ***********
 
@@ -179,16 +179,13 @@ CreateStatement returns common::NamedMetaclassReference:
 	'val' name=ValidID '=' 'new' MetaclassReference;
 
 // *********** UPDATE ***********
-UpdateBlock returns toplevelelements::UpdateBlock:
+UpdateBlock returns toplevelelements::CodeBlock:
 	'update' CodeBlock;
 
 // ****** CODE BLOCKS ******
 
 fragment CodeBlock returns toplevelelements::CodeBlock:
 	code=XExpression;
-
-fragment RoutineCallBlock returns toplevelelements::RoutineCallBlock:
-	'call' CodeBlock;
 
 fragment Taggable:
 	tag=TagCodeBlock;
