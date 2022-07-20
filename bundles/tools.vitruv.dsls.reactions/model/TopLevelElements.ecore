@@ -37,7 +37,7 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="trigger" eType="#//Trigger"
         containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="callRoutine" eType="#//CodeBlock"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="callRoutine" eType="#//RoutineCallBlock"
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="reactionsSegment" lowerBound="1"
         eType="#//ReactionsSegment" eOpposite="#//ReactionsSegment/reactions"/>
@@ -59,7 +59,7 @@
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="reactionsSegment" lowerBound="1"
         eType="#//ReactionsSegment" eOpposite="#//ReactionsSegment/routines"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="updateBlock" eType="#//CodeBlock"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="updateBlock" eType="#//UpdateBlock"
         containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="RoutineOverrideImportPath">
@@ -96,4 +96,5 @@
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="RoutineCallBlock" eSuperTypes="#//CodeBlock"/>
   <eClassifiers xsi:type="ecore:EClass" name="ReactionRoutineCall" eSuperTypes="#//RoutineCallBlock"/>
+  <eClassifiers xsi:type="ecore:EClass" name="UpdateBlock" eSuperTypes="#//CodeBlock"/>
 </ecore:EPackage>

@@ -470,7 +470,7 @@ class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 		}
 
 		def update(Consumer<UpdateStatementBuilder> updates) {
-			routine.updateBlock = TopLevelElementsFactory.eINSTANCE.createCodeBlock
+			routine.updateBlock = TopLevelElementsFactory.eINSTANCE.createUpdateBlock
 			val statementBuilder = new UpdateStatementBuilder(builder)
 			updates.accept(statementBuilder)
 			readyToBeAttached = true

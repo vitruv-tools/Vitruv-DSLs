@@ -37,17 +37,14 @@ Reaction returns toplevelelements::Reaction:
 		callRoutine=ReactionRoutineCall
 	'}';
 	
-ReactionRoutineCall returns toplevelelements::CodeBlock:
+ReactionRoutineCall returns toplevelelements::RoutineCallBlock:
+	{toplevelelements::RoutineCallBlock}
 	'call' CodeBlock;
 
 // *********** TRIGGER ***********
 
-InvariantViolationEvent:
-	'invariant' violation=[ecore::EClass|QualifiedName];
-
 Trigger returns toplevelelements::Trigger:
-	// TODO HK Extend this by "before" executing the transformation before applying the change
-	'after' (ModelChange | InvariantViolationEvent)
+	'after' ModelChange
 	('with' precondition=PreconditionCodeBlock)?;
 
 ModelChange:
@@ -179,7 +176,7 @@ CreateStatement returns common::NamedMetaclassReference:
 	'val' name=ValidID '=' 'new' MetaclassReference;
 
 // *********** UPDATE ***********
-UpdateBlock returns toplevelelements::CodeBlock:
+UpdateBlock returns toplevelelements::UpdateBlock:
 	'update' CodeBlock;
 
 // ****** CODE BLOCKS ******

@@ -34,9 +34,9 @@ class ReactionClassGenerator extends ClassGenerator {
 		super(typesBuilderExtensionProvider)
 		checkArgument(reaction !== null, "reaction must not be null")
 		checkArgument(!reaction.name.nullOrEmpty, "reaction must have a name")
-		//checkArgument(reaction.trigger !== null, "reaction must have a defined trigger")
+		checkArgument(reaction.trigger !== null, "reaction must have a defined trigger")
 		this.reaction = reaction
-		this.changeType = reaction.trigger?.extractChangeType
+		this.changeType = reaction.trigger.extractChangeType
 		this.reactionClassQualifiedName = reaction.reactionClassNameGenerator.qualifiedName
 		this.routineCallClassGenerator = if (reaction.callRoutine !== null) {
 			val routinesFacadeClassName = reaction.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName

@@ -62,7 +62,6 @@
     <genClasses ecoreClass="TopLevelElements.ecore#//CreateBlock">
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//CreateBlock/createStatements"/>
     </genClasses>
-    <genClasses ecoreClass="TopLevelElements.ecore#//UpdateBlock"/>
     <genClasses ecoreClass="TopLevelElements.ecore#//CodeBlock">
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//CodeBlock/code"/>
     </genClasses>

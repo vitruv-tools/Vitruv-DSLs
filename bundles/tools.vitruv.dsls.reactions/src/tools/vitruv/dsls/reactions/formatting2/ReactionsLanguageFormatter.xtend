@@ -35,7 +35,7 @@ import tools.vitruv.dsls.reactions.language.toplevelelements.CreateBlock
 import tools.vitruv.dsls.reactions.language.toplevelelements.MatchBlock
 import tools.vitruv.dsls.reactions.language.toplevelelements.MatchStatement
 import tools.vitruv.dsls.reactions.language.MatchCheckStatement
-import tools.vitruv.dsls.reactions.language.toplevelelements.CodeBlock
+import tools.vitruv.dsls.reactions.language.toplevelelements.UpdateBlock
 
 class ReactionsLanguageFormatter extends AbstractFormatter2 {
 	
@@ -158,7 +158,7 @@ class ReactionsLanguageFormatter extends AbstractFormatter2 {
 		creator.createStatements.forEach[formatMetaclassReference(document)]
 	}
 	
-	def void formatUpdateBlock(CodeBlock update, extension IFormattableDocument document) {
+	def void formatUpdateBlock(UpdateBlock update, extension IFormattableDocument document) {
 		update.code?.formatIndividually(document)
 	}
 
