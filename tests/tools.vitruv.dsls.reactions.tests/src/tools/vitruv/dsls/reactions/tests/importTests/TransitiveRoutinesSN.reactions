@@ -10,7 +10,7 @@ reactions: importTestsTransitiveRoutinesSN
 in reaction to changes in minimal
 execute actions in minimal
 
-reaction TransitiveRoutinesSNReaction {
+reaction TransitiveRoutinesSNReupdate {
 	after attribute replaced at minimal::Root[id]
 	call {
 		val data = newValue
@@ -21,9 +21,7 @@ reaction TransitiveRoutinesSNReaction {
 }
 
 routine transitiveRoutinesSNRoutine() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(TransitiveRoutinesSNRoutine)
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(TransitiveRoutinesSNRoutine)
 	}
 }

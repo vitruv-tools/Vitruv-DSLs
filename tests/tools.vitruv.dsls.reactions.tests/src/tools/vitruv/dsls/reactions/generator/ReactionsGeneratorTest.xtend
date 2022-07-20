@@ -42,7 +42,7 @@ class ReactionsGeneratorTest {
 			create.reactionsSegment(reactionsFileName).inReactionToChangesIn(AllElementTypesPackage.eINSTANCE).executeActionsIn(
 				AllElementTypesPackage.eINSTANCE) += create.reaction(reactionName).afterAnyChange.
 				call [
-					action[
+					update [
 						execute[createPrintlnStatement]
 					]
 				]
