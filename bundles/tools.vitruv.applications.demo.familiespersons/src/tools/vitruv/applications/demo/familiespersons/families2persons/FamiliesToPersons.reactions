@@ -20,11 +20,12 @@ reaction InsertedFamilyRegister {
 	call createPersonRegister(newValue)
 }
 routine createPersonRegister(families::FamilyRegister familyRegister) {
-	action {
-		val personRegister = create persons::PersonRegister and initialize {
-			persistProjectRelative(familyRegister, personRegister, "model/persons.persons")
-		}
-		add correspondence between personRegister and familyRegister
+	create {
+		val personRegister = new persons::PersonRegister	
+	}
+	update {
+		persistProjectRelative(familyRegister, personRegister, "model/persons.persons")
+		addCorrespondenceBetween(personRegister, familyRegister)
 	}
 }
 //Deletion of a {@link PersonRegister} after a {@link FamilyRegister} was deleted.
@@ -36,8 +37,9 @@ routine deletePersonRegister(families::FamilyRegister familyRegister) {
 	match {
 		val personRegister = retrieve persons::PersonRegister corresponding to familyRegister
 	}
-	action {
-		delete personRegister
+	update {
+		deleteObject(personRegister)
+		removeCorrespondenceBetween(personRegister, familyRegister)
 	}
 }
 
@@ -93,8 +95,8 @@ routine createOrFindMale(families::Member newMember, families::Family family) {
     match {
         require absence of persons::Male corresponding to newMember
     }
-    action {
-        call createMale(newMember, family)
+    update {
+        createMale(newMember, family)
     }
 }
 
@@ -104,26 +106,25 @@ routine createMaleFromNewMember(families::Member newFather, families::Family fam
 	match {
 		require absence of persons::Person corresponding to newFather
 	}
-	action {
-		call createMale(newFather, family)
+	update {
+		createMale(newFather, family)
 	}
 }
 
-//Creates corresponding male person for fathers and sons and sets up correspondences
+//Creates corresponding male person for fathers, sons, sets up correspondences
 routine createMale(families::Member newMember, families::Family family) {
 	match {
 		check { assertValidFirstname(newMember) true }
 		val personsRegister = retrieve persons::PersonRegister corresponding to family.register
 	}
-	action {
-		val person = create persons::Male and initialize {
-	 		person.fullName = newMember.getPersonName
-		}
-		update personsRegister {
-			personsRegister.persons += person
-		}
-		add correspondence between newMember and person
-		add correspondence between family and person
+	create {
+		val person = new persons::Male
+	}
+	update {
+ 		person.fullName = newMember.getPersonName
+		personsRegister.persons += person
+		addCorrespondenceBetween(newMember, person)
+		addCorrespondenceBetween(family, person)
 	}
 }
 
@@ -131,8 +132,8 @@ routine createOrFindFemale(families::Member newMember, families::Family family) 
     match {
         require absence of persons::Female corresponding to newMember
     }
-    action {
-        call createFemale(newMember, family)
+    update {
+        createFemale(newMember, family)
     }
 }
 
@@ -142,8 +143,8 @@ routine createFemaleFromNewMember(families::Member newMother, families::Family f
 	match {
 		require absence of persons::Person corresponding to newMother
 	}
-	action {
-		call createFemale(newMother, family)
+	update {
+		createFemale(newMother, family)
 	}
 }
 
@@ -153,15 +154,14 @@ routine createFemale(families::Member newMember, families::Family family) {
 		check { assertValidFirstname(newMember) true }
 		val personsRegister = retrieve persons::PersonRegister corresponding to family.register
 	}
-	action {
-		val person = create persons::Female and initialize {
-	 		person.fullName = newMember.getPersonName
-		}
-		update personsRegister {
-			personsRegister.persons += person
-		}
-		add correspondence between newMember and person
-		add correspondence between family and person
+	create {
+		val person = new persons::Female
+	}
+	update {
+ 		person.fullName = newMember.getPersonName
+		personsRegister.persons += person
+		addCorrespondenceBetween(newMember, person)
+		addCorrespondenceBetween(family, person)
 	}
 }
 
@@ -173,8 +173,8 @@ routine updateNameAndCorrespondencesAfterMemberBecameFather(families::Member new
 		val correspondingPerson = retrieve persons::Person corresponding to newFather
 		with { assertMale(correspondingPerson) true }
 	}
-	action {
-		call updateNameAndCorrespondencesOfCorrespondingPerson(newFather, newFamily)
+	update {
+		updateNameAndCorrespondencesOfCorrespondingPerson(newFather, newFamily)
 	}
 }
 
@@ -186,8 +186,8 @@ routine updateNameAndCorrespondencesAfterMemberBecameMother(families::Member new
 		val correspondingPerson = retrieve persons::Person corresponding to newMother
 		with { assertFemale(correspondingPerson) true }
 	}
-	action {
-		call updateNameAndCorrespondencesOfCorrespondingPerson(newMother, newFamily)
+	update {
+		updateNameAndCorrespondencesOfCorrespondingPerson(newMother, newFamily)
 	}
 }
 
@@ -200,13 +200,11 @@ routine updateNameAndCorrespondencesOfCorrespondingPerson(families::Member newMe
 		val correspondingPerson = retrieve persons::Person corresponding to newMember
 		val oldFamily = retrieve families::Family corresponding to correspondingPerson
 	}
-	action {
-		update correspondingPerson {
-			correspondingPerson.fullName = newMember.personName
-		}
-		remove correspondence between correspondingPerson and oldFamily
-		add correspondence between correspondingPerson and newFamily
-		call deleteFamilyIfEmpty(oldFamily)
+	update {
+		correspondingPerson.fullName = newMember.personName
+		removeCorrespondenceBetween(correspondingPerson, oldFamily)
+		addCorrespondenceBetween(correspondingPerson, newFamily)
+		deleteFamilyIfEmpty(oldFamily)
 	}
 }
 
@@ -216,8 +214,8 @@ routine existingMemberBecameSon_updateNameAndCorrespondencesOfCorrespondingMale(
 		val correspondingPerson = retrieve persons::Person corresponding to insertedChild
 		with { assertMale(correspondingPerson) true }
 	}
-	action {
-		call updatePersonFamilyCorrespondence(insertedChild, newFamily)
+	update {
+		updatePersonFamilyCorrespondence(insertedChild, newFamily)
 	}
 }
 
@@ -241,13 +239,11 @@ routine updatePersonFamilyCorrespondence (families::Member insertedChild, famili
 		val correspondingPerson = retrieve persons::Person corresponding to insertedChild
 		val oldFamily = retrieve families::Family corresponding to correspondingPerson
 	}
-	action {
-		update correspondingPerson {
-			correspondingPerson.fullName = insertedChild.personName
-		}
-		remove correspondence between correspondingPerson and oldFamily
-		add correspondence between correspondingPerson and newFamily
-		call deleteFamilyIfEmpty(oldFamily)
+	update {
+		correspondingPerson.fullName = insertedChild.personName
+		removeCorrespondenceBetween(correspondingPerson, oldFamily)
+		addCorrespondenceBetween(correspondingPerson, newFamily)
+		deleteFamilyIfEmpty(oldFamily)
 	}
 }
 
@@ -264,10 +260,8 @@ routine updatePersonName(families::Member member) {
 		check { assertValidFirstname(member) true }
 		val person = retrieve persons::Person corresponding to member
 	}
-	action {
-		update person {
-			person.fullName = member.getPersonName
-		}
+	update {
+		person.fullName = member.getPersonName
 	}
 }
 
@@ -283,10 +277,10 @@ routine deletePerson(families::Member member) {
 		val person = retrieve persons::Person corresponding to member
 		val family = retrieve families::Family corresponding to person
 	}
-	action {
-		remove correspondence between member and person
-		remove correspondence between family and person
-		delete person
+	update {
+		deleteObject(person)
+		removeCorrespondenceBetween(member, person)
+		removeCorrespondenceBetween(family, person)
 	}
 }
 
@@ -294,7 +288,7 @@ routine deleteFamilyIfEmpty(families::Family family) {
 	match {
 		check family.members.size == 0
 	}
-	action {
-		call family.register.families.^remove(family)
+	update {
+		family.register.families.^remove(family)
 	}
 }
