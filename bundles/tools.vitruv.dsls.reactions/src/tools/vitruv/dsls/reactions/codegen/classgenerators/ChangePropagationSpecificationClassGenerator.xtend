@@ -5,7 +5,7 @@ import org.eclipse.xtext.common.types.JvmGenericType
 import org.eclipse.xtext.common.types.JvmVisibility
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment
-import tools.vitruv.dsls.reactions.runtime.AbstractReactionsChangePropagationSpecification
+import tools.vitruv.dsls.reactions.runtime.reactions.AbstractReactionsChangePropagationSpecification
 import tools.vitruv.change.propagation.ChangePropagationSpecification
 
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsImportsHelper.getIncludedReactions
@@ -17,7 +17,7 @@ import java.util.Set
 import tools.vitruv.change.composite.MetamodelDescriptor
 import tools.vitruv.dsls.reactions.runtime.structure.ReactionsImportPath
 import static com.google.common.base.Preconditions.checkState
-import tools.vitruv.dsls.reactions.runtime.RoutinesFacadesProvider
+import tools.vitruv.dsls.reactions.runtime.routines.RoutinesFacadesProvider
 
 class ChangePropagationSpecificationClassGenerator extends ClassGenerator {
 	final ReactionsSegment reactionsSegment

@@ -1,4 +1,4 @@
-package tools.vitruv.dsls.reactions.runtime
+package tools.vitruv.dsls.reactions.runtime.routines
 
 import java.io.IOException
 import java.util.List
@@ -15,6 +15,7 @@ import tools.vitruv.change.interaction.UserInteractor
 import tools.vitruv.change.propagation.ResourceAccess
 import org.eclipse.emf.common.util.URI
 import static com.google.common.base.Preconditions.checkState
+import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 
 abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 	val AbstractRoutinesFacade routinesFacade;

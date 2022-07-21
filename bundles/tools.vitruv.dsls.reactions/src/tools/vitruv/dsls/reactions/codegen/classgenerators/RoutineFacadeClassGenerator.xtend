@@ -6,7 +6,7 @@ import org.eclipse.xtext.common.types.JvmConstructor
 import org.eclipse.xtext.common.types.JvmOperation
 import org.eclipse.xtext.common.types.JvmVisibility
 import tools.vitruv.dsls.reactions.language.toplevelelements.Routine
-import tools.vitruv.dsls.reactions.runtime.RoutinesFacadesProvider
+import tools.vitruv.dsls.reactions.runtime.routines.RoutinesFacadesProvider
 import tools.vitruv.dsls.reactions.runtime.structure.ReactionsImportPath
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators.*
@@ -14,11 +14,11 @@ import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsImpo
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
 import org.eclipse.xtext.common.types.JvmGenericType
 import tools.vitruv.dsls.common.ClassNameGenerator
-import tools.vitruv.dsls.reactions.runtime.ReactionExecutionState
+import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
-import tools.vitruv.dsls.reactions.runtime.RoutinesFacadeExecutionState
+import tools.vitruv.dsls.reactions.runtime.state.RoutinesFacadeExecutionState
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsElementsCompletionChecker.isReferenceable
-import tools.vitruv.dsls.reactions.runtime.AbstractRoutinesFacade
+import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutinesFacade
 
 class RoutineFacadeClassGenerator extends ClassGenerator {
 	val ReactionsSegment reactionsSegment

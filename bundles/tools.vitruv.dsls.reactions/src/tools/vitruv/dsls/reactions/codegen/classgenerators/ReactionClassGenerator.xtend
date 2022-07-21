@@ -14,7 +14,7 @@ import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.UpdateBlockCl
 import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.EmptyStepExecutionClassGenerator
 import org.eclipse.xtend2.lib.StringConcatenationClient
 import static com.google.common.base.Preconditions.checkArgument
-import tools.vitruv.dsls.reactions.runtime.AbstractReaction
+import tools.vitruv.dsls.reactions.runtime.reactions.AbstractReaction
 
 class ReactionClassGenerator extends ClassGenerator {
 	static val EXECUTION_STATE_VARIABLE = "executionState"
