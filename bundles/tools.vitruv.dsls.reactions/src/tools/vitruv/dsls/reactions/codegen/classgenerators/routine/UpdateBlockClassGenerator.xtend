@@ -10,7 +10,7 @@ import static com.google.common.base.Preconditions.checkArgument
 import static com.google.common.base.Preconditions.checkNotNull
 import org.eclipse.xtend2.lib.StringConcatenationClient
 import tools.vitruv.dsls.reactions.language.toplevelelements.CodeBlock
-import tools.vitruv.dsls.reactions.runtime.AbstractRoutine
+import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
 
 /**
  * Generates for an {@link UpdateBlock} of a routine a class with a method (with the name defined in 

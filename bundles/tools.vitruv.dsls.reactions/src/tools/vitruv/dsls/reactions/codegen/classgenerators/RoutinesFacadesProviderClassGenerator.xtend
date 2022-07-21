@@ -7,14 +7,14 @@ import org.eclipse.xtext.common.types.JvmVisibility
 import tools.vitruv.dsls.common.ClassNameGenerator
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment
-import tools.vitruv.dsls.reactions.runtime.AbstractRoutinesFacadesProvider
-import tools.vitruv.dsls.reactions.runtime.RoutinesFacadeExecutionState
+import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutinesFacadesProvider
+import tools.vitruv.dsls.reactions.runtime.state.RoutinesFacadeExecutionState
 import tools.vitruv.dsls.reactions.runtime.structure.ReactionsImportPath
 
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators.*
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsImportsHelper.*
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsElementsCompletionChecker.isReferenceable
-import tools.vitruv.dsls.reactions.runtime.AbstractRoutinesFacade
+import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutinesFacade
 
 class RoutinesFacadesProviderClassGenerator extends ClassGenerator {
 

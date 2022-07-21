@@ -26,7 +26,7 @@ import tools.vitruv.dsls.reactions.language.toplevelelements.MatchBlock
 import tools.vitruv.dsls.reactions.language.MatchCheckStatement
 import org.eclipse.xtext.common.types.JvmTypeReference
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
-import tools.vitruv.dsls.reactions.runtime.AbstractRoutine
+import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
 
 /**
  * Generates for a {@link Matcher} block of a routine a class providing a method (with the name defined in 

@@ -13,7 +13,7 @@ import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsLang
 import static extension edu.kit.ipd.sdq.commons.util.java.lang.IterableUtil.mapFixed
 import tools.vitruv.dsls.reactions.language.toplevelelements.CreateBlock
 import tools.vitruv.dsls.common.elements.NamedMetaclassReference
-import tools.vitruv.dsls.reactions.runtime.AbstractRoutine
+import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
 
 /**
  * Generates for a {@link CreateBlock} of a routine a class providing a creation method (with the name defined in {@link #CREATE_ELEMENTS_METHOD_NAME})

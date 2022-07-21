@@ -24,7 +24,7 @@ import tools.vitruv.dsls.common.elements.ElementsFactory
 import org.eclipse.xtext.xbase.XBlockExpression
 import tools.vitruv.dsls.common.elements.NamedMetaclassReference
 import org.eclipse.xtext.xbase.XFeatureCall
-import tools.vitruv.dsls.reactions.runtime.AbstractRoutine
+import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
 
 class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 
