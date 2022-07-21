@@ -17,7 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument
 import tools.vitruv.dsls.reactions.runtime.reactions.AbstractReaction
 
 class ReactionClassGenerator extends ClassGenerator {
-	static val EXECUTION_STATE_VARIABLE = "executionState"
+	static val EXECUTION_STATE_VARIABLE = "getExecutionState()"
 	static val ROUTINES_FACADE_VARIABLE = "getRoutinesFacade()"
 
 	static val EXECUTE_REACTION_METHOD_NAME = "executeReaction"
