@@ -53,7 +53,7 @@ abstract class AbstractReactionsChangePropagationSpecification extends AbstractC
 	override setUserInteractor(UserInteractor userInteractor) {
 		super.setUserInteractor(userInteractor)
 		reactions.clear()
-		setup();
+		setup()
 	}
 
 	protected abstract def RoutinesFacadesProvider createRoutinesFacadesProvider()

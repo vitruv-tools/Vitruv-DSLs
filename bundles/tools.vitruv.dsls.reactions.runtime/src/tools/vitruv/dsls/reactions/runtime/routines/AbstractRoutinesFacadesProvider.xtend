@@ -15,28 +15,29 @@ import tools.vitruv.dsls.reactions.runtime.state.RoutinesFacadeExecutionState
  */
 abstract class AbstractRoutinesFacadesProvider implements RoutinesFacadesProvider {
 
-	val RoutinesFacadeExecutionState sharedRoutinesFacadeExecutionState = new RoutinesFacadeExecutionState();
+	val RoutinesFacadeExecutionState sharedRoutinesFacadeExecutionState = new RoutinesFacadeExecutionState()
 	// the routines facades that were created so far:
-	val Map<ReactionsImportPath, AbstractRoutinesFacade> routinesFacades = new HashMap<ReactionsImportPath, AbstractRoutinesFacade>();
+	val Map<ReactionsImportPath, AbstractRoutinesFacade> routinesFacades = new HashMap<ReactionsImportPath, AbstractRoutinesFacade>()
 
 	new() {
 	}
 
 	// creates the specified routines facade:
-	protected def abstract AbstractRoutinesFacade createRoutinesFacade(ReactionsImportPath reactionsImportPath, RoutinesFacadeExecutionState sharedExecutionState);
+	protected def abstract AbstractRoutinesFacade createRoutinesFacade(ReactionsImportPath reactionsImportPath,
+		RoutinesFacadeExecutionState sharedExecutionState)
 
 	override <T extends AbstractRoutinesFacade> T getRoutinesFacade(ReactionsImportPath reactionsImportPath) {
-		checkNotNull(reactionsImportPath, "reactionsImportPath is null");
+		checkNotNull(reactionsImportPath, "reactionsImportPath is null")
 		// check if we already created the requested routines facade:
-		var T routinesFacade = routinesFacades.get(reactionsImportPath) as T;
-		if (routinesFacade !== null) return routinesFacade;
+		var T routinesFacade = routinesFacades.get(reactionsImportPath) as T
+		if(routinesFacade !== null) return routinesFacade
 		// create the routines facade:
-		routinesFacade = this.createRoutinesFacade(reactionsImportPath, sharedRoutinesFacadeExecutionState) as T;
+		routinesFacade = this.createRoutinesFacade(reactionsImportPath, sharedRoutinesFacadeExecutionState) as T
 		if (routinesFacade !== null) {
 			// store created routines facade:
-			routinesFacades.put(reactionsImportPath, routinesFacade);
-			return routinesFacade;
+			routinesFacades.put(reactionsImportPath, routinesFacade)
+			return routinesFacade
 		}
-		return routinesFacade;
+		return routinesFacade
 	}
 }

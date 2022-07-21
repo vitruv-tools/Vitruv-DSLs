@@ -18,7 +18,8 @@ abstract class AbstractRoutinesFacade extends Loggable implements RoutinesFacade
 	// shared execution state among all routines facades in the import hierarchy:
 	val RoutinesFacadeExecutionState executionState
 
-	new(RoutinesFacadesProvider routinesFacadesProvider, ReactionsImportPath reactionsImportPath, RoutinesFacadeExecutionState executionState) {
+	new(RoutinesFacadesProvider routinesFacadesProvider, ReactionsImportPath reactionsImportPath,
+		RoutinesFacadeExecutionState executionState) {
 		this.routinesFacadesProvider = routinesFacadesProvider
 		this.reactionsImportPath = reactionsImportPath
 		this.executionState = executionState
@@ -35,13 +36,17 @@ abstract class AbstractRoutinesFacade extends Loggable implements RoutinesFacade
 	def RoutinesFacadeExecutionState _getExecutionState() {
 		return executionState
 	}
-	
+
 	override _setReactionExecutionState(ReactionExecutionState reactionExecutionState, CallHierarchyHaving calledBy) {
-		this.executionState.setExecutionState(reactionExecutionState, calledBy)
+		executionState.setExecutionState(reactionExecutionState, calledBy)
 	}
-	
+
 	override _resetExecutionState() {
-		this.executionState.reset()
+		executionState.reset()
 	}
-	
+
+	override _restoreExecutionState(RoutinesFacadeExecutionState executionStateToRestore) {
+		executionState.setExecutionState(executionStateToRestore.reactionExecutionState, executionStateToRestore.caller)
+	}
+
 }

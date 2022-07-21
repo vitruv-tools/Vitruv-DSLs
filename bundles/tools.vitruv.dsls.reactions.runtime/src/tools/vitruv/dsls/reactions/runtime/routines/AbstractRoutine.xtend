@@ -18,48 +18,48 @@ import static com.google.common.base.Preconditions.checkState
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 
 abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
-	val AbstractRoutinesFacade routinesFacade;
-	extension val ReactionExecutionState executionState;
+	val AbstractRoutinesFacade routinesFacade
+	extension val ReactionExecutionState executionState
 
 	new(AbstractRoutinesFacade routinesFacade, ReactionExecutionState executionState, CallHierarchyHaving calledBy) {
-		super(calledBy);
-		this.routinesFacade = routinesFacade;
-		this.executionState = executionState;
+		super(calledBy)
+		this.routinesFacade = routinesFacade
+		this.executionState = executionState
 	}
 
 	// generic return type for convenience; the requested type has to match the type of the facade provided during construction
 	protected def <T extends AbstractRoutinesFacade> T getRoutinesFacade() {
-		return routinesFacade as T;
+		return routinesFacade as T
 	}
 
 	protected def ReactionExecutionState getExecutionState() {
-		return executionState;
+		return executionState
 	}
 
 	protected def UserInteractor getUserInteractor() {
-		return executionState.userInteractor;
+		return executionState.userInteractor
 	}
 
 	protected def CorrespondenceModel getCorrespondenceModel() {
-		return executionState.correspondenceModel;
+		return executionState.correspondenceModel
 	}
-	
+
 	override boolean execute() {
 		// capture the current routines facade execution state:
-		val facadeExecutionState = routinesFacade._getExecutionState().capture();
+		val facadeExecutionState = routinesFacade._getExecutionState().capture()
 		// set the reaction execution state and caller to use for all following routine calls:
-		routinesFacade._getExecutionState.setExecutionState(executionState, this);
+		routinesFacade._getExecutionState.setExecutionState(executionState, this)
 
 		try {
 			// Exception handling could be added here when productively used
-			return executeRoutine();
+			return executeRoutine()
 		} finally {
 			// restore the previously captured execution state of the facade:
-			routinesFacade._getExecutionState().restore(facadeExecutionState);
+			routinesFacade._restoreExecutionState(facadeExecutionState)
 		}
 	}
 
-	protected abstract def boolean executeRoutine() throws IOException;
+	protected abstract def boolean executeRoutine() throws IOException
 
 	static class Match extends Loggable {
 		protected final extension ReactionExecutionState executionState
@@ -67,7 +67,7 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 		new(ReactionExecutionState executionState) {
 			this.executionState = executionState
 		}
-		
+
 		protected def <T extends EObject> List<T> getCorrespondingElements(
 			EObject correspondenceSource,
 			Class<T> elementClass,
@@ -75,10 +75,10 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 			String tag
 		) {
 			val retrievedElements = ReactionsCorrespondenceHelper.getCorrespondingModelElements(correspondenceSource,
-				elementClass, tag, correspondencePreconditionMethod, correspondenceModel);
-			return retrievedElements;
+				elementClass, tag, correspondencePreconditionMethod, correspondenceModel)
+			return retrievedElements
 		}
-	
+
 		protected def <T extends EObject> T getCorrespondingElement(
 			EObject correspondenceSource,
 			Class<T> elementClass,
@@ -86,16 +86,16 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 			String tag,
 			boolean asserted
 		) {
-			val retrievedElements = getCorrespondingElements(correspondenceSource,
-				elementClass, correspondencePreconditionMethod, tag);
+			val retrievedElements = getCorrespondingElements(correspondenceSource, elementClass,
+				correspondencePreconditionMethod, tag)
 			checkState(retrievedElements.size <= 1 && (!asserted || retrievedElements.size == 1),
-				"There were (%s) corresponding elements of type %s for: %s, which are: %s", 
-				retrievedElements.size, elementClass.simpleName, correspondenceSource, retrievedElements)
-			val retrievedElement = if (!retrievedElements.empty) retrievedElements.get(0) else null;
-			return retrievedElement;
+				"There were (%s) corresponding elements of type %s for: %s, which are: %s", retrievedElements.size,
+				elementClass.simpleName, correspondenceSource, retrievedElements)
+			val retrievedElement = if(!retrievedElements.empty) retrievedElements.get(0) else null
+			return retrievedElement
 		}
 	}
-	
+
 	static class Create extends Loggable {
 		protected final extension ReactionExecutionState executionState
 
@@ -104,10 +104,10 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 		}
 
 		protected def void notifyObjectCreated(EObject createdObject) {
-			executionState.changePropagationObservable.notifyObjectCreated(createdObject);
-		}	
+			executionState.changePropagationObservable.notifyObjectCreated(createdObject)
+		}
 	}
-	
+
 	static class Update extends Loggable {
 		protected final extension ReactionExecutionState executionState
 
@@ -131,10 +131,10 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 			String persistencePath) {
 			if (alreadyPersistedObject === null || elementToPersist === null || persistencePath === null) {
 				throw new IllegalArgumentException(
-					"correspondenceSource, element and persistancePath must be specified");
+					"correspondenceSource, element and persistancePath must be specified")
 			}
 
-			val _resourceURI = PersistenceHelper.getURIFromSourceProjectFolder(alreadyPersistedObject, persistencePath);
+			val _resourceURI = PersistenceHelper.getURIFromSourceProjectFolder(alreadyPersistedObject, persistencePath)
 			persistAsRoot(elementToPersist, _resourceURI)
 		}
 
@@ -148,7 +148,7 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 		 */
 		protected def persistAsMetadataRoot(EObject rootObject, String... metadataKey) {
 			if (rootObject === null) {
-				throw new IllegalArgumentException("rootObject is null!");
+				throw new IllegalArgumentException("rootObject is null!")
 			}
 			val modelURI = resourceAccess.getMetadataModelURI(metadataKey)
 			persistAsRoot(rootObject, modelURI)
@@ -161,15 +161,15 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 				resourceAccess.persistAsRoot(rootObject, uri)
 			}
 		}
-		
+
 		protected def void addCorrespondenceBetween(EObject firstElement, EObject secondElement) {
 			addCorrespondenceBetween(firstElement, secondElement, null)
 		}
-		
+
 		protected def void addCorrespondenceBetween(EObject firstElement, EObject secondElement, String tag) {
-			ReactionsCorrespondenceHelper.addCorrespondence(correspondenceModel, firstElement, secondElement, tag);
+			ReactionsCorrespondenceHelper.addCorrespondence(correspondenceModel, firstElement, secondElement, tag)
 		}
-		
+
 		def void removeObject(EObject element) {
 			if (element === null) {
 				return
@@ -179,14 +179,14 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 			}
 			EcoreUtil.delete(element)
 		}
-		
+
 		protected def void removeCorrespondenceBetween(EObject firstElement, EObject secondElement) {
 			removeCorrespondenceBetween(firstElement, secondElement, null)
 		}
-		
+
 		protected def void removeCorrespondenceBetween(EObject firstElement, EObject secondElement, String tag) {
-			ReactionsCorrespondenceHelper.removeCorrespondencesBetweenElements(correspondenceModel, 
-				firstElement, secondElement, tag)
+			ReactionsCorrespondenceHelper.removeCorrespondencesBetweenElements(correspondenceModel, firstElement,
+				secondElement, tag)
 		}
 	}
 }
