@@ -22,9 +22,9 @@ import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.*
 import tools.vitruv.dsls.reactions.language.LanguageFactory
 import tools.vitruv.dsls.common.elements.ElementsFactory
 import org.eclipse.xtext.xbase.XBlockExpression
-import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization
 import tools.vitruv.dsls.common.elements.NamedMetaclassReference
 import org.eclipse.xtext.xbase.XFeatureCall
+import tools.vitruv.dsls.reactions.runtime.AbstractRoutineRealization
 
 class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 
@@ -492,7 +492,7 @@ class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 			val statement = (XbaseFactory.eINSTANCE.createXFeatureCall => [
 				explicitOperationCall = true
 			]).whenJvmTypes [
-				feature = typeProvider.findMethod(AbstractRepairRoutineRealization.Update, 'removeObject')
+				feature = typeProvider.findMethod(AbstractRoutineRealization.Update, 'removeObject')
 				featureCallArguments += existingElement(existingElement)
 			]
 			expressionBlock.expressions += statement
@@ -526,7 +526,7 @@ class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 			(XbaseFactory.eINSTANCE.createXFeatureCall => [
 				explicitOperationCall = true
 			]).whenJvmTypes [
-				feature = typeProvider.findMethod(AbstractRepairRoutineRealization.Update, 'addCorrespondenceBetween') 
+				feature = typeProvider.findMethod(AbstractRoutineRealization.Update, 'addCorrespondenceBetween') 
 			]
 		}
 		
@@ -558,7 +558,7 @@ class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 			(XbaseFactory.eINSTANCE.createXFeatureCall => [
 				explicitOperationCall = true
 			]).whenJvmTypes [
-				feature = typeProvider.findMethod(AbstractRepairRoutineRealization.Update, 'removeCorrespondenceBetween')
+				feature = typeProvider.findMethod(AbstractRoutineRealization.Update, 'removeCorrespondenceBetween')
 			]
 		}
 

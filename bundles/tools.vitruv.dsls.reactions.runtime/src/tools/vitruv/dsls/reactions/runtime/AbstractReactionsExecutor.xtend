@@ -1,7 +1,6 @@
 package tools.vitruv.dsls.reactions.runtime
 
 import org.apache.log4j.Logger
-import tools.vitruv.dsls.reactions.runtime.IReactionRealization
 import tools.vitruv.change.interaction.UserInteractor
 import tools.vitruv.change.atomic.EChange
 import tools.vitruv.change.correspondence.CorrespondenceModel
@@ -14,7 +13,7 @@ abstract class AbstractReactionsExecutor extends AbstractChangePropagationSpecif
 	static val LOGGER = Logger.getLogger(AbstractReactionsExecutor);
 
 	val RoutinesFacadesProvider routinesFacadesProvider;
-	List<IReactionRealization> reactions;
+	List<Reaction> reactions;
 
 	new(MetamodelDescriptor sourceMetamodelDescriptor, MetamodelDescriptor targetMetamodelDescriptor) {
 		super(sourceMetamodelDescriptor, targetMetamodelDescriptor);
@@ -27,7 +26,7 @@ abstract class AbstractReactionsExecutor extends AbstractChangePropagationSpecif
 		return routinesFacadesProvider;
 	}
 
-	protected def void addReaction(IReactionRealization reaction) {
+	protected def void addReaction(Reaction reaction) {
 		this.reactions += reaction;
 	}
 
@@ -41,7 +40,7 @@ abstract class AbstractReactionsExecutor extends AbstractChangePropagationSpecif
 		for (reaction : reactions) {
 			LOGGER.trace("Calling reaction: " + reaction.class.simpleName + " with change: " + change);
 			val executionState = new ReactionExecutionState(userInteractor, correspondenceModel, resourceAccess, this);
-			reaction.applyEvent(change, executionState)
+			reaction.execute(change, executionState)
 		}
 	}
 

@@ -16,15 +16,15 @@ abstract class AbstractRoutinesFacadesProvider implements RoutinesFacadesProvide
 
 	val RoutinesFacadeExecutionState sharedRoutinesFacadeExecutionState = new RoutinesFacadeExecutionState();
 	// the routines facades that were created so far:
-	val Map<ReactionsImportPath, AbstractRepairRoutinesFacade> routinesFacades = new HashMap<ReactionsImportPath, AbstractRepairRoutinesFacade>();
+	val Map<ReactionsImportPath, AbstractRoutinesFacade> routinesFacades = new HashMap<ReactionsImportPath, AbstractRoutinesFacade>();
 
 	new() {
 	}
 
 	// creates the specified routines facade:
-	protected def abstract AbstractRepairRoutinesFacade createRoutinesFacade(ReactionsImportPath reactionsImportPath, RoutinesFacadeExecutionState sharedExecutionState);
+	protected def abstract AbstractRoutinesFacade createRoutinesFacade(ReactionsImportPath reactionsImportPath, RoutinesFacadeExecutionState sharedExecutionState);
 
-	override <T extends AbstractRepairRoutinesFacade> T getRoutinesFacade(ReactionsImportPath reactionsImportPath) {
+	override <T extends AbstractRoutinesFacade> T getRoutinesFacade(ReactionsImportPath reactionsImportPath) {
 		checkNotNull(reactionsImportPath, "reactionsImportPath is null");
 		// check if we already created the requested routines facade:
 		var T routinesFacade = routinesFacades.get(reactionsImportPath) as T;

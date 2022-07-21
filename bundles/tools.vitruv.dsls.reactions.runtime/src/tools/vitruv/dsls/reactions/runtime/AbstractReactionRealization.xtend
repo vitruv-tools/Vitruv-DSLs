@@ -1,26 +1,25 @@
 package tools.vitruv.dsls.reactions.runtime
 
-import tools.vitruv.dsls.reactions.runtime.IReactionRealization
 import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
 import tools.vitruv.change.atomic.EChange
 import org.eclipse.xtend.lib.annotations.Accessors
 import tools.vitruv.change.interaction.UserInteractor
 
-abstract class AbstractReactionRealization extends CallHierarchyHaving implements IReactionRealization {
-	val AbstractRepairRoutinesFacade routinesFacade;
+abstract class AbstractReactionRealization extends CallHierarchyHaving implements Reaction {
+	val AbstractRoutinesFacade routinesFacade;
 	protected UserInteractor userInteractor;
 	protected ReactionExecutionState executionState;
 	
-	new(AbstractRepairRoutinesFacade routinesFacade) {
+	new(AbstractRoutinesFacade routinesFacade) {
 		this.routinesFacade = routinesFacade;
 	}
 	
 	// generic return type for convenience; the requested type has to match the type of the facade provided during construction
-	protected def <T extends AbstractRepairRoutinesFacade> T getRoutinesFacade() {
+	protected def <T extends AbstractRoutinesFacade> T getRoutinesFacade() {
 		return routinesFacade as T;
 	}
 	
-	override applyEvent(EChange change, ReactionExecutionState reactionExecutionState) {
+	override execute(EChange change, ReactionExecutionState reactionExecutionState) {
 		this.executionState = reactionExecutionState;
 		this.userInteractor = reactionExecutionState.userInteractor;
 

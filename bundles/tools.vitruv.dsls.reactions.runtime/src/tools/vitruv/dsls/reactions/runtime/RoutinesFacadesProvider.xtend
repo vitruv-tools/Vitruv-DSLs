@@ -18,5 +18,5 @@ interface RoutinesFacadesProvider {
 	 * @throws IllegalArgumentException if the specified import path is not valid (for ex. does not exist in the import hierarchy)
 	 * @throws ClassCastException if the specified routines facade type is not applicable to the actually returned routines facade
 	 */
-	def <T extends AbstractRepairRoutinesFacade> T getRoutinesFacade(ReactionsImportPath reactionsImportPath);
+	def <T extends AbstractRoutinesFacade> T getRoutinesFacade(ReactionsImportPath reactionsImportPath);
 }
