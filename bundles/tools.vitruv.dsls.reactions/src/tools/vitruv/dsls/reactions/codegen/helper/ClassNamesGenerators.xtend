@@ -97,17 +97,17 @@ class ClassNamesGenerators {
 	}
 	
 	private static class RoutinesFacadesProviderClassNameGenerator implements ClassNameGenerator {
-		val ReactionsSegment reactionSegment;
+		val ReactionsSegment reactionsSegment;
 		
-		new(ReactionsSegment reactionSegment) {
-			this.reactionSegment = reactionSegment;
+		new(ReactionsSegment reactionsSegment) {
+			this.reactionsSegment = reactionsSegment;
 		}
 		
 		override String getSimpleName() '''
-			«ROUTINES_FACADES_PROVIDER_CLASS_NAME»'''
+			«reactionsSegment.name.toFirstUpper»«ROUTINES_FACADES_PROVIDER_CLASS_NAME»'''
 		
 		override String getPackageName() '''
-			«basicRoutinesPackageQualifiedName».«reactionSegment.packageName»'''
+			«basicRoutinesPackageQualifiedName».«reactionsSegment.packageName»'''
 	}
 	
 	private static class ReactionClassNameGenerator implements ClassNameGenerator {
@@ -157,7 +157,7 @@ class ClassNamesGenerators {
 		}
 		
 		override String getSimpleName() '''
-			«ROUTINES_FACADE_CLASS_NAME»'''
+			«reactionsSegment.name.toFirstUpper»«ROUTINES_FACADE_CLASS_NAME»'''
 		
 		override String getPackageName() '''
 			«reactionsSegment.routinesPackageQualifiedName»'''
@@ -173,7 +173,7 @@ class ClassNamesGenerators {
 		}
 		
 		override String getSimpleName() '''
-			«ROUTINES_FACADE_CLASS_NAME»'''
+			«reactionsSegment.name.toFirstUpper»«ROUTINES_FACADE_CLASS_NAME»'''
 		
 		override String getPackageName() '''
 			«reactionsSegment.routinesPackageQualifiedName».«relativeImportPath.segments.join(".", [it.reactionsSegmentPackageName])»'''
