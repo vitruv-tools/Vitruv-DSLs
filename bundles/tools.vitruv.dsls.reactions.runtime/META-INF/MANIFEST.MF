@@ -17,7 +17,8 @@ Require-Bundle: org.apache.log4j;visibility:=reexport,
  tools.vitruv.change.composite;visibility:=reexport,
  tools.vitruv.change.propagation;visibility:=reexport,
  tools.vitruv.change.interaction;visibility:=reexport,
- edu.kit.ipd.sdq.commons.util.emf
+ edu.kit.ipd.sdq.commons.util.emf,
+ edu.kit.ipd.sdq.activextendannotations
 Bundle-ActivationPolicy: lazy
 Export-Package: tools.vitruv.dsls.reactions.runtime,
  tools.vitruv.dsls.reactions.runtime.helper,
