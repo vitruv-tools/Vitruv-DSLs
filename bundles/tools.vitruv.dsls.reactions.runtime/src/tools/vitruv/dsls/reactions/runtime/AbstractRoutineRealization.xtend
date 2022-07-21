@@ -16,18 +16,18 @@ import tools.vitruv.change.propagation.ResourceAccess
 import org.eclipse.emf.common.util.URI
 import static com.google.common.base.Preconditions.checkState
 
-abstract class AbstractRepairRoutineRealization extends CallHierarchyHaving implements RepairRoutine {
-	val AbstractRepairRoutinesFacade routinesFacade;
+abstract class AbstractRoutineRealization extends CallHierarchyHaving implements Routine {
+	val AbstractRoutinesFacade routinesFacade;
 	extension val ReactionExecutionState executionState;
 
-	new(AbstractRepairRoutinesFacade routinesFacade, ReactionExecutionState executionState, CallHierarchyHaving calledBy) {
+	new(AbstractRoutinesFacade routinesFacade, ReactionExecutionState executionState, CallHierarchyHaving calledBy) {
 		super(calledBy);
 		this.routinesFacade = routinesFacade;
 		this.executionState = executionState;
 	}
 
 	// generic return type for convenience; the requested type has to match the type of the facade provided during construction
-	protected def <T extends AbstractRepairRoutinesFacade> T getRoutinesFacade() {
+	protected def <T extends AbstractRoutinesFacade> T getRoutinesFacade() {
 		return routinesFacade as T;
 	}
 
@@ -43,7 +43,7 @@ abstract class AbstractRepairRoutineRealization extends CallHierarchyHaving impl
 		return executionState.correspondenceModel;
 	}
 	
-	override boolean applyRoutine() {
+	override boolean execute() {
 		// capture the current routines facade execution state:
 		val facadeExecutionState = routinesFacade._getExecutionState().capture();
 		// set the reaction execution state and caller to use for all following routine calls:
@@ -161,11 +161,11 @@ abstract class AbstractRepairRoutineRealization extends CallHierarchyHaving impl
 			}
 		}
 		
-		def void addCorrespondenceBetween(EObject firstElement, EObject secondElement) {
+		protected def void addCorrespondenceBetween(EObject firstElement, EObject secondElement) {
 			addCorrespondenceBetween(firstElement, secondElement, null)
 		}
 		
-		def void addCorrespondenceBetween(EObject firstElement, EObject secondElement, String tag) {
+		protected def void addCorrespondenceBetween(EObject firstElement, EObject secondElement, String tag) {
 			ReactionsCorrespondenceHelper.addCorrespondence(correspondenceModel, firstElement, secondElement, tag);
 		}
 		
@@ -176,14 +176,14 @@ abstract class AbstractRepairRoutineRealization extends CallHierarchyHaving impl
 			if (logger.debugEnabled) {
 				logger.debug("Removing object " + element + " from container " + element.eContainer())
 			}
-			EcoreUtil.remove(element)
+			EcoreUtil.delete(element)
 		}
 		
-		def void removeCorrespondenceBetween(EObject firstElement, EObject secondElement) {
+		protected def void removeCorrespondenceBetween(EObject firstElement, EObject secondElement) {
 			removeCorrespondenceBetween(firstElement, secondElement, null)
 		}
 		
-		def void removeCorrespondenceBetween(EObject firstElement, EObject secondElement, String tag) {
+		protected def void removeCorrespondenceBetween(EObject firstElement, EObject secondElement, String tag) {
 			ReactionsCorrespondenceHelper.removeCorrespondencesBetweenElements(correspondenceModel, 
 				firstElement, secondElement, tag)
 		}

@@ -6,7 +6,6 @@ import org.eclipse.xtext.common.types.JvmConstructor
 import org.eclipse.xtext.common.types.JvmOperation
 import org.eclipse.xtext.common.types.JvmVisibility
 import tools.vitruv.dsls.reactions.language.toplevelelements.Routine
-import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutinesFacade
 import tools.vitruv.dsls.reactions.runtime.RoutinesFacadesProvider
 import tools.vitruv.dsls.reactions.runtime.structure.ReactionsImportPath
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment
@@ -19,6 +18,7 @@ import tools.vitruv.dsls.reactions.runtime.ReactionExecutionState
 import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
 import tools.vitruv.dsls.reactions.runtime.RoutinesFacadeExecutionState
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsElementsCompletionChecker.isReferenceable
+import tools.vitruv.dsls.reactions.runtime.AbstractRoutinesFacade
 
 class RoutineFacadeClassGenerator extends ClassGenerator {
 	val ReactionsSegment reactionsSegment
@@ -44,7 +44,7 @@ class RoutineFacadeClassGenerator extends ClassGenerator {
 	override generateBody() {
 		this.includedRoutinesFacades = reactionsSegment.includedRoutinesFacades;
 		generatedClass => [
-			superTypes += typeRef(AbstractRepairRoutinesFacade);
+			superTypes += typeRef(AbstractRoutinesFacade);
 			members += generateConstructor();
 
 			// fields for all routines facades of reactions segments imported with qualified names,
@@ -112,7 +112,7 @@ class RoutineFacadeClassGenerator extends ClassGenerator {
 				«CallHierarchyHaving» _caller = this._getExecutionState().getCaller();
 				«typeRef(routineNameGenerator.qualifiedName)» routine = new «typeRef(routineNameGenerator.qualifiedName)»(_routinesFacade, _reactionExecutionState, _caller«
 					»«FOR parameter : parameters BEFORE ', ' SEPARATOR ', '»«parameter.name»«ENDFOR»);
-				return routine.applyRoutine();
+				return routine.execute();
 			'''
 		])
 	}

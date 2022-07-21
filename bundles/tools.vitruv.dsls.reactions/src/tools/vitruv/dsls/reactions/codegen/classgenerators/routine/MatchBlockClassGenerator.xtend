@@ -20,13 +20,13 @@ import static extension edu.kit.ipd.sdq.commons.util.java.lang.IterableUtil.mapF
 import java.io.IOException
 import org.eclipse.xtext.common.types.JvmFormalParameter
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsLanguageHelper.*
-import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization
 import static com.google.common.base.Preconditions.checkNotNull
 import static com.google.common.base.Preconditions.checkArgument
 import tools.vitruv.dsls.reactions.language.toplevelelements.MatchBlock
 import tools.vitruv.dsls.reactions.language.MatchCheckStatement
 import org.eclipse.xtext.common.types.JvmTypeReference
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
+import tools.vitruv.dsls.reactions.runtime.AbstractRoutineRealization
 
 /**
  * Generates for a {@link Matcher} block of a routine a class providing a method (with the name defined in 
@@ -82,7 +82,7 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 
 	override generateBody() {
 		generatedClass => [
-			superTypes += typeRef(AbstractRepairRoutineRealization.Match)
+			superTypes += typeRef(AbstractRoutineRealization.Match)
 			members += retrievedElementsClass
 			members += generateConstructor()
 			members += generateMatchMethod()

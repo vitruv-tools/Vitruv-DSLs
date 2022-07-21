@@ -7,7 +7,6 @@ import static extension edu.kit.ipd.sdq.commons.util.java.lang.IterableUtil.*
 import org.eclipse.xtext.common.types.JvmConstructor
 import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
 import tools.vitruv.dsls.reactions.language.toplevelelements.Routine
-import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators.*
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
@@ -19,6 +18,7 @@ import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.UpdateBlockCl
 import org.eclipse.xtend2.lib.StringConcatenationClient
 import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.EmptyStepExecutionClassGenerator
 import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.StepExecutionClassGenerator
+import tools.vitruv.dsls.reactions.runtime.AbstractRoutineRealization
 
 class RoutineClassGenerator extends ClassGenerator {
 	static val EXECUTION_STATE_VARIABLE = "getExecutionState()"
@@ -94,7 +94,7 @@ class RoutineClassGenerator extends ClassGenerator {
 		val executeMethod = generateMethodExecuteRoutine()
 		generatedClass => [
 			documentation = getCommentWithoutMarkers(routine.documentation)
-			superTypes += typeRef(AbstractRepairRoutineRealization)
+			superTypes += typeRef(AbstractRoutineRealization)
 			if(hasInputValues) members += routine.toField(INPUT_VALUES_FIELD_NAME, typeRef(inputValuesClass))
 			members += if (!matchBlockClassGenerator.empty)
 				routine.toField(RETRIEVED_VALUES_FIELD_NAME,
