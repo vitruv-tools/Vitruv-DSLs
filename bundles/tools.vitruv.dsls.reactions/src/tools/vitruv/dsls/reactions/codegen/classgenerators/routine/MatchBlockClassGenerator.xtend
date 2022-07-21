@@ -314,10 +314,10 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 	'''
 
 	override Iterable<AccessibleElement> getNewlyAccessibleElementsAfterExecution() {
-		return matchBlock.matchStatements.filter(RetrieveModelElement).mapFixed[accessibleElement]
+		return matchBlock.matchStatements.filter(RetrieveModelElement).filter[!name.nullOrEmpty].mapFixed[accessibleElement]
 	}
 
-	def getAccessibleElement(RetrieveModelElement retrieveElement) {
+	private def getAccessibleElement(RetrieveModelElement retrieveElement) {
 		val retrievalType = retrieveElement.retrievalType
 		val retrieveElementType = retrieveElement.elementType?.metaclass?.javaClassName
 		switch (retrievalType) {
