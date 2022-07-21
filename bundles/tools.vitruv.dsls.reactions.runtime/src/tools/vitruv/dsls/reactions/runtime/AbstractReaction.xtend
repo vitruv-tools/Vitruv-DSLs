@@ -2,10 +2,9 @@ package tools.vitruv.dsls.reactions.runtime
 
 import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
 import tools.vitruv.change.atomic.EChange
-import org.eclipse.xtend.lib.annotations.Accessors
 import tools.vitruv.change.interaction.UserInteractor
 
-abstract class AbstractReactionRealization extends CallHierarchyHaving implements Reaction {
+abstract class AbstractReaction extends CallHierarchyHaving implements Reaction {
 	val AbstractRoutinesFacade routinesFacade;
 	protected UserInteractor userInteractor;
 	protected ReactionExecutionState executionState;
@@ -38,11 +37,4 @@ abstract class AbstractReactionRealization extends CallHierarchyHaving implement
 	
 	protected def void executeReaction(EChange change);
 	
-	
-	static abstract class ChangeMatcher<T extends EChange> {
-		@Accessors(PUBLIC_GETTER)
-		T change
-
-		def boolean check(EChange change);
-	}
 }

@@ -4,7 +4,6 @@ import org.eclipse.xtext.common.types.JvmConstructor
 import org.eclipse.xtext.common.types.JvmGenericType
 import org.eclipse.xtext.common.types.JvmVisibility
 import org.eclipse.xtext.common.types.JvmOperation
-import tools.vitruv.dsls.reactions.runtime.AbstractReactionRealization
 import tools.vitruv.dsls.reactions.language.toplevelelements.Reaction
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators.*
 import static extension tools.vitruv.dsls.reactions.codegen.changetyperepresentation.ChangeTypeRepresentationExtractor.*
@@ -15,6 +14,7 @@ import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.UpdateBlockCl
 import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.EmptyStepExecutionClassGenerator
 import org.eclipse.xtend2.lib.StringConcatenationClient
 import static com.google.common.base.Preconditions.checkArgument
+import tools.vitruv.dsls.reactions.runtime.AbstractReaction
 
 class ReactionClassGenerator extends ClassGenerator {
 	static val EXECUTION_STATE_VARIABLE = "executionState"
@@ -57,7 +57,7 @@ class ReactionClassGenerator extends ClassGenerator {
 	override generateBody() {
 		generatedClass => [
 			documentation = getCommentWithoutMarkers(reaction.documentation)
-			superTypes += typeRef(AbstractReactionRealization)
+			superTypes += typeRef(AbstractReaction)
 			members +=
 				reaction.toField(changeType.name, changeType.accessibleElement.generateTypeRef(_typeReferenceBuilder))
 			members += reaction.generateConstructor()
