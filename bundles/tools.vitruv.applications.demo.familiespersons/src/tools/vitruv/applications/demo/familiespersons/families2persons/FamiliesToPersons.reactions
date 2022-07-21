@@ -225,8 +225,8 @@ routine existingMemberBecameDaughter_updateNameAndCorrespondencesOfCorresponding
 		val correspondingPerson = retrieve persons::Person corresponding to insertedChild
 		with { assertFemale(correspondingPerson) true }
 	}
-	action {
-		call updatePersonFamilyCorrespondence(insertedChild, newFamily)
+	update {
+		updatePersonFamilyCorrespondence(insertedChild, newFamily)
 	}
 }
 
