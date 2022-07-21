@@ -16,7 +16,7 @@ import tools.vitruv.change.propagation.ResourceAccess
 import org.eclipse.emf.common.util.URI
 import static com.google.common.base.Preconditions.checkState
 
-abstract class AbstractRoutineRealization extends CallHierarchyHaving implements Routine {
+abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 	val AbstractRoutinesFacade routinesFacade;
 	extension val ReactionExecutionState executionState;
 

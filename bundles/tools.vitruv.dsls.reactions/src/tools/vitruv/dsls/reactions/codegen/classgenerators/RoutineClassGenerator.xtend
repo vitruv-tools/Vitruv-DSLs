@@ -18,7 +18,7 @@ import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.UpdateBlockCl
 import org.eclipse.xtend2.lib.StringConcatenationClient
 import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.EmptyStepExecutionClassGenerator
 import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.StepExecutionClassGenerator
-import tools.vitruv.dsls.reactions.runtime.AbstractRoutineRealization
+import tools.vitruv.dsls.reactions.runtime.AbstractRoutine
 
 class RoutineClassGenerator extends ClassGenerator {
 	static val EXECUTION_STATE_VARIABLE = "getExecutionState()"
@@ -94,7 +94,7 @@ class RoutineClassGenerator extends ClassGenerator {
 		val executeMethod = generateMethodExecuteRoutine()
 		generatedClass => [
 			documentation = getCommentWithoutMarkers(routine.documentation)
-			superTypes += typeRef(AbstractRoutineRealization)
+			superTypes += typeRef(AbstractRoutine)
 			if(hasInputValues) members += routine.toField(INPUT_VALUES_FIELD_NAME, typeRef(inputValuesClass))
 			members += if (!matchBlockClassGenerator.empty)
 				routine.toField(RETRIEVED_VALUES_FIELD_NAME,
