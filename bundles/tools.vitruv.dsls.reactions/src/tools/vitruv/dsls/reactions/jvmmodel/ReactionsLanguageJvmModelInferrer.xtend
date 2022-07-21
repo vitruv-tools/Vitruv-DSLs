@@ -6,7 +6,6 @@ package tools.vitruv.dsls.reactions.jvmmodel
 import com.google.inject.Inject
 import org.eclipse.xtext.xbase.jvmmodel.AbstractModelInferrer
 import org.eclipse.xtext.xbase.jvmmodel.IJvmDeclaredTypeAcceptor
-import tools.vitruv.dsls.reactions.codegen.classgenerators.ExecutorClassGenerator
 import tools.vitruv.dsls.reactions.codegen.classgenerators.RoutineFacadeClassGenerator
 import tools.vitruv.dsls.reactions.codegen.classgenerators.RoutineClassGenerator
 import tools.vitruv.dsls.reactions.language.toplevelelements.Routine
@@ -63,7 +62,6 @@ class ReactionsLanguageJvmModelInferrer extends AbstractModelInferrer  {
 			for (reaction : reactionsSegment.reactions.filter[it.isReferenceable]) {
 				generate(reaction, acceptor, isPreIndexingPhase);
 			}
-			acceptor.accept(new ExecutorClassGenerator(reactionsSegment, typesBuilderExtensionProvider), reactionsSegment);
 			acceptor.accept(new ChangePropagationSpecificationClassGenerator(reactionsSegment, typesBuilderExtensionProvider), reactionsSegment);
 		}
 
