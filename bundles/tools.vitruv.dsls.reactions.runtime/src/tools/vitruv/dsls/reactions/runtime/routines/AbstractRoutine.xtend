@@ -45,17 +45,12 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 	}
 
 	override boolean execute() {
-		// capture the current routines facade execution state:
-		val facadeExecutionState = routinesFacade._getExecutionState().capture()
-		// set the reaction execution state and caller to use for all following routine calls:
-		routinesFacade._getExecutionState.setExecutionState(executionState, this)
+		routinesFacade._pushCaller(this)
 
 		try {
-			// Exception handling could be added here when productively used
 			return executeRoutine()
 		} finally {
-			// restore the previously captured execution state of the facade:
-			routinesFacade._restoreExecutionState(facadeExecutionState)
+			routinesFacade._dropLastCaller()
 		}
 	}
 
