@@ -22,6 +22,8 @@ import org.eclipse.xtext.common.types.JvmFormalParameter
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 
 class RoutineFacadeClassGenerator extends ClassGenerator {
+	protected static val EXECUTION_STATE_ACCESS_CODE = "_getExecutionState()"
+	
 	val ReactionsSegment reactionsSegment
 	val ClassNameGenerator routinesFacadeNameGenerator
 	
@@ -106,7 +108,7 @@ class RoutineFacadeClassGenerator extends ClassGenerator {
 			parameters += routine.inputElementsParameter
 			body = '''
 				«typeRef(routinesFacadeNameGenerator.qualifiedName)» _routinesFacade = «generateGetOwnRoutinesFacade()»;
-				«ReactionExecutionState» _executionState = this._getExecutionState();
+				«ReactionExecutionState» _executionState = «EXECUTION_STATE_ACCESS_CODE»;
 				«CallHierarchyHaving» _caller = this._getCurrentCaller();
 				«typeRef(routineNameGenerator.qualifiedName)» routine = new «typeRef(routineNameGenerator.qualifiedName)»(_routinesFacade, _executionState, _caller«
 					»«FOR parameter : parameters BEFORE ', ' SEPARATOR ', '»«parameter.name»«ENDFOR»);

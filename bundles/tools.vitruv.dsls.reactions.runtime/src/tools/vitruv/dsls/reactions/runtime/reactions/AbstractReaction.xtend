@@ -4,33 +4,30 @@ import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
 import tools.vitruv.change.atomic.EChange
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 import tools.vitruv.dsls.reactions.runtime.routines.RoutinesFacade
-import org.eclipse.xtend.lib.annotations.Accessors
+import java.util.function.Function
 
+/**
+ * A Reaction retrieves a routines facade upon each execution and applies the
+ * current execution's execution state to that facade such that it gets
+ * propagated through all routines and their used facades.
+ */
 abstract class AbstractReaction extends CallHierarchyHaving implements Reaction {
-	val RoutinesFacade routinesFacade
-	@Accessors(PROTECTED_GETTER)
-	ReactionExecutionState executionState
-
-	new(RoutinesFacade routinesFacade) {
-		this.routinesFacade = routinesFacade
+	val Function<ReactionExecutionState, RoutinesFacade> routinesFacadeGenerator
+	
+	new(Function<ReactionExecutionState, RoutinesFacade> routinesFacadeGenerator) {
+		this.routinesFacadeGenerator = routinesFacadeGenerator
 	}
 	
-	// generic return type for convenience; the requested type has to match the type of the facade provided during construction
-	protected def <T extends RoutinesFacade> T getRoutinesFacade() {
-		return routinesFacade as T
-	}
-
 	override execute(EChange change, ReactionExecutionState reactionExecutionState) {
-		this.executionState = reactionExecutionState
-		routinesFacade._setExecutionState(executionState)
+		val routinesFacade = routinesFacadeGenerator.apply(reactionExecutionState)
 		routinesFacade._pushCaller(this)
 		try {
-			executeReaction(change)
+			executeReaction(change, reactionExecutionState, routinesFacade)
 		} finally {
 			routinesFacade._dropLastCaller()
 		}
 	}
 
-	protected def void executeReaction(EChange change)
+	protected def void executeReaction(EChange change, ReactionExecutionState executionState, RoutinesFacade routinesFacade)
 
 }

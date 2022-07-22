@@ -15,10 +15,14 @@ import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.EmptyStepExec
 import org.eclipse.xtend2.lib.StringConcatenationClient
 import static com.google.common.base.Preconditions.checkArgument
 import tools.vitruv.dsls.reactions.runtime.reactions.AbstractReaction
+import tools.vitruv.dsls.reactions.runtime.routines.RoutinesFacade
+import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
+import java.util.function.Function
+import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 
 class ReactionClassGenerator extends ClassGenerator {
-	static val EXECUTION_STATE_VARIABLE = "getExecutionState()"
-	static val ROUTINES_FACADE_VARIABLE = "getRoutinesFacade()"
+	static val EXECUTION_STATE_VARIABLE = "executionState"
+	static val ROUTINES_FACADE_VARIABLE = "routinesFacade"
 
 	static val EXECUTE_REACTION_METHOD_NAME = "executeReaction"
 	static val MATCH_CHANGE_METHOD_NAME = "isCurrentChangeMatchingTrigger"
@@ -69,7 +73,7 @@ class ReactionClassGenerator extends ClassGenerator {
 	private def JvmConstructor generateConstructor(Reaction reaction) {
 		return reaction.toConstructor [
 			visibility = JvmVisibility.PUBLIC
-			val routinesFacadeParameter = generateRoutinesFacadeParameter(reaction.reactionsSegment)
+			val routinesFacadeParameter = generateParameter(new AccessibleElement(ROUTINES_FACADE_VARIABLE + "Generator", Function.name, ReactionExecutionState.name, RoutinesFacade.name))
 			parameters += routinesFacadeParameter
 			body = '''
 				super(«routinesFacadeParameter.name»);
@@ -83,8 +87,14 @@ class ReactionClassGenerator extends ClassGenerator {
 		val executeReactionMethod = reaction.toMethod(EXECUTE_REACTION_METHOD_NAME, typeRef(Void.TYPE)) [
 			visibility = JvmVisibility.PUBLIC
 			val changeParameter = generateUntypedChangeParameter
+			val reactionExecutionStateParameter = generateParameter(new AccessibleElement(EXECUTION_STATE_VARIABLE, ReactionExecutionState))
+			val routinesFacadeParameter = generateParameter(new AccessibleElement(ROUTINES_FACADE_VARIABLE + "Untyped", RoutinesFacade))
 			parameters += changeParameter
+			parameters += reactionExecutionStateParameter
+			parameters += routinesFacadeParameter
+			val facadeClassName = reaction.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
 			body = '''
+				«facadeClassName» «ROUTINES_FACADE_VARIABLE» = («facadeClassName»)«ROUTINES_FACADE_VARIABLE»Untyped;
 				«generateMatchChangeMethodCallCode(matchChangeMethod, changeParameter.name)»
 				«changeType.generatePropertiesAssignmentCode»
 				«generateUserDefinedPreconditionMethodCall(userDefinedPreconditionMethod)»

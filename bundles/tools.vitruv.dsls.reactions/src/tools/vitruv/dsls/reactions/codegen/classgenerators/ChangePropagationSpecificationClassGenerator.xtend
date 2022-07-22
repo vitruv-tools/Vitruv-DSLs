@@ -18,6 +18,8 @@ import tools.vitruv.change.composite.MetamodelDescriptor
 import tools.vitruv.dsls.reactions.runtime.structure.ReactionsImportPath
 import static com.google.common.base.Preconditions.checkState
 import tools.vitruv.dsls.reactions.runtime.routines.RoutinesFacadesProvider
+import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
+import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 
 class ChangePropagationSpecificationClassGenerator extends ClassGenerator {
 	final ReactionsSegment reactionsSegment
@@ -48,9 +50,11 @@ class ChangePropagationSpecificationClassGenerator extends ClassGenerator {
 			
 			// create routines facades provider:
 			members += reactionsSegment.toMethod("createRoutinesFacadesProvider", typeRef(RoutinesFacadesProvider)) [
-				visibility = JvmVisibility.PROTECTED;
+				visibility = JvmVisibility.PROTECTED
+				val executionStateParameter = generateParameter(new AccessibleElement("executionState", ReactionExecutionState))
+				parameters += executionStateParameter
 				body = '''
-					return new «reactionsSegment.routinesFacadesProviderClassNameGenerator.qualifiedName»();
+					return new «reactionsSegment.routinesFacadesProviderClassNameGenerator.qualifiedName»(«executionStateParameter.name»);
 				'''
 			]
 
@@ -67,7 +71,7 @@ class ChangePropagationSpecificationClassGenerator extends ClassGenerator {
 						«val reaction = reactionEntry.key»
 						«val reactionsImportPath = reactionEntry.value»
 						«val reactionsNameGenerator = reaction.reactionClassNameGenerator»
-						addReaction(new «reactionsNameGenerator.qualifiedName»(getRoutinesFacadesProvider().getRoutinesFacade(«
+						addReaction(new «reactionsNameGenerator.qualifiedName»((executionState) -> createRoutinesFacadesProvider(executionState).getRoutinesFacade(«
 							»«ReactionsImportPath».fromPathString("«reactionsImportPath.pathString»"))));
 					«ENDFOR»
 				'''
