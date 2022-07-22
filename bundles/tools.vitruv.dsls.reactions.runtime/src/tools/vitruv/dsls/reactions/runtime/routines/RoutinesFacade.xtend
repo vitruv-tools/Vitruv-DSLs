@@ -1,17 +1,35 @@
 package tools.vitruv.dsls.reactions.runtime.routines
 
-import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
-import tools.vitruv.dsls.reactions.runtime.state.RoutinesFacadeExecutionState
+import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 
 /**
  * Note: All methods start with an underscore here to not conflict with the methods that are generated from the routines by
  * concrete implementations of a facade
  */
 interface RoutinesFacade {
-	def void _setReactionExecutionState(ReactionExecutionState reactionExecutionState, CallHierarchyHaving calledBy)
+	/**
+	 * Sets the execution state for the current execution run.
+	 */
+	def void _setExecutionState(ReactionExecutionState executionState)
 
-	def void _restoreExecutionState(RoutinesFacadeExecutionState executionStateToRestore)
+	/**
+	 * Returns the execution state of the current execution run.
+	 */
+	def ReactionExecutionState _getExecutionState()
 
-	def void _resetExecutionState()
+	/**
+	 * Pushes the given caller to the call stack.
+	 */
+	def void _pushCaller(CallHierarchyHaving caller)
+	
+	/**
+	 * Returns the current routine caller
+	 */
+	def CallHierarchyHaving _getCurrentCaller()
+
+	/**
+	 * Drops the last caller from the call stack.
+	 */
+	def void _dropLastCaller()
 }

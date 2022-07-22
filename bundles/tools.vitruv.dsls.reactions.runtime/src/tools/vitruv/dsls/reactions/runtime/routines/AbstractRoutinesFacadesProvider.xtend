@@ -5,7 +5,6 @@ import java.util.Map
 import tools.vitruv.dsls.reactions.runtime.structure.ReactionsImportPath
 
 import static com.google.common.base.Preconditions.*
-import tools.vitruv.dsls.reactions.runtime.state.RoutinesFacadeExecutionState
 
 /**
  * A RoutinesFacadesProvider which caches created routines facades.
@@ -15,7 +14,6 @@ import tools.vitruv.dsls.reactions.runtime.state.RoutinesFacadeExecutionState
  */
 abstract class AbstractRoutinesFacadesProvider implements RoutinesFacadesProvider {
 
-	val RoutinesFacadeExecutionState sharedRoutinesFacadeExecutionState = new RoutinesFacadeExecutionState()
 	// the routines facades that were created so far:
 	val Map<ReactionsImportPath, AbstractRoutinesFacade> routinesFacades = new HashMap<ReactionsImportPath, AbstractRoutinesFacade>()
 
@@ -23,8 +21,7 @@ abstract class AbstractRoutinesFacadesProvider implements RoutinesFacadesProvide
 	}
 
 	// creates the specified routines facade:
-	protected def abstract AbstractRoutinesFacade createRoutinesFacade(ReactionsImportPath reactionsImportPath,
-		RoutinesFacadeExecutionState sharedExecutionState)
+	protected def abstract AbstractRoutinesFacade createRoutinesFacade(ReactionsImportPath reactionsImportPath)
 
 	override <T extends AbstractRoutinesFacade> T getRoutinesFacade(ReactionsImportPath reactionsImportPath) {
 		checkNotNull(reactionsImportPath, "reactionsImportPath is null")
@@ -32,7 +29,7 @@ abstract class AbstractRoutinesFacadesProvider implements RoutinesFacadesProvide
 		var T routinesFacade = routinesFacades.get(reactionsImportPath) as T
 		if(routinesFacade !== null) return routinesFacade
 		// create the routines facade:
-		routinesFacade = this.createRoutinesFacade(reactionsImportPath, sharedRoutinesFacadeExecutionState) as T
+		routinesFacade = this.createRoutinesFacade(reactionsImportPath) as T
 		if (routinesFacade !== null) {
 			// store created routines facade:
 			routinesFacades.put(reactionsImportPath, routinesFacade)

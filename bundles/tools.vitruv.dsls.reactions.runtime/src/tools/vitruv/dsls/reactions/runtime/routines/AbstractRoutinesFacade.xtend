@@ -2,9 +2,9 @@ package tools.vitruv.dsls.reactions.runtime.routines
 
 import tools.vitruv.dsls.reactions.runtime.structure.Loggable
 import tools.vitruv.dsls.reactions.runtime.structure.ReactionsImportPath
-import tools.vitruv.dsls.reactions.runtime.state.RoutinesFacadeExecutionState
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
+import java.util.Stack
 
 /**
  * Note: All methods start with an underscore here to not conflict with the methods that are generated from the routines by
@@ -16,13 +16,12 @@ abstract class AbstractRoutinesFacade extends Loggable implements RoutinesFacade
 	// absolute path inside the import hierarchy to the segment this routines facade belongs to, never null:
 	val ReactionsImportPath reactionsImportPath
 	// shared execution state among all routines facades in the import hierarchy:
-	val RoutinesFacadeExecutionState executionState
-
-	new(RoutinesFacadesProvider routinesFacadesProvider, ReactionsImportPath reactionsImportPath,
-		RoutinesFacadeExecutionState executionState) {
+	var ReactionExecutionState executionState
+	val Stack<CallHierarchyHaving> callerStack = new Stack()
+	
+	new(RoutinesFacadesProvider routinesFacadesProvider, ReactionsImportPath reactionsImportPath) {
 		this.routinesFacadesProvider = routinesFacadesProvider
 		this.reactionsImportPath = reactionsImportPath
-		this.executionState = executionState
 	}
 
 	protected def RoutinesFacadesProvider _getRoutinesFacadesProvider() {
@@ -32,21 +31,25 @@ abstract class AbstractRoutinesFacade extends Loggable implements RoutinesFacade
 	protected def ReactionsImportPath _getReactionsImportPath() {
 		return reactionsImportPath
 	}
-
-	def RoutinesFacadeExecutionState _getExecutionState() {
+	
+	override _setExecutionState(ReactionExecutionState executionState) {
+		this.executionState = executionState
+	}
+	
+	override _getExecutionState() {
 		return executionState
 	}
-
-	override _setReactionExecutionState(ReactionExecutionState reactionExecutionState, CallHierarchyHaving calledBy) {
-		executionState.setExecutionState(reactionExecutionState, calledBy)
+	
+	override _pushCaller(CallHierarchyHaving caller) {
+		callerStack.push(caller)
 	}
-
-	override _resetExecutionState() {
-		executionState.reset()
+	
+	override _getCurrentCaller() {
+		return if (!callerStack.empty()) callerStack.peek() else null
 	}
-
-	override _restoreExecutionState(RoutinesFacadeExecutionState executionStateToRestore) {
-		executionState.setExecutionState(executionStateToRestore.reactionExecutionState, executionStateToRestore.caller)
+	
+	override _dropLastCaller() {
+		callerStack.pop()
 	}
-
+	
 }

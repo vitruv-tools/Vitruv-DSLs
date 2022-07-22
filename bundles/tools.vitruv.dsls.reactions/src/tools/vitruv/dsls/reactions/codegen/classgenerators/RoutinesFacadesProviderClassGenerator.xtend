@@ -8,7 +8,6 @@ import tools.vitruv.dsls.common.ClassNameGenerator
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment
 import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutinesFacadesProvider
-import tools.vitruv.dsls.reactions.runtime.state.RoutinesFacadeExecutionState
 import tools.vitruv.dsls.reactions.runtime.structure.ReactionsImportPath
 
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators.*
@@ -46,21 +45,18 @@ class RoutinesFacadesProviderClassGenerator extends ClassGenerator {
 				visibility = JvmVisibility.PUBLIC;
 				val reactionsImportPathParameter = generateParameter("reactionsImportPath",
 					typeRef(ReactionsImportPath));
-				val sharedExecutionStateParameter = generateParameter("sharedExecutionState",
-					typeRef(RoutinesFacadeExecutionState));
 				parameters += reactionsImportPathParameter;
-				parameters += sharedExecutionStateParameter;
 				body = '''
 					switch(«reactionsImportPathParameter.name».getPathString()) {
 					«FOR importHierarchyEntry : reactionsSegment.importHierarchyRoutinesFacades.entrySet»
 						«val importPath = importHierarchyEntry.key»
 						«val routinesFacadeClassNameGenerator = importHierarchyEntry.value»
 							case "«importPath.pathString»": {
-								return new «routinesFacadeClassNameGenerator.qualifiedName»(this, «reactionsImportPathParameter.name», «sharedExecutionStateParameter.name»);
+								return new «routinesFacadeClassNameGenerator.qualifiedName»(this, «reactionsImportPathParameter.name»);
 							}
 					«ENDFOR»
 						default: {
-						throw new IllegalArgumentException("Unexpected import path: " + «reactionsImportPathParameter.name».getPathString());
+							throw new IllegalArgumentException("Unexpected import path: " + «reactionsImportPathParameter.name».getPathString());
 						}
 					}
 				'''

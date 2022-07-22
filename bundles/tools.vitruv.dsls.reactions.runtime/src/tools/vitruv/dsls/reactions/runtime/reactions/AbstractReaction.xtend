@@ -22,17 +22,12 @@ abstract class AbstractReaction extends CallHierarchyHaving implements Reaction 
 
 	override execute(EChange change, ReactionExecutionState reactionExecutionState) {
 		this.executionState = reactionExecutionState
-
-		// set the reaction execution state and caller to use for all following routine calls:
-		// note: reactions are executed one after the other, therefore we don't need to capture/restore the facade's previous execution state here,
-		// resetting it after execution is sufficient
-		routinesFacade._setReactionExecutionState(executionState, this)
-
+		routinesFacade._setExecutionState(executionState)
+		routinesFacade._pushCaller(this)
 		try {
 			executeReaction(change)
 		} finally {
-			// reset the routines facade execution state:
-			routinesFacade._resetExecutionState()
+			routinesFacade._dropLastCaller()
 		}
 	}
 
