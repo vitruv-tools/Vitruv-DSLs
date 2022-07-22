@@ -15,6 +15,7 @@ import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsImpo
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsElementsCompletionChecker.isReferenceable
 import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutinesFacade
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
+import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 
 class RoutinesFacadesProviderClassGenerator extends ClassGenerator {
 
@@ -39,7 +40,11 @@ class RoutinesFacadesProviderClassGenerator extends ClassGenerator {
 	override generateBody() {
 		generatedClass => [
 			superTypes += typeRef(AbstractRoutinesFacadesProvider);
-			members += reactionsSegment.toConstructor()[];
+			members += reactionsSegment.toConstructor()[
+				val executionStateParameter = generateParameter(new AccessibleElement("executionState", ReactionExecutionState))
+				parameters += executionStateParameter
+				body = '''super(«executionStateParameter.name»);'''
+			];
 
 			// create routines facades for the whole reactions import hierarchy:
 			members += reactionsSegment.toMethod("createRoutinesFacade", typeRef(AbstractRoutinesFacade)) [

@@ -5,6 +5,7 @@ import java.util.Map
 import tools.vitruv.dsls.reactions.runtime.structure.ReactionsImportPath
 
 import static com.google.common.base.Preconditions.*
+import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 
 /**
  * A RoutinesFacadesProvider which caches created routines facades.
@@ -17,7 +18,10 @@ abstract class AbstractRoutinesFacadesProvider implements RoutinesFacadesProvide
 	// the routines facades that were created so far:
 	val Map<ReactionsImportPath, AbstractRoutinesFacade> routinesFacades = new HashMap<ReactionsImportPath, AbstractRoutinesFacade>()
 
-	new() {
+	val ReactionExecutionState executionState
+	
+	new(ReactionExecutionState executionState) {
+		this.executionState = executionState
 	}
 
 	// creates the specified routines facade:
@@ -31,6 +35,7 @@ abstract class AbstractRoutinesFacadesProvider implements RoutinesFacadesProvide
 		// create the routines facade:
 		routinesFacade = this.createRoutinesFacade(reactionsImportPath) as T
 		if (routinesFacade !== null) {
+			routinesFacade._setExecutionState(executionState)
 			// store created routines facade:
 			routinesFacades.put(reactionsImportPath, routinesFacade)
 			return routinesFacade
