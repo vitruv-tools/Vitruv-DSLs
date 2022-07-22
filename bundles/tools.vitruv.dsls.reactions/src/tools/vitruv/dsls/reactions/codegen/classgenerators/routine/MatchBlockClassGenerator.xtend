@@ -251,10 +251,9 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 		val methodName = "getCorrespondingModelElementsPrecondition" +
 			(elementRetrieve.retrieveOrRequireAbscenceMethodSuffix ?: counterGetCorrespondenceSource++)
 		return elementRetrieve.precondition?.generateAndAddMethod(methodName, typeRef(Boolean.TYPE)) [
-			val elementParameter = generateModelElementParameter(elementRetrieve.elementType,
-				name ?: RETRIEVAL_PRECONDITION_METHOD_TARGET)
-			parameters += generateAccessibleElementsParameters(currentlyAccessibleElements)
-			parameters += elementParameter
+			val element = new AccessibleElement(name ?: RETRIEVAL_PRECONDITION_METHOD_TARGET, elementRetrieve.elementType.javaClassName)
+			parameters += generateParameters(currentlyAccessibleElements)
+			parameters += generateParameter(element)
 			body = elementRetrieve.precondition.code
 		];
 	}

@@ -50,7 +50,7 @@ class RoutineClassGenerator extends ClassGenerator {
 		}
 		this.routine = routine
 		this.routineClassNameGenerator = routine.routineClassNameGenerator
-		this.inputElements = routine.getInputElements(routine.input.modelInputElements, routine.input.javaInputElements)
+		this.inputElements = getInputElements(routine.input.modelInputElements, routine.input.javaInputElements)
 		this.inputValuesClass = if (hasInputValues) {
 			generateElementsContainerClass(INPUT_VALUES_SIMPLE_CLASS_NAME, inputElements)
 		}
@@ -120,8 +120,8 @@ class RoutineClassGenerator extends ClassGenerator {
 			visibility = JvmVisibility.PUBLIC
 			val routinesFacadeParameter = generateRoutinesFacadeParameter(routine.reactionsSegment)
 			val executionStateParameter = generateReactionExecutionStateParameter()
-			val calledByParameter = generateParameter("calledBy", typeRef(CallHierarchyHaving))
-			val inputParameters = routine.generateMethodInputParameters(inputElements)
+			val calledByParameter = generateParameter(new AccessibleElement("calledBy", CallHierarchyHaving))
+			val inputParameters = routine.generateParameters(inputElements)
 			parameters += routinesFacadeParameter
 			parameters += executionStateParameter
 			parameters += calledByParameter
