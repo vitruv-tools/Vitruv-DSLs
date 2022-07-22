@@ -1,4 +1,4 @@
-import tools.vitruv.applications.demo.insurancefamilies.insurance2families.FamilyRole;
+import tools.vitruv.applications.demo.insurancefamilies.insurance2families.PositionPreference;
 import edu.kit.ipd.sdq.metamodels.families.Family
 import edu.kit.ipd.sdq.metamodels.insurance.Gender
 
@@ -81,10 +81,10 @@ routine insertAsParentOrChild(insurance::InsuranceClient insertedClient) {
 	}
 	action {
 		call {
-			val FamilyRole role = askUserWhetherClientIsParentOrChild(userInteractor, insertedClient)
+			val PositionPreference role = askUserWhetherClientIsParentOrChild(userInteractor, insertedClient)
 			switch role {
-				case FamilyRole.Child: createChild(insertedClient)
-				case FamilyRole.Parent: createParent(insertedClient)
+				case PositionPreference.Child: createChild(insertedClient)
+				case PositionPreference.Parent: createParent(insertedClient)
 			}
 		}
 	}
@@ -268,11 +268,12 @@ routine reactToLastnameChange(insurance::InsuranceClient renamedClient, String o
 					// If the member is not alone move it to
 					// a different family depending on lastname and supposed role
 					val boolean wasChildBeforeRenaming = correspondingMember.familySon === oldFamily || correspondingMember.familyDaughter === oldFamily
-					val boolean isSupposedToBeAChild = askUserWhetherClientIsParentOrChildDuringRenaming(userInteractor, oldFullname, renamedClient.name, wasChildBeforeRenaming) == FamilyRole.Child
-					if (isSupposedToBeAChild) {
-						insertExistingMemberIntoUserChosenFamilyAsChild(renamedClient)
-					} else {
-						insertExistingMemberIntoUserChosenFamilyAsParent(renamedClient)
+					val PositionPreference positionPreference = askUserWhetherClientIsParentOrChildDuringRenaming(userInteractor, oldFullname, renamedClient.name, wasChildBeforeRenaming)
+					switch(positionPreference){
+						case Child:
+							insertExistingMemberIntoUserChosenFamilyAsChild(renamedClient)
+						case Parent:
+							insertExistingMemberIntoUserChosenFamilyAsParent(renamedClient)
 					}
 				}
 			}

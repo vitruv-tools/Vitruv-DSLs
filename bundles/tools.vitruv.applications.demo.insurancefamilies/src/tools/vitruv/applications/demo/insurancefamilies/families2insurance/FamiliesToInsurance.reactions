@@ -208,6 +208,6 @@ routine deleteFamilyIfEmpty(families::Family family) {
 		check family.members.size == 0
 	}
 	action {
-		call family.register.families.^remove(family)
+		delete family
 	}
 }

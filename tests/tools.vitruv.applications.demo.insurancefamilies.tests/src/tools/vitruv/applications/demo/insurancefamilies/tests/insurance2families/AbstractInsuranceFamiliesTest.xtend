@@ -1,6 +1,8 @@
 package tools.vitruv.applications.demo.insurancefamilies.tests.insurance2families;
 
-import edu.kit.ipd.sdq.metamodels.insurance.InsuranceClient
+import edu.kit.ipd.sdq.metamodels.families.FamiliesFactory
+import edu.kit.ipd.sdq.metamodels.families.Family
+import edu.kit.ipd.sdq.metamodels.insurance.Gender
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceDatabase
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceFactory
 import java.nio.file.Path
@@ -11,29 +13,21 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.junit.jupiter.api.BeforeEach
 import tools.vitruv.applications.demo.insurancefamilies.tests.util.InsuranceFamiliesViewFactory
+import tools.vitruv.change.interaction.UserInteractionOptions.NotificationType
+import tools.vitruv.change.propagation.ChangePropagationMode
 import tools.vitruv.framework.views.View
+import tools.vitruv.testutils.TestUserInteraction.MultipleChoiceInteractionDescription
 import tools.vitruv.testutils.ViewBasedVitruvApplicationTest
 
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertTrue
-import static tools.vitruv.testutils.matchers.ModelMatchers.*
-
+import static tools.vitruv.applications.demo.insurancefamilies.tests.util.CreatorsUtil.createInsuranceClient
+import static tools.vitruv.applications.demo.insurancefamilies.tests.util.FamiliesQueryUtil.claimFamilyRegister
 import static tools.vitruv.applications.demo.insurancefamilies.tests.util.InsuranceQueryUtil.claimInsuranceDatabase
 import static tools.vitruv.applications.demo.insurancefamilies.tests.util.TransformationDirectionConfiguration.configureUnidirectionalExecution
-import edu.kit.ipd.sdq.metamodels.families.Family
-import tools.vitruv.change.propagation.ChangePropagationMode
-import edu.kit.ipd.sdq.metamodels.insurance.Gender
-import tools.vitruv.testutils.TestUserInteraction.MultipleChoiceInteractionDescription
-import edu.kit.ipd.sdq.metamodels.families.FamiliesFactory
-import static tools.vitruv.applications.demo.insurancefamilies.tests.util.FamiliesQueryUtil.claimFamilyRegister
-import tools.vitruv.change.interaction.UserInteractionOptions.NotificationType
-import edu.kit.ipd.sdq.metamodels.families.Member
-
-enum PositionPreference {
-	Parent,
-	Child
-}
+import static tools.vitruv.testutils.matchers.ModelMatchers.*
+import tools.vitruv.applications.demo.insurancefamilies.insurance2families.PositionPreference
 
 enum FamilyPreference {
 	New,
@@ -96,24 +90,6 @@ abstract class AbstractInsuranceFamiliesTest extends ViewBasedVitruvApplicationT
 			insuranceDatabaseInitialization.apply(insuranceDatabase)
 			createAndRegisterRoot(insuranceDatabase,  getProjectModelPath("insurance", INSURANCE_MODEL_FILE_EXTENSION).uri)
 		]
-	}
-	
-	protected def Family createFamily((Family)=> void familyInitalization){
-		var family = FamiliesFactory.eINSTANCE.createFamily
-		familyInitalization.apply(family)
-		return family
-	}
-	
-	protected def Member createFamilyMember((Member)=> void familyMemberInitalization){
-		var member = FamiliesFactory.eINSTANCE.createMember
-		familyMemberInitalization.apply(member)
-		return member
-	}
-	
-	protected def InsuranceClient createInsuranceClient((InsuranceClient)=> void insuranceClientInitialization) {
-		var insuranceClient = InsuranceFactory.eINSTANCE.createInsuranceClient
-		insuranceClientInitialization.apply(insuranceClient)
-		return insuranceClient
 	}
 	
 	protected def String fullName(String firstName, String lastName) {

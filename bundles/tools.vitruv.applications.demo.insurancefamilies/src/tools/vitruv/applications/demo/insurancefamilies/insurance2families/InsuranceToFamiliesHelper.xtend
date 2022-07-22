@@ -10,7 +10,7 @@ import edu.kit.ipd.sdq.metamodels.insurance.Gender
 import tools.vitruv.change.interaction.UserInteractor
 import tools.vitruv.change.interaction.UserInteractionOptions.WindowModality
 
-enum FamilyRole {
+enum PositionPreference {
 	Parent,
 	Child
 }
@@ -55,7 +55,7 @@ class InsuranceToFamiliesHelper {
 		userInteractor.notificationDialogBuilder.message(message.toString()).title("Insurance Client has been replaced in his original family").startInteraction()
 	}
 	
-	def static FamilyRole askUserWhetherClientIsParentOrChild(UserInteractor userInteractor, InsuranceClient insuranceClient) {
+	def static PositionPreference askUserWhetherClientIsParentOrChild(UserInteractor userInteractor, InsuranceClient insuranceClient) {
 
 		val StringBuilder parentOrChildMessageBuilder = new StringBuilder()
 			.append("You have inserted ")
@@ -73,7 +73,7 @@ class InsuranceToFamiliesHelper {
 			.windowModality(WindowModality.MODAL)
 			.startInteraction()
 
-		return if (parentOrChildSelection == parentOrChildOptions.toList.indexOf("Child")) FamilyRole.Child else FamilyRole.Parent
+		return if (parentOrChildSelection == parentOrChildOptions.toList.indexOf("Child")) PositionPreference.Child else PositionPreference.Parent
 	}
 	
 	def static Family askUserWhichFamilyToInsertTheMemberIn(UserInteractor userInteractor, InsuranceClient newClient, Iterable<Family> selectableFamilies) {
@@ -100,7 +100,7 @@ class InsuranceToFamiliesHelper {
 		return if (whichFamilyIndex === 0) null else selectableFamilies.get(whichFamilyIndex-1)
 	}
 	
-	def static FamilyRole askUserWhetherClientIsParentOrChildDuringRenaming(UserInteractor userInteractor, String oldFullname, String newFullname, boolean wasChildBefore) {
+	def static PositionPreference askUserWhetherClientIsParentOrChildDuringRenaming(UserInteractor userInteractor, String oldFullname, String newFullname, boolean wasChildBefore) {
 
 		val StringBuilder parentOrChildMessageBuilder = new StringBuilder()
 			.append("You have renamed ")
@@ -122,7 +122,7 @@ class InsuranceToFamiliesHelper {
 			.windowModality(WindowModality.MODAL)
 			.startInteraction()
 
-		return if (parentOrChildSelection == parentOrChildOptions.toList.indexOf("Child")) FamilyRole.Child else FamilyRole.Parent
+		return if (parentOrChildSelection == parentOrChildOptions.toList.indexOf("Child")) PositionPreference.Child else PositionPreference.Parent
 	}
 	
 	def static String stringifyFamily(Family family) {

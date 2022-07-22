@@ -10,6 +10,10 @@ import static tools.vitruv.applications.demo.insurancefamilies.tests.util.Famili
 import static tools.vitruv.applications.demo.insurancefamilies.tests.util.FamiliesQueryUtil.claimFamilyRegister
 import static tools.vitruv.applications.demo.insurancefamilies.tests.util.InsuranceQueryUtil.claimInsuranceClient
 import static tools.vitruv.applications.demo.insurancefamilies.tests.util.InsuranceQueryUtil.claimInsuranceDatabase
+import static tools.vitruv.applications.demo.insurancefamilies.tests.util.CreatorsUtil.createFamily
+import static tools.vitruv.applications.demo.insurancefamilies.tests.util.CreatorsUtil.createFamilyMember
+import static tools.vitruv.applications.demo.insurancefamilies.tests.util.CreatorsUtil.createInsuranceClient
+import tools.vitruv.applications.demo.insurancefamilies.insurance2families.PositionPreference
 
 class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {	
 	

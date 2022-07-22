@@ -20,11 +20,15 @@ class FamiliesToInsuranceHelper {
 	 *  @return Name that the corresponding Insurance Client from the insurance model should have.
 	 */
 	def static String getInsuranceClientName(Member member) {
-		// TODO: handling of empty/invalid/... names?
-		return member.firstName + " " + member.family.lastName
+		val name = new StringBuilder()
+		name.append(member.firstName)
+		if(member.family.lastName !== null && member.family.lastName !== ""){
+			name.append(" " + member.family.lastName)
+		}
+		
+		return name.toString()
 	}
-
-	// TODO: check/rework name handling
+	
 	/**Checks if a members firstname is <code>null</code>, empty or contains escape sequences.
 	 * @param member The member whose firstname is checked
 	 * @throws <code>IllegalArgumentException</code> if firstname is not valid
