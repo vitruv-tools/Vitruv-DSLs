@@ -14,6 +14,7 @@ import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGen
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsImportsHelper.*
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsElementsCompletionChecker.isReferenceable
 import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutinesFacade
+import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 
 class RoutinesFacadesProviderClassGenerator extends ClassGenerator {
 
@@ -43,8 +44,7 @@ class RoutinesFacadesProviderClassGenerator extends ClassGenerator {
 			// create routines facades for the whole reactions import hierarchy:
 			members += reactionsSegment.toMethod("createRoutinesFacade", typeRef(AbstractRoutinesFacade)) [
 				visibility = JvmVisibility.PUBLIC;
-				val reactionsImportPathParameter = generateParameter("reactionsImportPath",
-					typeRef(ReactionsImportPath));
+				val reactionsImportPathParameter = generateParameter(new AccessibleElement("reactionsImportPath", ReactionsImportPath));
 				parameters += reactionsImportPathParameter;
 				body = '''
 					switch(«reactionsImportPathParameter.name».getPathString()) {

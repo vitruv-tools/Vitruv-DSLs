@@ -20,7 +20,7 @@ import org.eclipse.xtext.common.types.JvmVisibility
 abstract class ClassGenerator extends TypesBuilderExtensionProvider {
 	protected def generateAccessibleElementsParameters(EObject sourceObject,
 		Iterable<AccessibleElement> accessibleElements) {
-			sourceObject.generateMethodInputParameters(accessibleElements)
+			sourceObject.generateParameters(accessibleElements)
 	}
 
 	new(TypesBuilderExtensionProvider typesBuilderExtensionProvider) {
@@ -42,7 +42,7 @@ abstract class ClassGenerator extends TypesBuilderExtensionProvider {
 	
 	protected def generateElementsContainerClass(String qualifiedClassName, Iterable<AccessibleElement> elements) {
 		generateUnassociatedClass(qualifiedClassName) [
-			val retrievedElementParameters = generateMethodInputParameters(elements)
+			val retrievedElementParameters = generateParameters(elements)
 			members += retrievedElementParameters.mapFixed[
 				toField(name, parameterType) => [
 					final = true
