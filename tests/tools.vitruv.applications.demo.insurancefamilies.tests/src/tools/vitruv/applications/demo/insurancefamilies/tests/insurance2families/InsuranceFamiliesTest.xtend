@@ -32,12 +32,13 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 		]
 	}
 	
+	@Test
 	def void testDeleteInsuranceDatabase() {
 		createEmptyInsuranceDatabase()
 		
 		changeInsuranceView[
 			var insuranceDatabase = claimInsuranceDatabase(it)
-			deleteAndUnregisterRoot(insuranceDatabase)
+			deleteRoot(insuranceDatabase)
 		]
 		
 		validateFamilyView[

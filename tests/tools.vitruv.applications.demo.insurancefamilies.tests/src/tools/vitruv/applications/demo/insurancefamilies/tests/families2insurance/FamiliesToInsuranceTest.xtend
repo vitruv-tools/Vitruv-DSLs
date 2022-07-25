@@ -28,14 +28,13 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 
 	// === TEST: FAMILY-REGISTER ===
 	
-	// TODO: fix stackOverflow
 	@Test
 	def void testDeleteFamilyRegister() {
 		createOneCompleteFamily()
 
 		changeFamilyRegisterView[
 			var familyRegister = claimFamilyRegister(it)
-			deleteAndUnregisterRoot(familyRegister)
+			deleteRoot(familyRegister)
 		]
 
 		validateFamilyView[

@@ -28,6 +28,7 @@ import static tools.vitruv.applications.demo.insurancefamilies.tests.util.Insura
 import static tools.vitruv.applications.demo.insurancefamilies.tests.util.TransformationDirectionConfiguration.configureUnidirectionalExecution
 import static tools.vitruv.testutils.matchers.ModelMatchers.*
 import tools.vitruv.applications.demo.insurancefamilies.insurance2families.PositionPreference
+import org.eclipse.emf.ecore.util.EcoreUtil
 
 enum FamilyPreference {
 	New,
@@ -78,8 +79,8 @@ abstract class AbstractInsuranceFamiliesTest extends ViewBasedVitruvApplicationT
 		view.registerRoot(rootObject, persistenceUri)
 	}
 	
-	protected def void deleteAndUnregisterRoot(View view, EObject rootObject) {
-		view.deleteAndUnregisterRoot(rootObject)
+	protected def void deleteRoot(View view, EObject rootObject) {
+		EcoreUtil.delete(rootObject)
 	}
 	
 	// === creators ===

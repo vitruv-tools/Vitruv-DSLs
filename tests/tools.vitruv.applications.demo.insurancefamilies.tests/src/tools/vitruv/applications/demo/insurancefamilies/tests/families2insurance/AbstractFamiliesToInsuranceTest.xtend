@@ -29,6 +29,7 @@ import static tools.vitruv.applications.demo.insurancefamilies.tests.util.Famili
 import static tools.vitruv.applications.demo.insurancefamilies.tests.util.InsuranceQueryUtil.claimInsuranceDatabase
 import static tools.vitruv.applications.demo.insurancefamilies.tests.util.TransformationDirectionConfiguration.configureUnidirectionalExecution
 import static tools.vitruv.testutils.matchers.ModelMatchers.*
+import org.eclipse.emf.ecore.util.EcoreUtil
 
 abstract class AbstractFamiliesToInsuranceTest extends ViewBasedVitruvApplicationTest {
  	protected var extension InsuranceFamiliesViewFactory viewFactory
@@ -80,8 +81,8 @@ abstract class AbstractFamiliesToInsuranceTest extends ViewBasedVitruvApplicatio
 		view.registerRoot(rootObject, persistenceUri)
 	}
 	
-	protected def void deleteAndUnregisterRoot(View view, EObject rootObject) {
-		view.deleteAndUnregisterRoot(rootObject)
+	protected def void deleteRoot(View view, EObject rootObject) {
+		EcoreUtil.delete(rootObject)
 	}
 	
 	// === creators ===
