@@ -1,4 +1,4 @@
-package tools.vitruv.dsls.reactions.codegen.classgenerators.routine
+package tools.vitruv.dsls.reactions.codegen.classgenerators.steps
 
 import org.eclipse.emf.ecore.EObject
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
