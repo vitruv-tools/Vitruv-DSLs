@@ -10,15 +10,15 @@ import tools.vitruv.dsls.reactions.runtime.helper.PersistenceHelper
 import tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper
 import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
 import tools.vitruv.dsls.reactions.runtime.structure.Loggable
-import tools.vitruv.change.correspondence.CorrespondenceModel
-import tools.vitruv.change.interaction.UserInteractor
 import tools.vitruv.change.propagation.ResourceAccess
 import org.eclipse.emf.common.util.URI
 import static com.google.common.base.Preconditions.checkState
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
+import org.eclipse.xtend.lib.annotations.Accessors
 
 abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 	val AbstractRoutinesFacade routinesFacade
+	@Accessors(PROTECTED_GETTER)
 	extension val ReactionExecutionState executionState
 
 	new(AbstractRoutinesFacade routinesFacade, ReactionExecutionState executionState, CallHierarchyHaving calledBy) {
@@ -30,14 +30,6 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 	// generic return type for convenience; the requested type has to match the type of the facade provided during construction
 	protected def <T extends AbstractRoutinesFacade> T getRoutinesFacade() {
 		return routinesFacade as T
-	}
-
-	protected def UserInteractor getUserInteractor() {
-		return executionState.userInteractor
-	}
-
-	protected def CorrespondenceModel getCorrespondenceModel() {
-		return executionState.correspondenceModel
 	}
 
 	override boolean execute() {
