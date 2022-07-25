@@ -20,6 +20,8 @@ import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
  * that returns the created elements.
  */
 class CreateBlockClassGenerator extends StepExecutionClassGenerator {
+	static val PREDEFINED_CREATE_OBJECT_METHOD_NAME = "createObject" 
+	
 	static val MISSING_NAME = "/* Name missing */"
 	static val MISSING_TYPE = "/* Type missing */"
 	static val CREATED_ELEMENTS_SIMPLE_CLASS_NAME = "CreatedValues"
@@ -104,9 +106,10 @@ class CreateBlockClassGenerator extends StepExecutionClassGenerator {
 		val affectedElementClass = elementCreate.metaclass
 		val createdClassFactory = affectedElementClass?.EPackage?.EFactoryInstance?.runtimeClassName
 		return '''
-		«affectedElementClass.javaClassName» «elementCreate.name ?: MISSING_NAME» = «createdClassFactory?: 
-			MISSING_TYPE».eINSTANCE.create«affectedElementClass?.name?: MISSING_TYPE»();
-		notifyObjectCreated(«elementCreate.name ?: MISSING_NAME»);'''
+			«affectedElementClass.javaClassName» «elementCreate.name ?: MISSING_NAME» = «PREDEFINED_CREATE_OBJECT_METHOD_NAME»(() -> {
+				return «createdClassFactory?: MISSING_TYPE».eINSTANCE.create«affectedElementClass?.name?: MISSING_TYPE»();
+			});
+		'''
 	}
 
 	override generateStepExecutionCode(
