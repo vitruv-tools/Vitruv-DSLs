@@ -563,11 +563,18 @@ class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 		}
 
 		def XExpression execute(Function<TypeProvider, XExpression> expressionBuilder) {
-			expressionBlock.whenJvmTypes [ expressions += extractExpressions(expressionBuilder.apply(typeProvider))]
+			val placeholderExpression = XbaseFactory.eINSTANCE.createXBlockExpression
+			expressionBlock.expressions += placeholderExpression
+			expressionBlock.whenJvmTypes [
+				expressions.addAll(expressions.indexOf(placeholderExpression), extractExpressions(expressionBuilder.apply(typeProvider)))
+				expressions -= placeholderExpression
+			]
+			return expressionBlock
 		}
 
 		def XExpression call(Function<TypeProvider, XExpression> expressionBuilder) {
 			execute(expressionBuilder)
+			return expressionBlock
 		}
 
 		def void call(FluentRoutineBuilder routineBuilder, RoutineCallParameter... parameters) {
