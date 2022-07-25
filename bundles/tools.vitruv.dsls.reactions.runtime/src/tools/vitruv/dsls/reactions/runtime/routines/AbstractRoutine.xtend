@@ -32,10 +32,6 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 		return routinesFacade as T
 	}
 
-	protected def ReactionExecutionState getExecutionState() {
-		return executionState
-	}
-
 	protected def UserInteractor getUserInteractor() {
 		return executionState.userInteractor
 	}
@@ -57,7 +53,7 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 	protected abstract def boolean executeRoutine() throws IOException
 
 	static class Match extends Loggable {
-		protected final extension ReactionExecutionState executionState
+		protected val extension ReactionExecutionState executionState
 
 		new(ReactionExecutionState executionState) {
 			this.executionState = executionState
@@ -92,7 +88,7 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 	}
 
 	static class Create extends Loggable {
-		protected final extension ReactionExecutionState executionState
+		protected val extension ReactionExecutionState executionState
 
 		new(ReactionExecutionState executionState) {
 			this.executionState = executionState
@@ -110,7 +106,7 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 	}
 
 	static class Update extends Loggable {
-		protected final extension ReactionExecutionState executionState
+		protected val extension ReactionExecutionState executionState
 
 		new(ReactionExecutionState executionState) {
 			this.executionState = executionState

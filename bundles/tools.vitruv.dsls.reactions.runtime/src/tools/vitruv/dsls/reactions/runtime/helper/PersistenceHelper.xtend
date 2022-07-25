@@ -12,13 +12,6 @@ import edu.kit.ipd.sdq.activextendannotations.Utility
 
 @Utility
 class PersistenceHelper {
-	static def EObject getModelRoot(EObject modelObject) {
-		var result = modelObject
-		while (result.eContainer !== null) {
-			result = result.eContainer
-		}
-		return result
-	}
 
 	private static def URI getURIOfElementProject(EObject element) {
 		val elementUri = element.eResource.URI
