@@ -9,9 +9,9 @@ import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGen
 import static extension tools.vitruv.dsls.reactions.codegen.changetyperepresentation.ChangeTypeRepresentationExtractor.*
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
 import tools.vitruv.dsls.reactions.codegen.changetyperepresentation.ChangeTypeRepresentation
-import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.StepExecutionClassGenerator
-import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.UpdateBlockClassGenerator
-import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.EmptyStepExecutionClassGenerator
+import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.StepExecutionClassGenerator
+import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.UpdateBlockClassGenerator
+import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.EmptyStepExecutionClassGenerator
 import org.eclipse.xtend2.lib.StringConcatenationClient
 import static com.google.common.base.Preconditions.checkArgument
 import tools.vitruv.dsls.reactions.runtime.reactions.AbstractReaction

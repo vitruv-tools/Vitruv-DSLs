@@ -1,4 +1,4 @@
-package tools.vitruv.dsls.reactions.codegen.classgenerators.routine
+package tools.vitruv.dsls.reactions.codegen.classgenerators.steps
 
 import tools.vitruv.dsls.reactions.codegen.classgenerators.ClassGenerator
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider

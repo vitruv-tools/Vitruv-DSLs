@@ -12,12 +12,12 @@ import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
 import tools.vitruv.dsls.common.ClassNameGenerator
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsElementsCompletionChecker.isReferenceable
-import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.CreateBlockClassGenerator
-import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.MatchBlockClassGenerator
-import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.UpdateBlockClassGenerator
+import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.CreateBlockClassGenerator
+import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.MatchBlockClassGenerator
+import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.UpdateBlockClassGenerator
 import org.eclipse.xtend2.lib.StringConcatenationClient
-import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.EmptyStepExecutionClassGenerator
-import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.StepExecutionClassGenerator
+import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.EmptyStepExecutionClassGenerator
+import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.StepExecutionClassGenerator
 import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
 
 class RoutineClassGenerator extends ClassGenerator {
