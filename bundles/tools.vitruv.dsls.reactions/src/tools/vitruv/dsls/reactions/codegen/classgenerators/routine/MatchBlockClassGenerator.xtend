@@ -121,9 +121,9 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 		val retrieveStatementArguments = getGeneralGetCorrespondingElementStatementArguments(elementAbscence, null,
 			currentlyAccessibleElements)
 		val StringConcatenationClient statements = '''
-			if (!getCorrespondingElements(
+			if (hasCorrespondingElements(
 				«retrieveStatementArguments»
-			).isEmpty()) {
+			)) {
 				return null;
 			}
 		'''
@@ -144,7 +144,7 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 	private def dispatch StringConcatenationClient createStatements(RetrieveManyModelElements retrieveElement,
 		String name, String typeName, StringConcatenationClient generalArguments) {
 		val StringConcatenationClient statement = '''
-			«IF !name.nullOrEmpty»«List»<«typeName»> «name» = «ENDIF»getCorrespondingElements(
+			«IF !name.nullOrEmpty»«Iterable»<«typeName»> «name» = «ENDIF»getCorrespondingElements(
 				«generalArguments»
 			);
 		'''
@@ -154,10 +154,10 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 	private def dispatch StringConcatenationClient createStatements(RetrieveOneModelElement retrieveElement,
 		String name, String typeName, StringConcatenationClient generalArguments) {
 		val retrieveStatement = '''
-		getCorrespondingElement(
-			«generalArguments», 
-			«retrieveElement.asserted» // asserted
-			)''';
+			getCorrespondingElement(
+				«generalArguments», 
+				«retrieveElement.asserted» // asserted
+			)'''
 		if (name.nullOrEmpty) {
 			if (!retrieveElement.optional) {
 				return '''if («retrieveStatement» == null) {
@@ -185,13 +185,13 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 		val checkMethod = generateMethodMatcherPrecondition(checkStatement, currentlyAccessibleElements)
 		val checkMethodCall = checkMethod?.userExecutionMethodCallString
 		return '''
-		if (!«checkMethodCall») {
-			«IF checkStatement.asserted»
-				throw new «IllegalStateException»();
-			«ELSE»
-				return null;
-			«ENDIF»
-		}''';
+			if (!«checkMethodCall») {
+				«IF checkStatement.asserted»
+					throw new «IllegalStateException»();
+				«ELSE»
+					return null;
+				«ENDIF»
+			}'''
 	}
 
 	private def StringConcatenationClient getTagString(RetrieveOrRequireAbscenceOfModelElement retrieveElement,
@@ -214,9 +214,9 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 		val preconditionMethod = generateMethodCorrespondencePrecondition(retrieveElement, name,
 			currentlyAccessibleElements)
 		return '''(«affectedElementClass» _element) -> «preconditionMethod.simpleName»(« //
-		preconditionMethod.generateMethodParameterCallList.toString.replace(name?: 
-			RETRIEVAL_PRECONDITION_METHOD_TARGET, "_element"
-		)»)'''
+			preconditionMethod.generateMethodParameterCallList.toString.replace(name?: 
+				RETRIEVAL_PRECONDITION_METHOD_TARGET, "_element"
+			)»)'''
 	}
 
 	private def StringConcatenationClient getGeneralGetCorrespondingElementStatementArguments(
@@ -230,10 +230,10 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 		val correspondenceSourceMethodCall = correspondenceSourceMethod?.userExecutionMethodCallString
 		val tagString = getTagString(retrieveElement, currentlyAccessibleElements)
 		return '''
-		«correspondenceSourceMethodCall», // correspondence source supplier
-		«affectedElementClass ?: MISSING_TYPE».class,
-		«correspondingElementPreconditionChecker», // correspondence precondition checker
-		«tagString»'''
+			«correspondenceSourceMethodCall», // correspondence source supplier
+			«affectedElementClass ?: MISSING_TYPE».class,
+			«correspondingElementPreconditionChecker», // correspondence precondition checker
+			«tagString»'''
 	}
 
 	private def JvmOperation generateMethodGetRetrieveTag(Taggable taggable,
@@ -328,7 +328,7 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 					return new AccessibleElement(retrieveElement.name, retrieveElementType)
 				}
 			RetrieveManyModelElements:
-				return new AccessibleElement(retrieveElement.name, List.name, retrieveElementType)
+				return new AccessibleElement(retrieveElement.name, Iterable.name, retrieveElementType)
 		}
 
 	}

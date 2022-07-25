@@ -1,7 +1,5 @@
 package tools.vitruv.dsls.reactions.runtime.helper
 
-import java.util.ArrayList
-import java.util.List
 import org.apache.log4j.Logger
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.xbase.lib.Functions.Function1
@@ -17,8 +15,8 @@ class ReactionsCorrespondenceHelper {
 		return correspondenceModel.getEditableView(ReactionsCorrespondenceModelViewFactory.instance)
 	}
 
-	static def removeCorrespondences(CorrespondenceModel correspondenceModel, EObject source,
-		EObject target, String tag) {
+	static def removeCorrespondences(CorrespondenceModel correspondenceModel, EObject source, EObject target,
+		String tag) {
 		logger.trace("Removing correspondence between " + source + " and " + target + " with tag: " + tag)
 		val correspondenceModelView = correspondenceModel.reactionsView
 		correspondenceModelView.removeCorrespondencesBetween(#[source], #[target], tag)
@@ -32,21 +30,20 @@ class ReactionsCorrespondenceHelper {
 		return correspondence
 	}
 
-	static def <T> Iterable<T> getCorrespondingObjectsOfType(CorrespondenceModel correspondenceModel, EObject source,
-		String expectedTag, Class<T> type) {
-		return correspondenceModel.reactionsView.getCorrespondingEObjects(#[source], expectedTag).flatten.filter(type)
-	}
-
-	static def <T> List<T> getCorrespondingModelElements(EObject sourceElement, Class<T> affectedElementClass,
-		String expectedTag, Function1<T, Boolean> preconditionMethod, CorrespondenceModel correspondenceModel) {
+	static def <T> Iterable<T> getCorrespondingElements(CorrespondenceModel correspondenceModel, EObject sourceElement,
+		Class<T> expectedType, String expectedTag) {
 		if (sourceElement === null) {
 			return #[]
 		}
+		return correspondenceModel.reactionsView.getCorrespondingEObjects(#[sourceElement], expectedTag).flatten.filter(
+			expectedType)
+	}
+
+	static def <T> Iterable<T> getCorrespondingElements(CorrespondenceModel correspondenceModel, EObject sourceElement,
+		Class<T> expectedType, String expectedTag, Function1<T, Boolean> preconditionMethod) {
+		val correspondingObjects = correspondenceModel.getCorrespondingElements(sourceElement, expectedType,
+			expectedTag)
 		val nonNullPreconditionMethod = if(preconditionMethod !== null) preconditionMethod else [T input|true]
-		val targetElements = new ArrayList<T>()
-		val correspondingObjects = getCorrespondingObjectsOfType(correspondenceModel, sourceElement, expectedTag,
-			affectedElementClass)
-		targetElements += correspondingObjects.filterNull.filter(nonNullPreconditionMethod)
-		return targetElements
+		return correspondingObjects.filterNull.filter(nonNullPreconditionMethod)
 	}
 }

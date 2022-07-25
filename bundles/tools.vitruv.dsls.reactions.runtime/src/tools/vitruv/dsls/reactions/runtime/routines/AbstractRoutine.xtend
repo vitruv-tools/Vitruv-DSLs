@@ -1,13 +1,14 @@
 package tools.vitruv.dsls.reactions.runtime.routines
 
 import java.io.IOException
-import java.util.List
 import java.util.function.Function
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.util.EcoreUtil
 import tools.vitruv.dsls.reactions.runtime.helper.PersistenceHelper
-import tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper
+import static extension tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper.getCorrespondingElements
+import static extension tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper.addCorrespondence
+import static extension tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper.removeCorrespondences
 import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
 import tools.vitruv.dsls.reactions.runtime.structure.Loggable
 import tools.vitruv.change.propagation.ResourceAccess
@@ -51,14 +52,24 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 			this.executionState = executionState
 		}
 
-		protected def <T extends EObject> List<T> getCorrespondingElements(
+		protected def <T extends EObject> boolean hasCorrespondingElements(
 			EObject correspondenceSource,
 			Class<T> elementClass,
 			Function<T, Boolean> correspondencePreconditionMethod,
 			String tag
 		) {
-			val retrievedElements = ReactionsCorrespondenceHelper.getCorrespondingModelElements(correspondenceSource,
-				elementClass, tag, correspondencePreconditionMethod, correspondenceModel)
+			return !getCorrespondingElements(correspondenceSource, elementClass, correspondencePreconditionMethod, tag).
+				empty
+		}
+
+		protected def <T extends EObject> Iterable<T> getCorrespondingElements(
+			EObject correspondenceSource,
+			Class<T> elementClass,
+			Function<T, Boolean> correspondencePreconditionMethod,
+			String tag
+		) {
+			val retrievedElements = correspondenceModel.getCorrespondingElements(correspondenceSource,
+				elementClass, tag, correspondencePreconditionMethod)
 			return retrievedElements
 		}
 
@@ -85,8 +96,8 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 		new(ReactionExecutionState executionState) {
 			this.executionState = executionState
 		}
-		
-		protected def <T extends EObject> T createObject(() => T creator) {
+
+		protected def <T extends EObject> T createObject(()=>T creator) {
 			val createdObject = creator.apply
 			createdObject.notifyObjectCreated
 			return createdObject
@@ -156,7 +167,7 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 		}
 
 		protected def void addCorrespondenceBetween(EObject firstElement, EObject secondElement, String tag) {
-			ReactionsCorrespondenceHelper.addCorrespondence(correspondenceModel, firstElement, secondElement, tag)
+			correspondenceModel.addCorrespondence(firstElement, secondElement, tag)
 		}
 
 		def void removeObject(EObject element) {
@@ -174,8 +185,7 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 		}
 
 		protected def void removeCorrespondenceBetween(EObject firstElement, EObject secondElement, String tag) {
-			ReactionsCorrespondenceHelper.removeCorrespondences(correspondenceModel, firstElement,
-				secondElement, tag)
+			correspondenceModel.removeCorrespondences(firstElement, secondElement, tag)
 		}
 	}
 }
