@@ -430,6 +430,7 @@ class CommonalityInsertReactionsBuilder extends ReactionsSubGenerator {
 					participationContext.managedClasses.forEach [ contextClass |
 						val participationClass = contextClass.participationClass
 						delete(participationClass.correspondingVariableName)
+						removeCorrespondenceBetween(participationClass.correspondingVariableName).and.affectedEObject
 					]
 				]
 			]
