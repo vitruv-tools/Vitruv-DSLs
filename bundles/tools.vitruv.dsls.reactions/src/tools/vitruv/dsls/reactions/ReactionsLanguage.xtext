@@ -44,11 +44,8 @@ ReactionRoutineCall returns toplevelelements::RoutineCallBlock:
 // *********** TRIGGER ***********
 
 Trigger returns toplevelelements::Trigger:
-	'after' ModelChange
+	'after' (ArbitraryModelChange | ConcreteModelChange)
 	('with' precondition=PreconditionCodeBlock)?;
-
-ModelChange:
-	ArbitraryModelChange | ConcreteModelChange;
 
 ConcreteModelChange:
 	ModelElementChange | ModelAttributeChange;
