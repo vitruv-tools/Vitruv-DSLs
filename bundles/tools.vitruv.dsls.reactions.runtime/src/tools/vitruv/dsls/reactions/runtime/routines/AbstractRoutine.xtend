@@ -97,8 +97,14 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 		new(ReactionExecutionState executionState) {
 			this.executionState = executionState
 		}
+		
+		protected def <T extends EObject> T createObject(() => T creator) {
+			val createdObject = creator.apply
+			createdObject.notifyObjectCreated
+			return createdObject
+		}
 
-		protected def void notifyObjectCreated(EObject createdObject) {
+		private def void notifyObjectCreated(EObject createdObject) {
 			executionState.changePropagationObservable.notifyObjectCreated(createdObject)
 		}
 	}
