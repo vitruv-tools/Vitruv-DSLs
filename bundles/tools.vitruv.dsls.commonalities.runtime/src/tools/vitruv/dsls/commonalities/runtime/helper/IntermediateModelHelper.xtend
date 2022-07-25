@@ -8,7 +8,7 @@ import tools.vitruv.change.correspondence.CorrespondenceModel
 
 import static com.google.common.base.Preconditions.*
 
-import static extension tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper.*
+import static extension tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper.getCorrespondingElements
 
 @Utility
 class IntermediateModelHelper {
@@ -28,13 +28,13 @@ class IntermediateModelHelper {
 	static def <I extends Intermediate> I getCorrespondingIntermediate(CorrespondenceModel correspondenceModel,
 		EObject object, Class<I> intermediateType) {
 		// Assumption: Each object has at most one Intermediate correspondence.
-		return correspondenceModel.getCorrespondingObjectsOfType(object, null, intermediateType).head
+		return correspondenceModel.getCorrespondingElements(object, intermediateType, null).head
 	}
 
 	static def IntermediateResourceBridge getCorrespondingResourceBridge(CorrespondenceModel correspondenceModel,
 		EObject object) {
 		checkArgument(!(object instanceof Intermediate), "object cannot be of type Intermediate")
 		// Assumption: Each object has at most one Resource correspondence.
-		return correspondenceModel.getCorrespondingObjectsOfType(object, null, IntermediateResourceBridge).head
+		return correspondenceModel.getCorrespondingElements(object, IntermediateResourceBridge, null).head
 	}
 }

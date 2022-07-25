@@ -8,7 +8,7 @@ import tools.vitruv.dsls.commonalities.runtime.intermediatemodelbase.Intermediat
 import tools.vitruv.dsls.commonalities.runtime.resources.Resource
 import tools.vitruv.dsls.commonalities.runtime.resources.ResourcesPackage
 import tools.vitruv.dsls.reactions.runtime.helper.PersistenceHelper
-import tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper
+import static extension tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper.getCorrespondingElements
 
 import static com.google.common.base.Preconditions.*
 import static tools.vitruv.dsls.commonalities.runtime.helper.XtendAssertHelper.*
@@ -200,9 +200,9 @@ class IntermediateResourceBridgeI extends IntermediateResourceBridgeImpl {
 		intermediates += intermediateCorrespondenceContainer
 
 		val resourceHaving = intermediates.flatMap [
-			ReactionsCorrespondenceHelper.getCorrespondingModelElements(it, EObject, null, [
+			correspondenceModel.getCorrespondingElements(it, EObject, null, [
 				!(it instanceof Intermediate) && !(it instanceof Resource) && eResource !== null
-			], correspondenceModel)
+			])
 		].head
 		if (resourceHaving === null) {
 			throw new IllegalStateException('''Could not find any transitive correspondence or container of ‹«content
@@ -231,8 +231,7 @@ class IntermediateResourceBridgeI extends IntermediateResourceBridgeImpl {
 		// Collecting to Set removes duplicates and avoids a ConcurrentModificationException when adding the results to
 		// the result Set.
 		val transitiveIntermediates = foundIntermediates.flatMap [ intermediate |
-			ReactionsCorrespondenceHelper.getCorrespondingModelElements(intermediate, Intermediate, null, null,
-				correspondenceModel)
+			correspondenceModel.getCorrespondingElements(intermediate, Intermediate, null, null)
 		].toSet
 
 		// Add to result Set: This removes objects which we have already found before.
@@ -246,8 +245,7 @@ class IntermediateResourceBridgeI extends IntermediateResourceBridgeImpl {
 
 	private def findIntermediateCorrespondence(EObject object) {
 		if (correspondenceModel === null) return null; // TODO
-		val result = ReactionsCorrespondenceHelper.getCorrespondingModelElements(object, Intermediate, null, null,
-			correspondenceModel).head
+		val result = correspondenceModel.getCorrespondingElements(object, Intermediate, null, null).head
 		if (result === null) {
 			throw new IllegalStateException('''Could not find the intermediate correspondence of ‹«object»›!''')
 		}
