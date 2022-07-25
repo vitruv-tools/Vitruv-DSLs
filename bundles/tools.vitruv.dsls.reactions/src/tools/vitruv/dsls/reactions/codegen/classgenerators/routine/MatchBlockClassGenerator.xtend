@@ -34,6 +34,10 @@ import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
  * defined match statements.
  */
 class MatchBlockClassGenerator extends StepExecutionClassGenerator {
+	static val PREDEFINED_HAS_CORRESPONDING_ELEMENTS_METHOD_NAME = "hasCorrespondingElements"
+	static val PREDEFINED_GET_CORRESPONDING_ELEMENT_METHOD_NAME = "getCorrespondingElement"
+	static val PREDEFINED_GET_CORRESPONDING_ELEMENTS_METHOD_NAME = "getCorrespondingElements"
+	
 	static val MATCH_METHOD_NAME = "match"
 	static val MISSING_TYPE = "/* Type missing */"
 	static val RETRIEVED_ELEMENTS_SIMPLE_CLASS_NAME = "RetrievedValues"
@@ -121,7 +125,7 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 		val retrieveStatementArguments = getGeneralGetCorrespondingElementStatementArguments(elementAbscence, null,
 			currentlyAccessibleElements)
 		val StringConcatenationClient statements = '''
-			if (hasCorrespondingElements(
+			if («PREDEFINED_HAS_CORRESPONDING_ELEMENTS_METHOD_NAME»(
 				«retrieveStatementArguments»
 			)) {
 				return null;
@@ -144,7 +148,7 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 	private def dispatch StringConcatenationClient createStatements(RetrieveManyModelElements retrieveElement,
 		String name, String typeName, StringConcatenationClient generalArguments) {
 		val StringConcatenationClient statement = '''
-			«IF !name.nullOrEmpty»«Iterable»<«typeName»> «name» = «ENDIF»getCorrespondingElements(
+			«IF !name.nullOrEmpty»«Iterable»<«typeName»> «name» = «ENDIF»«PREDEFINED_GET_CORRESPONDING_ELEMENTS_METHOD_NAME»(
 				«generalArguments»
 			);
 		'''
@@ -154,7 +158,7 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 	private def dispatch StringConcatenationClient createStatements(RetrieveOneModelElement retrieveElement,
 		String name, String typeName, StringConcatenationClient generalArguments) {
 		val retrieveStatement = '''
-			getCorrespondingElement(
+			«PREDEFINED_GET_CORRESPONDING_ELEMENT_METHOD_NAME»(
 				«generalArguments», 
 				«retrieveElement.asserted» // asserted
 			)'''
