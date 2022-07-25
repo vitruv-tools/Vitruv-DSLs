@@ -17,7 +17,7 @@ class ReactionsCorrespondenceHelper {
 		return correspondenceModel.getEditableView(ReactionsCorrespondenceModelViewFactory.instance)
 	}
 
-	static def removeCorrespondencesBetweenElements(CorrespondenceModel correspondenceModel, EObject source,
+	static def removeCorrespondences(CorrespondenceModel correspondenceModel, EObject source,
 		EObject target, String tag) {
 		logger.trace("Removing correspondence between " + source + " and " + target + " with tag: " + tag)
 		val correspondenceModelView = correspondenceModel.reactionsView
