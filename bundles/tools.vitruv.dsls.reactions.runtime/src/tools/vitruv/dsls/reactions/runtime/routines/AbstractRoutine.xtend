@@ -182,7 +182,7 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 		}
 
 		protected def void removeCorrespondenceBetween(EObject firstElement, EObject secondElement, String tag) {
-			ReactionsCorrespondenceHelper.removeCorrespondencesBetweenElements(correspondenceModel, firstElement,
+			ReactionsCorrespondenceHelper.removeCorrespondences(correspondenceModel, firstElement,
 				secondElement, tag)
 		}
 	}
