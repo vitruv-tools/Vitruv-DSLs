@@ -189,8 +189,18 @@ class GeneratedReactionsMatcherBuilder {
 
 	def private static firstMismatchLineIgnoringWhitespace(String mismatch, String reference) {
 		val mismatchLines = mismatch.split(System.lineSeparator)
+		val unmatchingLineInMismatch = mismatchLines.getFirstLineNotContainedInReferenceText(reference)
+		if (unmatchingLineInMismatch !== null) {
+			return unmatchingLineInMismatch
+		} else {
+			val referenceLines = reference.split(System.lineSeparator)
+			return referenceLines.getFirstLineNotContainedInReferenceText(mismatch)
+		}
+	}
+	
+	def private static getFirstLineNotContainedInReferenceText(String[] lines, String reference) {
 		val referenceWithoutWhitespace = reference.withoutWhitespace
-		mismatchLines.findFirst[!referenceWithoutWhitespace.contains(it.withoutWhitespace)]
+		return lines.findFirst[!referenceWithoutWhitespace.contains(it.withoutWhitespace)]
 	}
 
 }
