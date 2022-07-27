@@ -19,6 +19,7 @@ import org.junit.jupiter.params.provider.ValueSource
 import org.eclipse.core.runtime.Platform
 import org.junit.jupiter.api.BeforeEach
 import static java.lang.System.lineSeparator
+import org.junit.jupiter.api.DisplayName
 
 @ExtendWith(InjectionExtension)
 @InjectWith(ReactionsLanguageInjectorProvider)
@@ -26,7 +27,8 @@ class ReactionLanguageFormatterTest {
 	@Inject var extension ParseHelper<ReactionsFile>
 	@Inject var extension ISerializer
 
-	@ParameterizedTest
+	@DisplayName("reformat existing test classes")
+	@ParameterizedTest(name = "{index} file: {1}")
 	@ValueSource(strings=#[
 		"tools/vitruv/dsls/reactions/tests/AllElementTypesRedundancy.reactions",
 		"tools/vitruv/dsls/reactions/tests/importTests/CommonRoutines.reactions",
@@ -40,7 +42,7 @@ class ReactionLanguageFormatterTest {
 		"tools/vitruv/dsls/reactions/tests/importTests/TransitiveRoutinesSN.reactions",
 		"tools/vitruv/dsls/reactions/tests/importTests/TransitiveSN.reactions"
 	])
-	def void testAllElementTypesReactions(String filePathInSourceFolder) {
+	def void testExistingReactionsFilesFormatting(String filePathInSourceFolder) {
 		val content = filePathInSourceFolder.loadJavaFileContents()
 		assertThat(content.destroyFormatting().format(), hasEachLineEqualTo(content))
 	}
@@ -55,6 +57,7 @@ class ReactionLanguageFormatterTest {
 		return new Scanner(file).useDelimiter("\\Z").next()
 	}
 
+	@DisplayName("reformat file with all kinds of Reactions statements")
 	@Test
 	def void testAllStatementTypes() {
 		val expected = '''
@@ -108,52 +111,7 @@ class ReactionLanguageFormatterTest {
 				insertNonRoot(newNonRoot)
 			}
 		}'''
-		assertThat(expected.destroyFormatting.format, hasEachLineEqualTo(expected))
-	}
-
-	/**
-	 * New lines can only be tested when not having Xbase code blocks with more than one line, because
-	 * the Xbase formatter does not remove empty lines.
-	 */
-	@Test
-	def void testProperNewlines() {
-		val expected = '''
-		import static tools.vitruv.dsls.reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor.ChangeType.*;
-		import tools.vitruv.change.atomic.eobject.EObjectExistenceEChange
-		import static extension tools.vitruv.testutils.metamodels.TestMetamodelsPathFactory.allElementTypes
-		
-		import "http://tools.vitruv.testutils.metamodels.allElementTypes" as minimal
-		import "http://tools.vitruv.testutils.metamodels.allElementTypes" as minimal2
-		
-		reactions: simpleChangesTests
-		in reaction to changes in minimal
-		execute actions in minimal
-		
-		reaction InsertedNonRoot {
-			after element minimal::NonRoot inserted in minimal::NonRootObjectContainerHelper[nonRootObjectsContainment]
-			call insertNonRoot(newValue)
-		}
-		
-		routine insertNonRoot(minimal::NonRoot nonRootElement) {
-			match {
-				require absence of minimal::NonRoot corresponding to nonRootElement
-				val correspondingContainer = retrieve EObject corresponding to nonRootElement.eContainer tagged "test" with true
-				val optionalCorresponding = retrieve optional minimal::NonRoot corresponding to {
-					nonRootElement
-				} tagged null
-				val correspondingAsIterable = retrieve many minimal::NonRoot corresponding to {
-					return nonRootElement;
-				} with {
-					correspondingAsIterable !== null
-				}
-			}
-			create {
-				val newNonRoot = new minimal::NonRoot
-			}
-			update {
-			}
-		}'''
-		assertThat(expected.destroyFormatting.format, hasEachLineEqualTo(expected))
+		assertThat(expected.destroyFormatting().format(), hasEachLineEqualTo(expected))
 	}
 
 	private def String format(String reactionsCodeToFormat) {
