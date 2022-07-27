@@ -1,5 +1,4 @@
 import tools.vitruv.dsls.reactions.tests.importTests.ImportTestsExecutionMonitor
-
 import static tools.vitruv.dsls.reactions.tests.importTests.ImportTests.*
 import static tools.vitruv.dsls.reactions.tests.importTests.ImportTestsExecutionMonitor.ExecutionType.*
 import static tools.vitruv.dsls.reactions.tests.importTests.ImportTestsUtils.*
@@ -32,8 +31,7 @@ routine transitive3SNRoutine() {
 }
 
 // routine overrides:
-
-routine transitive3SNOverriddenRoutine(){
+routine transitive3SNOverriddenRoutine() {
 	update {
 		ImportTestsExecutionMonitor.instance.set(Transitive3SNOverriddenRoutine)
 		transitive3SNRoutine()

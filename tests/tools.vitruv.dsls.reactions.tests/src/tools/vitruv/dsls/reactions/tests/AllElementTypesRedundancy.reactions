@@ -5,7 +5,7 @@ import tools.vitruv.change.atomic.^root.RootEChange
 import tools.vitruv.change.atomic.eobject.EObjectExistenceEChange
 import static extension tools.vitruv.testutils.metamodels.TestMetamodelsPathFactory.allElementTypes
 
-import "http://tools.vitruv.testutils.metamodels.allElementTypes" as minimal 
+import "http://tools.vitruv.testutils.metamodels.allElementTypes" as minimal
 
 reactions: simpleChangesTests
 in reaction to changes in minimal
@@ -28,7 +28,8 @@ routine createRoot(minimal::Root rootElement) {
 	}
 	update {
 		newRoot.id = rootElement.id
-		val targetModel = rootElement.eResource.URI.trimFileExtension.lastSegment.replace('Source', 'Target').allElementTypes 
+		val targetModel = rootElement.eResource.URI.trimFileExtension.lastSegment.replace('Source', 'Target').
+			allElementTypes
 		persistProjectRelative(rootElement, newRoot, targetModel.toString)
 		addCorrespondenceBetween(newRoot, rootElement)
 	}
@@ -78,9 +79,13 @@ reaction ReplacedSingleValuedEAttribute {
 routine replaceSingleValuedEAttribute(minimal::Root rootElement, Integer value) {
 	match {
 		// The check statements do only test that multiple check statements work
-		check asserted { rootElement !== null }
+		check asserted {
+			rootElement !== null
+		}
 		val targetElement = retrieve asserted minimal::Root corresponding to rootElement
-		check { value !== null }
+		check {
+			value !== null
+		}
 	}
 	update {
 		targetElement.singleValuedEAttribute = value;
@@ -141,7 +146,7 @@ routine removeNonRoot(minimal::NonRoot removedNonRoot) {
 	match {
 		val targetElement = retrieve minimal::NonRoot corresponding to removedNonRoot
 	}
-	update{
+	update {
 		SimpleChangesTestsExecutionMonitor.instance.set(DeleteNonRootEObjectInList);
 		removeObject(targetElement)
 		removeCorrespondenceBetween(targetElement, removedNonRoot)
@@ -166,8 +171,8 @@ reaction ReplacedNonRootEObjectSingleReupdate {
 routine deleteNonRootEObjectSingle(minimal::Root container, minimal::NonRoot containedObject) {
 	match {
 		val correspondingContainer = retrieve asserted minimal::Root corresponding to container
-		val targetElement = retrieve minimal::NonRoot corresponding to containedObject
-			with targetElement.eContainer === correspondingContainer
+		val targetElement = retrieve minimal::NonRoot corresponding to containedObject with targetElement.eContainer ===
+			correspondingContainer
 	}
 	update {
 		removeObject(targetElement)
@@ -200,8 +205,7 @@ reaction ReplacedSingleValuedNonContainmentEReference {
 	call replaceSingleValuedNonContainmentReference(affectedEObject, newValue)
 }
 
-routine replaceSingleValuedNonContainmentReference(minimal::Root rootElement, minimal::NonRoot newReferencedElement
-) {
+routine replaceSingleValuedNonContainmentReference(minimal::Root rootElement, minimal::NonRoot newReferencedElement) {
 	match {
 		val targetContainer = retrieve asserted minimal::Root corresponding to rootElement
 		val targetElement = retrieve asserted minimal::NonRoot corresponding to newReferencedElement
@@ -262,12 +266,13 @@ routine insertNonContainmentReference(minimal::Root rootElement, minimal::NonRoo
 		val targetElement = retrieve asserted minimal::Root corresponding to rootElement
 	}
 	update {
-		val addedNonRoot = targetElement.nonRootObjectContainerHelper.nonRootObjectsContainment.findFirst[it.id == insertedNonRoot.id];
+		val addedNonRoot = targetElement.nonRootObjectContainerHelper.nonRootObjectsContainment.findFirst [
+			it.id == insertedNonRoot.id
+		];
 		targetElement.multiValuedNonContainmentEReference += addedNonRoot;
 		SimpleChangesTestsExecutionMonitor.instance.set(InsertNonContainmentEReference);
 	}
 }
-
 
 /*
  * RemoveNonContainmentEReference
@@ -287,14 +292,12 @@ routine removeNonContainmentReference(minimal::Root rootElement, minimal::NonRoo
 	}
 }
 
-
-
 /**
  * Initializes the nonRootObjectContainer for second model
  */
 reaction HelperReactionForNonRootObjectContainerInitialization {
 	after element minimal::NonRootObjectContainerHelper replaced at minimal::Root[nonRootObjectContainerHelper]
-		with newValue !== null
+	with newValue !== null
 	call createNonRootObjectContainer(affectedEObject, newValue)
 }
 
@@ -382,8 +385,11 @@ routine testPrimitiveTypesRoutine(Integer intVal, Long longVal, Short shortVal, 
 // Unused reaction: Only check, that change is available when reacting to any change
 reaction AnyChange {
 	after anychange
-	with change instanceof FeatureChange || change instanceof RootEChange || change instanceof EObjectExistenceEChange<?>
-	call { change.eClass }
+	with change instanceof FeatureChange || change instanceof RootEChange ||
+		change instanceof EObjectExistenceEChange<?>
+	call {
+		change.eClass
+	}
 }
 
 routine testJavaTypes(plain SimpleChangesTestsExecutionMonitor as monitor) {
@@ -398,7 +404,9 @@ reaction CheckManyCorrespondenceRetrievalWorks {
 routine checkManyCorrespondenceRetrievalWorks(minimal::Root rootElement) {
 	match {
 		val targetElements = retrieve many minimal::Root corresponding to rootElement
-		check asserted { return targetElements !== null && !targetElements.empty }
+		check asserted {
+			return targetElements !== null && !targetElements.empty
+		}
 	}
 	update {
 	}

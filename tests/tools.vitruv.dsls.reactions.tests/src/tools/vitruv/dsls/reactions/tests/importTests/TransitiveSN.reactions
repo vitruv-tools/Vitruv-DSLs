@@ -1,5 +1,4 @@
 import tools.vitruv.dsls.reactions.tests.importTests.ImportTestsExecutionMonitor
-
 import static tools.vitruv.dsls.reactions.tests.importTests.ImportTests.*
 import static tools.vitruv.dsls.reactions.tests.importTests.ImportTestsExecutionMonitor.ExecutionType.*
 import static tools.vitruv.dsls.reactions.tests.importTests.ImportTestsUtils.*
@@ -59,7 +58,6 @@ routine transitiveSNInnerRoutine() {
 }
 
 // reaction overrides:
-
 reaction TransitiveSNOverriddenReupdate {
 	after attribute replaced at minimal::Root[id]
 	call {
@@ -94,8 +92,7 @@ reaction TransitiveSNOverriddenReaction3 {
 }
 
 // routine overrides:
-
-routine transitiveSNOverriddenRoutine(){
+routine transitiveSNOverriddenRoutine() {
 	update {
 		ImportTestsExecutionMonitor.instance.set(TransitiveSNOverriddenRoutine)
 		transitiveSNRoutine()
