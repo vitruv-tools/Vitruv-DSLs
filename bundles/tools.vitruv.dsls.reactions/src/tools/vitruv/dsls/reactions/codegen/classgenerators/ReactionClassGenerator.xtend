@@ -156,12 +156,12 @@ class ReactionClassGenerator extends ClassGenerator {
 		if (!hasUserDefinedPrecondition) {
 			return null
 		}
-		val preconditionBlock = reaction.trigger.precondition
+		val precondition = reaction.trigger.precondition
 		val methodName = USER_DEFINED_PRECONDITION_METHOD_NAME
-		return preconditionBlock.toMethod(methodName, typeRef(Boolean.TYPE)) [
+		return reaction.trigger.toMethod(methodName, typeRef(Boolean.TYPE)) [
 			visibility = JvmVisibility.PRIVATE
 			parameters += generateAccessibleElementsParameters(changeType.generatePropertiesParameterList)
-			body = preconditionBlock.code
+			body = precondition
 		]
 	}
 
