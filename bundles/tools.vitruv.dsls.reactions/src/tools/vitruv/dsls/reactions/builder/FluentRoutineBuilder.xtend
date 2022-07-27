@@ -15,7 +15,6 @@ import tools.vitruv.dsls.reactions.language.RetrieveModelElement
 import tools.vitruv.dsls.reactions.language.RetrieveOrRequireAbscenceOfModelElement
 import tools.vitruv.dsls.reactions.language.toplevelelements.Routine
 import tools.vitruv.dsls.reactions.language.toplevelelements.RoutineOverrideImportPath
-import tools.vitruv.dsls.reactions.language.Taggable
 
 import static com.google.common.base.Preconditions.*
 import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.*
@@ -319,12 +318,12 @@ class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 
 		def correspondingTo(String element) {
 			statement.correspondenceSource = correspondingElement(element)
-			new TaggedWithBuilder(builder, statement)
+			new RetrieveModelElementMatchBlockStatementTagBuilder(builder, statement)
 		}
 
 		def correspondingTo(Function<TypeProvider, XExpression> expressionBuilder) {
 			statement.correspondenceSource = correspondingElement(expressionBuilder)
-			new TaggedWithBuilder(builder, statement)
+			new RetrieveModelElementMatchBlockStatementTagBuilder(builder, statement)
 		}
 	}
 
@@ -340,19 +339,19 @@ class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 		def affectedEObject() {
 			requireAffectedEObject = true
 			statement.correspondenceSource = correspondingElement(CHANGE_AFFECTED_ELEMENT_ATTRIBUTE)
-			new TaggedWithBuilder(builder, statement)
+			new RetrieveModelElementMatchBlockStatementTagBuilder(builder, statement)
 		}
 
 		def newValue() {
 			requireNewValue = true
 			statement.correspondenceSource = correspondingElement(CHANGE_NEW_VALUE_ATTRIBUTE)
-			new TaggedWithBuilder(builder, statement)
+			new RetrieveModelElementMatchBlockStatementTagBuilder(builder, statement)
 		}
 
 		def oldValue() {
 			requireOldValue = true
 			statement.correspondenceSource = correspondingElement(CHANGE_OLD_VALUE_ATTRIBUTE)
-			new TaggedWithBuilder(builder, statement)
+			new RetrieveModelElementMatchBlockStatementTagBuilder(builder, statement)
 		}
 	}
 
@@ -381,7 +380,7 @@ class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 
 		def check(Function<TypeProvider, XExpression> expressionBuilder) {
 			val statement = LanguageFactory.eINSTANCE.createMatchCheckStatement => [
-				code = XbaseFactory.eINSTANCE.createXBlockExpression.whenJvmTypes [
+				condition = XbaseFactory.eINSTANCE.createXBlockExpression.whenJvmTypes [
 					expressions += extractExpressions(expressionBuilder.apply(typeProvider))
 				]
 			]
@@ -395,34 +394,28 @@ class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 		}
 	}
 
-	static class TaggedWithBuilder {
+	static class RetrieveModelElementMatchBlockStatementTagBuilder {
 		val extension FluentRoutineBuilder builder
-		val Taggable taggable
+		val RetrieveOrRequireAbscenceOfModelElement statement
 
-		private new(FluentRoutineBuilder builder, Taggable taggable) {
+		private new(FluentRoutineBuilder builder, RetrieveOrRequireAbscenceOfModelElement statement) {
 			this.builder = builder
-			this.taggable = taggable
+			this.statement = statement
 		}
 		
 		def void taggedWithAnything() {
-			taggable.tag = LanguageFactory.eINSTANCE.createTagCodeBlock => [
-				code = XbaseFactory.eINSTANCE.createXNullLiteral
-			]
+			statement.tag = XbaseFactory.eINSTANCE.createXNullLiteral
 		}
 
 		def void taggedWith(String tag) {
-			taggable.tag = LanguageFactory.eINSTANCE.createTagCodeBlock => [
-				code = XbaseFactory.eINSTANCE.createXStringLiteral => [
-					value = tag
-				]
+			statement.tag = XbaseFactory.eINSTANCE.createXStringLiteral => [
+				value = tag
 			]
 		}
 
 		def void taggedWith(Function<TypeProvider, XExpression> tagExpressionBuilder) {
-			taggable.tag = LanguageFactory.eINSTANCE.createTagCodeBlock => [
-				code = XbaseFactory.eINSTANCE.createXBlockExpression.whenJvmTypes [
-					expressions += extractExpressions(tagExpressionBuilder.apply(typeProvider))
-				]
+			statement.tag = XbaseFactory.eINSTANCE.createXBlockExpression.whenJvmTypes [
+				expressions += extractExpressions(tagExpressionBuilder.apply(typeProvider))
 			]
 		}
 	}
@@ -750,18 +743,14 @@ class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 	}
 
 	def private correspondingElement(String name) {
-		LanguageFactory.eINSTANCE.createCorrespondingObjectCodeBlock => [
-			code = XbaseFactory.eINSTANCE.createXFeatureCall.whenJvmTypes [
-				feature = correspondingMethodParameter(name)
-			]
+		XbaseFactory.eINSTANCE.createXFeatureCall.whenJvmTypes [
+			feature = correspondingMethodParameter(name)
 		]
 	}
 
 	def private correspondingElement(Function<TypeProvider, XExpression> expressionBuilder) {
-		LanguageFactory.eINSTANCE.createCorrespondingObjectCodeBlock => [
-			code = XbaseFactory.eINSTANCE.createXBlockExpression.whenJvmTypes [
-				expressions += extractExpressions(expressionBuilder.apply(typeProvider))
-			]
+		XbaseFactory.eINSTANCE.createXBlockExpression.whenJvmTypes [
+			expressions += extractExpressions(expressionBuilder.apply(typeProvider))
 		]
 	}
 

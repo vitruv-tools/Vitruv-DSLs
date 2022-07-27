@@ -37,13 +37,13 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="trigger" eType="#//Trigger"
         containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="callRoutine" eType="#//RoutineCallBlock"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="callRoutine" eType="#//RoutineCall"
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="reactionsSegment" lowerBound="1"
         eType="#//ReactionsSegment" eOpposite="#//ReactionsSegment/reactions"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Trigger">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="precondition" eType="#//PreconditionCodeBlock"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="precondition" eType="ecore:EClass ../../org.eclipse.xtext.xbase/model/Xbase.ecore#//XExpression"
         containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Routine">
@@ -84,17 +84,15 @@
         eType="ecore:EClass ../../tools.vitruv.dsls.common/model/CommonLanguageElements.ecore#//NamedMetaclassReference"
         containment="true"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="CodeBlock">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="code" eType="ecore:EClass ../../org.eclipse.xtext.xbase/model/Xbase.ecore#//XExpression"
-        containment="true"/>
-  </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="PreconditionCodeBlock" eSuperTypes="#//CodeBlock"/>
   <eClassifiers xsi:type="ecore:EClass" name="NamedJavaElementReference">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="type" eType="ecore:EClass ../../org.eclipse.xtext.common.types/model/JavaVMTypes.ecore#//JvmTypeReference"
         containment="true"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="RoutineCallBlock" eSuperTypes="#//CodeBlock"/>
-  <eClassifiers xsi:type="ecore:EClass" name="ReactionRoutineCall" eSuperTypes="#//RoutineCallBlock"/>
-  <eClassifiers xsi:type="ecore:EClass" name="UpdateBlock" eSuperTypes="#//CodeBlock"/>
+  <eClassifiers xsi:type="ecore:EClass" name="RoutineCall" eSuperTypes="#//CodeExecutionBlock"/>
+  <eClassifiers xsi:type="ecore:EClass" name="UpdateBlock" eSuperTypes="#//CodeExecutionBlock"/>
+  <eClassifiers xsi:type="ecore:EClass" name="CodeExecutionBlock">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="code" eType="ecore:EClass ../../org.eclipse.xtext.xbase/model/Xbase.ecore#//XExpression"
+        containment="true"/>
+  </eClassifiers>
 </ecore:EPackage>
