@@ -155,10 +155,14 @@ class ReactionsLanguageFormatter extends XbaseFormatter {
 
 	def dispatch format(Routine routine, extension IFormattableDocument document) {
 		if (routine.documentation !== null) {
-			routine.regionFor.keyword('routine').prepend[newLine]
+			routine.prepend[newLines = 2]
 		}
 		routine.regionFor.keyword('routine') => [
-			prepend[newLines = 2]
+			if (routine.documentation === null) {
+				prepend[newLines = 2]
+			} else {
+				prepend[newLine]
+			}
 			append[oneSpace]
 		]
 		routine.overrideImportPath?.format(document)
