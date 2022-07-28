@@ -213,7 +213,7 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 		Iterable<AccessibleElement> currentlyAccessibleElements) {
 		val affectedElementClass = retrieveElement.elementType?.javaClassName
 		if (retrieveElement.precondition === null) {
-			return '''(«affectedElementClass» _element) -> true'''
+			return '''null'''
 		}
 		val preconditionMethod = generateMethodCorrespondencePrecondition(retrieveElement, name,
 			currentlyAccessibleElements)

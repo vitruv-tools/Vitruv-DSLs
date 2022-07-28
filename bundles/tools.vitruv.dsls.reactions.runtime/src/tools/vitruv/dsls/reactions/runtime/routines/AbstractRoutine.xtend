@@ -16,6 +16,7 @@ import org.eclipse.emf.common.util.URI
 import static com.google.common.base.Preconditions.checkState
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 import org.eclipse.xtend.lib.annotations.Accessors
+import tools.vitruv.change.correspondence.CorrespondenceModel
 
 abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 	val AbstractRoutinesFacade routinesFacade
@@ -45,11 +46,11 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 
 	protected abstract def boolean executeRoutine() throws IOException
 
-	static class Match extends Loggable {
-		protected val extension ReactionExecutionState executionState
+	private static class CorrespondenceRetriever extends Loggable {
+		CorrespondenceModel _correspondenceModel
 
-		new(ReactionExecutionState executionState) {
-			this.executionState = executionState
+		new(CorrespondenceModel correspondenceModel) {
+			this._correspondenceModel = correspondenceModel
 		}
 
 		protected def <T extends EObject> boolean hasCorrespondingElements(
@@ -68,8 +69,13 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 			Function<T, Boolean> correspondencePreconditionMethod,
 			String tag
 		) {
-			val retrievedElements = correspondenceModel.getCorrespondingElements(correspondenceSource,
-				elementClass, tag, correspondencePreconditionMethod)
+			val Function<T, Boolean> preconditionMethod = if (correspondencePreconditionMethod !== null) {
+					correspondencePreconditionMethod
+				} else {
+					[true]
+				}
+			val retrievedElements = _correspondenceModel.getCorrespondingElements(correspondenceSource,
+				elementClass, tag, preconditionMethod)
 			return retrievedElements
 		}
 
@@ -90,6 +96,16 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 		}
 	}
 
+	static class Match extends CorrespondenceRetriever {
+		protected val extension ReactionExecutionState executionState
+
+		new(ReactionExecutionState executionState) {
+			super(executionState.correspondenceModel)
+			this.executionState = executionState
+		}
+
+	}
+
 	static class Create extends Loggable {
 		protected val extension ReactionExecutionState executionState
 
@@ -108,10 +124,11 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 		}
 	}
 
-	static class Update extends Loggable {
+	static class Update extends CorrespondenceRetriever {
 		protected val extension ReactionExecutionState executionState
 
 		new(ReactionExecutionState executionState) {
+			super(executionState.correspondenceModel)
 			this.executionState = executionState
 		}
 
