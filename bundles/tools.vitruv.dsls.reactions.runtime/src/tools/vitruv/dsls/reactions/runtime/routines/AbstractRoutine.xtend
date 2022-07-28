@@ -194,7 +194,7 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 			if (logger.debugEnabled) {
 				logger.debug("Removing object " + element + " from container " + element.eContainer())
 			}
-			EcoreUtil.delete(element)
+			EcoreUtil.remove(element)
 		}
 
 		protected def void removeCorrespondenceBetween(EObject firstElement, EObject secondElement) {
