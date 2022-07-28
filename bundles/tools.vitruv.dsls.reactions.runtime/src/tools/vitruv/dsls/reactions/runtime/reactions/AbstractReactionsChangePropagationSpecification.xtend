@@ -9,6 +9,7 @@ import tools.vitruv.change.correspondence.CorrespondenceModel
 import tools.vitruv.change.interaction.UserInteractor
 import tools.vitruv.change.propagation.ResourceAccess
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
+import tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceModelViewFactory
 
 /**
  * A {@link ChangePropagationSpecification} that executes {@link Reaction}s.
@@ -36,9 +37,13 @@ abstract class AbstractReactionsChangePropagationSpecification extends AbstractC
 		LOGGER.trace("Call relevant reactions from " + sourceMetamodelDescriptor + " to " + targetMetamodelDescriptor)
 		for (reaction : reactions) {
 			LOGGER.trace("Calling reaction: " + reaction.class.simpleName + " with change: " + change)
-			val executionState = new ReactionExecutionState(userInteractor, correspondenceModel, resourceAccess, this)
+			val executionState = new ReactionExecutionState(userInteractor, correspondenceModel.reactionsView, resourceAccess, this)
 			reaction.execute(change, executionState)
 		}
+	}
+	
+	private static def getReactionsView(CorrespondenceModel correspondenceModel) {
+		return correspondenceModel.getEditableView(ReactionsCorrespondenceModelViewFactory.instance).genericView
 	}
 
 	override setUserInteractor(UserInteractor userInteractor) {

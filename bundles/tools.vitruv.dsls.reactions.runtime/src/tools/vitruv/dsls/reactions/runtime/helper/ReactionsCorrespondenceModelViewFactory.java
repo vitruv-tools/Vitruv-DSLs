@@ -7,7 +7,7 @@ import tools.vitruv.change.correspondence.InternalCorrespondenceModel;
 import tools.vitruv.change.correspondence.impl.CorrespondenceModelViewImpl;
 import tools.vitruv.dsls.reactions.runtime.correspondence.CorrespondenceFactory;
 
-final class ReactionsCorrespondenceModelViewFactory
+public final class ReactionsCorrespondenceModelViewFactory
 		implements CorrespondenceModelViewFactory<CorrespondenceModelView<ReactionsCorrespondence>> {
 	private static ReactionsCorrespondenceModelViewFactory instance;
 

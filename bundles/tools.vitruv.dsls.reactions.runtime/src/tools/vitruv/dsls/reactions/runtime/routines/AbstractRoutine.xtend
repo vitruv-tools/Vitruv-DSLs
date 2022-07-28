@@ -6,9 +6,6 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.util.EcoreUtil
 import tools.vitruv.dsls.reactions.runtime.helper.PersistenceHelper
-import static extension tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper.getCorrespondingElements
-import static extension tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper.addCorrespondence
-import static extension tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper.removeCorrespondences
 import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
 import tools.vitruv.dsls.reactions.runtime.structure.Loggable
 import tools.vitruv.change.propagation.ResourceAccess
@@ -17,6 +14,7 @@ import static com.google.common.base.Preconditions.checkState
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 import org.eclipse.xtend.lib.annotations.Accessors
 import tools.vitruv.change.correspondence.CorrespondenceModel
+import org.eclipse.xtext.xbase.lib.Functions.Function1
 
 abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 	val AbstractRoutinesFacade routinesFacade
@@ -89,6 +87,14 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 				elementClass.simpleName, correspondenceSource, retrievedElements)
 			val retrievedElement = retrievedElements.head
 			return retrievedElement
+		}
+
+		private def <T extends EObject> Iterable<T> getCorrespondingElements(EObject sourceElement, Class<T> expectedType, String expectedTag,
+			Function1<T, Boolean> preconditionMethod) {
+			val correspondingObjects = _correspondenceModel.getCorrespondingEObjects(sourceElement, expectedType,
+				expectedTag)
+			val nonNullPreconditionMethod = if(preconditionMethod !== null) preconditionMethod else [T input|true]
+			return correspondingObjects.filterNull.filter(nonNullPreconditionMethod)
 		}
 	}
 
@@ -180,7 +186,7 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 		}
 
 		protected def void addCorrespondenceBetween(EObject firstElement, EObject secondElement, String tag) {
-			correspondenceModel.addCorrespondence(firstElement, secondElement, tag)
+			correspondenceModel.addCorrespondenceBetween(firstElement, secondElement, if(tag === null) "" else tag)
 		}
 
 		def void removeObject(EObject element) {
@@ -198,7 +204,7 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 		}
 
 		protected def void removeCorrespondenceBetween(EObject firstElement, EObject secondElement, String tag) {
-			correspondenceModel.removeCorrespondences(firstElement, secondElement, tag)
+			correspondenceModel.removeCorrespondencesBetween(firstElement, secondElement, tag)
 		}
 	}
 }
