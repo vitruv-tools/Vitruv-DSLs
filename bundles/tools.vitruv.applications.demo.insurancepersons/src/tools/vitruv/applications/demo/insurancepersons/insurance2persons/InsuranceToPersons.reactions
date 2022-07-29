@@ -1,7 +1,6 @@
 import edu.kit.ipd.sdq.metamodels.insurance.Gender
 import edu.kit.ipd.sdq.metamodels.persons.Male
 import edu.kit.ipd.sdq.metamodels.persons.Female
-
 import static extension edu.kit.ipd.sdq.metamodels.insurance.InsuranceUtil.getInsuranceDatabase
 
 import "edu.kit.ipd.sdq.metamodels.persons" as persons
@@ -40,7 +39,7 @@ routine deletePersonRegister(insurance::InsuranceDatabase insuranceDatabase) {
 		removeCorrespondenceBetween(personRegister, insuranceDatabase)
 	}
 }
-	
+
 reaction InsertedClient {
 	after element insurance::InsuranceClient inserted in insurance::InsuranceDatabase[insuranceclient]
 	call createPerson(newValue)
@@ -49,9 +48,9 @@ reaction InsertedClient {
 routine createPerson(insurance::InsuranceClient client) {
 	update {
 		switch client.gender {
-			case Gender.MALE : createMalePerson(client)
-			case Gender.FEMALE : createFemalePerson(client)
-			default : throw new IllegalArgumentException("Unknown gender for persons")
+			case Gender.MALE: createMalePerson(client)
+			case Gender.FEMALE: createFemalePerson(client)
+			default: throw new IllegalArgumentException("Unknown gender for persons")
 		}
 	}
 }
@@ -109,17 +108,18 @@ routine changeGender(insurance::InsuranceClient client) {
 	}
 	update {
 		switch client.gender {
-			case Gender.MALE :
+			case Gender.MALE:
 				if (!(person instanceof Male)) {
 					deletePerson(client)
 					createMalePerson(client)
 				}
-			case Gender.FEMALE :
+			case Gender.FEMALE:
 				if (!(person instanceof Female)) {
 					deletePerson(client)
 					createFemalePerson(client)
 				}
-			default : throw new IllegalArgumentException("Gender of client is unknown.")
+			default:
+				throw new IllegalArgumentException("Gender of client is unknown.")
 		}
 	}
 }
