@@ -8,21 +8,10 @@ import static edu.kit.ipd.sdq.commons.util.org.eclipse.emf.common.util.URIUtil.g
 import static extension tools.vitruv.change.propagation.ProjectMarker.getProjectRootFolder
 import java.nio.file.Path
 import static edu.kit.ipd.sdq.commons.util.org.eclipse.emf.common.util.URIUtil.createFileURI
+import edu.kit.ipd.sdq.activextendannotations.Utility
 
-final class PersistenceHelper {
-	private new() {}
-	
-	static def EObject getModelRoot(EObject modelObject) {
-		var result = modelObject
-		while (result.eContainer !== null) {
-			result = result.eContainer
-		}
-		return result
-	}
-
-	private static def URI getURIOfElementResourceFolder(EObject element) {
-		return element.eResource.URI.trimSegments(1)
-	}
+@Utility
+class PersistenceHelper {
 
 	private static def URI getURIOfElementProject(EObject element) {
 		val elementUri = element.eResource.URI
@@ -35,7 +24,8 @@ final class PersistenceHelper {
 			val elementPath = Path.of(elementUri.toFileString)
 			return createFileURI(elementPath.projectRootFolder.toFile())
 		} else {
-			throw new UnsupportedOperationException("Other URI types than file and platform are currently not supported");
+			throw new UnsupportedOperationException(
+				"Other URI types than file and platform are currently not supported");
 		}
 	}
 
@@ -47,11 +37,6 @@ final class PersistenceHelper {
 		return baseURI.appendSegments(newModelFileSegments)
 	}
 
-	static def URI getURIFromSourceResourceFolder(EObject source, String relativePath) {
-		val baseURI = getURIOfElementResourceFolder(source)
-		return baseURI.appendPathToURI(relativePath)
-	}
-	
 	/**
 	 * Returns the URI of the project folder, relative as specified in <code>relativePath</code>
 	 * to the project root, determined from the element <code>source</code>.

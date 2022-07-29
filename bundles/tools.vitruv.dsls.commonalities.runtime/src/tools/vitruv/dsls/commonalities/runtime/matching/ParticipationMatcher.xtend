@@ -10,7 +10,7 @@ import tools.vitruv.dsls.commonalities.runtime.intermediatemodelbase.Intermediat
 import tools.vitruv.dsls.commonalities.runtime.intermediatemodelbase.IntermediateModelBasePackage
 import tools.vitruv.dsls.commonalities.runtime.resources.IntermediateResourceBridge
 import tools.vitruv.dsls.commonalities.runtime.resources.ResourcesFactory
-import tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper
+import static extension tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper.getCorrespondingElements
 import tools.vitruv.change.correspondence.CorrespondenceModel
 import tools.vitruv.change.propagation.ResourceAccess
 
@@ -217,8 +217,7 @@ class ParticipationMatcher {
 			return Collections.singleton(object)
 		}
 
-		if (!ReactionsCorrespondenceHelper.getCorrespondingObjectsOfType(correspondenceModel, object, null,
-			Intermediate).empty) {
+		if (!correspondenceModel.getCorrespondingElements(object, Intermediate, null).empty) {
 			val attributeReferenceRootNode = containmentContext.attributeReferenceRootNode
 			if (attributeReferenceRootNode !== null) {
 				if (followAttributeReferences && attributeReferenceRootNode.matchesObject(object,
@@ -376,8 +375,8 @@ class ParticipationMatcher {
 		// Note: Not checking for correspondences for our dynamically created (and only partially setup)
 		// ResourceBridge.
 		if (!object.isResourceBridge) {
-			var correspondingIntermediate = ReactionsCorrespondenceHelper.getCorrespondingObjectsOfType(
-				correspondenceModel, object, null, Intermediate).head
+			var correspondingIntermediate = correspondenceModel.getCorrespondingElements(
+				object, Intermediate, null).head
 			if (correspondingIntermediateType != correspondingIntermediate?.eClass) {
 				if (correspondingIntermediateType === null) {
 					logger.trace('''«indent(depth)»Node «node.toSimpleString»: Object already corresponds to an «

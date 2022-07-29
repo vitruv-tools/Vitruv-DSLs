@@ -4,7 +4,7 @@ import java.util.List
 import tools.vitruv.dsls.commonalities.runtime.operators.mapping.attribute.AbstractAttributeMappingOperator
 import tools.vitruv.dsls.commonalities.runtime.operators.mapping.attribute.AttributeMappingOperator
 import tools.vitruv.dsls.commonalities.runtime.operators.mapping.attribute.AttributeType
-import tools.vitruv.dsls.reactions.runtime.ReactionExecutionState
+import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 
 /**
  * Converts between an integer number on the participation side and a list of

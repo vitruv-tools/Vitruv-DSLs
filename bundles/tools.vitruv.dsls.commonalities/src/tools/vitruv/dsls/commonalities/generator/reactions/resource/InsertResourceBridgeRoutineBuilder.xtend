@@ -20,7 +20,6 @@ import static tools.vitruv.dsls.commonalities.generator.reactions.ReactionsGener
 import static tools.vitruv.dsls.commonalities.generator.reactions.intermediatemodel.IntermediateModelHelper.*
 import static tools.vitruv.dsls.commonalities.generator.reactions.util.ReactionsHelper.*
 
-import static extension tools.vitruv.dsls.commonalities.generator.reactions.util.JvmTypeProviderHelper.*
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.util.XbaseHelper.*
 import static extension tools.vitruv.dsls.commonalities.language.extensions.CommonalitiesLanguageModelExtensions.*
 
@@ -61,7 +60,7 @@ class InsertResourceBridgeRoutineBuilder extends ReactionsGenerationHelper {
 					model(ResourcesPackage.eINSTANCE.intermediateResourceBridge, RESOURCE_BRIDGE)
 					model(IntermediateModelBasePackage.eINSTANCE.intermediate, INTERMEDIATE)
 				]
-				.action [
+				.update [
 					execute [
 						insertResourceBridge(concept, variable(RESOURCE_BRIDGE), variable(INTERMEDIATE))
 					]

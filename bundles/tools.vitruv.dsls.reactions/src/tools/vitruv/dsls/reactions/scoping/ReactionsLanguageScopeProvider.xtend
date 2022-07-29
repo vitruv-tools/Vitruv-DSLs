@@ -17,7 +17,6 @@ import org.eclipse.xtext.scoping.impl.SimpleScope
 import tools.vitruv.dsls.common.elements.MetaclassFeatureReference
 import tools.vitruv.dsls.common.elements.MetaclassReference
 import tools.vitruv.dsls.common.elements.MetamodelImport
-import tools.vitruv.dsls.reactions.language.CreateModelElement
 import tools.vitruv.dsls.reactions.language.ElementChangeType
 import tools.vitruv.dsls.reactions.language.ElementReplacementChangeType
 import tools.vitruv.dsls.reactions.language.ModelAttributeChange
@@ -37,7 +36,8 @@ import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsImpo
 import static extension tools.vitruv.dsls.reactions.util.ReactionsLanguageUtil.*
 import tools.vitruv.dsls.reactions.language.RetrieveOrRequireAbscenceOfModelElement
 import tools.vitruv.dsls.common.elements.CommonLanguageElementsScopeProvider
-import tools.vitruv.dsls.reactions.language.toplevelelements.Matcher
+import tools.vitruv.dsls.reactions.language.toplevelelements.CreateBlock
+import tools.vitruv.dsls.reactions.language.toplevelelements.MatchBlock
 
 /**
  * This class contains custom scoping description.
@@ -66,11 +66,11 @@ class ReactionsLanguageScopeProvider extends AbstractReactionsLanguageScopeProvi
 			val potentialMetaclassReference = if(context instanceof MetaclassReference) context
 			if (container instanceof ModelElementChange) {
 				return createQualifiedEClassScopeWithEObject(potentialMetaclassReference?.metamodel);
-			} else if (container instanceof CreateModelElement) {
+			} else if (container instanceof CreateBlock) {
 				return createQualifiedEClassScopeWithoutAbstract(potentialMetaclassReference?.metamodel);
 			} else if (container instanceof RoutineInput) {
 				return createQualifiedEClassScopeWithSpecialInputTypes(potentialMetaclassReference?.metamodel);
-			} else if (container instanceof RetrieveOrRequireAbscenceOfModelElement || container instanceof Matcher) {
+			} else if (container instanceof RetrieveOrRequireAbscenceOfModelElement || container instanceof MatchBlock) {
 				return createQualifiedEClassScopeWithEObject(potentialMetaclassReference?.metamodel)
 			} else if (container instanceof MetaclassReference) {
 				return createQualifiedEClassScopeWithEObject(container.metamodel)

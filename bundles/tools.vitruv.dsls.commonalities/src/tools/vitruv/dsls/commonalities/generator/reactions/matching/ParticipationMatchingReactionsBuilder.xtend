@@ -315,7 +315,7 @@ class ParticipationMatchingReactionsBuilder extends ReactionsGenerationHelper {
 				vall(INTERMEDIATE).retrieve(commonality.changeClass).correspondingTo.oldValue
 				vall(RESOURCE_BRIDGE).retrieve(ResourcesPackage.eINSTANCE.intermediateResourceBridge).correspondingTo.oldValue
 			]
-			action [
+			update [
 				// Remove correspondence between the resource bridge and the just removed element
 				removeCorrespondenceBetween [extension typeProvider|typeProvider.oldValue].and(RESOURCE_BRIDGE).taggedWithAnything
 				delete(INTERMEDIATE)
@@ -339,7 +339,7 @@ class ParticipationMatchingReactionsBuilder extends ReactionsGenerationHelper {
 			create.routine('''matchManyParticipations_«participation.name»«reactionNameSuffix»''')
 				.input [
 					model(EcorePackage.eINSTANCE.EObject, REFERENCE_ROOT)
-				].action [
+				].update [
 					execute [ extension typeProvider |
 						XbaseFactory.eINSTANCE.createXBlockExpression => [
 							// Result variable (initially 'false'):
@@ -403,7 +403,7 @@ class ParticipationMatchingReactionsBuilder extends ReactionsGenerationHelper {
 						.correspondingTo(INTERMEDIATE)
 						.taggedWith(referenceRootClass.correspondenceTag)
 				]
-				.action [
+				.update [
 					// TODO: Avoid generating the same matching routines twice. These routines already exists inside
 					// P -> C segment. Import the segment and call the matching routine there.
 					if (participationContext.isForAttributeReferenceMapping) {

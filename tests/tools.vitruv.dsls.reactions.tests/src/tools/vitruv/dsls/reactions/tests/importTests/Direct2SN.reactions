@@ -1,5 +1,4 @@
 import tools.vitruv.dsls.reactions.tests.importTests.ImportTestsExecutionMonitor
-
 import static tools.vitruv.dsls.reactions.tests.importTests.ImportTests.*
 import static tools.vitruv.dsls.reactions.tests.importTests.ImportTestsExecutionMonitor.ExecutionType.*
 import static tools.vitruv.dsls.reactions.tests.importTests.ImportTestsUtils.*
@@ -12,7 +11,7 @@ execute actions in minimal
 
 import importTestsTransitive3SN
 
-reaction Direct2SNReaction {
+reaction Direct2SNReupdate {
 	after attribute replaced at minimal::Root[id]
 	call {
 		ImportTestsExecutionMonitor.instance.set(Direct2SNReaction)
@@ -28,9 +27,7 @@ reaction Direct2SNReaction {
 }
 
 routine direct2SNRoutine() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(Direct2SNRoutine)
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(Direct2SNRoutine)
 	}
 }
