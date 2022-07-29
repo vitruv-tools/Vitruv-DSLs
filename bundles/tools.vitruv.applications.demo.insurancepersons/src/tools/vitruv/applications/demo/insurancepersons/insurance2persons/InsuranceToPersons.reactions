@@ -36,7 +36,7 @@ routine deletePersonRegister(insurance::InsuranceDatabase insuranceDatabase) {
 		val personRegister = retrieve persons::PersonRegister corresponding to insuranceDatabase
 	}
 	update {
-		deleteObject(personRegister)
+		removeObject(personRegister)
 		removeCorrespondenceBetween(personRegister, insuranceDatabase)
 	}
 }
@@ -134,7 +134,7 @@ routine deletePerson(insurance::InsuranceClient client) {
 		val person = retrieve persons::Person corresponding to client
 	}
 	update {
-		deleteObject(person)
+		removeObject(person)
 		removeCorrespondenceBetween(client, person)
 	}
 }

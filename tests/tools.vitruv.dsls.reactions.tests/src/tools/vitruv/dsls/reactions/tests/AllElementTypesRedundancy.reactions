@@ -44,7 +44,7 @@ routine deleteRoot(minimal::Root rootElement) {
 		val oldModel = retrieve minimal::Root corresponding to rootElement
 	}
 	update {
-		deleteObject(oldModel)
+		removeObject(oldModel)
 		removeCorrespondenceBetween(rootElement, oldModel)
 	}
 }
@@ -143,7 +143,7 @@ routine removeNonRoot(minimal::NonRoot removedNonRoot) {
 	}
 	update{
 		SimpleChangesTestsExecutionMonitor.instance.set(DeleteNonRootEObjectInList);
-		deleteObject(targetElement)
+		removeObject(targetElement)
 		removeCorrespondenceBetween(targetElement, removedNonRoot)
 	}
 }
@@ -170,7 +170,7 @@ routine deleteNonRootEObjectSingle(minimal::Root container, minimal::NonRoot con
 			with targetElement.eContainer === correspondingContainer
 	}
 	update {
-		deleteObject(targetElement)
+		removeObject(targetElement)
 		removeCorrespondenceBetween(containedObject, targetElement)
 		SimpleChangesTestsExecutionMonitor.instance.set(DeleteNonRootEObjectSingle);
 	}
@@ -346,7 +346,7 @@ routine deleteNonRootFromContainer(minimal::NonRoot removedNonRoot) {
 		val correspondingNonRoot = retrieve minimal::NonRoot corresponding to removedNonRoot
 	}
 	update {
-		deleteObject(correspondingNonRoot)
+		removeObject(correspondingNonRoot)
 		removeCorrespondenceBetween(removedNonRoot, correspondingNonRoot)
 	}
 }

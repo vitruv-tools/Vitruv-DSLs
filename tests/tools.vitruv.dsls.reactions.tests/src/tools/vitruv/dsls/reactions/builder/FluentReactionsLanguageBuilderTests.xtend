@@ -81,7 +81,7 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 					val toDelete = retrieve allElementTypes::Root corresponding to affectedEObject
 				}
 				update {
-					deleteObject(toDelete)
+					removeObject(toDelete)
 				}
 			}
 		'''
@@ -160,7 +160,7 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 					val toDelete = retrieve allElementTypes::Root corresponding to affectedEObject
 				}
 				update {
-					deleteObject(toDelete)
+					removeObject(toDelete)
 				}
 			}
 			

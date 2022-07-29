@@ -173,7 +173,7 @@ abstract class AbstractRepairRoutineRealization extends CallHierarchyHaving impl
 			ReactionsCorrespondenceHelper.addCorrespondence(correspondenceModel, firstElement, secondElement, tag);
 		}
 		
-		def void deleteObject(EObject element) {
+		def void removeObject(EObject element) {
 			if (element === null) {
 				return
 			}

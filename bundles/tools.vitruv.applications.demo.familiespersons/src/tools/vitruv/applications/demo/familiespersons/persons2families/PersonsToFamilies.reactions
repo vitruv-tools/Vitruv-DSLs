@@ -52,7 +52,7 @@ routine deleteFamilyRegister(persons::PersonRegister deletedPersonsRegister) {
 		val familyRegister = retrieve families::FamilyRegister corresponding to deletedPersonsRegister
 	}
 	update {
-		deleteObject(familyRegister)
+		removeObject(familyRegister)
 		removeCorrespondenceBetween(familyRegister, deletedPersonsRegister)
 	}
 }
@@ -346,7 +346,7 @@ routine deleteMember(persons::Person person) {
 		val family = retrieve families::Family corresponding to person
 	}
 	update {
-		deleteObject(member)
+		removeObject(member)
 		removeCorrespondenceBetween(person, family)
 		removeCorrespondenceBetween(person, member)
 		deleteFamilyIfEmpty(family)
@@ -361,6 +361,6 @@ routine deleteFamilyIfEmpty(families::Family family) {
 		check family.daughters.empty
 	}
 	update {
-		deleteObject(family)
+		removeObject(family)
 	}
 }

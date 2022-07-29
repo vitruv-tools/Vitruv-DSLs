@@ -492,7 +492,7 @@ class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 			val statement = (XbaseFactory.eINSTANCE.createXFeatureCall => [
 				explicitOperationCall = true
 			]).whenJvmTypes [
-				feature = typeProvider.findMethod(AbstractRepairRoutineRealization.Update, 'deleteObject') 
+				feature = typeProvider.findMethod(AbstractRepairRoutineRealization.Update, 'removeObject')
 				featureCallArguments += existingElement(existingElement)
 			]
 			expressionBlock.expressions += statement
