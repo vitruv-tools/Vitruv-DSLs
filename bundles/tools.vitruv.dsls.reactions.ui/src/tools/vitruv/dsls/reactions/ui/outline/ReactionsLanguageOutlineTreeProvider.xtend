@@ -15,13 +15,13 @@ import tools.vitruv.dsls.reactions.language.toplevelelements.Reaction
 import static extension tools.vitruv.dsls.reactions.util.ReactionsLanguageUtil.*
 import tools.vitruv.dsls.reactions.language.toplevelelements.RoutineInput
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsImport
-import tools.vitruv.dsls.reactions.language.toplevelelements.RoutineCallBlock
 import tools.vitruv.dsls.reactions.language.ModelElementChange
 import tools.vitruv.dsls.reactions.language.ModelAttributeChange
 import tools.vitruv.dsls.reactions.language.ArbitraryModelChange
 import tools.vitruv.dsls.reactions.language.toplevelelements.UpdateBlock
 import tools.vitruv.dsls.reactions.language.toplevelelements.CreateBlock
 import tools.vitruv.dsls.reactions.language.toplevelelements.MatchBlock
+import tools.vitruv.dsls.reactions.language.toplevelelements.RoutineCall
 
 /**
  * Outline structure definition for a reactions file.
@@ -117,7 +117,7 @@ class ReactionsLanguageOutlineTreeProvider extends DefaultOutlineTreeProvider {
 		return true;
 	}
 
-	protected def boolean _isLeaf(RoutineCallBlock element) {
+	protected def boolean _isLeaf(RoutineCall element) {
 		return true;
 	}
 
