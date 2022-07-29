@@ -10,7 +10,7 @@ reactions: importTestsTransitive3SN
 in reaction to changes in minimal
 execute actions in minimal
 
-reaction Transitive3SNReaction {
+reaction Transitive3SNReupdate {
 	after attribute replaced at minimal::Root[id]
 	call {
 		ImportTestsExecutionMonitor.instance.set(Transitive3SNReaction)
@@ -26,20 +26,16 @@ reaction Transitive3SNReaction {
 }
 
 routine transitive3SNRoutine() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(Transitive3SNRoutine)
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(Transitive3SNRoutine)
 	}
 }
 
 // routine overrides:
 
 routine transitive3SNOverriddenRoutine(){
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(Transitive3SNOverriddenRoutine)
-			transitive3SNRoutine()
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(Transitive3SNOverriddenRoutine)
+		transitive3SNRoutine()
 	}
 }

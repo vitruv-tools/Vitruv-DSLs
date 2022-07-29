@@ -15,6 +15,7 @@ import tools.vitruv.change.correspondence.CorrespondenceModel
 import tools.vitruv.change.propagation.ResourceAccess
 
 import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.*
+import org.eclipse.xtext.common.types.JvmGenericType
 
 class TypeProvider implements IJvmTypeProvider {
 
@@ -38,6 +39,15 @@ class TypeProvider implements IJvmTypeProvider {
 
 	override findTypeByName(String name, boolean binaryNestedTypeDelimiter) {
 		delegate.findTypeByName(name, binaryNestedTypeDelimiter).possiblyImported
+	}
+	
+	def findMethod(Class<?> containingClass, String methodName) {
+		val type = findTypeByName(containingClass.name)
+		if (type instanceof JvmGenericType) {
+			return findMethod(type, methodName)	
+		} else {
+			throw new IllegalStateException('''Could not find type “«containingClass.name»”!''')
+		}	
 	}
 
 	override getResourceSet() {
@@ -144,7 +154,7 @@ class TypeProvider implements IJvmTypeProvider {
 		]
 	}
 
-	def protected static JvmField findAttribute(JvmDeclaredType declaredType, String attributeName) {
+	static def JvmField findAttribute(JvmDeclaredType declaredType, String attributeName) {
 		val result = (declaredType.members.filter[simpleName == attributeName].filter(JvmField) +
 			declaredType.superTypes.map[type].filter(JvmDeclaredType).map[findAttribute(attributeName)]
 		).head
@@ -155,7 +165,7 @@ class TypeProvider implements IJvmTypeProvider {
 		return result
 	}
 
-	def protected static JvmOperation findMethod(JvmDeclaredType declaredType, String methodName) {
+	static def JvmOperation findMethod(JvmDeclaredType declaredType, String methodName) {
 		val result = declaredType.members.filter(JvmOperation).filter[simpleName == methodName].head
 		if (result === null) {
 			throw new IllegalStateException('''Could not find the method “«methodName»” in ‹«
@@ -163,4 +173,5 @@ class TypeProvider implements IJvmTypeProvider {
 		}
 		return result
 	}
+
 }

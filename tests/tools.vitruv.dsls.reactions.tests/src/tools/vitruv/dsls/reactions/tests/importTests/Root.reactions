@@ -14,7 +14,7 @@ import importTestsDirectSN
 import importTestsDirect2SN
 import routines importTestsDirectRoutinesQN using qualified names
 
-reaction RootReaction {
+reaction RootReupdate {
 	after attribute replaced at minimal::Root[id]
 	call {
 		val data = newValue
@@ -100,45 +100,41 @@ reaction RootReaction {
 }
 
 routine rootRoutine() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(RootRoutine)
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(RootRoutine)
 	}
 }
 
 routine callRoutinesFromRoutine(String data) {
-	action {
-		call {
-			if (containsDataTag(data, TAG_ROOT_ROUTINE)) {
-				rootRoutine()
-			}
-			if (containsDataTag(data, TAG_DIRECT_ROUTINE_SN)) {
-				directSNRoutine()
-			}
-			if (containsDataTag(data, TAG_DIRECT_ROUTINE_QN)) {
-				importTestsDirectRoutinesQN.directRoutinesQNRoutine()
-			}
-			// transitive routines
-			if (containsDataTag(data, TAG_TRANSITIVE_ROUTINE_SN_SN)) {
-				transitiveSNRoutine()
-			}
-			if (containsDataTag(data, TAG_TRANSITIVE_ROUTINE_SN_QN)) {
-				importTestsTransitiveRoutinesQN.transitiveRoutinesQNRoutine()
-			}
-			if (containsDataTag(data, TAG_TRANSITIVE_ROUTINE_QN_SN)) {
-				importTestsDirectRoutinesQN.transitiveRoutinesSNRoutine()
-			}
-			if (containsDataTag(data, TAG_TRANSITIVE_ROUTINE_QN_QN)) {
-				importTestsDirectRoutinesQN.importTestsTransitiveRoutinesQN.transitiveRoutinesQNRoutine
-			}
+	update {
+		if (containsDataTag(data, TAG_ROOT_ROUTINE)) {
+			rootRoutine()
+		}
+		if (containsDataTag(data, TAG_DIRECT_ROUTINE_SN)) {
+			directSNRoutine()
+		}
+		if (containsDataTag(data, TAG_DIRECT_ROUTINE_QN)) {
+			importTestsDirectRoutinesQN.directRoutinesQNRoutine()
+		}
+		// transitive routines
+		if (containsDataTag(data, TAG_TRANSITIVE_ROUTINE_SN_SN)) {
+			transitiveSNRoutine()
+		}
+		if (containsDataTag(data, TAG_TRANSITIVE_ROUTINE_SN_QN)) {
+			importTestsTransitiveRoutinesQN.transitiveRoutinesQNRoutine()
+		}
+		if (containsDataTag(data, TAG_TRANSITIVE_ROUTINE_QN_SN)) {
+			importTestsDirectRoutinesQN.transitiveRoutinesSNRoutine()
+		}
+		if (containsDataTag(data, TAG_TRANSITIVE_ROUTINE_QN_QN)) {
+			importTestsDirectRoutinesQN.importTestsTransitiveRoutinesQN.transitiveRoutinesQNRoutine
 		}
 	}
 }
 
 // reaction overrides:
 
-reaction importTestsDirectSN::DirectSNOverriddenReaction {
+reaction importTestsDirectSN::DirectSNOverriddenReupdate {
 	after attribute replaced at minimal::Root[id]
 	call {
 		val data = newValue;
@@ -149,7 +145,7 @@ reaction importTestsDirectSN::DirectSNOverriddenReaction {
 	}
 }
 
-reaction importTestsTransitiveSN::TransitiveSNOverriddenReaction {
+reaction importTestsTransitiveSN::TransitiveSNOverriddenReupdate {
 	after attribute replaced at minimal::Root[id]
 	call {
 		val data = newValue;
@@ -174,71 +170,55 @@ reaction importTestsTransitiveSN::TransitiveSNOverriddenReaction2 {
 // routine overrides:
 
 routine importTestsDirectSN::directSNOverriddenRoutine(){
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(RootDirectSNOverriddenRoutine)
-			rootRoutine()
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(RootDirectSNOverriddenRoutine)
+		rootRoutine()
 	}
 }
 
 routine importTestsDirectSN.importTestsTransitiveSN::transitiveSNOverriddenRoutine() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(RootTransitiveSNOverriddenRoutine)
-			rootRoutine()
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(RootTransitiveSNOverriddenRoutine)
+		rootRoutine()
 	}
 }
 
 routine importTestsDirect2SN.importTestsTransitive3SN::transitive3SNOverriddenRoutine() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(RootTransitive3SNOverriddenRoutine)
-			rootRoutine()
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(RootTransitive3SNOverriddenRoutine)
+		rootRoutine()
 	}
 }
 
 routine importTestsDirectSN.importTestsTransitiveSN::transitiveSNOverriddenRoutine2() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(RootTransitiveSNOverriddenRoutine2)
-			rootRoutine()
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(RootTransitiveSNOverriddenRoutine2)
+		rootRoutine()
 	}
 }
 
 // test multiple imports of same routines at different import paths:
 routine importTestsDirectSN.importTestsTransitiveSN.importTestsCommonRoutines::commonRoutinesRoutine1() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(RootCommonRoutinesRoutine1)
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(RootCommonRoutinesRoutine1)
 	}
 }
 
 routine importTestsDirectSN.importTestsTransitiveSN.importTestsCommonRoutines::commonRoutinesRoutine2() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(RootCommonRoutinesRoutine2)
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(RootCommonRoutinesRoutine2)
 	}
 }
 
 routine importTestsDirectSN.importTestsTransitiveSN.importTestsCommonRoutines::commonRoutinesRoutine3() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(RootCommonRoutinesRoutine3)
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(RootCommonRoutinesRoutine3)
 	}
 }
 
 // multiple overrides of same routine along different import paths:
 routine importTestsDirectRoutinesQN.importTestsCommonRoutines::commonRoutinesRoutine3() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(RootCommonRoutines2Routine3)
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(RootCommonRoutines2Routine3)
 	}
 }

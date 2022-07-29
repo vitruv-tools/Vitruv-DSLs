@@ -21,17 +21,16 @@ reaction InsertRootTest {
 
 routine createRoot(minimal::Root rootElement) {
 	match {
-		require absence of minimal::Root corresponding to rootElement 
+		require absence of minimal::Root corresponding to rootElement
 	}
-	action {
-		val newRoot = create minimal::Root and initialize {
-			newRoot.id = rootElement.id;
-		}
-		call {
-			val targetModel = rootElement.eResource.URI.trimFileExtension.lastSegment.replace('Source', 'Target').allElementTypes 
-			persistProjectRelative(rootElement, newRoot, targetModel.toString)
-		}
-		add correspondence between newRoot and rootElement
+	create {
+		val newRoot = new minimal::Root
+	}
+	update {
+		newRoot.id = rootElement.id
+		val targetModel = rootElement.eResource.URI.trimFileExtension.lastSegment.replace('Source', 'Target').allElementTypes 
+		persistProjectRelative(rootElement, newRoot, targetModel.toString)
+		addCorrespondenceBetween(newRoot, rootElement)
 	}
 }
 
@@ -44,8 +43,9 @@ routine deleteRoot(minimal::Root rootElement) {
 	match {
 		val oldModel = retrieve minimal::Root corresponding to rootElement
 	}
-	action {
-		delete oldModel
+	update {
+		removeObject(oldModel)
+		removeCorrespondenceBetween(rootElement, oldModel)
 	}
 }
 
@@ -61,13 +61,9 @@ routine replaceSingleValuedPrimitiveTypeEAttribute(minimal::Root rootElement, In
 	match {
 		val targetElement = retrieve asserted minimal::Root corresponding to rootElement
 	}
-	action {
-		update targetElement {
-			targetElement.singleValuedPrimitiveTypeEAttribute = value;
-		}
-		call {
-			SimpleChangesTestsExecutionMonitor.instance.set(UpdateSingleValuedPrimitveTypeEAttribute);
-		}
+	update {
+		targetElement.singleValuedPrimitiveTypeEAttribute = value;
+		SimpleChangesTestsExecutionMonitor.instance.set(UpdateSingleValuedPrimitveTypeEAttribute);
 	}
 }
 
@@ -86,13 +82,9 @@ routine replaceSingleValuedEAttribute(minimal::Root rootElement, Integer value) 
 		val targetElement = retrieve asserted minimal::Root corresponding to rootElement
 		check { value !== null }
 	}
-	action {
-		update targetElement {
-			targetElement.singleValuedEAttribute = value;
-		}
-		call {
-			SimpleChangesTestsExecutionMonitor.instance.set(UpdateSingleValuedEAttribute);
-		}
+	update {
+		targetElement.singleValuedEAttribute = value;
+		SimpleChangesTestsExecutionMonitor.instance.set(UpdateSingleValuedEAttribute);
 	}
 }
 
@@ -108,10 +100,8 @@ routine replaceIdentifiedId(minimal::Identified identified, String value) {
 	match {
 		val targetElement = retrieve asserted minimal::Identified corresponding to identified
 	}
-	action {
-		update targetElement {
-			targetElement.id = value;
-		}
+	update {
+		targetElement.id = value;
 	}
 }
 
@@ -128,17 +118,14 @@ routine insertNonRoot(minimal::Root rootElement, minimal::NonRoot insertedNonRoo
 		val targetElement = retrieve asserted minimal::Root corresponding to rootElement
 		require absence of minimal::NonRoot corresponding to insertedNonRoot
 	}
-	action {
-		val newNonRoot = create minimal::NonRoot and initialize {
-			newNonRoot.id = insertedNonRoot.id
-		}
-		update targetElement {
-			targetElement.multiValuedContainmentEReference += newNonRoot;
-		}
-		add correspondence between newNonRoot and insertedNonRoot
-		call {
-			SimpleChangesTestsExecutionMonitor.instance.set(CreateNonRootEObjectInList);
-		}
+	create {
+		val newNonRoot = new minimal::NonRoot
+	}
+	update {
+		newNonRoot.id = insertedNonRoot.id
+		targetElement.multiValuedContainmentEReference += newNonRoot;
+		addCorrespondenceBetween(newNonRoot, insertedNonRoot)
+		SimpleChangesTestsExecutionMonitor.instance.set(CreateNonRootEObjectInList);
 	}
 }
 
@@ -154,18 +141,17 @@ routine removeNonRoot(minimal::NonRoot removedNonRoot) {
 	match {
 		val targetElement = retrieve minimal::NonRoot corresponding to removedNonRoot
 	}
-	action {
-		call {
-			SimpleChangesTestsExecutionMonitor.instance.set(DeleteNonRootEObjectInList);
-		}
-		delete targetElement
+	update{
+		SimpleChangesTestsExecutionMonitor.instance.set(DeleteNonRootEObjectInList);
+		removeObject(targetElement)
+		removeCorrespondenceBetween(targetElement, removedNonRoot)
 	}
 }
 
 /*
  * ReplaceNonRootEObjectSingle
  */
-reaction ReplacedNonRootEObjectSingleReaction {
+reaction ReplacedNonRootEObjectSingleReupdate {
 	after element minimal::NonRoot replaced at minimal::Root[singleValuedContainmentEReference]
 	call {
 		if (oldValue !== null) {
@@ -183,12 +169,10 @@ routine deleteNonRootEObjectSingle(minimal::Root container, minimal::NonRoot con
 		val targetElement = retrieve minimal::NonRoot corresponding to containedObject
 			with targetElement.eContainer === correspondingContainer
 	}
-	action {
-		remove correspondence between containedObject and targetElement
-		delete targetElement
-		call {
-			SimpleChangesTestsExecutionMonitor.instance.set(DeleteNonRootEObjectSingle);
-		}
+	update {
+		removeObject(targetElement)
+		removeCorrespondenceBetween(containedObject, targetElement)
+		SimpleChangesTestsExecutionMonitor.instance.set(DeleteNonRootEObjectSingle);
 	}
 }
 
@@ -197,17 +181,14 @@ routine createNonRootEObjectSingle(minimal::Root sourceRoot, minimal::NonRoot co
 		val targetElement = retrieve asserted minimal::Root corresponding to sourceRoot
 		require absence of minimal::NonRoot corresponding to containedObject
 	}
-	action {
-		val newNonRoot = create minimal::NonRoot and initialize {
-			newNonRoot.id = containedObject.id
-		}
-		update targetElement {
-			targetElement.singleValuedContainmentEReference = newNonRoot;
-		}
-		add correspondence between newNonRoot and containedObject
-		call {
-			SimpleChangesTestsExecutionMonitor.instance.set(CreateNonRootEObjectSingle);
-		}
+	create {
+		val newNonRoot = new minimal::NonRoot
+	}
+	update {
+		newNonRoot.id = containedObject.id
+		targetElement.singleValuedContainmentEReference = newNonRoot;
+		addCorrespondenceBetween(newNonRoot, containedObject)
+		SimpleChangesTestsExecutionMonitor.instance.set(CreateNonRootEObjectSingle);
 	}
 }
 
@@ -225,13 +206,9 @@ routine replaceSingleValuedNonContainmentReference(minimal::Root rootElement, mi
 		val targetContainer = retrieve asserted minimal::Root corresponding to rootElement
 		val targetElement = retrieve asserted minimal::NonRoot corresponding to newReferencedElement
 	}
-	action {
-		update targetContainer {
-			targetContainer.singleValuedNonContainmentEReference = targetElement;
-		}
-		call {
-			SimpleChangesTestsExecutionMonitor.instance.set(UpdateSingleValuedNonContainmentEReference);
-		}
+	update {
+		targetContainer.singleValuedNonContainmentEReference = targetElement;
+		SimpleChangesTestsExecutionMonitor.instance.set(UpdateSingleValuedNonContainmentEReference);
 	}
 }
 
@@ -247,13 +224,9 @@ routine insertEAttribute(minimal::Root rootElement, Integer attributeValue) {
 	match {
 		val targetElement = retrieve asserted minimal::Root corresponding to rootElement
 	}
-	action {
-		update targetElement {
-			targetElement.multiValuedEAttribute += attributeValue;
-		}
-		call {
-			SimpleChangesTestsExecutionMonitor.instance.set(InsertEAttributeValue);
-		}
+	update {
+		targetElement.multiValuedEAttribute += attributeValue;
+		SimpleChangesTestsExecutionMonitor.instance.set(InsertEAttributeValue);
 	}
 }
 
@@ -269,14 +242,10 @@ routine removeEAttribute(minimal::Root rootElement, Integer removedAttributeValu
 	match {
 		val targetElement = retrieve asserted minimal::Root corresponding to rootElement
 	}
-	action {
-		update targetElement {
-			val sourceValueList = rootElement.multiValuedEAttribute;
-			targetElement.multiValuedEAttribute.removeIf[!sourceValueList.contains(it.intValue)];
-		}
-		call {
-			SimpleChangesTestsExecutionMonitor.instance.set(RemoveEAttributeValue);
-		}
+	update {
+		val sourceValueList = rootElement.multiValuedEAttribute;
+		targetElement.multiValuedEAttribute.removeIf[!sourceValueList.contains(it.intValue)];
+		SimpleChangesTestsExecutionMonitor.instance.set(RemoveEAttributeValue);
 	}
 }
 
@@ -292,14 +261,10 @@ routine insertNonContainmentReference(minimal::Root rootElement, minimal::NonRoo
 	match {
 		val targetElement = retrieve asserted minimal::Root corresponding to rootElement
 	}
-	action {
-		update targetElement {
-			val addedNonRoot = targetElement.nonRootObjectContainerHelper.nonRootObjectsContainment.findFirst[it.id == insertedNonRoot.id];
-			targetElement.multiValuedNonContainmentEReference += addedNonRoot;
-		}
-		call {
-			SimpleChangesTestsExecutionMonitor.instance.set(InsertNonContainmentEReference);
-		}
+	update {
+		val addedNonRoot = targetElement.nonRootObjectContainerHelper.nonRootObjectsContainment.findFirst[it.id == insertedNonRoot.id];
+		targetElement.multiValuedNonContainmentEReference += addedNonRoot;
+		SimpleChangesTestsExecutionMonitor.instance.set(InsertNonContainmentEReference);
 	}
 }
 
@@ -316,13 +281,9 @@ routine removeNonContainmentReference(minimal::Root rootElement, minimal::NonRoo
 	match {
 		val targetRoot = retrieve asserted minimal::Root corresponding to rootElement
 	}
-	action {
-		update targetRoot {
-			targetRoot.multiValuedNonContainmentEReference.removeIf[it.id == removedNonRoot.id];
-		}
-		call {
-			SimpleChangesTestsExecutionMonitor.instance.set(RemoveNonContainmentEReference);
-		}
+	update {
+		targetRoot.multiValuedNonContainmentEReference.removeIf[it.id == removedNonRoot.id];
+		SimpleChangesTestsExecutionMonitor.instance.set(RemoveNonContainmentEReference);
 	}
 }
 
@@ -342,14 +303,13 @@ routine createNonRootObjectContainer(minimal::Root rootElement, minimal::NonRoot
 		val targetElement = retrieve asserted minimal::Root corresponding to rootElement
 		require absence of minimal::NonRootObjectContainerHelper corresponding to nonRootObjectContainer
 	}
-	action {
-		val newNonRootContainer = create minimal::NonRootObjectContainerHelper and initialize {
-			newNonRootContainer.id = nonRootObjectContainer.id;
-		}
-		update targetElement {
-			targetElement.nonRootObjectContainerHelper = newNonRootContainer;
-		}
-		add correspondence between newNonRootContainer and nonRootObjectContainer
+	create {
+		val newNonRootContainer = new minimal::NonRootObjectContainerHelper
+	}
+	update {
+		newNonRootContainer.id = nonRootObjectContainer.id;
+		targetElement.nonRootObjectContainerHelper = newNonRootContainer;
+		addCorrespondenceBetween(newNonRootContainer, nonRootObjectContainer)
 	}
 }
 
@@ -366,14 +326,13 @@ routine createNonRootInContainer(minimal::NonRootObjectContainerHelper container
 		val nonRootContainer = retrieve asserted minimal::NonRootObjectContainerHelper corresponding to container
 		require absence of minimal::NonRoot corresponding to insertedNonRoot
 	}
-	action {
-		val newNonRoot = create minimal::NonRoot and initialize {
-			newNonRoot.id = insertedNonRoot.id;
-		}
-		update nonRootContainer {
-			nonRootContainer.nonRootObjectsContainment += newNonRoot;
-		}
-		add correspondence between newNonRoot and insertedNonRoot
+	create {
+		val newNonRoot = new minimal::NonRoot
+	}
+	update {
+		newNonRoot.id = insertedNonRoot.id;
+		nonRootContainer.nonRootObjectsContainment += newNonRoot;
+		addCorrespondenceBetween(newNonRoot, insertedNonRoot)
 	}
 }
 
@@ -386,8 +345,9 @@ routine deleteNonRootFromContainer(minimal::NonRoot removedNonRoot) {
 	match {
 		val correspondingNonRoot = retrieve minimal::NonRoot corresponding to removedNonRoot
 	}
-	action {
-		delete correspondingNonRoot
+	update {
+		removeObject(correspondingNonRoot)
+		removeCorrespondenceBetween(removedNonRoot, correspondingNonRoot)
 	}
 }
 
@@ -403,21 +363,19 @@ reaction NonRootDeleted {
 
 // Unused routine: Only to test if primitive types are mapped and scoped correctly
 routine testPrimitiveTypesRoutine(Integer intVal, Long longVal, Short shortVal, Byte byteVal, Character charVal, Double doubleVal, Float floatVal, Boolean boolVal, String stringVal) {
-	action {
-		call {
-			// Call methods of types to ensure that they are correctly mapped
-			// otherwise static code checks will fail
-			intVal.intValue;
-			longVal.longValue;
-			shortVal.shortValue;
-			byteVal.byteValue;
-			charVal.charValue;
-			doubleVal.doubleValue;
-			floatVal.floatValue;
-			boolVal.booleanValue;
-			stringVal.charAt(0);
-			testPrimitiveTypesRoutine(intVal, longVal, shortVal, byteVal, charVal, doubleVal, floatVal, boolVal, stringVal)
-		}
+	update {
+		// Call methods of types to ensure that they are correctly mapped
+		// otherwise static code checks will fail
+		intVal.intValue;
+		longVal.longValue;
+		shortVal.shortValue;
+		byteVal.byteValue;
+		charVal.charValue;
+		doubleVal.doubleValue;
+		floatVal.floatValue;
+		boolVal.booleanValue;
+		stringVal.charAt(0);
+		testPrimitiveTypesRoutine(intVal, longVal, shortVal, byteVal, charVal, doubleVal, floatVal, boolVal, stringVal)
 	}
 }
 
@@ -429,10 +387,6 @@ reaction AnyChange {
 }
 
 routine testJavaTypes(plain SimpleChangesTestsExecutionMonitor as monitor) {
-	action {
-		call {}
-		execute {}
-	}
 }
 
 reaction CheckManyCorrespondenceRetrievalWorks {
@@ -446,8 +400,7 @@ routine checkManyCorrespondenceRetrievalWorks(minimal::Root rootElement) {
 		val targetElements = retrieve many minimal::Root corresponding to rootElement
 		check asserted { return targetElements !== null && !targetElements.empty }
 	}
-	action {
-		call { }
+	update {
 	}
 }
 

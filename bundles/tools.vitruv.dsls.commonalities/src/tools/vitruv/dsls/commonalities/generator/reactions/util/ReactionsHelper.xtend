@@ -14,8 +14,6 @@ import tools.vitruv.dsls.commonalities.runtime.intermediatemodelbase.Intermediat
 
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.util.JvmTypeProviderHelper.*
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.util.XbaseHelper.*
-import tools.vitruv.dsls.reactions.language.RoutineCallStatement
-import tools.vitruv.dsls.reactions.language.ExecuteActionStatement
 
 @Utility
 class ReactionsHelper {
@@ -89,13 +87,8 @@ class ReactionsHelper {
 			return caller
 		}
 
-		def setCallerContext(RoutineCallStatement callerContext) {
-			this.callerContext = callerContext?.code
-			return callerContext
-		}
-
-		def setCallerContext(ExecuteActionStatement callerContext) {
-			this.callerContext = callerContext?.code
+		def setCallerContext(XExpression callerContext) {
+			this.callerContext = callerContext
 			return callerContext
 		}
 
@@ -114,16 +107,6 @@ class ReactionsHelper {
 		TypeProvider typeProvider, FluentRoutineBuilder routine, XExpression... parameters) {
 		callerContext.checkReady()
 		return createRoutineCall(callerContext.caller, callerContext.callerContext, typeProvider, routine, parameters)
-	}
-
-	static def createRoutineCall(FluentRoutineBuilder caller, RoutineCallStatement callerContext,
-		TypeProvider typeProvider, FluentRoutineBuilder routine, XExpression... parameters) {
-		return createRoutineCall(caller, callerContext.code, typeProvider, routine, parameters)
-	}
-
-	static def createRoutineCall(FluentRoutineBuilder caller, ExecuteActionStatement callerContext,
-		TypeProvider typeProvider, FluentRoutineBuilder routine, XExpression... parameters) {
-		return createRoutineCall(caller, callerContext.code, typeProvider, routine, parameters)
 	}
 
 	static def createRoutineCall(FluentRoutineBuilder caller, XExpression callerContext,
