@@ -9,25 +9,19 @@ in reaction to changes in minimal
 execute actions in minimal
 
 routine commonRoutinesRoutine1() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(CommonRoutinesRoutine1)
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(CommonRoutinesRoutine1)
 	}
 }
 
 routine commonRoutinesRoutine2() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(CommonRoutinesRoutine2)
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(CommonRoutinesRoutine2)
 	}
 }
 
 routine commonRoutinesRoutine3() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(CommonRoutinesRoutine3)
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(CommonRoutinesRoutine3)
 	}
 }

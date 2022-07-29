@@ -247,7 +247,7 @@ class FluentReactionBuilder extends FluentReactionsSegmentChildBuilder {
 
 		def private addRoutineCall(FluentRoutineBuilder routineBuilder, RoutineCallParameter... parameters) {
 			if (reaction.callRoutine === null) {
-				reaction.callRoutine = TopLevelElementsFactory.eINSTANCE.createReactionRoutineCall => [
+				reaction.callRoutine = TopLevelElementsFactory.eINSTANCE.createRoutineCallBlock => [
 					code = routineCall(routineBuilder, parameters)
 				]
 			} else {

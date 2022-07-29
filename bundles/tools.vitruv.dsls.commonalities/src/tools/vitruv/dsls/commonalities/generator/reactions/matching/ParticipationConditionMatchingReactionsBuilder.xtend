@@ -143,7 +143,7 @@ class ParticipationConditionMatchingReactionsBuilder extends ReactionsGeneration
 							.taggedWith(participationClass.correspondenceTag)
 					]
 				]
-				.action[
+				.update [
 					execute [ extension typeProvider |
 						// Check all checked participation conditions. If at least one of them is no longer fulfilled,
 						// delete the commonality instance.

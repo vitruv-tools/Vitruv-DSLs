@@ -37,17 +37,14 @@ Reaction returns toplevelelements::Reaction:
 		callRoutine=ReactionRoutineCall
 	'}';
 	
-ReactionRoutineCall returns toplevelelements::ReactionRoutineCall:
-	RoutineCallBlock;
+ReactionRoutineCall returns toplevelelements::RoutineCallBlock:
+	{toplevelelements::RoutineCallBlock}
+	'call' CodeBlock;
 
 // *********** TRIGGER ***********
 
-InvariantViolationEvent:
-	'invariant' violation=[ecore::EClass|QualifiedName];
-
 Trigger returns toplevelelements::Trigger:
-	// TODO HK Extend this by "before" executing the transformation before applying the change
-	'after' (ModelChange | InvariantViolationEvent)
+	'after' ModelChange
 	('with' precondition=PreconditionCodeBlock)?;
 
 ModelChange:
@@ -122,8 +119,9 @@ ElementChangeType returns ElementChangeType:
 Routine returns toplevelelements::Routine:
 	(documentation=ML_COMMENT)?
 	'routine' (overrideImportPath=RoutineOverrideImportPath '::')? name=ValidID input=RoutineInput '{'
-		matcher=MatcherBlock?
-		action=ActionBlock
+		matchBlock=MatchBlock?
+		createBlock=CreateBlock?
+		updateBlock=UpdateBlock?
 	'}';
 
 RoutineOverrideImportPath returns toplevelelements::RoutineOverrideImportPath:
@@ -134,16 +132,16 @@ RoutineInput returns toplevelelements::RoutineInput:
 	'(' ((modelInputElements+=NamedMetaclassReference | "plain" javaInputElements+=NamedJavaElementReference)
 		(',' (modelInputElements+=NamedMetaclassReference | "plain" javaInputElements+=NamedJavaElementReference))*)? ')';
 
-// *********** MATCHER ***********
+// *********** MATCH ***********
 
-MatcherBlock returns toplevelelements::Matcher:
-	{toplevelelements::Matcher}
+MatchBlock returns toplevelelements::MatchBlock:
+	{toplevelelements::MatchBlock}
 	'match' '{'
-		(matcherStatements+=MatcherStatement)+
+		(matchStatements+=MatchStatement)+
 	'}';
 
-MatcherStatement returns toplevelelements::MatcherStatement:
-	RetrieveOrRequireAbscenceOfModelElement | MatcherCheckStatement;
+MatchStatement returns toplevelelements::MatchStatement:
+	RetrieveOrRequireAbscenceOfModelElement | MatchCheckStatement;
 
 RetrieveOrRequireAbscenceOfModelElement:
 	(RequireAbscenceOfModelElement | RetrieveModelElement) elementType=UnnamedMetaclassReference 
@@ -162,68 +160,32 @@ RetrieveModelElementTypeStatement returns RetrieveModelElementType:
 	{RetrieveOneModelElement} (optional?='optional' | asserted?='asserted')? |
 	{RetrieveManyModelElements} 'many';
 
-enum RetrieveOneElementType:
-	optional='optional' | asserted='asserted' ;
-
-MatcherCheckStatement:
-	{MatcherCheckStatement}
+MatchCheckStatement:
+	{MatchCheckStatement}
 	'check' (asserted?='asserted')? CodeBlock;
 	
-// *********** EFFECTS ***********
+// *********** CREATE ***********
 
-ActionBlock returns toplevelelements::Action:
-	{toplevelelements::Action}
-	'action' '{'
-		(actionStatements+=ActionStatement)+
+CreateBlock returns toplevelelements::CreateBlock:
+	{toplevelelements::CreateBlock}
+	'create' '{'
+		createStatements+=CreateStatement*
 	'}';
-
-RoutineCallStatement returns RoutineCallStatement:
-	{RoutineCallStatement}
-	RoutineCallBlock;
-
-ActionStatement returns toplevelelements::ActionStatement:
-	CreateModelElementStatement | DeleteModelElementStatement | UpdateModelElementStatement | CreateCorrespondenceStatement | RemoveCorrespondenceStatement | ExecuteActionStatement | RoutineCallStatement;
-
-ExecuteActionStatement returns ExecuteActionStatement:
-	{ExecuteActionStatement}
-	'execute' CodeBlock;
-
-CreateModelElementStatement returns CreateModelElement:
-	{CreateModelElement}
-	'val' name=ValidID '=' 'create' elementType=UnnamedMetaclassReference ('and' 'initialize' initializationBlock=ExecutionCodeBlock)?;
 	
-DeleteModelElementStatement returns DeleteModelElement:
-	{DeleteModelElement}
-	"delete" element=ExistingElementReference;
+CreateStatement returns common::NamedMetaclassReference:
+	'val' name=ValidID '=' 'new' MetaclassReference;
 
-UpdateModelElementStatement returns UpdateModelElement:
-	{UpdateModelElement}
-	'update' element=ExistingElementReference updateBlock=ExecutionCodeBlock;
-
-CreateCorrespondenceStatement returns CreateCorrespondence:
-	{CreateCorrespondence}
-	'add' 'correspondence' 'between' firstElement=ExistingElementReference 'and' secondElement=ExistingElementReference
-	('tagged' 'with' Taggable)?;
-	
-RemoveCorrespondenceStatement returns RemoveCorrespondence:
-	{RemoveCorrespondence}
-	'remove' 'correspondence' 'between' firstElement=ExistingElementReference 'and' secondElement=ExistingElementReference
-	('tagged' 'with' Taggable)?;
-
+// *********** UPDATE ***********
+UpdateBlock returns toplevelelements::UpdateBlock:
+	'update' CodeBlock;
 
 // ****** CODE BLOCKS ******
 
 fragment CodeBlock returns toplevelelements::CodeBlock:
 	code=XExpression;
 
-fragment RoutineCallBlock returns toplevelelements::RoutineCallBlock:
-	'call' CodeBlock;
-
 fragment Taggable:
 	tag=TagCodeBlock;
-
-ExistingElementReference:
-	CodeBlock;
 
 TagCodeBlock returns TagCodeBlock:
 	{TagCodeBlock}
@@ -235,10 +197,6 @@ PreconditionCodeBlock returns toplevelelements::PreconditionCodeBlock:
 
 CorrespondingObjectCodeBlock returns CorrespondingObjectCodeBlock:
 	{CorrespondingObjectCodeBlock}
-	CodeBlock;
-
-ExecutionCodeBlock returns ExecutionCodeBlock:
-	{ExecutionCodeBlock}
 	CodeBlock;
 
 fragment MetaclassReference returns common::MetaclassReference:

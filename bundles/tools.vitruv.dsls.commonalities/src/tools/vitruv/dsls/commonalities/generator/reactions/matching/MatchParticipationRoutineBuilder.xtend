@@ -99,7 +99,7 @@ package class MatchParticipationRoutineBuilder extends ReactionsGenerationHelper
 					model(EcorePackage.eINSTANCE.EObject, START_OBJECT)
 					plain(Boolean, FOLLOW_ATTRIBUTE_REFERENCES)
 					plain(BooleanResult, FOUND_MATCH_RESULT)
-				].action [
+				].update [
 					execute [ extension typeProvider |
 						participationContext.matchParticipation(routineCallContext, typeProvider)
 					].setCallerContext

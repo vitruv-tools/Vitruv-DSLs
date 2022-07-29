@@ -14,7 +14,6 @@ import tools.vitruv.dsls.commonalities.language.ParticipationClass
 import tools.vitruv.dsls.commonalities.participation.ParticipationContext
 import tools.vitruv.dsls.reactions.builder.FluentReactionsSegmentBuilder
 import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder
-import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.ActionStatementBuilder
 import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.RoutineCallParameter
 import tools.vitruv.dsls.commonalities.runtime.matching.ParticipationObjects
 
@@ -25,6 +24,7 @@ import static extension tools.vitruv.dsls.commonalities.generator.reactions.Reac
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.intermediatemodel.IntermediateModelHelper.*
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.util.EmfAccessExpressions.*
 import static extension tools.vitruv.dsls.commonalities.language.extensions.CommonalitiesLanguageModelExtensions.*
+import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.UpdateStatementBuilder
 
 class CreateIntermediateRoutineBuilder extends ReactionsGenerationHelper {
 
@@ -71,8 +71,11 @@ class CreateIntermediateRoutineBuilder extends ReactionsGenerationHelper {
 				.input [
 					plain(ParticipationObjects, PARTICIPATION_OBJECTS)
 				]
-				.action [ extension it |
-					vall(INTERMEDIATE).create(commonality.changeClass).andInitialize [
+				. create [
+					vall(INTERMEDIATE).create(commonality.changeClass)
+				]
+				.update [ extension it |
+					execute [
 						claimIntermediateId(variable(INTERMEDIATE))
 					]
 
@@ -151,7 +154,7 @@ class CreateIntermediateRoutineBuilder extends ReactionsGenerationHelper {
 				requireAbsenceOf(singletonEClass).correspondingTo [
 					getEClass(singletonEClass)
 				]
-			].action [
+			].update [
 				// Add singleton correspondence:
 				addCorrespondenceBetween(SINGLETON).and [
 					getEClass(singletonEClass)
@@ -174,7 +177,7 @@ class CreateIntermediateRoutineBuilder extends ReactionsGenerationHelper {
 	 * Performs remaining setup and then inserts the ResourceBridge returned by
 	 * the ParticipationMatcher into the intermediate model.
 	 */
-	private def setupAndInsertResourceBridge(extension ActionStatementBuilder it, Participation participation) {
+	private def setupAndInsertResourceBridge(extension UpdateStatementBuilder it, Participation participation) {
 		val resourceClass = participation.resourceClass
 		assertTrue(resourceClass !== null)
 		call(segment.getSetupResourceBridgeRoutine(resourceClass), new RoutineCallParameter [ extension typeProvider |

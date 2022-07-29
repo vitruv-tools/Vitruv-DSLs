@@ -59,7 +59,7 @@ class ApplyCommonalityAttributesRoutineBuilder extends ReactionsGenerationHelper
 						]
 					]
 				]
-				.action [
+				.update [
 					execute [ extension typeProvider |
 						XbaseFactory.eINSTANCE.createXBlockExpression => [
 							val participationClassToObject = typeProvider.participationClassToOptionalObject

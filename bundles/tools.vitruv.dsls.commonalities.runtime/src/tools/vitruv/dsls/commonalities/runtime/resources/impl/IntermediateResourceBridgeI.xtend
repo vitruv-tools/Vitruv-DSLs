@@ -45,7 +45,7 @@ class IntermediateResourceBridgeI extends IntermediateResourceBridgeImpl {
 
 	private def fullPathChanged(String oldPath, String oldName, String oldFileExtension) {
 		if (this.isPersisted) {
-			discard(getResourceUri(oldPath, oldName, oldFileExtension))
+			discard()
 		}
 		if (this.canBePersisted) {
 			persist()
@@ -54,7 +54,7 @@ class IntermediateResourceBridgeI extends IntermediateResourceBridgeImpl {
 
 	private def contentChanged() {
 		if (this.isPersisted) {
-			discard(resourceUri)
+			discard()
 		}
 		if (this.canBePersisted) {
 			persist()
@@ -87,7 +87,7 @@ class IntermediateResourceBridgeI extends IntermediateResourceBridgeImpl {
 			&& correspondenceModel !== null && resourceAccess !== null && isPersistenceEnabled
 	}
 
-	private def discard(URI oldUri) {
+	private def discard() {
 		// TODO handling if content == null
 		isPersisted = false
 	}
@@ -113,7 +113,7 @@ class IntermediateResourceBridgeI extends IntermediateResourceBridgeImpl {
 	}
 
 	override remove() {
-		discard(resourceUri)
+		discard()
 	}
 
 	override setContent(EObject newContent) {
