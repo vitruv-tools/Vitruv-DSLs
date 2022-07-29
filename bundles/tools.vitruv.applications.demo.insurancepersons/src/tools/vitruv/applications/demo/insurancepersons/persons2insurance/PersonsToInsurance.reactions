@@ -1,7 +1,6 @@
 import edu.kit.ipd.sdq.metamodels.insurance.Gender
 import edu.kit.ipd.sdq.metamodels.persons.Male
 import edu.kit.ipd.sdq.metamodels.persons.Female
-
 import static extension edu.kit.ipd.sdq.metamodels.persons.PersonsUtil.getPersonRegister
 
 import "edu.kit.ipd.sdq.metamodels.persons" as persons
@@ -26,7 +25,7 @@ routine createInsuranceDatabase(persons::PersonRegister personRegister) {
 	}
 }
 
-reaction DeletedPersonRegister{
+reaction DeletedPersonRegister {
 	after element persons::PersonRegister deleted
 	call deleteInsuranceDatabase(affectedEObject)
 }
@@ -56,9 +55,9 @@ routine createInsuranceClient(persons::Person person) {
 	update {
 		newClient.name = person.fullName
 		switch person {
-			Male : newClient.gender = Gender.MALE
-			Female : newClient.gender = Gender.FEMALE
-			default : throw new IllegalArgumentException("Gender of client is unknown.")
+			Male: newClient.gender = Gender.MALE
+			Female: newClient.gender = Gender.FEMALE
+			default: throw new IllegalArgumentException("Gender of client is unknown.")
 		}
 		insuranceDatabase.insuranceclient += newClient
 		addCorrespondenceBetween(person, newClient)
