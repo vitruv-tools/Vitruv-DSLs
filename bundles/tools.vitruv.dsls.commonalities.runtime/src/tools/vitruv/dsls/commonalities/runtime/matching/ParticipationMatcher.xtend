@@ -10,12 +10,12 @@ import tools.vitruv.dsls.commonalities.runtime.intermediatemodelbase.Intermediat
 import tools.vitruv.dsls.commonalities.runtime.intermediatemodelbase.IntermediateModelBasePackage
 import tools.vitruv.dsls.commonalities.runtime.resources.IntermediateResourceBridge
 import tools.vitruv.dsls.commonalities.runtime.resources.ResourcesFactory
-import static extension tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper.getCorrespondingElements
-import tools.vitruv.change.correspondence.CorrespondenceModel
 import tools.vitruv.change.propagation.ResourceAccess
 
 import static com.google.common.base.Preconditions.*
 import static tools.vitruv.dsls.commonalities.runtime.helper.XtendAssertHelper.*
+import tools.vitruv.change.correspondence.Correspondence
+import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView
 
 /**
  * Matches participation classes to their objects according to the specified
@@ -28,7 +28,7 @@ class ParticipationMatcher {
 	val ContainmentContext containmentContext
 	val EObject startObject
 	val boolean followAttributeReferences
-	val CorrespondenceModel correspondenceModel
+	val EditableCorrespondenceModelView<Correspondence> correspondenceModel
 	val ResourceAccess resourceAccess
 
 	/**
@@ -50,7 +50,7 @@ class ParticipationMatcher {
 	 * 		the correspondence model
 	 */
 	new(ContainmentContext containmentContext, EObject startObject, boolean followAttributeReferences,
-		CorrespondenceModel correspondenceModel, ResourceAccess resourceAccess) {
+		EditableCorrespondenceModelView<Correspondence> correspondenceModel, ResourceAccess resourceAccess) {
 		checkNotNull(containmentContext, "containmentContext is null")
 		checkNotNull(startObject, "startObject is null")
 		checkNotNull(correspondenceModel, "correspondenceModel is null")
@@ -217,7 +217,7 @@ class ParticipationMatcher {
 			return Collections.singleton(object)
 		}
 
-		if (!correspondenceModel.getCorrespondingElements(object, Intermediate, null).empty) {
+		if (!correspondenceModel.getCorrespondingEObjects(object).filter(Intermediate).empty) {
 			val attributeReferenceRootNode = containmentContext.attributeReferenceRootNode
 			if (attributeReferenceRootNode !== null) {
 				if (followAttributeReferences && attributeReferenceRootNode.matchesObject(object,
@@ -375,8 +375,8 @@ class ParticipationMatcher {
 		// Note: Not checking for correspondences for our dynamically created (and only partially setup)
 		// ResourceBridge.
 		if (!object.isResourceBridge) {
-			var correspondingIntermediate = correspondenceModel.getCorrespondingElements(
-				object, Intermediate, null).head
+			var correspondingIntermediate = correspondenceModel.getCorrespondingEObjects(
+				object).filter(Intermediate).head
 			if (correspondingIntermediateType != correspondingIntermediate?.eClass) {
 				if (correspondingIntermediateType === null) {
 					logger.trace('''«indent(depth)»Node «node.toSimpleString»: Object already corresponds to an «

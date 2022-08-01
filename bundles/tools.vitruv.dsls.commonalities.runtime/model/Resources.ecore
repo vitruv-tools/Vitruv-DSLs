@@ -26,8 +26,11 @@
         volatile="true" transient="true" derived="true" iD="true"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="resourceAccess" eType="#//ResourceAccess"
         transient="true"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="correspondenceModel" eType="#//CorrespondenceModel"
-        transient="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="correspondenceModel" transient="true">
+      <eGenericType eClassifier="#//EditableCorrespondenceModelView">
+        <eTypeArguments eClassifier="#//Correspondence"/>
+      </eGenericType>
+    </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="intermediateNS" ordered="false"
         unique="false" lowerBound="1" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="emfResource" ordered="false"
@@ -38,8 +41,14 @@
         defaultValueLiteral="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EDataType" name="ResourceAccess" instanceClassName="tools.vitruv.change.propagation.ResourceAccess"/>
-  <eClassifiers xsi:type="ecore:EDataType" name="CorrespondenceModel" instanceClassName="tools.vitruv.change.correspondence.CorrespondenceModel"/>
+  <eClassifiers xsi:type="ecore:EDataType" name="EditableCorrespondenceModelView"
+      instanceClassName="tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView">
+    <eTypeParameters name="C">
+      <eBounds eClassifier="#//Correspondence"/>
+    </eTypeParameters>
+  </eClassifiers>
   <eClassifiers xsi:type="ecore:EDataType" name="URI" instanceClassName="org.eclipse.emf.common.util.URI"/>
   <eClassifiers xsi:type="ecore:EDataType" name="EmfResource" instanceClassName="org.eclipse.emf.ecore.resource.Resource"
       serializable="false"/>
+  <eClassifiers xsi:type="ecore:EDataType" name="Correspondence" instanceClassName="tools.vitruv.change.correspondence.Correspondence"/>
 </ecore:EPackage>

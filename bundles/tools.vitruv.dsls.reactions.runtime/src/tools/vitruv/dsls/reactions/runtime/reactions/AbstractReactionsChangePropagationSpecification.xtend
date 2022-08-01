@@ -5,11 +5,13 @@ import org.apache.log4j.Logger
 import tools.vitruv.change.propagation.impl.AbstractChangePropagationSpecification
 import java.util.List
 import tools.vitruv.change.atomic.EChange
-import tools.vitruv.change.correspondence.CorrespondenceModel
 import tools.vitruv.change.interaction.UserInteractor
 import tools.vitruv.change.propagation.ResourceAccess
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
-import tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceModelViewFactory
+import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView
+import tools.vitruv.change.correspondence.Correspondence
+import tools.vitruv.dsls.reactions.runtime.correspondence.ReactionsCorrespondence
+import tools.vitruv.dsls.reactions.runtime.correspondence.CorrespondenceFactory
 
 /**
  * A {@link ChangePropagationSpecification} that executes {@link Reaction}s.
@@ -29,11 +31,11 @@ abstract class AbstractReactionsChangePropagationSpecification extends AbstractC
 		this.reactions += reaction
 	}
 
-	override doesHandleChange(EChange change, CorrespondenceModel correspondenceModel) {
+	override doesHandleChange(EChange change, EditableCorrespondenceModelView<Correspondence> correspondenceModel) {
 		return true
 	}
 
-	override propagateChange(EChange change, CorrespondenceModel correspondenceModel, ResourceAccess resourceAccess) {
+	override propagateChange(EChange change, EditableCorrespondenceModelView<Correspondence> correspondenceModel, ResourceAccess resourceAccess) {
 		LOGGER.trace("Call relevant reactions from " + sourceMetamodelDescriptor + " to " + targetMetamodelDescriptor)
 		for (reaction : reactions) {
 			LOGGER.trace("Calling reaction: " + reaction.class.simpleName + " with change: " + change)
@@ -42,8 +44,8 @@ abstract class AbstractReactionsChangePropagationSpecification extends AbstractC
 		}
 	}
 	
-	private static def getReactionsView(CorrespondenceModel correspondenceModel) {
-		return correspondenceModel.getEditableView(ReactionsCorrespondenceModelViewFactory.instance).genericView
+	private static def getReactionsView(EditableCorrespondenceModelView<Correspondence> correspondenceModel) {
+		return correspondenceModel.getEditableView(ReactionsCorrespondence, [CorrespondenceFactory.eINSTANCE.createReactionsCorrespondence])
 	}
 
 	override setUserInteractor(UserInteractor userInteractor) {

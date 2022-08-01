@@ -13,8 +13,9 @@ import org.eclipse.emf.common.util.URI
 import static com.google.common.base.Preconditions.checkState
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 import org.eclipse.xtend.lib.annotations.Accessors
-import tools.vitruv.change.correspondence.CorrespondenceModel
 import org.eclipse.xtext.xbase.lib.Functions.Function1
+import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView
+import tools.vitruv.dsls.reactions.runtime.correspondence.ReactionsCorrespondence
 
 abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 	val AbstractRoutinesFacade routinesFacade
@@ -45,9 +46,9 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 	protected abstract def boolean executeRoutine() throws IOException
 
 	private static class CorrespondenceRetriever extends Loggable {
-		CorrespondenceModel _correspondenceModel
+		EditableCorrespondenceModelView<ReactionsCorrespondence> _correspondenceModel
 
-		new(CorrespondenceModel correspondenceModel) {
+		new(EditableCorrespondenceModelView<ReactionsCorrespondence> correspondenceModel) {
 			this._correspondenceModel = correspondenceModel
 		}
 
@@ -91,8 +92,7 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 
 		private def <T extends EObject> Iterable<T> getCorrespondingElements(EObject sourceElement, Class<T> expectedType, String expectedTag,
 			Function1<T, Boolean> preconditionMethod) {
-			val correspondingObjects = _correspondenceModel.getCorrespondingEObjects(sourceElement, expectedType,
-				expectedTag)
+			val correspondingObjects = _correspondenceModel.getCorrespondingEObjects(sourceElement, expectedTag).filter(expectedType)
 			val nonNullPreconditionMethod = if(preconditionMethod !== null) preconditionMethod else [T input|true]
 			return correspondingObjects.filterNull.filter(nonNullPreconditionMethod)
 		}
