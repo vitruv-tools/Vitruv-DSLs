@@ -6,8 +6,6 @@ import java.util.function.Function
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.util.EcoreUtil
-import org.eclipse.xtend.lib.annotations.Delegate
-import tools.vitruv.dsls.reactions.runtime.effects.ReactionElementsHandlerImpl
 import tools.vitruv.dsls.reactions.runtime.helper.PersistenceHelper
 import tools.vitruv.dsls.reactions.runtime.helper.ReactionsCorrespondenceHelper
 import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
@@ -17,18 +15,14 @@ import tools.vitruv.change.interaction.UserInteractor
 import tools.vitruv.change.propagation.ResourceAccess
 import org.eclipse.emf.common.util.URI
 
-abstract class AbstractRepairRoutineRealization extends CallHierarchyHaving implements RepairRoutine, ReactionElementsHandler {
+abstract class AbstractRepairRoutineRealization extends CallHierarchyHaving implements RepairRoutine {
 	val AbstractRepairRoutinesFacade routinesFacade;
 	extension val ReactionExecutionState executionState;
-
-	@Delegate
-	val ReactionElementsHandler _reactionElementsHandler;
 
 	new(AbstractRepairRoutinesFacade routinesFacade, ReactionExecutionState executionState, CallHierarchyHaving calledBy) {
 		super(calledBy);
 		this.routinesFacade = routinesFacade;
 		this.executionState = executionState;
-		this._reactionElementsHandler = new ReactionElementsHandlerImpl(correspondenceModel);
 	}
 
 	// generic return type for convenience; the requested type has to match the type of the facade provided during construction
@@ -47,43 +41,7 @@ abstract class AbstractRepairRoutineRealization extends CallHierarchyHaving impl
 	protected def CorrespondenceModel getCorrespondenceModel() {
 		return executionState.correspondenceModel;
 	}
-
-	protected def void notifyObjectCreated(EObject createdObject) {
-		executionState.changePropagationObservable.notifyObjectCreated(createdObject);
-	}
 	
-	protected def <T extends EObject> List<T> getCorrespondingElements(
-		EObject correspondenceSource,
-		Class<T> elementClass,
-		Function<T, Boolean> correspondencePreconditionMethod,
-		String tag
-	) {
-		val retrievedElements = ReactionsCorrespondenceHelper.getCorrespondingModelElements(correspondenceSource,
-			elementClass, tag, correspondencePreconditionMethod, correspondenceModel);
-		return retrievedElements;
-	}
-
-	protected def <T extends EObject> T getCorrespondingElement(
-		EObject correspondenceSource,
-		Class<T> elementClass,
-		Function<T, Boolean> correspondencePreconditionMethod,
-		String tag,
-		boolean asserted
-	) {
-		val retrievedElements = getCorrespondingElements(correspondenceSource,
-			elementClass, correspondencePreconditionMethod, tag);
-		if (retrievedElements.size > 1) {
-			CorrespondenceFailHandlerFactory.createExceptionHandler().handle(retrievedElements, correspondenceSource,
-				elementClass, executionState.userInteractor);
-		}
-		if (asserted && retrievedElements.size == 0) {
-			CorrespondenceFailHandlerFactory.createExceptionHandler().handle(retrievedElements, correspondenceSource,
-				elementClass, executionState.userInteractor);
-		}
-		val retrievedElement = if (!retrievedElements.empty) retrievedElements.get(0) else null;
-		return retrievedElement;
-	}
-
 	override boolean applyRoutine() {
 		// capture the current routines facade execution state:
 		val facadeExecutionState = routinesFacade._getExecutionState().capture();
@@ -101,7 +59,59 @@ abstract class AbstractRepairRoutineRealization extends CallHierarchyHaving impl
 
 	protected abstract def boolean executeRoutine() throws IOException;
 
-	static class UserExecution extends Loggable {
+	static class Match extends Loggable {
+		protected final extension ReactionExecutionState executionState
+
+		new(ReactionExecutionState executionState) {
+			this.executionState = executionState
+		}
+		
+		protected def <T extends EObject> List<T> getCorrespondingElements(
+			EObject correspondenceSource,
+			Class<T> elementClass,
+			Function<T, Boolean> correspondencePreconditionMethod,
+			String tag
+		) {
+			val retrievedElements = ReactionsCorrespondenceHelper.getCorrespondingModelElements(correspondenceSource,
+				elementClass, tag, correspondencePreconditionMethod, correspondenceModel);
+			return retrievedElements;
+		}
+	
+		protected def <T extends EObject> T getCorrespondingElement(
+			EObject correspondenceSource,
+			Class<T> elementClass,
+			Function<T, Boolean> correspondencePreconditionMethod,
+			String tag,
+			boolean asserted
+		) {
+			val retrievedElements = getCorrespondingElements(correspondenceSource,
+				elementClass, correspondencePreconditionMethod, tag);
+			if (retrievedElements.size > 1) {
+				CorrespondenceFailHandlerFactory.createExceptionHandler().handle(retrievedElements, correspondenceSource,
+					elementClass, executionState.userInteractor);
+			}
+			if (asserted && retrievedElements.size == 0) {
+				CorrespondenceFailHandlerFactory.createExceptionHandler().handle(retrievedElements, correspondenceSource,
+					elementClass, executionState.userInteractor);
+			}
+			val retrievedElement = if (!retrievedElements.empty) retrievedElements.get(0) else null;
+			return retrievedElement;
+		}
+	}
+	
+	static class Create extends Loggable {
+		protected final extension ReactionExecutionState executionState
+
+		new(ReactionExecutionState executionState) {
+			this.executionState = executionState
+		}
+
+		protected def void notifyObjectCreated(EObject createdObject) {
+			executionState.changePropagationObservable.notifyObjectCreated(createdObject);
+		}	
+	}
+	
+	static class Update extends Loggable {
 		protected final extension ReactionExecutionState executionState
 
 		new(ReactionExecutionState executionState) {
@@ -153,6 +163,33 @@ abstract class AbstractRepairRoutineRealization extends CallHierarchyHaving impl
 				EcoreUtil.remove(rootObject)
 				resourceAccess.persistAsRoot(rootObject, uri)
 			}
+		}
+		
+		def void addCorrespondenceBetween(EObject firstElement, EObject secondElement) {
+			addCorrespondenceBetween(firstElement, secondElement, null)
+		}
+		
+		def void addCorrespondenceBetween(EObject firstElement, EObject secondElement, String tag) {
+			ReactionsCorrespondenceHelper.addCorrespondence(correspondenceModel, firstElement, secondElement, tag);
+		}
+		
+		def void removeObject(EObject element) {
+			if (element === null) {
+				return
+			}
+			if (logger.debugEnabled) {
+				logger.debug("Removing object " + element + " from container " + element.eContainer())
+			}
+			EcoreUtil.remove(element)
+		}
+		
+		def void removeCorrespondenceBetween(EObject firstElement, EObject secondElement) {
+			removeCorrespondenceBetween(firstElement, secondElement, null)
+		}
+		
+		def void removeCorrespondenceBetween(EObject firstElement, EObject secondElement, String tag) {
+			ReactionsCorrespondenceHelper.removeCorrespondencesBetweenElements(correspondenceModel, 
+				firstElement, secondElement, tag)
 		}
 	}
 }

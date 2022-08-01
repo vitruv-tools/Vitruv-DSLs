@@ -54,8 +54,8 @@ class SetupResourceBridgeRoutineBuilder extends ReactionsGenerationHelper {
 				.input [
 					model(ResourcesPackage.eINSTANCE.intermediateResourceBridge, RESOURCE_BRIDGE)
 				]
-				.action [
-					update(RESOURCE_BRIDGE) [
+				.update [
+					execute [
 						initExistingResourceBridge(resourceClass, variable(RESOURCE_BRIDGE))
 					]
 				]

@@ -12,15 +12,15 @@ import tools.vitruv.dsls.commonalities.language.CommonalityAttributeMapping
 import tools.vitruv.dsls.commonalities.language.Participation
 import tools.vitruv.dsls.commonalities.language.ParticipationClass
 import tools.vitruv.dsls.reactions.builder.FluentReactionsSegmentBuilder
-import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.ActionStatementBuilder
 import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.RoutineStartBuilder
-import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.UndecidedMatcherStatementBuilder
+import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.UndecidedMatchStatementBuilder
 
 import static com.google.common.base.Preconditions.*
 import static tools.vitruv.dsls.commonalities.runtime.helper.XtendAssertHelper.*
 
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.ReactionsGeneratorConventions.*
 import static extension tools.vitruv.dsls.commonalities.language.extensions.CommonalitiesLanguageModelExtensions.*
+import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.UpdateStatementBuilder
 
 class ParticipationAttributeChangeReactionsBuilder extends ReactionsSubGenerator {
 
@@ -87,12 +87,12 @@ class ParticipationAttributeChangeReactionsBuilder extends ReactionsSubGenerator
 			retrieveIntermediate(mapping)
 			retrieveRelevantParticipationObjects()
 		]
-		.action [
+		.update [
 			applyMapping(mapping)
 		]
 	}
 
-	private def retrieveIntermediate(extension UndecidedMatcherStatementBuilder builder,
+	private def retrieveIntermediate(extension UndecidedMatchStatementBuilder builder,
 		CommonalityAttributeMapping mapping) {
 		// Otherwise we would not generate an attribute change reaction:
 		assertTrue(mapping.participationAttribute !== null)
@@ -102,7 +102,7 @@ class ParticipationAttributeChangeReactionsBuilder extends ReactionsSubGenerator
 			.taggedWith(participationClass.correspondenceTag)
 	}
 
-	private def retrieveRelevantParticipationObjects(extension UndecidedMatcherStatementBuilder matcherBuilder) {
+	private def retrieveRelevantParticipationObjects(extension UndecidedMatchStatementBuilder matcherBuilder) {
 		relevantParticipationClasses.forEach [ participationClass |
 			matcherBuilder.retrieveAssertedParticipationObject(participationClass) [
 				variable(INTERMEDIATE) // correspondence source
@@ -110,9 +110,9 @@ class ParticipationAttributeChangeReactionsBuilder extends ReactionsSubGenerator
 		]
 	}
 
-	private def void applyMapping(extension ActionStatementBuilder actionBuilder,
+	private def void applyMapping(extension UpdateStatementBuilder updateBuilder,
 		CommonalityAttributeMapping mapping) {
-		update(INTERMEDIATE) [ extension typeProvider |
+		execute [ extension typeProvider |
 			val participationClassToObject = typeProvider.participationClassToOptionalObject
 			val operatorContext = new AttributeMappingOperatorContext(typeProvider, [variable(INTERMEDIATE)],
 					participationClassToObject)

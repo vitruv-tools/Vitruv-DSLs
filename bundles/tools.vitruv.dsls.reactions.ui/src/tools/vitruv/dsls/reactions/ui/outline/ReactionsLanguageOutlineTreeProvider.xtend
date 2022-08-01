@@ -12,15 +12,16 @@ import tools.vitruv.dsls.reactions.language.toplevelelements.Routine
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsFile
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment
 import tools.vitruv.dsls.reactions.language.toplevelelements.Reaction
-import tools.vitruv.dsls.reactions.language.toplevelelements.Action
 import static extension tools.vitruv.dsls.reactions.util.ReactionsLanguageUtil.*
-import tools.vitruv.dsls.reactions.language.toplevelelements.Matcher
 import tools.vitruv.dsls.reactions.language.toplevelelements.RoutineInput
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsImport
 import tools.vitruv.dsls.reactions.language.toplevelelements.RoutineCallBlock
 import tools.vitruv.dsls.reactions.language.ModelElementChange
 import tools.vitruv.dsls.reactions.language.ModelAttributeChange
 import tools.vitruv.dsls.reactions.language.ArbitraryModelChange
+import tools.vitruv.dsls.reactions.language.toplevelelements.UpdateBlock
+import tools.vitruv.dsls.reactions.language.toplevelelements.CreateBlock
+import tools.vitruv.dsls.reactions.language.toplevelelements.MatchBlock
 
 /**
  * Outline structure definition for a reactions file.
@@ -68,12 +69,16 @@ class ReactionsLanguageOutlineTreeProvider extends DefaultOutlineTreeProvider {
 		return "parameters";
 	}
 
-	protected def Object _text(Matcher matcher) {
-		return "matcher";
+	protected def Object _text(MatchBlock matcher) {
+		return "match";
 	}
 
-	protected def Object _text(Action action) {
-		return "action";
+	protected def Object _text(CreateBlock creator) {
+		return "create";
+	}
+	
+	protected def Object _text(UpdateBlock update) {
+		return "update";
 	}
 
 	protected def Object _text(ReactionsSegment reactionsSegment) {
@@ -100,11 +105,15 @@ class ReactionsLanguageOutlineTreeProvider extends DefaultOutlineTreeProvider {
 		return true;
 	}
 
-	protected def boolean _isLeaf(Matcher element) {
+	protected def boolean _isLeaf(MatchBlock element) {
 		return true;
 	}
 
-	protected def boolean _isLeaf(Action element) {
+	protected def boolean _isLeaf(CreateBlock element) {
+		return true;
+	}
+	
+	protected def boolean _isLeaf(UpdateBlock element) {
 		return true;
 	}
 

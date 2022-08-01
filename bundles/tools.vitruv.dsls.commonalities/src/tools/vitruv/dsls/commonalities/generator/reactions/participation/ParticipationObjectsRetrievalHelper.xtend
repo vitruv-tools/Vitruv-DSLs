@@ -4,7 +4,7 @@ import java.util.function.Function
 import org.eclipse.xtext.xbase.XExpression
 import tools.vitruv.dsls.commonalities.generator.reactions.helper.ReactionsGenerationHelper
 import tools.vitruv.dsls.commonalities.language.ParticipationClass
-import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.UndecidedMatcherStatementBuilder
+import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.UndecidedMatchStatementBuilder
 import tools.vitruv.dsls.reactions.builder.TypeProvider
 
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.ReactionsGeneratorConventions.*
@@ -15,17 +15,17 @@ class ParticipationObjectsRetrievalHelper extends ReactionsGenerationHelper {
 	package new() {
 	}
 
-	def retrieveUnassertedParticipationObject(extension UndecidedMatcherStatementBuilder matcherBuilder,
+	def retrieveUnassertedParticipationObject(extension UndecidedMatchStatementBuilder matcherBuilder,
 		ParticipationClass participationClass, Function<TypeProvider, XExpression> correspondenceSource) {
 		matcherBuilder.retrieveParticipationObject(participationClass, false, correspondenceSource)
 	}
 
-	def retrieveAssertedParticipationObject(extension UndecidedMatcherStatementBuilder matcherBuilder,
+	def retrieveAssertedParticipationObject(extension UndecidedMatchStatementBuilder matcherBuilder,
 		ParticipationClass participationClass, Function<TypeProvider, XExpression> correspondenceSource) {
 		matcherBuilder.retrieveParticipationObject(participationClass, true, correspondenceSource)
 	}
 
-	private def retrieveParticipationObject(extension UndecidedMatcherStatementBuilder matcherBuilder,
+	private def retrieveParticipationObject(extension UndecidedMatchStatementBuilder matcherBuilder,
 		ParticipationClass participationClass, boolean asserted,
 		Function<TypeProvider, XExpression> correspondenceSource) {
 		if (participationClass.isRootClass) {

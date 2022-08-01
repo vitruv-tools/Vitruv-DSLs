@@ -7,7 +7,7 @@ import tools.vitruv.dsls.commonalities.language.ParticipationClass
 import tools.vitruv.dsls.reactions.builder.TypeProvider
 import tools.vitruv.dsls.commonalities.runtime.resources.IntermediateResourceBridge
 
-import static extension tools.vitruv.dsls.commonalities.generator.reactions.util.JvmTypeProviderHelper.*
+import static tools.vitruv.dsls.commonalities.generator.reactions.util.JvmTypeProviderHelper.*
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.util.XbaseHelper.*
 import static extension tools.vitruv.dsls.commonalities.language.extensions.CommonalitiesLanguageModelExtensions.*
 
@@ -28,7 +28,7 @@ class ResourceBridgeHelper extends ReactionsGenerationHelper {
 		return resourceClass.setupResourceBridge(resourceBridge, typeProvider) => [
 			expressions += XbaseFactory.eINSTANCE.createXAssignment => [
 				assignable = resourceBridge.copy
-				feature = typeProvider.findMethod(IntermediateResourceBridge, 'setFileExtension')
+				feature = findMethod(typeProvider, IntermediateResourceBridge, 'setFileExtension')
 				value = XbaseFactory.eINSTANCE.createXStringLiteral => [
 					value = resourceClass.superMetaclass.domain.name
 				]

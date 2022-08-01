@@ -13,7 +13,7 @@ execute actions in minimal
 import importTestsTransitiveSN
 import routines importTestsTransitiveRoutinesQN using qualified names
 
-reaction DirectSNReaction {
+reaction DirectSNReupdate {
 	after attribute replaced at minimal::Root[id]
 	call {
 		ImportTestsExecutionMonitor.instance.set(DirectSNReaction)
@@ -56,24 +56,20 @@ reaction DirectSNReaction {
 }
 
 routine directSNRoutine() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(DirectSNRoutine)
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(DirectSNRoutine)
 	}
 }
 
 routine directSNInnerRoutine() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(DirectSNInnerRoutine)
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(DirectSNInnerRoutine)
 	}
 }
 
 // reaction overrides:
 
-reaction DirectSNOverriddenReaction {
+reaction DirectSNOverriddenReupdate {
 	after attribute replaced at minimal::Root[id]
 	call {
 		val data = newValue;
@@ -109,28 +105,22 @@ reaction importTestsTransitiveSN::TransitiveSNOverriddenReaction3 {
 // routine overrides:
 
 routine directSNOverriddenRoutine(){
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(DirectSNOverriddenRoutine)
-			directSNRoutine()
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(DirectSNOverriddenRoutine)
+		directSNRoutine()
 	}
 }
 
 routine importTestsTransitiveSN::transitiveSNOverriddenRoutine2() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(DirectSNTransitiveSNOverriddenRoutine2)
-			directSNRoutine()
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(DirectSNTransitiveSNOverriddenRoutine2)
+		directSNRoutine()
 	}
 }
 
 routine importTestsTransitiveSN::transitiveSNOverriddenRoutine3() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(DirectSNTransitiveSNOverriddenRoutine3)
-			directSNRoutine()
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(DirectSNTransitiveSNOverriddenRoutine3)
+		directSNRoutine()
 	}
 }

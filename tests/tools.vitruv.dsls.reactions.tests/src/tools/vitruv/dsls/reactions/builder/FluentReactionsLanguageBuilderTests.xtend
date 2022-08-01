@@ -16,13 +16,16 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		val builder = create.reactionsFile('createRootTest') +=
 			create.reactionsSegment('simpleChangesRootTests').inReactionToChangesIn(AllElementTypesPackage.eINSTANCE).
 				executeActionsIn(AllElementTypesPackage.eINSTANCE) += create.reaction('CreateRootTest').afterElement(Root).created.call [
-				action [
+				create [
 					vall('newRoot').create(Root)
-					addCorrespondenceBetween('newRoot').and.affectedEObject
+				].update [
+					addCorrespondenceBetween('newRoot').and.affectedEObject	
 				]
 			]
 
 		val reactionResult = '''
+			import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization.Update
+			
 			import "http://tools.vitruv.testutils.metamodels.allElementTypes" as allElementTypes
 			
 			reactions: simpleChangesRootTests
@@ -35,9 +38,11 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 			}
 			
 			routine createRootTestRepair(allElementTypes::Root affectedEObject) {
-				action {
-					val newRoot = create allElementTypes::Root
-					add correspondence between newRoot and affectedEObject
+				create {
+					val newRoot = new allElementTypes::Root
+				}
+				update {
+					addCorrespondenceBetween(newRoot, affectedEObject)
 				}
 			}
 		'''
@@ -52,12 +57,14 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 				executeActionsIn(AllElementTypesPackage.eINSTANCE) += create.reaction('DeleteRootTest').afterElement(Root).deleted.call [
 				match [
 					vall('toDelete').retrieve(Root).correspondingTo.affectedEObject
-				].action [
+				].update [
 					delete('toDelete')
 				]
 			]
 
 		val reactionResult = '''
+			import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization.Update
+			
 			import "http://tools.vitruv.testutils.metamodels.allElementTypes" as allElementTypes
 			
 			reactions: simpleChangesRootTests
@@ -73,8 +80,8 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 				match {
 					val toDelete = retrieve allElementTypes::Root corresponding to affectedEObject
 				}
-				action {
-					delete toDelete
+				update {
+					removeObject(toDelete)
 				}
 			}
 		'''
@@ -89,8 +96,9 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		val baseSegment = create.reactionsSegment('baseSegment').inReactionToChangesIn(AllElementTypesPackage.eINSTANCE).
 			executeActionsIn(AllElementTypesPackage.eINSTANCE)
 		baseSegment += create.reaction('CreateRootTest').afterElement(Root).created.call [
-			action [
+			create [
 				vall('newRoot').create(Root)
+			].update[
 				addCorrespondenceBetween('newRoot').and.affectedEObject
 			]
 		]
@@ -100,7 +108,7 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		baseSegment2 += create.reaction('DeleteRootTest').afterElement(Root).deleted.call [
 			match [
 				vall('toDelete').retrieve(Root).correspondingTo.affectedEObject
-			].action [
+			].update [
 				delete('toDelete')
 			]
 		]
@@ -114,6 +122,8 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		builder += extendedSegment
 
 		val reactionResult = '''
+			import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization.Update
+			
 			import "http://tools.vitruv.testutils.metamodels.allElementTypes" as allElementTypes
 			
 			reactions: baseSegment
@@ -126,9 +136,11 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 			}
 			
 			routine createRootTestRepair(allElementTypes::Root affectedEObject) {
-				action {
-					val newRoot = create allElementTypes::Root
-					add correspondence between newRoot and affectedEObject
+				create {
+					val newRoot = new allElementTypes::Root
+				}
+				update {
+					addCorrespondenceBetween(newRoot, affectedEObject)
 				}
 			}
 			
@@ -147,8 +159,8 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 				match {
 					val toDelete = retrieve allElementTypes::Root corresponding to affectedEObject
 				}
-				action {
-					delete toDelete
+				update {
+					removeObject(toDelete)
 				}
 			}
 			
@@ -172,8 +184,9 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		val baseSegment = create.reactionsSegment('baseSegment').inReactionToChangesIn(AllElementTypesPackage.eINSTANCE).
 			executeActionsIn(AllElementTypesPackage.eINSTANCE)
 		baseSegment += create.reaction('CreateRootTest').afterElement(Root).created.call [
-			action [
+			create [
 				vall('newRoot').create(Root)
+			].update [
 				addCorrespondenceBetween('newRoot').and.affectedEObject
 			]
 		]
@@ -182,8 +195,9 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 			executeActionsIn(AllElementTypesPackage.eINSTANCE).importSegment(baseSegment).usingQualifiedRoutineNames
 		extendedSegment +=
 			create.reaction('CreateRootTest').overrideSegment(baseSegment).afterElement(Root).created.call [
-				action [
+				create [
 					vall('newRootInOverride').create(Root)
+				].update [
 					addCorrespondenceBetween('newRootInOverride').and.affectedEObject
 				]
 			]
@@ -192,6 +206,8 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		builder += extendedSegment
 
 		val reactionResult = '''
+			import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization.Update
+			
 			import "http://tools.vitruv.testutils.metamodels.allElementTypes" as allElementTypes
 			
 			reactions: baseSegment
@@ -204,9 +220,11 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 			}
 			
 			routine createRootTestRepair(allElementTypes::Root affectedEObject) {
-				action {
-					val newRoot = create allElementTypes::Root
-					add correspondence between newRoot and affectedEObject
+				create {
+					val newRoot = new allElementTypes::Root
+				}
+				update {
+					addCorrespondenceBetween(newRoot, affectedEObject)
 				}
 			}
 			
@@ -224,9 +242,11 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 			}
 			
 			routine createRootTestRepair(allElementTypes::Root affectedEObject) {
-				action {
-					val newRootInOverride = create allElementTypes::Root
-					add correspondence between newRootInOverride and affectedEObject
+				create {
+					val newRootInOverride = new allElementTypes::Root
+				}
+				update {
+					addCorrespondenceBetween(newRootInOverride, affectedEObject)
 				}
 			}
 		'''
@@ -241,8 +261,9 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		val baseSegment = create.reactionsSegment('baseSegment').inReactionToChangesIn(AllElementTypesPackage.eINSTANCE).
 			executeActionsIn(AllElementTypesPackage.eINSTANCE)
 		baseSegment += create.reaction('CreateRootTest').afterElement(Root).created.call [
-			action [
+			create [
 				vall('newRoot').create(Root)
+			].update [
 				addCorrespondenceBetween('newRoot').and.affectedEObject
 			]
 		]
@@ -252,8 +273,9 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		extendedSegment += create.routine('createRootTestRepair') // TODO this is not working yet
 		.overrideAlongImportPath(baseSegment).input [
 			model(Root, 'affectedEObject')
-		].action [
+		].create [
 			vall('newRoot2').create(Root)
+		].update [
 			addCorrespondenceBetween('newRoot2').and.affectedEObject
 		]
 
@@ -262,8 +284,9 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		extendedSegment2 += create.routine('createRootTestRepair') // TODO this is not working yet
 		.overrideAlongImportPath(extendedSegment, baseSegment).input [
 			model(Root, 'affectedEObject')
-		].action [
+		].create [
 			vall('newRoot3').create(Root)
+		].update [
 			addCorrespondenceBetween('newRoot3').and.affectedEObject
 		]
 
@@ -272,6 +295,8 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		builder += extendedSegment2
 
 		val reactionResult = '''
+			import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization.Update
+			
 			import "http://tools.vitruv.testutils.metamodels.allElementTypes" as allElementTypes
 			
 			reactions: baseSegment
@@ -284,9 +309,11 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 			}
 			
 			routine createRootTestRepair(allElementTypes::Root affectedEObject) {
-				action {
-					val newRoot = create allElementTypes::Root
-					add correspondence between newRoot and affectedEObject
+				create {
+					val newRoot = new allElementTypes::Root
+				}
+				update {
+					addCorrespondenceBetween(newRoot, affectedEObject)
 				}
 			}
 			
@@ -299,9 +326,11 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 			import baseSegment using qualified names
 			
 			routine baseSegment::createRootTestRepair(allElementTypes::Root affectedEObject) {
-				action {
-					val newRoot2 = create allElementTypes::Root
-					add correspondence between newRoot2 and affectedEObject
+				create {
+					val newRoot2 = new allElementTypes::Root
+				}
+				update {
+					addCorrespondenceBetween(newRoot2, affectedEObject)
 				}
 			}
 			
@@ -314,9 +343,11 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 			import extendedSegment using qualified names
 			
 			routine extendedSegment.baseSegment::createRootTestRepair(allElementTypes::Root affectedEObject) {
-				action {
-					val newRoot3 = create allElementTypes::Root
-					add correspondence between newRoot3 and affectedEObject
+				create {
+					val newRoot3 = new allElementTypes::Root
+				}
+				update {
+					addCorrespondenceBetween(newRoot3, affectedEObject)
 				}
 			}
 		'''
@@ -351,11 +382,13 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 				executeActionsIn(AllElementTypesPackage.eINSTANCE) += create.routine('withArguments').input [
 				model(Root, 'rootParameter')
 				model(NonRoot, 'nonRootParameter')
-			].action [
+			].update [
 				addCorrespondenceBetween('rootParameter').and('nonRootParameter')
 			]
 
 		val expectedReaction = '''
+			import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization.Update
+			
 			import "http://tools.vitruv.testutils.metamodels.allElementTypes" as allElementTypes
 			
 			reactions: simpleChangesRootTests
@@ -363,8 +396,8 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 			execute actions in allElementTypes
 			
 			routine withArguments(allElementTypes::Root rootParameter, allElementTypes::NonRoot nonRootParameter) {
-				action {
-					add correspondence between rootParameter and nonRootParameter
+				update {
+					addCorrespondenceBetween(rootParameter, nonRootParameter)
 				}
 			}
 		'''
@@ -376,8 +409,9 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 	def void routineForTwoReactionsImplicitlyAdded() {
 		val commonRoutine = create.routine('commonRootCreate').input [
 			model(EObject, 'affectedEObject')
-		].action [
+		].create [
 			vall('newRoot').create(Root)
+		].update [
 			addCorrespondenceBetween('newRoot').and.affectedEObject
 		]
 
@@ -391,6 +425,8 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		reactionsFile += reactionsSegment
 
 		val expectedReaction = '''
+			import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization.Update
+			
 			import "http://tools.vitruv.testutils.metamodels.allElementTypes" as allElementTypes
 			import "http://www.eclipse.org/emf/2002/Ecore" as ecore
 			
@@ -409,9 +445,11 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 			}
 			
 			routine commonRootCreate(ecore::EObject affectedEObject) {
-				action {
-					val newRoot = create allElementTypes::Root
-					add correspondence between newRoot and affectedEObject
+				create {
+					val newRoot = new allElementTypes::Root
+				}
+				update {
+					addCorrespondenceBetween(newRoot, affectedEObject)
 				}
 			}
 		'''
@@ -423,8 +461,9 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 	def void routineForTwoReactionsExplicitlyAdded() {
 		val commonRoutine = create.routine('commonRootCreate').input [
 			model(EObject, 'affectedEObject')
-		].action [
+		].create [
 			vall('newRoot').create(Root)
+		].update [
 			addCorrespondenceBetween('newRoot').and.affectedEObject
 		]
 
@@ -441,6 +480,8 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		reactionsFile += reactionsSegment
 
 		val expectedReaction = '''
+			import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization.Update
+			
 			import "http://www.eclipse.org/emf/2002/Ecore" as ecore
 			import "http://tools.vitruv.testutils.metamodels.allElementTypes" as allElementTypes
 			
@@ -459,9 +500,11 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 			}
 			
 			routine commonRootCreate(ecore::EObject affectedEObject) {
-				action {
-					val newRoot = create allElementTypes::Root
-					add correspondence between newRoot and affectedEObject
+				create {
+					val newRoot = new allElementTypes::Root
+				}
+				update {
+					addCorrespondenceBetween(newRoot, affectedEObject)
 				}
 			}
 		'''
@@ -482,9 +525,9 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 					]
 				]
 			]
-		].action [
+		].create [
 			vall('newRoot').create(Root)
-		]
+		].withoutUpdate
 
 		val reactionsFile = create.reactionsFile('routineWithMatchTest') +=
 			create.reactionsSegment('routineWithMatchTest').inReactionToChangesIn(AllElementTypesPackage.eINSTANCE).
@@ -505,8 +548,8 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 						"test" === "test"
 					}
 				}
-				action {
-					val newRoot = create allElementTypes::Root
+				create {
+					val newRoot = new allElementTypes::Root
 				}
 			}
 		'''
@@ -526,8 +569,9 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 					]
 				]
 			]
-		].action [
+		].create [
 			vall('newRoot').create(Root)
+		].update [
 			addCorrespondenceBetween("newRoot").and.affectedEObject
 		]
 
@@ -541,6 +585,7 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 
 		val expectedReaction = '''
 			import «objectExtensionsFqn»
+			import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization.Update
 			
 			import "http://tools.vitruv.testutils.metamodels.allElementTypes" as allElementTypes
 			
@@ -559,9 +604,11 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 						"test" === affectedEObject
 					}
 				}
-				action {
-					val newRoot = create allElementTypes::Root
-					add correspondence between newRoot and affectedEObject
+				create {
+					val newRoot = new allElementTypes::Root
+				}
+				update {
+					addCorrespondenceBetween(newRoot, affectedEObject)
 				}
 			}
 		'''
@@ -573,8 +620,9 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 	def void routineFromDifferentSegmentWithImplicitSegment() {
 		val commonRoutine = create.routine('commonRootCreate').input [
 			model(EObject, 'affectedEObject')
-		].action [
+		].create [
 			vall('newRoot').create(Root)
+		].update [
 			addCorrespondenceBetween('newRoot').and.affectedEObject
 		]
 
@@ -591,6 +639,8 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 				create.reaction('CreateRoot2Test').afterElement(Root2).created.call(commonRoutine)
 
 		val expectedReaction = '''
+			import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization.Update
+			
 			import "http://tools.vitruv.testutils.metamodels.allElementTypes" as allElementTypes
 			import "http://www.eclipse.org/emf/2002/Ecore" as ecore
 			import "http://tools.vitruv.testutils.metamodels.allElementTypes2" as allElementTypes2
@@ -606,9 +656,11 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 			}
 			
 			routine commonRootCreate(ecore::EObject affectedEObject) {
-				action {
-					val newRoot = create allElementTypes::Root
-					add correspondence between newRoot and affectedEObject
+				create {
+					val newRoot = new allElementTypes::Root
+				}
+				update {
+					addCorrespondenceBetween(newRoot, affectedEObject)
 				}
 			}
 			
@@ -631,8 +683,9 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 	def void routineFromDifferentSegmentWithExplicitSegment() {
 		val commonRoutine = create.routine('commonRootCreate').input [
 			model(EObject, 'affectedEObject')
-		].action [
+		].create [
 			vall('newRoot').create(Root)
+		].update [
 			addCorrespondenceBetween('newRoot').and.affectedEObject
 		]
 
@@ -652,6 +705,8 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		reactionsFile += secondSegment
 
 		val expectedReaction = '''
+			import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization.Update
+			
 			import "http://tools.vitruv.testutils.metamodels.allElementTypes" as allElementTypes
 			import "http://tools.vitruv.testutils.metamodels.allElementTypes2" as allElementTypes2
 			import "http://www.eclipse.org/emf/2002/Ecore" as ecore
@@ -677,9 +732,11 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 			}
 					
 			routine commonRootCreate(ecore::EObject affectedEObject) {
-				action {
-					val newRoot = create allElementTypes::Root
-					add correspondence between newRoot and affectedEObject
+				create {
+					val newRoot = new allElementTypes::Root
+				}
+				update {
+					addCorrespondenceBetween(newRoot, affectedEObject)
 				}
 			}
 		'''
