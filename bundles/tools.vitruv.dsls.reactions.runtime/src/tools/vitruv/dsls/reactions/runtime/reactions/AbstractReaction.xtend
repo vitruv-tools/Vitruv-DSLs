@@ -8,7 +8,7 @@ import java.util.function.Function
 
 /**
  * A Reaction retrieves a routines facade upon each execution and applies the
- * current execution's execution state to that facade such that it gets
+ * current execution's state to that facade such that it gets
  * propagated through all routines and their used facades.
  */
 abstract class AbstractReaction extends CallHierarchyHaving implements Reaction {

@@ -69,11 +69,7 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 			Function<T, Boolean> correspondencePreconditionMethod,
 			String tag
 		) {
-			val Function<T, Boolean> preconditionMethod = if (correspondencePreconditionMethod !== null) {
-					correspondencePreconditionMethod
-				} else {
-					[true]
-				}
+			val Function<T, Boolean> preconditionMethod = correspondencePreconditionMethod ?: [true]
 			val retrievedElements = _correspondenceModel.getCorrespondingElements(correspondenceSource,
 				elementClass, tag, preconditionMethod)
 			return retrievedElements
@@ -91,7 +87,7 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 			checkState(retrievedElements.size <= 1 && (!asserted || retrievedElements.size == 1),
 				"There were (%s) corresponding elements of type %s for: %s, which are: %s", retrievedElements.size,
 				elementClass.simpleName, correspondenceSource, retrievedElements)
-			val retrievedElement = if(!retrievedElements.empty) retrievedElements.get(0) else null
+			val retrievedElement = retrievedElements.head
 			return retrievedElement
 		}
 	}
