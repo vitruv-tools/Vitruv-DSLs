@@ -26,7 +26,7 @@
     </genDataTypes>
     <genDataTypes ecoreDataType="Resources.ecore#//URI"/>
     <genDataTypes ecoreDataType="Resources.ecore#//EmfResource"/>
-    <genDataTypes ecoreDataType="Resources.ecore#//Correspondence"/>
+    <genDataTypes ecoreDataType="Resources.ecore#//ReactionsCorrespondence"/>
     <genClasses ecoreClass="Resources.ecore#//Resource">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute Resources.ecore#//Resource/name"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute Resources.ecore#//Resource/fileExtension"/>

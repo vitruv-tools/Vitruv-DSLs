@@ -14,8 +14,8 @@ import tools.vitruv.change.propagation.ResourceAccess
 
 import static com.google.common.base.Preconditions.*
 import static tools.vitruv.dsls.commonalities.runtime.helper.XtendAssertHelper.*
-import tools.vitruv.change.correspondence.Correspondence
 import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView
+import tools.vitruv.dsls.reactions.runtime.correspondence.ReactionsCorrespondence
 
 /**
  * Matches participation classes to their objects according to the specified
@@ -28,7 +28,7 @@ class ParticipationMatcher {
 	val ContainmentContext containmentContext
 	val EObject startObject
 	val boolean followAttributeReferences
-	val EditableCorrespondenceModelView<Correspondence> correspondenceModel
+	val EditableCorrespondenceModelView<ReactionsCorrespondence> correspondenceModel
 	val ResourceAccess resourceAccess
 
 	/**
@@ -50,7 +50,7 @@ class ParticipationMatcher {
 	 * 		the correspondence model
 	 */
 	new(ContainmentContext containmentContext, EObject startObject, boolean followAttributeReferences,
-		EditableCorrespondenceModelView<Correspondence> correspondenceModel, ResourceAccess resourceAccess) {
+		EditableCorrespondenceModelView<ReactionsCorrespondence> correspondenceModel, ResourceAccess resourceAccess) {
 		checkNotNull(containmentContext, "containmentContext is null")
 		checkNotNull(startObject, "startObject is null")
 		checkNotNull(correspondenceModel, "correspondenceModel is null")
