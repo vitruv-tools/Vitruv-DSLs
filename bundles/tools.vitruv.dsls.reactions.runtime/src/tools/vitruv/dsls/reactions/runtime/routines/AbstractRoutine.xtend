@@ -13,7 +13,6 @@ import org.eclipse.emf.common.util.URI
 import static com.google.common.base.Preconditions.checkState
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 import org.eclipse.xtend.lib.annotations.Accessors
-import org.eclipse.xtext.xbase.lib.Functions.Function1
 import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView
 import tools.vitruv.dsls.reactions.runtime.correspondence.ReactionsCorrespondence
 
@@ -64,14 +63,14 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 
 		protected def <T extends EObject> Iterable<T> getCorrespondingElements(
 			EObject correspondenceSource,
-			Class<T> elementClass,
+			Class<T> expectedType,
 			Function<T, Boolean> correspondencePreconditionMethod,
-			String tag
+			String expectedTag
 		) {
 			val Function<T, Boolean> preconditionMethod = correspondencePreconditionMethod ?: [true]
-			val retrievedElements = _correspondenceModel.getCorrespondingElements(correspondenceSource,
-				elementClass, tag, preconditionMethod)
-			return retrievedElements
+			val correspondingObjects = _correspondenceModel.getCorrespondingEObjects(correspondenceSource, expectedTag).
+				filter(expectedType)
+			return correspondingObjects.filterNull.filter(preconditionMethod)
 		}
 
 		protected def <T extends EObject> T getCorrespondingElement(
@@ -90,12 +89,6 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 			return retrievedElement
 		}
 
-		private def <T extends EObject> Iterable<T> getCorrespondingElements(EObject sourceElement, Class<T> expectedType, String expectedTag,
-			Function1<T, Boolean> preconditionMethod) {
-			val correspondingObjects = _correspondenceModel.getCorrespondingEObjects(sourceElement, expectedTag).filter(expectedType)
-			val nonNullPreconditionMethod = if(preconditionMethod !== null) preconditionMethod else [T input|true]
-			return correspondingObjects.filterNull.filter(nonNullPreconditionMethod)
-		}
 	}
 
 	static class Match extends CorrespondenceRetriever {
