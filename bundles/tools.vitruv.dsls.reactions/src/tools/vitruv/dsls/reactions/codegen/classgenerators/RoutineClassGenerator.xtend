@@ -7,18 +7,18 @@ import static extension edu.kit.ipd.sdq.commons.util.java.lang.IterableUtil.*
 import org.eclipse.xtext.common.types.JvmConstructor
 import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
 import tools.vitruv.dsls.reactions.language.toplevelelements.Routine
-import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators.*
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
 import tools.vitruv.dsls.common.ClassNameGenerator
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsElementsCompletionChecker.isReferenceable
-import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.CreateBlockClassGenerator
-import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.MatchBlockClassGenerator
-import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.UpdateBlockClassGenerator
+import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.CreateBlockClassGenerator
+import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.MatchBlockClassGenerator
+import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.UpdateBlockClassGenerator
 import org.eclipse.xtend2.lib.StringConcatenationClient
-import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.EmptyStepExecutionClassGenerator
-import tools.vitruv.dsls.reactions.codegen.classgenerators.routine.StepExecutionClassGenerator
+import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.EmptyStepExecutionClassGenerator
+import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.StepExecutionClassGenerator
+import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
 
 class RoutineClassGenerator extends ClassGenerator {
 	static val EXECUTION_STATE_VARIABLE = "getExecutionState()"
@@ -50,7 +50,7 @@ class RoutineClassGenerator extends ClassGenerator {
 		}
 		this.routine = routine
 		this.routineClassNameGenerator = routine.routineClassNameGenerator
-		this.inputElements = routine.getInputElements(routine.input.modelInputElements, routine.input.javaInputElements)
+		this.inputElements = getInputElements(routine.input.modelInputElements, routine.input.javaInputElements)
 		this.inputValuesClass = if (hasInputValues) {
 			generateElementsContainerClass(INPUT_VALUES_SIMPLE_CLASS_NAME, inputElements)
 		}
@@ -94,7 +94,7 @@ class RoutineClassGenerator extends ClassGenerator {
 		val executeMethod = generateMethodExecuteRoutine()
 		generatedClass => [
 			documentation = getCommentWithoutMarkers(routine.documentation)
-			superTypes += typeRef(AbstractRepairRoutineRealization)
+			superTypes += typeRef(AbstractRoutine)
 			if(hasInputValues) members += routine.toField(INPUT_VALUES_FIELD_NAME, typeRef(inputValuesClass))
 			members += if (!matchBlockClassGenerator.empty)
 				routine.toField(RETRIEVED_VALUES_FIELD_NAME,
@@ -120,8 +120,8 @@ class RoutineClassGenerator extends ClassGenerator {
 			visibility = JvmVisibility.PUBLIC
 			val routinesFacadeParameter = generateRoutinesFacadeParameter(routine.reactionsSegment)
 			val executionStateParameter = generateReactionExecutionStateParameter()
-			val calledByParameter = generateParameter("calledBy", typeRef(CallHierarchyHaving))
-			val inputParameters = routine.generateMethodInputParameters(inputElements)
+			val calledByParameter = generateParameter(new AccessibleElement("calledBy", CallHierarchyHaving))
+			val inputParameters = routine.generateParameters(inputElements)
 			parameters += routinesFacadeParameter
 			parameters += executionStateParameter
 			parameters += calledByParameter

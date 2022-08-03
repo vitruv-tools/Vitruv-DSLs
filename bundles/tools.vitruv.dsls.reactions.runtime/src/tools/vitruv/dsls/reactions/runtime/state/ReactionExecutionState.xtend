@@ -1,4 +1,4 @@
-package tools.vitruv.dsls.reactions.runtime
+package tools.vitruv.dsls.reactions.runtime.state
 
 import tools.vitruv.change.interaction.UserInteractor
 import tools.vitruv.change.correspondence.CorrespondenceModel

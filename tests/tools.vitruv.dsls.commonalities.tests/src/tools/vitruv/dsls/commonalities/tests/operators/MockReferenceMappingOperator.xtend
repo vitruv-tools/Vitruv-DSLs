@@ -3,7 +3,7 @@ package tools.vitruv.dsls.commonalities.tests.operators
 import tools.vitruv.dsls.commonalities.runtime.operators.mapping.reference.IReferenceMappingOperator
 import org.eclipse.emf.ecore.EObject
 import tools.vitruv.dsls.commonalities.runtime.operators.mapping.reference.ReferenceMappingOperator
-import tools.vitruv.dsls.reactions.runtime.ReactionExecutionState
+import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 
 @ReferenceMappingOperator(
 	name = "mock",

@@ -1,4 +1,4 @@
-package tools.vitruv.dsls.reactions.codegen.classgenerators.routine
+package tools.vitruv.dsls.reactions.codegen.classgenerators.steps
 
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
@@ -12,14 +12,16 @@ import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsLang
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsLanguageHelper.getJavaClassName
 import static extension edu.kit.ipd.sdq.commons.util.java.lang.IterableUtil.mapFixed
 import tools.vitruv.dsls.reactions.language.toplevelelements.CreateBlock
-import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization
 import tools.vitruv.dsls.common.elements.NamedMetaclassReference
+import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
 
 /**
  * Generates for a {@link CreateBlock} of a routine a class providing a creation method (with the name defined in {@link #CREATE_ELEMENTS_METHOD_NAME})
  * that returns the created elements.
  */
 class CreateBlockClassGenerator extends StepExecutionClassGenerator {
+	static val PREDEFINED_CREATE_OBJECT_METHOD_NAME = "createObject" 
+	
 	static val MISSING_NAME = "/* Name missing */"
 	static val MISSING_TYPE = "/* Type missing */"
 	static val CREATED_ELEMENTS_SIMPLE_CLASS_NAME = "CreatedValues"
@@ -73,7 +75,7 @@ class CreateBlockClassGenerator extends StepExecutionClassGenerator {
 
 	override generateBody() {
 		generatedClass => [
-			superTypes += typeRef(AbstractRepairRoutineRealization.Create)
+			superTypes += typeRef(AbstractRoutine.Create)
 			members += createdElementsClass
 			members += generateConstructor()
 			members += generateMethodCreate()
@@ -104,9 +106,10 @@ class CreateBlockClassGenerator extends StepExecutionClassGenerator {
 		val affectedElementClass = elementCreate.metaclass
 		val createdClassFactory = affectedElementClass?.EPackage?.EFactoryInstance?.runtimeClassName
 		return '''
-		«affectedElementClass.javaClassName» «elementCreate.name ?: MISSING_NAME» = «createdClassFactory?: 
-			MISSING_TYPE».eINSTANCE.create«affectedElementClass?.name?: MISSING_TYPE»();
-		notifyObjectCreated(«elementCreate.name ?: MISSING_NAME»);'''
+			«affectedElementClass.javaClassName» «elementCreate.name ?: MISSING_NAME» = «PREDEFINED_CREATE_OBJECT_METHOD_NAME»(() -> {
+				return «createdClassFactory?: MISSING_TYPE».eINSTANCE.create«affectedElementClass?.name?: MISSING_TYPE»();
+			});
+		'''
 	}
 
 	override generateStepExecutionCode(

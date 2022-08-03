@@ -1,4 +1,4 @@
-package tools.vitruv.dsls.reactions.codegen.classgenerators.routine
+package tools.vitruv.dsls.reactions.codegen.classgenerators.steps
 
 import org.eclipse.emf.ecore.EObject
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
@@ -20,11 +20,13 @@ import static extension edu.kit.ipd.sdq.commons.util.java.lang.IterableUtil.mapF
 import java.io.IOException
 import org.eclipse.xtext.common.types.JvmFormalParameter
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsLanguageHelper.*
-import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization
 import static com.google.common.base.Preconditions.checkNotNull
 import static com.google.common.base.Preconditions.checkArgument
 import tools.vitruv.dsls.reactions.language.toplevelelements.MatchBlock
 import tools.vitruv.dsls.reactions.language.MatchCheckStatement
+import org.eclipse.xtext.common.types.JvmTypeReference
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
+import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
 
 /**
  * Generates for a {@link Matcher} block of a routine a class providing a method (with the name defined in 
@@ -32,6 +34,10 @@ import tools.vitruv.dsls.reactions.language.MatchCheckStatement
  * defined match statements.
  */
 class MatchBlockClassGenerator extends StepExecutionClassGenerator {
+	static val PREDEFINED_HAS_CORRESPONDING_ELEMENTS_METHOD_NAME = "hasCorrespondingElements"
+	static val PREDEFINED_GET_CORRESPONDING_ELEMENT_METHOD_NAME = "getCorrespondingElement"
+	static val PREDEFINED_GET_CORRESPONDING_ELEMENTS_METHOD_NAME = "getCorrespondingElements"
+	
 	static val MATCH_METHOD_NAME = "match"
 	static val MISSING_TYPE = "/* Type missing */"
 	static val RETRIEVED_ELEMENTS_SIMPLE_CLASS_NAME = "RetrievedValues"
@@ -80,11 +86,10 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 
 	override generateBody() {
 		generatedClass => [
-			superTypes += typeRef(AbstractRepairRoutineRealization.Match)
+			superTypes += typeRef(AbstractRoutine.Match)
 			members += retrievedElementsClass
 			members += generateConstructor()
 			members += generateMatchMethod()
-			members += generatedMethods
 		]
 	}
 
@@ -120,9 +125,9 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 		val retrieveStatementArguments = getGeneralGetCorrespondingElementStatementArguments(elementAbscence, null,
 			currentlyAccessibleElements)
 		val StringConcatenationClient statements = '''
-			if (!getCorrespondingElements(
+			if («PREDEFINED_HAS_CORRESPONDING_ELEMENTS_METHOD_NAME»(
 				«retrieveStatementArguments»
-			).isEmpty()) {
+			)) {
 				return null;
 			}
 		'''
@@ -143,7 +148,7 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 	private def dispatch StringConcatenationClient createStatements(RetrieveManyModelElements retrieveElement,
 		String name, String typeName, StringConcatenationClient generalArguments) {
 		val StringConcatenationClient statement = '''
-			«IF !name.nullOrEmpty»«List»<«typeName»> «name» = «ENDIF»getCorrespondingElements(
+			«IF !name.nullOrEmpty»«Iterable»<«typeName»> «name» = «ENDIF»«PREDEFINED_GET_CORRESPONDING_ELEMENTS_METHOD_NAME»(
 				«generalArguments»
 			);
 		'''
@@ -153,10 +158,10 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 	private def dispatch StringConcatenationClient createStatements(RetrieveOneModelElement retrieveElement,
 		String name, String typeName, StringConcatenationClient generalArguments) {
 		val retrieveStatement = '''
-		getCorrespondingElement(
-			«generalArguments», 
-			«retrieveElement.asserted» // asserted
-			)''';
+			«PREDEFINED_GET_CORRESPONDING_ELEMENT_METHOD_NAME»(
+				«generalArguments», 
+				«retrieveElement.asserted» // asserted
+			)'''
 		if (name.nullOrEmpty) {
 			if (!retrieveElement.optional) {
 				return '''if («retrieveStatement» == null) {
@@ -184,13 +189,13 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 		val checkMethod = generateMethodMatcherPrecondition(checkStatement, currentlyAccessibleElements)
 		val checkMethodCall = checkMethod?.userExecutionMethodCallString
 		return '''
-		if (!«checkMethodCall») {
-			«IF checkStatement.asserted»
-				throw new «IllegalStateException»();
-			«ELSE»
-				return null;
-			«ENDIF»
-		}''';
+			if (!«checkMethodCall») {
+				«IF checkStatement.asserted»
+					throw new «IllegalStateException»();
+				«ELSE»
+					return null;
+				«ENDIF»
+			}'''
 	}
 
 	private def StringConcatenationClient getTagString(RetrieveOrRequireAbscenceOfModelElement retrieveElement,
@@ -208,14 +213,14 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 		Iterable<AccessibleElement> currentlyAccessibleElements) {
 		val affectedElementClass = retrieveElement.elementType?.javaClassName
 		if (retrieveElement.precondition === null) {
-			return '''(«affectedElementClass» _element) -> true'''
+			return '''null'''
 		}
 		val preconditionMethod = generateMethodCorrespondencePrecondition(retrieveElement, name,
 			currentlyAccessibleElements)
 		return '''(«affectedElementClass» _element) -> «preconditionMethod.simpleName»(« //
-		preconditionMethod.generateMethodParameterCallList.toString.replace(name?: 
-			RETRIEVAL_PRECONDITION_METHOD_TARGET, "_element"
-		)»)'''
+			preconditionMethod.generateMethodParameterCallList.toString.replace(name?: 
+				RETRIEVAL_PRECONDITION_METHOD_TARGET, "_element"
+			)»)'''
 	}
 
 	private def StringConcatenationClient getGeneralGetCorrespondingElementStatementArguments(
@@ -229,17 +234,17 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 		val correspondenceSourceMethodCall = correspondenceSourceMethod?.userExecutionMethodCallString
 		val tagString = getTagString(retrieveElement, currentlyAccessibleElements)
 		return '''
-		«correspondenceSourceMethodCall», // correspondence source supplier
-		«affectedElementClass ?: MISSING_TYPE».class,
-		«correspondingElementPreconditionChecker», // correspondence precondition checker
-		«tagString»'''
+			«correspondenceSourceMethodCall», // correspondence source supplier
+			«affectedElementClass ?: MISSING_TYPE».class,
+			«correspondingElementPreconditionChecker», // correspondence precondition checker
+			«tagString»'''
 	}
 
 	private def JvmOperation generateMethodGetRetrieveTag(Taggable taggable,
 		Iterable<AccessibleElement> currentlyAccessibleElements) {
 		val methodName = "getRetrieveTag" + counterGetRetrieveTagMethods++;
 
-		return taggable.tag?.getOrGenerateMethod(methodName, typeRef(String)) [
+		return taggable.tag?.generateAndAddMethod(methodName, typeRef(String)) [
 			parameters += generateAccessibleElementsParameters(currentlyAccessibleElements)
 			body = taggable.tag.code;
 		];
@@ -249,11 +254,10 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 		String name, Iterable<AccessibleElement> currentlyAccessibleElements) {
 		val methodName = "getCorrespondingModelElementsPrecondition" +
 			(elementRetrieve.retrieveOrRequireAbscenceMethodSuffix ?: counterGetCorrespondenceSource++)
-		return elementRetrieve.precondition?.getOrGenerateMethod(methodName, typeRef(Boolean.TYPE)) [
-			val elementParameter = generateModelElementParameter(elementRetrieve.elementType,
-				name ?: RETRIEVAL_PRECONDITION_METHOD_TARGET)
-			parameters += generateAccessibleElementsParameters(currentlyAccessibleElements)
-			parameters += elementParameter
+		return elementRetrieve.precondition?.generateAndAddMethod(methodName, typeRef(Boolean.TYPE)) [
+			val element = new AccessibleElement(name ?: RETRIEVAL_PRECONDITION_METHOD_TARGET, elementRetrieve.elementType.javaClassName)
+			parameters += generateParameters(currentlyAccessibleElements)
+			parameters += generateParameter(element)
 			body = elementRetrieve.precondition.code
 		];
 	}
@@ -263,8 +267,8 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 		val methodName = "getCorrepondenceSource" +
 			(elementRetrieve.retrieveOrRequireAbscenceMethodSuffix ?: counterGetCorrespondenceSource++);
 
-		val correspondenceSourceBlock = elementRetrieve.correspondenceSource;
-		return correspondenceSourceBlock?.getOrGenerateMethod(methodName, typeRef(EObject)) [
+		val correspondenceSourceBlock = elementRetrieve.correspondenceSource
+		return correspondenceSourceBlock?.generateAndAddMethod(methodName, typeRef(EObject)) [
 			parameters += generateAccessibleElementsParameters(currentlyAccessibleElements)
 			body = correspondenceSourceBlock.code;
 		];
@@ -276,7 +280,7 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 	private def JvmOperation generateMethodMatcherPrecondition(MatchCheckStatement checkStatement,
 		Iterable<AccessibleElement> currentlyAccessibleElements) {
 		val methodName = "checkMatcherPrecondition" + counterCheckMatcherPreconditionMethods++;
-		return checkStatement.getOrGenerateMethod(methodName, typeRef(Boolean.TYPE)) [
+		return checkStatement.generateAndAddMethod(methodName, typeRef(Boolean.TYPE)) [
 			parameters += generateAccessibleElementsParameters(currentlyAccessibleElements)
 			body = checkStatement.code;
 		];
@@ -328,13 +332,20 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 					return new AccessibleElement(retrieveElement.name, retrieveElementType)
 				}
 			RetrieveManyModelElements:
-				return new AccessibleElement(retrieveElement.name, List.name, retrieveElementType)
+				return new AccessibleElement(retrieveElement.name, Iterable.name, retrieveElementType)
 		}
 
 	}
 
 	override getNewlyAccessibleElementsContainerType() {
 		return retrievedElementsClass
+	}
+	
+	def JvmOperation generateAndAddMethod(EObject contextObject, String methodName, JvmTypeReference returnType,
+		Procedure1<? super JvmOperation> initializer) {
+		val generatedMethod = contextObject.toMethod(methodName, returnType, initializer)
+		generatedClass.members += generatedMethod
+		return generatedMethod
 	}
 
 }

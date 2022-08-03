@@ -1,9 +1,8 @@
-package tools.vitruv.dsls.reactions.codegen.classgenerators.routine
+package tools.vitruv.dsls.reactions.codegen.classgenerators.steps
 
 import org.eclipse.xtext.common.types.JvmVisibility
 import org.eclipse.xtext.common.types.JvmOperation
 import org.eclipse.xtext.common.types.JvmTypeReference
-import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutineRealization
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
 import org.eclipse.xtext.common.types.JvmGenericType
@@ -11,6 +10,7 @@ import static com.google.common.base.Preconditions.checkArgument
 import static com.google.common.base.Preconditions.checkNotNull
 import org.eclipse.xtend2.lib.StringConcatenationClient
 import tools.vitruv.dsls.reactions.language.toplevelelements.CodeBlock
+import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
 
 /**
  * Generates for an {@link UpdateBlock} of a routine a class with a method (with the name defined in 
@@ -60,7 +60,7 @@ class UpdateBlockClassGenerator extends StepExecutionClassGenerator {
 
 	override generateBody() {
 		generatedClass => [
-			superTypes += typeRef(AbstractRepairRoutineRealization.Update)
+			superTypes += typeRef(AbstractRoutine.Update)
 			members += generateConstructor()
 			members += generateUpdateMethod()
 		]

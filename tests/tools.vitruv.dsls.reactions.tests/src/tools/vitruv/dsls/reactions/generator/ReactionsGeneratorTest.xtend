@@ -28,7 +28,6 @@ class ReactionsGeneratorTest {
 	@Inject Provider<IReactionsGenerator> generatorProvider
 	@Inject Provider<XtextResourceSet> resourceSetProvider
 	static val CHANGE_PROPAGATION_SPEC_NAME_SUFFIX = 'ChangePropagationSpecification'
-	static val EXECUTOR_CLASS_NAME = 'ReactionsExecutor'
 	static val REACTION_NAME = 'TestReaction'
 	static val FIRST_SEGMENT = 'firstTestReaction'
 	static val SECOND_SEGMENT = 'secondTestReaction'
@@ -61,14 +60,12 @@ class ReactionsGeneratorTest {
 	}
 
 	private static def assertFilesForReaction(InMemoryFileSystemAccess fsa, String segmentName, String reactionName) {
-		assertFilesForReactionWithoutExecutor(fsa, segmentName, reactionName)
-		assertThat(fsa.allFiles.keySet,
-			hasItem(endsWith(segmentName + '/' + EXECUTOR_CLASS_NAME + '.java')))
+		assertFilesForReactionWithoutChangePropagationSpecification(fsa, segmentName, reactionName)
 		assertThat(fsa.allFiles.keySet,
 			hasItem(endsWith(segmentName + '/' + segmentName.toFirstUpper + CHANGE_PROPAGATION_SPEC_NAME_SUFFIX + '.java')))
 	}
 
-	private static def assertFilesForReactionWithoutExecutor(InMemoryFileSystemAccess fsa, String segmentName, String reactionName) {
+	private static def assertFilesForReactionWithoutChangePropagationSpecification(InMemoryFileSystemAccess fsa, String segmentName, String reactionName) {
 		assertThat(fsa.allFiles.keySet,
 			hasItem(endsWith(segmentName + '/' + reactionName + 'Reaction.java')))
 		assertThat(fsa.allFiles.keySet,
@@ -93,10 +90,10 @@ class ReactionsGeneratorTest {
 		fsa.assertFilesForReaction(SECOND_SEGMENT, REACTION_NAME);
 		fsa.assertFilesForReaction(THIRD_SEGMENT, REACTION_NAME);
 
-		val secondExecutorFileName = fsa.allFiles.entrySet.findFirst [
-			key.endsWith(SECOND_SEGMENT + '/' + EXECUTOR_CLASS_NAME + '.java')
+		val secondChangePropagationSpecificationFileName = fsa.allFiles.entrySet.findFirst [
+			key.endsWith(SECOND_SEGMENT + '/' + SECOND_SEGMENT.toFirstUpper + CHANGE_PROPAGATION_SPEC_NAME_SUFFIX + '.java')
 		].key
-		fsa.deleteFile(secondExecutorFileName, '')
+		fsa.deleteFile(secondChangePropagationSpecificationFileName, '')
 
 		generator = generatorProvider.get()
 		generator.useResourceSet(resourceSetProvider.get())
@@ -104,7 +101,7 @@ class ReactionsGeneratorTest {
 		generator.generate(fsa)
 
 		fsa.assertFilesForReaction(FIRST_SEGMENT, REACTION_NAME);
-		fsa.assertFilesForReactionWithoutExecutor(SECOND_SEGMENT, REACTION_NAME);
+		fsa.assertFilesForReactionWithoutChangePropagationSpecification(SECOND_SEGMENT, REACTION_NAME);
 		fsa.assertFilesForReaction(THIRD_SEGMENT, REACTION_NAME);
 		fsa.assertFilesForReaction(FOURTH_SEGMENT, REACTION_NAME);
 	}

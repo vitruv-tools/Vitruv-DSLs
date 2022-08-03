@@ -1,12 +1,7 @@
 package tools.vitruv.dsls.reactions.codegen.classgenerators
 
 import org.eclipse.xtext.common.types.JvmGenericType
-import java.util.Map
-import org.eclipse.xtext.common.types.JvmOperation
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.xtext.common.types.JvmTypeReference
-import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
-import java.util.HashMap
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
 import static extension edu.kit.ipd.sdq.commons.util.java.lang.IterableUtil.mapFixed
@@ -22,47 +17,20 @@ import org.eclipse.xtext.common.types.JvmVisibility
  * {@link ClassGenerator#generateEmptyClass() generateEmptyClass}
  * and {@link ClassGenerator#generateBody(JvmGenericType) generateBody} for those steps.
  */
-abstract class ClassGenerator extends TypesBuilderExtensionProvider implements IJvmOperationRegistry {
-	Map<String, JvmOperation> methodMap;
-
+abstract class ClassGenerator extends TypesBuilderExtensionProvider {
 	protected def generateAccessibleElementsParameters(EObject sourceObject,
 		Iterable<AccessibleElement> accessibleElements) {
-			sourceObject.generateMethodInputParameters(accessibleElements)
+			sourceObject.generateParameters(accessibleElements)
 	}
 
 	new(TypesBuilderExtensionProvider typesBuilderExtensionProvider) {
 		typesBuilderExtensionProvider.copyBuildersTo(this);
-		this.methodMap = new HashMap<String, JvmOperation>();
 	}
 
 	def JvmGenericType generateEmptyClass()
 
 	def JvmGenericType generateBody()
 
-	override JvmOperation getOrGenerateMethod(EObject contextObject, String methodName, JvmTypeReference returnType,
-		Procedure1<? super JvmOperation> initializer) {
-		if (!methodMap.containsKey(methodName)) {
-			val operation = contextObject.toMethod(methodName, returnType, initializer);
-			methodMap.put(operation.simpleName, operation);
-		}
-
-		return methodMap.get(methodName);
-	}
-
-	override JvmOperation getOrGenerateMethod(String methodName, JvmTypeReference returnType,
-		Procedure1<? super JvmOperation> initializer) {
-		if (!methodMap.containsKey(methodName)) {
-			val operation = generateUnassociatedMethod(methodName, returnType, initializer);
-			methodMap.put(operation.simpleName, operation);
-		}
-
-		return methodMap.get(methodName);
-	}
-
-	protected def Iterable<JvmOperation> getGeneratedMethods() {
-		return methodMap.values;
-	}
-	
 	protected def getCommentWithoutMarkers(String documentation) {
 		if (documentation !== null && documentation.length > 4) {
 			val withoutMultilineCommentMarkers = documentation.replaceAll("\\n \\* ","\\n")
@@ -74,7 +42,7 @@ abstract class ClassGenerator extends TypesBuilderExtensionProvider implements I
 	
 	protected def generateElementsContainerClass(String qualifiedClassName, Iterable<AccessibleElement> elements) {
 		generateUnassociatedClass(qualifiedClassName) [
-			val retrievedElementParameters = generateMethodInputParameters(elements)
+			val retrievedElementParameters = generateParameters(elements)
 			members += retrievedElementParameters.mapFixed[
 				toField(name, parameterType) => [
 					final = true
