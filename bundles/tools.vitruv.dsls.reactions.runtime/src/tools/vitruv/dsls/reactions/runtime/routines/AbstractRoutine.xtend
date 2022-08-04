@@ -15,20 +15,20 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView
 import tools.vitruv.dsls.reactions.runtime.correspondence.ReactionsCorrespondence
 
-abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
-	val AbstractRoutinesFacade routinesFacade
+abstract class AbstractRoutine<T extends AbstractRoutinesFacade> extends CallHierarchyHaving implements Routine {
+	val T routinesFacade
 	@Accessors(PROTECTED_GETTER)
 	extension val ReactionExecutionState executionState
 
-	new(AbstractRoutinesFacade routinesFacade, ReactionExecutionState executionState, CallHierarchyHaving calledBy) {
+	new(T routinesFacade, ReactionExecutionState executionState, CallHierarchyHaving calledBy) {
 		super(calledBy)
 		this.routinesFacade = routinesFacade
 		this.executionState = executionState
 	}
 
 	// generic return type for convenience; the requested type has to match the type of the facade provided during construction
-	protected def <T extends AbstractRoutinesFacade> T getRoutinesFacade() {
-		return routinesFacade as T
+	protected def T getRoutinesFacade() {
+		return routinesFacade
 	}
 
 	override boolean execute() {

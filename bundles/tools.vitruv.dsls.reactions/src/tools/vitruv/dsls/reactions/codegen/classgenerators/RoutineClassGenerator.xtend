@@ -96,7 +96,7 @@ class RoutineClassGenerator extends ClassGenerator {
 		val executeMethod = generateMethodExecuteRoutine()
 		generatedClass => [
 			documentation = getCommentWithoutMarkers(routine.documentation)
-			superTypes += typeRef(AbstractRoutine)
+			superTypes += typeRef(AbstractRoutine, typeRef(routinesFacadeQualifiedName))
 			if(hasInputValues) members += routine.toField(INPUT_VALUES_FIELD_NAME, typeRef(inputValuesClass))
 			members += if (!matchBlockClassGenerator.empty)
 				routine.toField(RETRIEVED_VALUES_FIELD_NAME,
