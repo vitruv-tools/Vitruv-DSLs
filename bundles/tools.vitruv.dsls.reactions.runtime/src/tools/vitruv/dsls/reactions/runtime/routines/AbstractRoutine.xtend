@@ -179,7 +179,7 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 		}
 
 		protected def void addCorrespondenceBetween(EObject firstElement, EObject secondElement, String tag) {
-			correspondenceModel.addCorrespondenceBetween(firstElement, secondElement, if(tag === null) "" else tag)
+			correspondenceModel.addCorrespondenceBetween(firstElement, secondElement, tag ?: "")
 		}
 
 		def void removeObject(EObject element) {
