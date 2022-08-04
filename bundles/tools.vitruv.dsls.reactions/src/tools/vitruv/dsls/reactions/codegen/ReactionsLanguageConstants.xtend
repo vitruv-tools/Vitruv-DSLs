@@ -5,7 +5,6 @@ import edu.kit.ipd.sdq.activextendannotations.Utility
 @Utility class ReactionsLanguageConstants {
 	public static val OVERRIDDEN_REACTIONS_SEGMENT_SEPARATOR = "::";
 	
-	public static val RETRIEVAL_PRECONDITION_METHOD_TARGET = "potentialTarget"
 	static val ROUTINES_FACADE_NAME = "routinesFacade";
 	public static val ROUTINES_FACADE_PARAMETER_NAME = ROUTINES_FACADE_NAME;
 	static val USER_INTERACTING_NAME = "userInteractor";

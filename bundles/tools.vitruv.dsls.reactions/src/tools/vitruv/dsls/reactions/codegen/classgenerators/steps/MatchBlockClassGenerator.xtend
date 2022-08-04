@@ -8,7 +8,6 @@ import org.eclipse.xtext.common.types.JvmOperation
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 import tools.vitruv.dsls.reactions.language.RetrieveOrRequireAbscenceOfModelElement
 import tools.vitruv.dsls.reactions.language.RetrieveModelElement
-import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.RETRIEVAL_PRECONDITION_METHOD_TARGET
 import org.eclipse.xtend2.lib.StringConcatenationClient
 import tools.vitruv.dsls.reactions.language.RetrieveManyModelElements
 import tools.vitruv.dsls.reactions.language.RetrieveOneModelElement
@@ -217,9 +216,7 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 		val preconditionMethod = generateMethodCorrespondencePrecondition(retrieveElement, name,
 			currentlyAccessibleElements)
 		return '''(«affectedElementClass» _element) -> «preconditionMethod.simpleName»(« //
-			preconditionMethod.generateMethodParameterCallList.toString.replace(name?: 
-				RETRIEVAL_PRECONDITION_METHOD_TARGET, "_element"
-			)»)'''
+			preconditionMethod.generateMethodParameterCallList.toString.replace("it", "_element")»)'''
 	}
 
 	private def StringConcatenationClient getGeneralGetCorrespondingElementStatementArguments(
@@ -254,7 +251,7 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 		val methodName = "getCorrespondingModelElementsPrecondition" +
 			(elementRetrieve.retrieveOrRequireAbscenceMethodSuffix ?: counterGetCorrespondenceSource++)
 		return elementRetrieve.precondition?.generateAndAddMethod(methodName, typeRef(Boolean.TYPE)) [
-			val element = new AccessibleElement(name ?: RETRIEVAL_PRECONDITION_METHOD_TARGET, elementRetrieve.elementType.javaClassName)
+			val element = new AccessibleElement("it", elementRetrieve.elementType.javaClassName)
 			parameters += generateParameters(currentlyAccessibleElements)
 			parameters += generateParameter(element)
 			body = elementRetrieve.precondition
