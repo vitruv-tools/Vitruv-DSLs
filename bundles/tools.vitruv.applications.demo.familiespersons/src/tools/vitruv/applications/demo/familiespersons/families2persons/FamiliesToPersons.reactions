@@ -179,7 +179,7 @@ routine createFemale(families::Member newMember, families::Family family) {
 routine updateNameAndCorrespondencesAfterMemberBecameFather(families::Member newFather, families::Family newFamily) {
 	match {
 		val correspondingPerson = retrieve persons::Person corresponding to newFather with {
-			assertMale(correspondingPerson)
+			assertMale(it)
 			true
 		}
 	}
@@ -194,7 +194,7 @@ routine updateNameAndCorrespondencesAfterMemberBecameFather(families::Member new
 routine updateNameAndCorrespondencesAfterMemberBecameMother(families::Member newMother, families::Family newFamily) {
 	match {
 		val correspondingPerson = retrieve persons::Person corresponding to newMother with {
-			assertFemale(correspondingPerson)
+			assertFemale(it)
 			true
 		}
 	}
@@ -224,7 +224,7 @@ routine updateNameAndCorrespondencesOfCorrespondingPerson(families::Member newMe
 routine existingMemberBecameSon_updateNameAndCorrespondencesOfCorrespondingMale(families::Member insertedChild, families::Family newFamily) {
 	match {
 		val correspondingPerson = retrieve persons::Person corresponding to insertedChild with {
-			assertMale(correspondingPerson)
+			assertMale(it)
 			true
 		}
 	}
@@ -237,7 +237,7 @@ routine existingMemberBecameSon_updateNameAndCorrespondencesOfCorrespondingMale(
 routine existingMemberBecameDaughter_updateNameAndCorrespondencesOfCorrespondingFemale(families::Member insertedChild, families::Family newFamily) {
 	match {
 		val correspondingPerson = retrieve persons::Person corresponding to insertedChild with {
-			assertFemale(correspondingPerson)
+			assertFemale(it)
 			true
 		}
 	}
