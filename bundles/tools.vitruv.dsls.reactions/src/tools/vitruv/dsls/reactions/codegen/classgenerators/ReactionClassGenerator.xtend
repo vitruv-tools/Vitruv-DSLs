@@ -19,6 +19,7 @@ import tools.vitruv.dsls.reactions.runtime.routines.RoutinesFacade
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 import java.util.function.Function
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
+import tools.vitruv.change.atomic.EChange
 
 class ReactionClassGenerator extends ClassGenerator {
 	static val EXECUTION_STATE_VARIABLE = "executionState"
@@ -86,7 +87,7 @@ class ReactionClassGenerator extends ClassGenerator {
 		val userDefinedPreconditionMethod = generateUserDefinedPreconditionMethod
 		val executeReactionMethod = reaction.toMethod(EXECUTE_REACTION_METHOD_NAME, typeRef(Void.TYPE)) [
 			visibility = JvmVisibility.PUBLIC
-			val changeParameter = generateUntypedChangeParameter
+			val changeParameter = generateParameter(new AccessibleElement("change", EChange))
 			val reactionExecutionStateParameter = generateParameter(new AccessibleElement(EXECUTION_STATE_VARIABLE, ReactionExecutionState))
 			val routinesFacadeParameter = generateParameter(new AccessibleElement(ROUTINES_FACADE_VARIABLE + "Untyped", RoutinesFacade))
 			parameters += changeParameter
@@ -129,7 +130,7 @@ class ReactionClassGenerator extends ClassGenerator {
 
 	private def JvmOperation generateMatchChangeMethod() {
 		return reaction.trigger.toMethod(MATCH_CHANGE_METHOD_NAME, typeRef(Boolean.TYPE)) [
-			val changeParameter = generateUntypedChangeParameter(reaction)
+			val changeParameter = generateParameter(new AccessibleElement("change", EChange))
 			visibility = JvmVisibility.PUBLIC
 			parameters += changeParameter
 			body = changeType.generateCheckMethodBody(changeParameter.name)

@@ -14,6 +14,7 @@ import static extension edu.kit.ipd.sdq.commons.util.java.lang.IterableUtil.mapF
 import tools.vitruv.dsls.reactions.language.toplevelelements.CreateBlock
 import tools.vitruv.dsls.common.elements.NamedMetaclassReference
 import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
+import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 
 /**
  * Generates for a {@link CreateBlock} of a routine a class providing a creation method (with the name defined in {@link #CREATE_ELEMENTS_METHOD_NAME})
@@ -84,7 +85,7 @@ class CreateBlockClassGenerator extends StepExecutionClassGenerator {
 
 	def private generateConstructor() {
 		createBlock.toConstructor [
-			val reactionExecutionStateParameter = generateReactionExecutionStateParameter()
+			val reactionExecutionStateParameter = generateParameter(new AccessibleElement("reactionExecutionState", ReactionExecutionState))
 			parameters += reactionExecutionStateParameter
 			body = '''super(«reactionExecutionStateParameter.name»);'''
 		]

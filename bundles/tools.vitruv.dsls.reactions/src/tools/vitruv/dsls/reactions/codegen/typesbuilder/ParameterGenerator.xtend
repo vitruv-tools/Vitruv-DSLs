@@ -3,15 +3,10 @@ package tools.vitruv.dsls.reactions.codegen.typesbuilder
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
 import org.eclipse.xtext.common.types.JvmFormalParameter
 import org.eclipse.emf.ecore.EObject
-import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 import org.eclipse.emf.ecore.EClass
-import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment
 import tools.vitruv.dsls.reactions.language.inputTypes.InputTypesPackage
-import tools.vitruv.change.atomic.EChange
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsLanguageHelper.*;
-import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators.*;
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
-import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.*;
 import tools.vitruv.dsls.reactions.language.toplevelelements.NamedJavaElementReference
 import tools.vitruv.dsls.common.elements.NamedMetaclassReference
 
@@ -24,18 +19,6 @@ class ParameterGenerator {
 	new (JvmTypeReferenceBuilder typeReferenceBuilder, JvmTypesBuilderWithoutAssociations typesBuilder) {
 		_typeReferenceBuilder = typeReferenceBuilder
 		_typesBuilder = typesBuilder
-	}
-	
-	def JvmFormalParameter generateUntypedChangeParameter(EObject parameterContext) {
-		return parameterContext.generateParameter(new AccessibleElement(CHANGE_PARAMETER_NAME, EChange))
-	}
-	
-	def JvmFormalParameter generateRoutinesFacadeParameter(EObject parameterContext, ReactionsSegment reactionsSegment) {
-		return generateParameter(parameterContext, new AccessibleElement(ROUTINES_FACADE_PARAMETER_NAME, reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName))
-	}
-	
-	def JvmFormalParameter generateReactionExecutionStateParameter(EObject parameterContext) {
-		return generateParameter(parameterContext, new AccessibleElement(REACTION_EXECUTION_STATE_PARAMETER_NAME, ReactionExecutionState))
 	}
 	
 	def generateParameter(EObject contextObject, AccessibleElement element) {
