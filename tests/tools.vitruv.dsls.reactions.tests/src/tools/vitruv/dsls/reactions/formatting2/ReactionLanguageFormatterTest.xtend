@@ -191,6 +191,12 @@ class ReactionLanguageFormatterTest {
 		nextPlaceholderChar = 14 as char
 	}
 
+	/*
+	 * We temporarily replace formatting sequences (such as whitespaces, tabs, newlines etc.)
+	 * with placeholders to restore different formatting sequences later on.
+	 * To this end, we use usually unused ASCII symbols as placeholders, specifically
+	 * the ASCII symbols 14 to 31.
+	 */
 	private def String modifyTextUsingPlaceholderChar(String text, (String, char)=>String modifier) {
 		val result = modifier.apply(text, retrievePlaceholderChar())
 		returnPlaceholderChar()
@@ -198,6 +204,9 @@ class ReactionLanguageFormatterTest {
 	}
 
 	private def char retrievePlaceholderChar() {
+		if (nextPlaceholderChar > 31) {
+			throw new IllegalStateException("Too many placeholder chars are used")
+		}
 		return nextPlaceholderChar++
 	}
 
