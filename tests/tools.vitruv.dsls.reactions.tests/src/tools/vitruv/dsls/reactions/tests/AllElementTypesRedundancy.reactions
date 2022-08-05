@@ -171,7 +171,7 @@ reaction ReplacedNonRootEObjectSingleReupdate {
 routine deleteNonRootEObjectSingle(minimal::Root container, minimal::NonRoot containedObject) {
 	match {
 		val correspondingContainer = retrieve asserted minimal::Root corresponding to container
-		val targetElement = retrieve minimal::NonRoot corresponding to containedObject with targetElement.eContainer ===
+		val targetElement = retrieve minimal::NonRoot corresponding to containedObject with eContainer ===
 			correspondingContainer
 	}
 	update {
