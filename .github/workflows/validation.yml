@@ -4,12 +4,12 @@ on:
   pull_request:
 
 jobs:
-  build_dsls:
+  validate_dsls:
     name: DSLs
     uses: ./.github/workflows/ci.yml
 
-  validate_applications:
-    needs: build_dsls
+  validate_cbs_applications:
+    needs: validate_dsls
     name: Application
     runs-on: ubuntu-latest
     steps:
@@ -40,7 +40,7 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 11
-      - name: Build Applications
+      - name: Build and Verify Applications
         uses: GabrielBB/xvfb-action@v1
         with:
           working-directory: ./cbsapplications
