@@ -18,7 +18,6 @@ import static tools.vitruv.dsls.commonalities.generator.reactions.ReactionsGener
 import static tools.vitruv.dsls.commonalities.generator.reactions.intermediatemodel.IntermediateModelHelper.*
 import static tools.vitruv.dsls.commonalities.generator.reactions.util.ReactionsHelper.*
 
-import static extension tools.vitruv.dsls.commonalities.generator.reactions.util.JvmTypeProviderHelper.*
 import static extension tools.vitruv.dsls.commonalities.generator.reactions.util.XbaseHelper.*
 
 class InsertIntermediateRoutineBuilder extends ReactionsGenerationHelper {
@@ -53,7 +52,7 @@ class InsertIntermediateRoutineBuilder extends ReactionsGenerationHelper {
 		return insertIntermediateRoutines.computeIfAbsent(concept.name) [
 			create.routine('''insertIntermediate_«concept.name»''')
 				.input [model(IntermediateModelBasePackage.Literals.INTERMEDIATE, INTERMEDIATE)]
-				.action [
+				.update [
 					execute [insertIntermediate(concept, variable(INTERMEDIATE))]
 				]
 		]

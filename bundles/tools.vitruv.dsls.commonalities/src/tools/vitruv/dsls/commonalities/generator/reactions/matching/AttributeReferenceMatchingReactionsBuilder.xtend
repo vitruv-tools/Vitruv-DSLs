@@ -188,7 +188,7 @@ class AttributeReferenceMatchingReactionsBuilder extends ReactionsGenerationHelp
 				].match [
 					vall(REFERENCING_INTERMEDIATE).retrieve(referencingCommonality.changeClass)
 						.correspondingTo(PARTICIPATION_OBJECT)
-				].action [
+				].update [
 					execute [extension typeProvider |
 						val extension jvmTypeReferenceBuilder = jvmTypeReferenceBuilder
 						XbaseFactory.eINSTANCE.createXBlockExpression => [
@@ -255,7 +255,7 @@ class AttributeReferenceMatchingReactionsBuilder extends ReactionsGenerationHelp
 				].match [
 					vall(REFERENCED_INTERMEDIATE).retrieve(referencedCommonality.changeClass)
 						.correspondingTo(PARTICIPATION_OBJECT)
-				].action [
+				].update [
 					execute [extension typeProvider |
 						XbaseFactory.eINSTANCE.createXBlockExpression => [
 							// Get the container intermediate, if there is one for the specific commonality reference:
@@ -303,7 +303,7 @@ class AttributeReferenceMatchingReactionsBuilder extends ReactionsGenerationHelp
 					vall(REFERENCE_ROOT).retrieveAsserted(attributeReferenceRootClass.changeClass)
 						.correspondingTo(REFERENCING_INTERMEDIATE)
 						.taggedWith(attributeReferenceRootClass.correspondenceTag)
-				].action [
+				].update [
 					execute [extension typeProvider |
 						val extension jvmTypeReferenceBuilder = jvmTypeReferenceBuilder
 						XbaseFactory.eINSTANCE.createXBlockExpression => [
@@ -356,7 +356,7 @@ class AttributeReferenceMatchingReactionsBuilder extends ReactionsGenerationHelp
 				].match [
 					vall(REFERENCED_INTERMEDIATE).retrieve(referencedCommonality.changeClass)
 						.correspondingTo(PARTICIPATION_OBJECT)
-				].action [
+				].update [
 					execute [extension typeProvider |
 						val extension jvmTypeReferenceBuilder = jvmTypeReferenceBuilder
 						XbaseFactory.eINSTANCE.createXBlockExpression => [
@@ -428,7 +428,7 @@ class AttributeReferenceMatchingReactionsBuilder extends ReactionsGenerationHelp
 							.correspondingTo(REFERENCED_INTERMEDIATE)
 							.taggedWith(containedClass.correspondenceTag)
 					]
-				].action [
+				].update [
 					execute [extension typeProvider |
 						XbaseFactory.eINSTANCE.createXBlockExpression => [
 							// Check each attribute reference containment:
@@ -515,7 +515,7 @@ class AttributeReferenceMatchingReactionsBuilder extends ReactionsGenerationHelp
 						.correspondingTo(REFERENCED_INTERMEDIATE)
 						.taggedWith(referencedClass.correspondenceTag)
 				]
-				.action [
+				.update [
 					call(participationContext.matchAttributeReferenceContainerRoutine,
 						new RoutineCallParameter[variable(PARTICIPATION_OBJECT)])
 				]

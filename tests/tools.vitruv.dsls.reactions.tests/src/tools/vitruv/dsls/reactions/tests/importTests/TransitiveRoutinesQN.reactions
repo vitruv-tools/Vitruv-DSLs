@@ -1,5 +1,4 @@
 import tools.vitruv.dsls.reactions.tests.importTests.ImportTestsExecutionMonitor
-
 import static tools.vitruv.dsls.reactions.tests.importTests.ImportTests.*
 import static tools.vitruv.dsls.reactions.tests.importTests.ImportTestsExecutionMonitor.ExecutionType.*
 import static tools.vitruv.dsls.reactions.tests.importTests.ImportTestsUtils.*
@@ -10,7 +9,7 @@ reactions: importTestsTransitiveRoutinesQN
 in reaction to changes in minimal
 execute actions in minimal
 
-reaction TransitiveRoutinesQNReaction {
+reaction TransitiveRoutinesQNReupdate {
 	after attribute replaced at minimal::Root[id]
 	call {
 		val data = newValue
@@ -21,9 +20,7 @@ reaction TransitiveRoutinesQNReaction {
 }
 
 routine transitiveRoutinesQNRoutine() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(TransitiveRoutinesQNRoutine)
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(TransitiveRoutinesQNRoutine)
 	}
 }

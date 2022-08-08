@@ -13,6 +13,7 @@ import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociator
 import org.eclipse.xtext.common.types.JvmFormalParameter
 import org.eclipse.xtext.common.types.JvmGenericType
 import com.google.inject.Singleton
+import org.eclipse.xtext.common.types.JvmConstructor
 
 @Singleton
 class JvmTypesBuilderWithoutAssociations extends JvmTypesBuilder {
@@ -23,50 +24,36 @@ class JvmTypesBuilderWithoutAssociations extends JvmTypesBuilder {
 	IJvmModelAssociator associator;
 
 	/**
-	 * Creates a public method with the given name and the given return type and associates it with the given
-	 * sourceElement.
+	 * Creates a public class with the given name.
 	 * 
-	 * @param sourceElement 
-	 * 		the sourceElement the method should be associated with.
-	 * @param name
-	 * 		the simple name of the method to be created.
-	 * @param returnType
-	 * 		the return type of the created method.
-	 * @param initializer
-	 *            the initializer to apply on the created method. If <code>null</code>, the method won't be initialized.
+	 * @param name the simple name of the resulting class. If {@code null}, {@code null} will be returned.
+	 * @param initializer the initializer to apply to the class. If {@code null}, no initialization will be applied.
 	 * 
-	 * @return a result representing a Java method with the given name, <code>null</code> if sourceElement or name are <code>null</code>.
+	 * @return a {@link JvmGenericType} representing a Java class with the given name, {@code null} if name is {@code null}.
 	 */
-	/* @Nullable */
-	def JvmOperation generateUnassociatedMethod( /* @Nullable */ String name, /* @Nullable */ JvmTypeReference returnType, /* @Nullable */ Procedure1<? super JvmOperation> initializer) {
+	def JvmGenericType generateUnassociatedClass( /* @Nullable */ String name, /* @Nullable */ Procedure1<? super JvmGenericType> initializer) {
 		if (name === null)
 			return null;
-		val result = typesFactory.createJvmOperation();
-		result.setSimpleName(name);
+		val fullName = splitQualifiedName(name);
+		val result = typesFactory.createJvmGenericType();
+		result.setSimpleName(fullName.getSecond());
+		if (fullName.getFirst() !== null)
+			result.setPackageName(fullName.getFirst());
 		result.setVisibility(JvmVisibility.PUBLIC);
-		result.setReturnType(cloneWithProxies(returnType));
 		return initializeSafely(result, initializer);
 	}
 
 	/**
-	 * Creates a private field with the given name and the given type associated to the given sourceElement.
+	 * Creates a private field with the given name and the given type.
 	 * 
-	 * @param sourceElement the sourceElement the resulting element is associated with.
-	 * @param name the simple name of the resulting field.
-	 * @param typeRef the type of the field
+	 * @param name the simple name of the resulting field. If {@code null}, {@code null} will be returned.
+	 * @param typeRef the type of the field, may not be {@code null}
+	 * @param initializer the initializer to apply to the field. If {@code null}, no initialization will be applied.
 	 * 
-	 * @return a {@link JvmField} representing a Java field with the given simple name and type.
+	 * @return a {@link JvmField} representing a Java field with the given simple name and type, {@code null} if name is {@code null}.
 	 */
-	/* @Nullable */
-	def JvmField generateUnassociatedField( /* @Nullable */ String name, /* @Nullable */ JvmTypeReference typeRef) {
-		return generateUnassociatedField(name, typeRef, null);
-	}
-
-	/**
-	 * Same as {@link #toField(EObject, String, JvmTypeReference)} but with an initializer passed as the last argument.
-	 */
-	/* @Nullable */
-	def JvmField generateUnassociatedField( /* @Nullable */ String name, /* @Nullable */ JvmTypeReference typeRef, /* @Nullable */ Procedure1<? super JvmField> initializer) {
+	def JvmField generateUnassociatedField( /* @Nullable */ String name,
+		JvmTypeReference typeRef, /* @Nullable */ Procedure1<? super JvmField> initializer) {
 		if (name === null)
 			return null;
 		val result = typesFactory.createJvmField();
@@ -76,6 +63,45 @@ class JvmTypesBuilderWithoutAssociations extends JvmTypesBuilder {
 		return initializeSafely(result, initializer);
 	}
 
+	/**
+	 * Creates a public constructor.
+	 * 
+	 * @param initializer the initializer to apply on the created constructor. If {@code null}, no initialization will be applied.
+	 * 
+	 * @return a {@link JvmConstructor} representing a Java constructor
+	 */
+	def JvmConstructor generateUnassociatedConstructor( /* @Nullable */ Procedure1<? super JvmConstructor> initializer) {
+		val result = typesFactory.createJvmConstructor();
+		return initializeSafely(result, initializer);
+	}
+
+	/**
+	 * Creates a public method with the given name and the given return type.
+	 * 
+	 * @param name the simple name of the method to be created. If {@code null}, {@code null} will be returned.
+	 * @param returnType the return type of the created method, must not be {@code null}
+	 * @param initializer the initializer to apply on the created method. If {@code null}, no initialization will be applied.
+	 * 
+	 * @return a {@code JvmOperation} representing a Java method with the given name, {@code null} if name is {@code null}.
+	 */
+	def JvmOperation generateUnassociatedMethod( /* @Nullable */ String name,
+		JvmTypeReference returnType, /* @Nullable */ Procedure1<? super JvmOperation> initializer) {
+		if (name === null)
+			return null;
+		val result = typesFactory.createJvmOperation();
+		result.setSimpleName(name);
+		result.setVisibility(JvmVisibility.PUBLIC);
+		result.setReturnType(cloneWithProxies(returnType));
+		return initializeSafely(result, initializer);
+	}
+
+	def JvmFormalParameter createParameter(String name, JvmTypeReference typeRef) {
+		val result = typesFactory.createJvmFormalParameter();
+		result.setName(name);
+		result.setParameterType(cloneWithProxies(typeRef));
+		return result;
+	}
+	
 	/**
 	 * Associates a source element with a target element. This association is used for tracing. Navigation, for
 	 * instance, uses this information to find the real declaration of a Jvm element.
@@ -94,7 +120,7 @@ class JvmTypesBuilderWithoutAssociations extends JvmTypesBuilder {
 	}
 
 	/**
-	 * Associates a source element with a target elementand marks the association as primary
+	 * Associates a source element with a target element and marks the association as primary
 	 * on both sides. This association is used for tracing. Navigation, for
 	 * instance, uses this information to find the real declaration of a Jvm element.
 	 * 
@@ -111,29 +137,4 @@ class JvmTypesBuilderWithoutAssociations extends JvmTypesBuilder {
 		return target;
 	}
 
-	def JvmFormalParameter createParameter(String name, JvmTypeReference typeRef) {
-		val result = typesFactory.createJvmFormalParameter();
-		result.setName(name);
-		result.setParameterType(cloneWithProxies(typeRef));
-		return result;
-	}
-
-	def JvmGenericType generateUnassociatedClass( /* @Nullable */ String name, /* @Nullable */ Procedure1<? super JvmGenericType> initializer) {
-		val result = createJvmGenericType(name);
-		if (result === null)
-			return null;
-		return initializeSafely(result, initializer);
-	}
-
-	protected def JvmGenericType createJvmGenericType( /* @Nullable */ String name) {
-		if (name === null)
-			return null;
-		val fullName = splitQualifiedName(name);
-		val result = typesFactory.createJvmGenericType();
-		result.setSimpleName(fullName.getSecond());
-		if (fullName.getFirst() !== null)
-			result.setPackageName(fullName.getFirst());
-		result.setVisibility(JvmVisibility.PUBLIC);
-		return result;
-	}
 }

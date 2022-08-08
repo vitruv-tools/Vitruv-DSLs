@@ -7,14 +7,15 @@ import org.eclipse.xtext.common.types.JvmVisibility
 import tools.vitruv.dsls.common.ClassNameGenerator
 import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsSegment
-import tools.vitruv.dsls.reactions.runtime.AbstractRepairRoutinesFacade
-import tools.vitruv.dsls.reactions.runtime.AbstractRoutinesFacadesProvider
-import tools.vitruv.dsls.reactions.runtime.RoutinesFacadeExecutionState
+import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutinesFacadesProvider
 import tools.vitruv.dsls.reactions.runtime.structure.ReactionsImportPath
 
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators.*
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsImportsHelper.*
 import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsElementsCompletionChecker.isReferenceable
+import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutinesFacade
+import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
+import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 
 class RoutinesFacadesProviderClassGenerator extends ClassGenerator {
 
@@ -39,28 +40,28 @@ class RoutinesFacadesProviderClassGenerator extends ClassGenerator {
 	override generateBody() {
 		generatedClass => [
 			superTypes += typeRef(AbstractRoutinesFacadesProvider);
-			members += reactionsSegment.toConstructor()[];
+			members += reactionsSegment.toConstructor()[
+				val executionStateParameter = generateParameter(new AccessibleElement("executionState", ReactionExecutionState))
+				parameters += executionStateParameter
+				body = '''super(«executionStateParameter.name»);'''
+			];
 
 			// create routines facades for the whole reactions import hierarchy:
-			members += reactionsSegment.toMethod("createRoutinesFacade", typeRef(AbstractRepairRoutinesFacade)) [
+			members += reactionsSegment.toMethod("createRoutinesFacade", typeRef(AbstractRoutinesFacade)) [
 				visibility = JvmVisibility.PUBLIC;
-				val reactionsImportPathParameter = generateParameter("reactionsImportPath",
-					typeRef(ReactionsImportPath));
-				val sharedExecutionStateParameter = generateParameter("sharedExecutionState",
-					typeRef(RoutinesFacadeExecutionState));
+				val reactionsImportPathParameter = generateParameter(new AccessibleElement("reactionsImportPath", ReactionsImportPath));
 				parameters += reactionsImportPathParameter;
-				parameters += sharedExecutionStateParameter;
 				body = '''
 					switch(«reactionsImportPathParameter.name».getPathString()) {
 					«FOR importHierarchyEntry : reactionsSegment.importHierarchyRoutinesFacades.entrySet»
 						«val importPath = importHierarchyEntry.key»
 						«val routinesFacadeClassNameGenerator = importHierarchyEntry.value»
 							case "«importPath.pathString»": {
-								return new «routinesFacadeClassNameGenerator.qualifiedName»(this, «reactionsImportPathParameter.name», «sharedExecutionStateParameter.name»);
+								return new «routinesFacadeClassNameGenerator.qualifiedName»(this, «reactionsImportPathParameter.name»);
 							}
 					«ENDFOR»
 						default: {
-						throw new IllegalArgumentException("Unexpected import path: " + «reactionsImportPathParameter.name».getPathString());
+							throw new IllegalArgumentException("Unexpected import path: " + «reactionsImportPathParameter.name».getPathString());
 						}
 					}
 				'''

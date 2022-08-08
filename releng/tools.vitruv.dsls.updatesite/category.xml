@@ -6,12 +6,6 @@
    <feature id="tools.vitruv.dsls.reactions.runtime.feature.source" version="2.1.0.qualifier">
       <category name="Vitruv DSLs Runtime"/>
    </feature>
-   <feature url="features/tools.vitruv.dsls.mappings.runtime.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.mappings.runtime.feature" version="2.1.0.qualifier">
-      <category name="Vitruv DSLs Runtime"/>
-   </feature>
-   <feature id="tools.vitruv.dsls.mappings.runtime.feature.source" version="2.1.0.qualifier">
-      <category name="Vitruv DSLs Runtime"/>
-   </feature>
    <feature url="features/tools.vitruv.dsls.commonalities.runtime.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.commonalities.runtime.feature" version="2.1.0.qualifier">
       <category name="Vitruv DSLs Runtime"/>
    </feature>
@@ -22,12 +16,6 @@
       <category name="Vitruv DSLs"/>
    </feature>
    <feature id="tools.vitruv.dsls.reactions.feature.source" version="2.1.0.qualifier">
-      <category name="Vitruv DSLs"/>
-   </feature>
-   <feature url="features/tools.vitruv.dsls.mappings.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.mappings.feature" version="2.1.0.qualifier">
-      <category name="Vitruv DSLs"/>
-   </feature>
-   <feature id="tools.vitruv.dsls.mappings.feature.source" version="2.1.0.qualifier">
       <category name="Vitruv DSLs"/>
    </feature>
    <feature url="features/tools.vitruv.dsls.commonalities.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.commonalities.feature" version="2.1.0.qualifier">

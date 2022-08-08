@@ -1,5 +1,4 @@
 import tools.vitruv.dsls.reactions.tests.importTests.ImportTestsExecutionMonitor
-
 import static tools.vitruv.dsls.reactions.tests.importTests.ImportTests.*
 import static tools.vitruv.dsls.reactions.tests.importTests.ImportTestsExecutionMonitor.ExecutionType.*
 import static tools.vitruv.dsls.reactions.tests.importTests.ImportTestsUtils.*
@@ -15,7 +14,7 @@ import routines importTestsTransitiveRoutinesSN
 import routines importTestsTransitiveRoutinesQN using qualified names
 import routines importTestsCommonRoutines using qualified names
 
-reaction DirectRoutinesQNReaction {
+reaction DirectRoutinesQNReupdate {
 	after attribute replaced at minimal::Root[id]
 	call {
 		val data = newValue
@@ -26,19 +25,15 @@ reaction DirectRoutinesQNReaction {
 }
 
 routine directRoutinesQNRoutine() {
-	action {
-		call {
-			ImportTestsExecutionMonitor.instance.set(DirectRoutinesQNRoutine)
-		}
+	update {
+		ImportTestsExecutionMonitor.instance.set(DirectRoutinesQNRoutine)
 	}
 }
 
 // test multiple imports of same routines at different import paths:
 routine directRoutinesQNTestCommonRoutine() {
-	action {
-		call {
-			// import path: directRoutinesQN > commonRoutines
-			importTestsCommonRoutines.commonRoutinesRoutine2()
-		}
+	update {
+		// import path: directRoutinesQN > commonRoutines
+		importTestsCommonRoutines.commonRoutinesRoutine2()
 	}
 }

@@ -40,7 +40,7 @@ class DeleteObjectRoutineBuilder extends ReactionsGenerationHelper {
 			deleteObjectRoutine = create.routine('deleteObject')
 				.input [
 					model(EcorePackage.Literals.EOBJECT, 'object')
-				].action [
+				].update [
 					delete('object')
 				]
 		}

@@ -1,0 +1,58 @@
+name: Validation
+
+on:
+  pull_request:
+
+jobs:
+  validate_dsls:
+    name: DSLs
+    uses: ./.github/workflows/ci.yml
+
+  validate_cbs_applications:
+    needs: validate_dsls
+    name: Application
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download DSLs Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: dsls
+          path: dsls
+      - name: Checkout CBS Applications
+        uses: actions/checkout@v3
+        with:
+          path: cbsapplications
+          repository: vitruv-tools/Vitruv-Applications-ComponentBasedSystems
+          ref: main
+          fetch-depth: 0
+      - name: Checkout Matching Applications Branch
+        run: |
+          cd cbsapplications
+          git checkout -B ${{ github.head_ref }} origin/${{ github.head_ref }} || true
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml', '**/MANIFEST.MF') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: 11
+      - name: Build and Verify Applications
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          working-directory: ./cbsapplications
+          run: >
+            ./mvnw -B -U clean verify
+            -Dvitruv.dsls.url=file:///${{ github.workspace }}/dsls
+            -Dstyle.color=always
+            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+            -Dorg.slf4j.simpleLogger.log.org.eclipse.tycho.core.resolver.DefaultTychoResolver=warn
+            -Dorg.slf4j.simpleLogger.log.org.eclipse.tycho.osgi.configuration.MavenContextConfigurator=warn
+            -Dorg.slf4j.simpleLogger.log.org.eclipse.sisu.equinox.launching.internal.DefaultEquinoxLauncher=warn
+            -Dorg.slf4j.simpleLogger.log.org.eclipse.xtext.maven.XtextGenerateMojo=warn
+            -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog
+        env: 
+          MAVEN_OPTS: -Djansi.force=true
