@@ -30,7 +30,7 @@ class InsuranceToFamiliesHelper {
 	}
 	
 	def static String getFirstName(InsuranceClient insuranceClient) {
-		insuranceClient.name.split(" ").get(0)
+		insuranceClient.name.split(" ").head
 	}
 	
 	def static (Family)=>boolean sameLastName(InsuranceClient insuranceClient) {
@@ -43,31 +43,19 @@ class InsuranceToFamiliesHelper {
 	}
 	
 	def static void informUserAboutReplacementOfClient(UserInteractor userInteractor, InsuranceClient insuranceClient, Family oldFamily){
-		var StringBuilder message = new StringBuilder()
-			.append("Insurance Client ")
-			.append(insuranceClient.name)
-			.append(" has been replaced by another insurance client in his family (")
-			.append(oldFamily.lastName)
-			.append("). Please decide in which family and role ")
-			.append(insuranceClient.name)
-			.append(" should be.")
+		var message = '''Insurance Client «insuranceClient.name» has been replaced by another insurance client in his family («oldFamily.lastName»). Please decide in which family and role «insuranceClient.name» should be.'''
 		
 		userInteractor.notificationDialogBuilder.message(message.toString()).title("Insurance Client has been replaced in his original family").startInteraction()
 	}
 	
 	def static PositionPreference askUserWhetherClientIsParentOrChild(UserInteractor userInteractor, InsuranceClient insuranceClient) {
-
-		val StringBuilder parentOrChildMessageBuilder = new StringBuilder()
-			.append("You have inserted ")
-			.append(insuranceClient.name)
-			.append(" into the insurance database which results into the creation of a corresponding member into the family register.")
-			.append(" Is this member supposed to be a parent or a child in the family register?")
+		val parentOrChildMessage = '''You have inserted «insuranceClient.name» into the insurance database which results into the creation of a corresponding member into the family register. Is this member supposed to be a parent or a child in the family register?'''
 
 		var Iterable<String> parentOrChildOptions = #["Parent", "Child"]
 
 		val int parentOrChildSelection = userInteractor
 			.singleSelectionDialogBuilder
-			.message(parentOrChildMessageBuilder.toString())
+			.message(parentOrChildMessage)
 			.choices(parentOrChildOptions)
 			.title("Parent or Child?")
 			.windowModality(WindowModality.MODAL)
@@ -77,11 +65,7 @@ class InsuranceToFamiliesHelper {
 	}
 	
 	def static Family askUserWhichFamilyToInsertTheMemberIn(UserInteractor userInteractor, InsuranceClient newClient, Iterable<Family> selectableFamilies) {
-		// Let user select the family
-		var StringBuilder whichFamilyMessageBuilder = new StringBuilder()
-			.append("Please choose whether you want to create a new family or insert ")
-			.append(newClient.name)
-			.append(" into one of the existing families.")
+		var whichFamilyMessage = '''Please choose whether you want to create a new family or insert  «newClient.name» into one of the existing families.'''
 
 		// Prepare options to select from
 		val Collection<String> whichFamilyOptions = new ArrayList<String>()
@@ -91,7 +75,7 @@ class InsuranceToFamiliesHelper {
 		// Start interaction
 		val whichFamilyIndex = userInteractor
 			.singleSelectionDialogBuilder
-			.message(whichFamilyMessageBuilder.toString())
+			.message(whichFamilyMessage)
 			.choices(whichFamilyOptions)
 			.title("New or Existing Family?")
 			.windowModality(WindowModality.MODAL)
@@ -101,22 +85,14 @@ class InsuranceToFamiliesHelper {
 	}
 	
 	def static PositionPreference askUserWhetherClientIsParentOrChildDuringRenaming(UserInteractor userInteractor, String oldFullname, String newFullname, boolean wasChildBefore) {
-
-		val StringBuilder parentOrChildMessageBuilder = new StringBuilder()
-			.append("You have renamed ")
-			.append(oldFullname)
-			.append(" to ")
-			.append(newFullname)
-			.append(", which might cause the corresponding member in the families model to change its position inside a family.")
-			.append(" Which position should this member, who was a ")
-			.append(if (wasChildBefore) "child" else "parent")
-			.append(" before, have after the renaming?")
-
+		val parentOrChildMessage = 
+		'''You have renamed «oldFullname» to «newFullname», which might cause the corresponding member in the families model to change its position inside a family. Which position should this member, who was a	«IF wasChildBefore»child«ELSE»parent«ENDIF» before, have after the renaming?'''
+		
 		var Iterable<String> parentOrChildOptions = #["Parent", "Child"]
 
 		val int parentOrChildSelection = userInteractor
 			.singleSelectionDialogBuilder
-			.message(parentOrChildMessageBuilder.toString())
+			.message(parentOrChildMessage)
 			.choices(parentOrChildOptions)
 			.title("Parent or Child?")
 			.windowModality(WindowModality.MODAL)

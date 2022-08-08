@@ -128,7 +128,7 @@ abstract class AbstractInsuranceFamiliesTest extends ViewBasedVitruvApplicationT
 		
 		if(insertMother){
 			decideParentOrChild(PositionPreference.Parent)
-			if (insertCount > 0) decideNewOrExistingFamily(FamilyPreference.Existing, 1)
+			if(insertCount > 0) decideNewOrExistingFamily(FamilyPreference.Existing, 1)
 			changeInsuranceView [
 				claimInsuranceDatabase(it) => [
 					insuranceclient += createInsuranceClient[ name = fullName(FIRST_MOM_1, LAST_NAME_1) gender = Gender.FEMALE]
@@ -139,7 +139,7 @@ abstract class AbstractInsuranceFamiliesTest extends ViewBasedVitruvApplicationT
 	
 		if(insertSon){
 			decideParentOrChild(PositionPreference.Child)
-			if (insertCount > 0) decideNewOrExistingFamily(FamilyPreference.Existing, 1)
+			if(insertCount > 0) decideNewOrExistingFamily(FamilyPreference.Existing, 1)
 			changeInsuranceView [
 				claimInsuranceDatabase(it) => [
 					insuranceclient += createInsuranceClient[ name = fullName(FIRST_SON_1, LAST_NAME_1) gender = Gender.MALE]
@@ -149,7 +149,7 @@ abstract class AbstractInsuranceFamiliesTest extends ViewBasedVitruvApplicationT
 		
 		if(insertDaugther){
 			decideParentOrChild(PositionPreference.Child)
-			if (insertCount > 0) decideNewOrExistingFamily(FamilyPreference.Existing, 1)
+			if(insertCount > 0) decideNewOrExistingFamily(FamilyPreference.Existing, 1)
 			changeInsuranceView [
 				claimInsuranceDatabase(it) => [
 					insuranceclient += createInsuranceClient[ name = fullName(FIRST_DAU_1, LAST_NAME_1) gender = Gender.FEMALE]

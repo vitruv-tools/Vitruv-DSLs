@@ -15,6 +15,6 @@ class InsuranceQueryUtil {
 	}
 	
 	static def claimInsuranceClient(InsuranceDatabase insuranceDatabase, String firstName, String lastName){
-		insuranceDatabase.insuranceclient.filter[c | c.name == firstName + " " + lastName].claimOne
+		insuranceDatabase.insuranceclient.filter[name == firstName + " " + lastName].claimOne
 	}
 }

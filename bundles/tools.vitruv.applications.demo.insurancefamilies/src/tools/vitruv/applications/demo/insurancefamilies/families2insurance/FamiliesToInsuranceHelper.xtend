@@ -22,7 +22,7 @@ class FamiliesToInsuranceHelper {
 	def static String getInsuranceClientName(Member member) {
 		val name = new StringBuilder()
 		name.append(member.firstName)
-		if(member.family.lastName !== null && member.family.lastName !== ""){
+		if(member.family.lastName !== null && !member.family.lastName.empty){
 			name.append(" " + member.family.lastName)
 		}
 		
@@ -43,26 +43,17 @@ class FamiliesToInsuranceHelper {
 		}
 	}
 	
-	/**Checks if a InsuranceClient is a Male and throws an exception if not.
-	 * @param insuranceClient The Insurance Client which is supposed to be a <code>Male</code>.
-	 * @throws <code>UnsupportedOperationException</code>, if the insuranceClient is not a <code>Male</code>.
+	/**Checks if a InsuranceClient has the expected gender and throws an exception if not.
+	 * @param insuranceClient The Insurance Client which is supposed to be of the expected gender.
+	 * @param expectedGender The expected Gender of the insuranceClient
+	 * @throws <code>UnsupportedOperationException</code>, if the insuranceClient is not of the expected gender.
 	 */
-	def static void assertMale(InsuranceClient insuranceClient) {
-		if (!(insuranceClient.gender === Gender.MALE)) {
+	def static void assertGender(InsuranceClient insuranceClient, Gender expectedGender) {
+		if (!(insuranceClient.gender === expectedGender)) {
+			val expectedGenderString = expectedGender === Gender.MALE ? "male" : "female"
+			
 			throw new UnsupportedOperationException(
-				"The position of a male family member can only be assigned to members with no or a male corresponding insurance client."
-			)
-		}
-	}
-
-	/**Checks if a insurance client is a Female and throws an exception if not.
-	 * @param insuranceClient The Insurance Client which is supposed to be a <code>Female</code>.
-	 * @throws <code>UnsupportedOperationException</code>, if the insuranceClient is not a <code>Female</code>.
-	 */
-	def static void assertFemale(InsuranceClient insuranceClient) {
-		if (!(insuranceClient.gender === Gender.FEMALE)) {
-			throw new UnsupportedOperationException(
-				"The position of a female family member can only be assigned to members with no or a female corresponding insurance client."
+				'''The position of a «expectedGenderString» family member can only be assigned to members with no or a «expectedGenderString» corresponding insurance client.'''
 			)
 		}
 	}
