@@ -1,15 +1,22 @@
-name: Application Validation
+name: Validation
 
 on:
   pull_request:
 
 jobs:
-  validate:
+  validate_dsls:
+    name: DSLs
+    uses: ./.github/workflows/ci.yml
+
+  validate_cbs_applications:
+    needs: validate_dsls
+    name: Application
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout DSLs
-        uses: actions/checkout@v3
+      - name: Download DSLs Artifact
+        uses: actions/download-artifact@v3
         with:
+          name: dsls
           path: dsls
       - name: Checkout CBS Applications
         uses: actions/checkout@v3
@@ -18,7 +25,7 @@ jobs:
           repository: vitruv-tools/Vitruv-Applications-ComponentBasedSystems
           ref: main
           fetch-depth: 0
-      - name: Checkout Matching Applications Branches
+      - name: Checkout Matching Applications Branch
         run: |
           cd cbsapplications
           git checkout -B ${{ github.head_ref }} origin/${{ github.head_ref }} || true
@@ -33,28 +40,13 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 11
-      - name: Build DSLs
-        uses: GabrielBB/xvfb-action@v1
-        with:
-          working-directory: ./dsls
-          run: >
-            ./mvnw -B -U package -Dmaven.test.skip=true
-            -Dstyle.color=always
-            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
-            -Dorg.slf4j.simpleLogger.log.org.eclipse.tycho.core.resolver.DefaultTychoResolver=warn
-            -Dorg.slf4j.simpleLogger.log.org.eclipse.tycho.osgi.configuration.MavenContextConfigurator=warn
-            -Dorg.slf4j.simpleLogger.log.org.eclipse.sisu.equinox.launching.internal.DefaultEquinoxLauncher=warn
-            -Dorg.slf4j.simpleLogger.log.org.eclipse.xtext.maven.XtextGenerateMojo=warn
-            -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog
-        env: 
-          MAVEN_OPTS: -Djansi.force=true
-      - name: Build Applications
+      - name: Build and Verify Applications
         uses: GabrielBB/xvfb-action@v1
         with:
           working-directory: ./cbsapplications
           run: >
             ./mvnw -B -U clean verify
-            -Dvitruv.dsls.path=${GITHUB_WORKSPACE}/dsls
+            -Dvitruv.dsls.url=file:///${{ github.workspace }}/dsls
             -Dstyle.color=always
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
             -Dorg.slf4j.simpleLogger.log.org.eclipse.tycho.core.resolver.DefaultTychoResolver=warn
