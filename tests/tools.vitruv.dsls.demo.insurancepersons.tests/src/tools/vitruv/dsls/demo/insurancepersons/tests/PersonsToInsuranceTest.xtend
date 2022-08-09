@@ -80,7 +80,6 @@ class PersonsToInsuranceTest implements TestView {
 	/**Before each test a new {@link PersonRegister} is created as starting point.
 	 * This is checked by several assertions to ensure correct preconditions for the tests. 
 	 */
-	@BeforeEach
 	def void insertRegister() {
 		resourceAt(PERSONS_MODEL).propagate[contents += PersonsFactory.eINSTANCE.createPersonRegister]
 		assertThat(resourceAt(INSURANCE_MODEL), exists);
@@ -116,6 +115,7 @@ class PersonsToInsuranceTest implements TestView {
 
 	@Test
 	def testCreatePersonsModel() {
+		insertRegister()
 		assertThat(resourceAt(INSURANCE_MODEL), exists)
 		assertThat(resourceAt(PERSONS_MODEL), exists)
 
@@ -128,6 +128,7 @@ class PersonsToInsuranceTest implements TestView {
 
 	@Test
 	def void testDeletePersonsRegister() {
+		insertRegister()
 		PersonRegister.from(PERSONS_MODEL).propagate [
 			persons += PersonsFactory.eINSTANCE.createMale => [fullName = MALE_NAME]
 		]
@@ -140,6 +141,7 @@ class PersonsToInsuranceTest implements TestView {
 
 	@Test
 	def void testCreatedPerson_male_emptyDatabase() {
+		insertRegister()
 		PersonRegister.from(PERSONS_MODEL).propagate [
 			persons += PersonsFactory.eINSTANCE.createMale => [fullName = MALE_NAME]
 		]
@@ -159,6 +161,7 @@ class PersonsToInsuranceTest implements TestView {
 
 	@Test
 	def void testCreatedPerson_female_emptyDatabase() {
+		insertRegister()
 		PersonRegister.from(PERSONS_MODEL).propagate [
 			persons += PersonsFactory.eINSTANCE.createFemale => [fullName = FEMALE_NAME]
 		]
@@ -178,6 +181,7 @@ class PersonsToInsuranceTest implements TestView {
 
 	@Test
 	def void testCreatedPerson_multiple() {
+		insertRegister()
 		PersonRegister.from(PERSONS_MODEL).propagate [
 			persons += PersonsFactory.eINSTANCE.createMale => [fullName = MALE_NAME]
 			persons += PersonsFactory.eINSTANCE.createFemale => [fullName = FEMALE_NAME]
@@ -215,6 +219,7 @@ class PersonsToInsuranceTest implements TestView {
 
 	@Test
 	def void testChangedFullName() {
+		insertRegister()
 		PersonRegister.from(PERSONS_MODEL).propagate [
 			persons += PersonsFactory.eINSTANCE.createMale => [fullName = MALE_NAME]
 			persons += PersonsFactory.eINSTANCE.createFemale => [fullName = FEMALE_NAME]
@@ -245,6 +250,7 @@ class PersonsToInsuranceTest implements TestView {
 
 	@Test
 	def void testDeletedPerson_first_notOnly() {
+		insertRegister()
 		PersonRegister.from(PERSONS_MODEL).propagate [
 			persons += PersonsFactory.eINSTANCE.createMale => [fullName = MALE_NAME]
 			persons += PersonsFactory.eINSTANCE.createFemale => [fullName = FEMALE_NAME]
@@ -270,6 +276,7 @@ class PersonsToInsuranceTest implements TestView {
 
 	@Test
 	def void testDeletedPerson_middle_notOnly() {
+		insertRegister()
 		PersonRegister.from(PERSONS_MODEL).propagate [
 			persons += PersonsFactory.eINSTANCE.createMale => [fullName = MALE_NAME]
 			persons += PersonsFactory.eINSTANCE.createFemale => [fullName = FEMALE_NAME]
@@ -307,6 +314,7 @@ class PersonsToInsuranceTest implements TestView {
 
 	@Test
 	def void testDeletedPerson_last_notOnly() {
+		insertRegister()
 		PersonRegister.from(PERSONS_MODEL).propagate [
 			persons += PersonsFactory.eINSTANCE.createMale => [fullName = MALE_NAME]
 			persons += PersonsFactory.eINSTANCE.createFemale => [fullName = FEMALE_NAME]
@@ -344,6 +352,7 @@ class PersonsToInsuranceTest implements TestView {
 
 	@Test
 	def void testDeletedPerson_only() {
+		insertRegister()
 		PersonRegister.from(PERSONS_MODEL).propagate [
 			persons += PersonsFactory.eINSTANCE.createMale => [fullName = MALE_NAME]
 		]

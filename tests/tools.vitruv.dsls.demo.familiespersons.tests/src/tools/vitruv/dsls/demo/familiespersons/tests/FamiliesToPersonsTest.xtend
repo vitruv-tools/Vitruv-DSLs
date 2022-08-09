@@ -53,7 +53,7 @@ enum MemberRole {
 /**Test to validate the transfer of changes from the FamilyModel to the PersonModel.
  * @author Dirk Neumann
  */
-@ExtendWith(TestLogging, TestProjectManager)
+@ExtendWith(#[TestLogging, TestProjectManager])
 class FamiliesToPersonsTest implements TestView {
 	static val logger = Logger.getLogger(FamiliesToPersonsTest)
 	String nameOfTestMethod = null

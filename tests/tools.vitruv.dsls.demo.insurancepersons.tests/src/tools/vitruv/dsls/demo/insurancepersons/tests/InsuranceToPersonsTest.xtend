@@ -81,7 +81,6 @@ class InsuranceToPersonsTest implements TestView {
 	/**Before each test a new {@link InsuranceDatabase} is created as starting point.
 	 * This is checked by several assertions to ensure correct preconditions for the tests. 
 	 */
-	@BeforeEach
 	def void insertRegister() {
 		resourceAt(INSURANCE_MODEL).propagate[contents += InsuranceFactory.eINSTANCE.createInsuranceDatabase()]
 		assertThat(resourceAt(PERSONS_MODEL), exists);
@@ -117,6 +116,7 @@ class InsuranceToPersonsTest implements TestView {
 
 	@Test
 	def void testCreateInsuranceDatabase() {
+		insertRegister()
 		assertThat(resourceAt(INSURANCE_MODEL), exists)
 		assertThat(resourceAt(PERSONS_MODEL), exists)
 
@@ -129,6 +129,7 @@ class InsuranceToPersonsTest implements TestView {
 
 	@Test
 	def void testDeleteInsuranceDatabase() {
+		insertRegister()
 		InsuranceDatabase.from(INSURANCE_MODEL).propagate [
 			insuranceclient += InsuranceFactory.eINSTANCE.createInsuranceClient => [
 				name = MALE_NAME
@@ -146,6 +147,7 @@ class InsuranceToPersonsTest implements TestView {
 
 	@Test
 	def void testCreatedClient() {
+		insertRegister()
 		InsuranceDatabase.from(INSURANCE_MODEL).propagate [
 			insuranceclient += InsuranceFactory.eINSTANCE.createInsuranceClient => [name = MALE_NAME]
 		]
@@ -166,6 +168,7 @@ class InsuranceToPersonsTest implements TestView {
 
 	@Test
 	def void testCreatedClient_multiple() {
+		insertRegister()
 		InsuranceDatabase.from(INSURANCE_MODEL).propagate [
 			insuranceclient += InsuranceFactory.eINSTANCE.createInsuranceClient => [
 				name = MALE_NAME
@@ -198,6 +201,7 @@ class InsuranceToPersonsTest implements TestView {
 
 	@Test
 	def void testChangedName() {
+		insertRegister()
 		InsuranceDatabase.from(INSURANCE_MODEL).propagate [
 			insuranceclient += InsuranceFactory.eINSTANCE.createInsuranceClient => [
 				name = MALE_NAME
@@ -243,6 +247,7 @@ class InsuranceToPersonsTest implements TestView {
 
 	@Test
 	def void testChangedName_empty() {
+		insertRegister()
 		InsuranceDatabase.from(INSURANCE_MODEL).propagate [
 			insuranceclient += InsuranceFactory.eINSTANCE.createInsuranceClient => [
 				name = MALE_NAME
@@ -297,6 +302,7 @@ class InsuranceToPersonsTest implements TestView {
 
 	@Test
 	def void testChangedName_specialChars() {
+		insertRegister()
 		InsuranceDatabase.from(INSURANCE_MODEL).propagate [
 			insuranceclient += InsuranceFactory.eINSTANCE.createInsuranceClient => [
 				name = MALE_NAME
@@ -351,6 +357,7 @@ class InsuranceToPersonsTest implements TestView {
 
 	@Test
 	def void testChangedGender_toFemale() {
+		insertRegister()
 		InsuranceDatabase.from(INSURANCE_MODEL).propagate [
 			insuranceclient += InsuranceFactory.eINSTANCE.createInsuranceClient => [
 				name = MALE_NAME
@@ -396,6 +403,7 @@ class InsuranceToPersonsTest implements TestView {
 
 	@Test
 	def void testChangedGender_toMale() {
+		insertRegister()
 		InsuranceDatabase.from(INSURANCE_MODEL).propagate [
 			insuranceclient += InsuranceFactory.eINSTANCE.createInsuranceClient => [
 				name = MALE_NAME
@@ -441,6 +449,7 @@ class InsuranceToPersonsTest implements TestView {
 
 	@Test
 	def void testDeletedClient_first_notOnly() {
+		insertRegister()
 		InsuranceDatabase.from(INSURANCE_MODEL).propagate [
 			insuranceclient += InsuranceFactory.eINSTANCE.createInsuranceClient => [
 				name = MALE_NAME
@@ -472,6 +481,7 @@ class InsuranceToPersonsTest implements TestView {
 
 	@Test
 	def void testDeletedClient_middle_notOnly() {
+		insertRegister()
 		InsuranceDatabase.from(INSURANCE_MODEL).propagate [
 			insuranceclient += InsuranceFactory.eINSTANCE.createInsuranceClient => [
 				name = MALE_NAME
@@ -512,6 +522,7 @@ class InsuranceToPersonsTest implements TestView {
 
 	@Test
 	def void testDeletedClient_last_notOnly() {
+		insertRegister()
 		InsuranceDatabase.from(INSURANCE_MODEL).propagate [
 			insuranceclient += InsuranceFactory.eINSTANCE.createInsuranceClient => [
 				name = MALE_NAME
@@ -552,6 +563,7 @@ class InsuranceToPersonsTest implements TestView {
 
 	@Test
 	def void testDeletedClient_only() {
+		insertRegister()
 		InsuranceDatabase.from(INSURANCE_MODEL).propagate [
 			insuranceclient += InsuranceFactory.eINSTANCE.createInsuranceClient => [
 				name = MALE_NAME

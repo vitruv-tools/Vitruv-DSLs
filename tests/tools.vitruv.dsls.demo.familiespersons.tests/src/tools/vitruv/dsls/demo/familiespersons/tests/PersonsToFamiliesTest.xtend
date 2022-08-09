@@ -167,9 +167,7 @@ class PersonsToFamiliesTest implements TestView {
 	/**Before each test a new {@link PersonRegister} is created as starting point.
 	 * This is checked by several assertions to ensure correct preconditions for the tests.
 	 */
-	@BeforeEach
-	def void insertRegister(TestInfo testInfo) {
-		this.nameOfTestMethod = testInfo.getDisplayName()
+	def void insertRegister() {
 		resourceAt(PERSONS_MODEL).propagate[contents += PersonsFactory.eINSTANCE.createPersonRegister]
 		assertThat(resourceAt(FAMILIES_MODEL), exists);
 		assertEquals(1, resourceAt(FAMILIES_MODEL).contents.size);
@@ -207,6 +205,7 @@ class PersonsToFamiliesTest implements TestView {
 	 */
 	@Test
 	def void createFamiliesForTesting() {
+		insertRegister()
 		decideParentOrChild(PositionPreference.Parent)
 		PersonRegister.from(PERSONS_MODEL).propagate [
 			persons += PersonsFactory.eINSTANCE.createMale => [fullName = FIRST_DAD_1 + " " + LAST_NAME_1]
@@ -257,6 +256,7 @@ class PersonsToFamiliesTest implements TestView {
 	// ========== FATHER ==========
 	@Test
 	def void testCreateMale_Father_EmptyRegister() {
+		insertRegister()		
 		logger.trace(this.nameOfTestMethod + " - begin")
 		// Father
 		decideParentOrChild(PositionPreference.Parent)
@@ -545,6 +545,7 @@ class PersonsToFamiliesTest implements TestView {
 	// ========== SON ==========
 	@Test
 	def void testCreateMale_Son_EmptyRegister() {
+		insertRegister()
 		logger.trace(this.nameOfTestMethod + " - begin")
 		// Son
 		decideParentOrChild(PositionPreference.Child)
@@ -839,6 +840,7 @@ class PersonsToFamiliesTest implements TestView {
 	// ========== MOTHER ==========
 	@Test
 	def void testCreateMale_Mother_EmptyRegister() {
+		insertRegister()
 		logger.trace(this.nameOfTestMethod + " - begin")
 		// Mother
 		decideParentOrChild(PositionPreference.Parent)
@@ -1130,6 +1132,7 @@ class PersonsToFamiliesTest implements TestView {
 	// ========== DAUGHTHER ==========
 	@Test
 	def void testCreateMale_Daughter_EmptyRegister() {
+		insertRegister()
 		logger.trace(this.nameOfTestMethod + " - begin")
 		// Daugther
 		decideParentOrChild(PositionPreference.Child)
@@ -1433,6 +1436,7 @@ class PersonsToFamiliesTest implements TestView {
 	@ParameterizedTest(name = " {index} => escapedNewName= {0}, expectedExceptionMessage= {1}")
 	@MethodSource("nameAndExceptionProvider")
 	def void testException_CreateWithInvalidFullname(String escapedNewName, String expectedExceptionMessage) {
+		insertRegister()
 		logger.trace(this.nameOfTestMethod + " - begin")
 		val unescapedNewName = if (escapedNewName !== null) unescapeString(escapedNewName) else null
 		logger.trace(this.nameOfTestMethod + " - preparation done")
