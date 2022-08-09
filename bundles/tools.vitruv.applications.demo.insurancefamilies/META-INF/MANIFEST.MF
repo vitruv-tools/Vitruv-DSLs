@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Vitruv Insurance-Families Demo Application
+Bundle-SymbolicName: tools.vitruv.applications.demo.insurancefamilies;singleton:=true
+Automatic-Module-Name: tools.vitruv.applications.demo.insurancefamilies
+Bundle-Version: 2.1.0.qualifier
+Bundle-Vendor: vitruv.tools
+Export-Package: tools.vitruv.applications.demo.insurancefamilies.families2insurance,
+ tools.vitruv.applications.demo.insurancefamilies.insurance2families
+Require-Bundle: tools.vitruv.dsls.reactions.runtime;visibility:=reexport,
+ edu.kit.ipd.sdq.metamodels.families,
+ edu.kit.ipd.sdq.metamodels.insurance,
+ edu.kit.ipd.sdq.activextendannotations
+Bundle-RequiredExecutionEnvironment: JavaSE-11
