@@ -20,14 +20,27 @@ import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import tools.vitruv.applications.demo.familiespersons.families2persons.FamiliesToPersonsChangePropagationSpecification
 import tools.vitruv.applications.demo.familiespersons.families2persons.FamiliesToPersonsHelper
-import tools.vitruv.testutils.VitruvApplicationTest
 
 import static org.hamcrest.CoreMatchers.*
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertThrows
 import static tools.vitruv.testutils.matchers.ModelMatchers.*
-import tools.vitruv.change.propagation.ChangePropagationMode
+import tools.vitruv.testutils.TestProject
+import org.junit.jupiter.api.AfterEach
+import tools.vitruv.testutils.TestProjectManager
+import tools.vitruv.testutils.TestLogging
+import org.junit.jupiter.api.^extension.ExtendWith
+import org.eclipse.xtend.lib.annotations.Delegate
+import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
+import tools.vitruv.testutils.TestUserInteraction
+import tools.vitruv.change.propagation.ChangePropagationSpecification
+import tools.vitruv.change.interaction.UserInteractionFactory
+import tools.vitruv.change.propagation.impl.DefaultChangeableModelRepository
+import tools.vitruv.change.propagation.impl.DefaultChangeRecordingModelRepository
+import tools.vitruv.testutils.views.TestView
+import tools.vitruv.testutils.views.ChangePublishingTestView
+import tools.vitruv.testutils.views.UriMode
 
 enum MemberRole {
 	Father,
@@ -39,9 +52,46 @@ enum MemberRole {
 /**Test to validate the transfer of changes from the FamilyModel to the PersonModel.
  * @author Dirk Neumann
  */
-class FamiliesPersonsTest extends VitruvApplicationTest {
+@ExtendWith(TestLogging, TestProjectManager)
+class FamiliesPersonsTest implements TestView {
 	static val logger = Logger.getLogger(FamiliesPersonsTest)
 	String nameOfTestMethod = null
+
+	@Delegate var TestView testView
+
+	/**
+	 * Can be used to set a different kind of test view to be used in subclasses.
+	 */
+	protected def setTestView(TestView testView) {
+		this.testView = testView
+	}
+
+	protected def Iterable<ChangePropagationSpecification> getChangePropagationSpecifications() {
+		return #[new FamiliesToPersonsChangePropagationSpecification()]
+	}
+
+	@BeforeEach
+	def void prepare(TestInfo testInfo, @TestProject Path testProjectPath) {
+		this.nameOfTestMethod = testInfo.getDisplayName()
+		testView = prepareTestView(testProjectPath)
+	}
+
+	private def TestView prepareTestView(Path testProjectPath) {
+		val userInteraction = new TestUserInteraction()
+		val changePropagationSpecificationProvider = new ChangePropagationSpecificationRepository(
+			changePropagationSpecifications)
+		val userInteractor = UserInteractionFactory.instance.createUserInteractor(
+			new TestUserInteraction.ResultProvider(userInteraction))
+		val changeableModelRepository = new DefaultChangeableModelRepository(
+			new DefaultChangeRecordingModelRepository(), changePropagationSpecificationProvider, userInteractor)
+		return new ChangePublishingTestView(testProjectPath, userInteraction, UriMode.FILE_URIS,
+			changeableModelRepository)
+	}
+
+	@AfterEach
+	def void cleanup() {
+		testView.close()
+	}
 
 	// First Set of reused static strings for the first names of the persons
 	final static String FIRST_DAD_1 = "Anton"
@@ -89,23 +139,12 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	final static Male SON22 = PersonsFactory.eINSTANCE.createMale => [fullName = FIRST_SON_2 + " " + LAST_NAME_2]
 	final static Female DAU22 = PersonsFactory.eINSTANCE.createFemale => [fullName = FIRST_DAU_2 + " " + LAST_NAME_2]
 
-	/**Set the correct set of reactions and routines for this test suite
-	 */
-	override protected getChangePropagationSpecifications() {
-		return #[new FamiliesToPersonsChangePropagationSpecification()]
-	}
 
-	@BeforeEach
-	def disableTransitiveChangePropagation() {
-		virtualModel.changePropagationMode = ChangePropagationMode.SINGLE_STEP
-	}
-	
-	/**Before each test a new {@link FamilyRegister} is created as starting point.
+	/**
+	 * Before each test a new {@link FamilyRegister} is created as starting point.
 	 * This is checked by several assertions to ensure correct preconditions for the tests.
 	 */
-	@BeforeEach
-	def void insertRegister(TestInfo testInfo) {
-		this.nameOfTestMethod = testInfo.getDisplayName()
+	def void insertRegister() {
 		val x = resourceAt(FAMILIES_MODEL)
 		x.propagate[contents += FamiliesFactory.eINSTANCE.createFamilyRegister]
 		assertThat(resourceAt(PERSONS_MODEL), exists)
@@ -125,6 +164,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testInsertNewFamily() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		val family = createFamily(LAST_NAME_1)
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -163,6 +203,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testInsertFamilyWithFather() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		val family = createFamily(LAST_NAME_1)
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -184,6 +225,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testInsertFamilyWithMother() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		val family = createFamily(LAST_NAME_1)
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -203,6 +245,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testInsertFamilyWithSon() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		val family = createFamily(LAST_NAME_1)
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -222,6 +265,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testInsertFamilyWithDaughter() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		val family = createFamily(LAST_NAME_1)
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -282,6 +326,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testDeleteFatherFromFamily() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -303,6 +348,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testDeleteSonFromFamily() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -325,6 +371,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testDeleteMotherFromFamily() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -346,6 +393,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testDeleteDaughterFromFamily() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -369,6 +417,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testChangeLastName() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -389,6 +438,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testChangeFirstNameFather() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -411,6 +461,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testChangeFirstNameSon() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -434,6 +485,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testChangeFirstNameMother() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -456,6 +508,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testChangeFirstNameDaughter() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -480,6 +533,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testReplaceFatherWithNewMember() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -511,6 +565,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testReplaceFatherWithExistingFather() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createTwoFamiliesBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -552,6 +607,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testReplaceFatherWithExistingPreviouslyLonlyFather() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		FamilyRegister.from(FAMILIES_MODEL).propagate [
@@ -590,6 +646,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testReplaceFatherWithExistingSon() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createTwoFamiliesBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -627,6 +684,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testReplaceMotherWithNewMember() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -658,6 +716,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testReplaceMotherWithExistingMother() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createTwoFamiliesBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -696,6 +755,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testReplaceMotherWithExistingDaughter() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createTwoFamiliesBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -737,6 +797,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testReplaceMotherWithExistingPreviouslyLonlyDaughter() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		FamilyRegister.from(FAMILIES_MODEL).propagate [
@@ -774,6 +835,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testSwitchFamilySamePositionFather() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		FamilyRegister.from(FAMILIES_MODEL).propagate [
@@ -810,6 +872,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testSwitchFamilySamePositionMother() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		FamilyRegister.from(FAMILIES_MODEL).propagate [
@@ -846,6 +909,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testSwitchFamilySamePositionSon() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		FamilyRegister.from(FAMILIES_MODEL).propagate [
@@ -882,6 +946,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testSwitchFamilySamePositionDaughter() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		FamilyRegister.from(FAMILIES_MODEL).propagate [
@@ -918,6 +983,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testRepeatedlyMovingFathersBetweenFamilies() {
+		insertRegister()
 		//Defining some additional values for this test
 		val String first_mom_3 = "Beate"
 		val Male dad13 = PersonsFactory.eINSTANCE.createMale => [fullName = FIRST_DAD_1 + " " + LAST_NAME_3]
@@ -982,6 +1048,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testSwitchFamilyDifferentPositionSonToFather() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		FamilyRegister.from(FAMILIES_MODEL).propagate [
@@ -1020,6 +1087,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testSwitchFamilyDifferentPositionLonlySonToFather() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		FamilyRegister.from(FAMILIES_MODEL).propagate [
 			families += FamiliesFactory.eINSTANCE.createFamily => [
@@ -1061,6 +1129,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testSwitchFamilyDifferentPositionDaughterToMother() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		FamilyRegister.from(FAMILIES_MODEL).propagate [
@@ -1099,6 +1168,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testSwitchFamilyDifferentPositionLonlyDaughterToMother() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		FamilyRegister.from(FAMILIES_MODEL).propagate [
 			families += FamiliesFactory.eINSTANCE.createFamily => [
@@ -1140,6 +1210,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testSwitchFamilyDifferentPositionFatherToSon() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		FamilyRegister.from(FAMILIES_MODEL).propagate [
@@ -1176,6 +1247,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testSwitchFamilyDifferentPositionMotherToDaughter() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		FamilyRegister.from(FAMILIES_MODEL).propagate [
@@ -1213,6 +1285,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testExceptionSexChanges_AssignMotherToFather() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createTwoFamiliesBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -1233,6 +1306,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testExceptionSexChanges_AssignDaughterToSon() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createTwoFamiliesBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -1253,6 +1327,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testExceptionSexChanges_AssignFatherToMother() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createTwoFamiliesBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -1273,6 +1348,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testExceptionSexChanges_AssignSonToDaughter() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createTwoFamiliesBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -1302,6 +1378,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	@ParameterizedTest(name = "{index} => role={0}, escapedNewName={1}, expectedExceptionMessage={2}")
 	@MethodSource("nameAndExceptionProvider")
 	def void testExceptionRenamingMemberWithInvalidFirstName(MemberRole role, String escapedNewName, String expectedExceptionMessage) {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		val unescapedNewName = if (escapedNewName !== null) unescapeString(escapedNewName) else null
 		this.createOneFamilyBeforeTesting()
@@ -1326,6 +1403,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	@ParameterizedTest(name = "{index} => role={0}, escapedNewName={1}, expectedExceptionMessage={2}")
 	@MethodSource("nameAndExceptionProvider")
 	def void testExceptionCreationOfMemberWithInvalidFirstName(MemberRole role, String escapedNewName, String expectedExceptionMessage) {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		val unescapedNewName = if (escapedNewName !== null) unescapeString(escapedNewName) else null
 		this.createOneFamilyBeforeTesting()
@@ -1348,7 +1426,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 		logger.trace(nameOfTestMethod + " - finished without errors")
 	}
 
-	def static Stream<Arguments> nameAndExceptionProvider() {
+	static def Stream<Arguments> nameAndExceptionProvider() {
 		Stream.of(
 			Arguments.of(MemberRole.Father, null, FamiliesToPersonsHelper.EXCEPTION_MESSAGE_FIRSTNAME_NULL),
 			Arguments.of(MemberRole.Father, "", FamiliesToPersonsHelper.EXCEPTION_MESSAGE_FIRSTNAME_WHITESPACE),
@@ -1412,6 +1490,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testDeleteAllFamiliesWithMatchingName() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")
@@ -1431,6 +1510,7 @@ class FamiliesPersonsTest extends VitruvApplicationTest {
 	 */
 	@Test
 	def void testDeleteFamilyRegister() {
+		insertRegister()
 		logger.trace(nameOfTestMethod + " - begin")
 		this.createOneFamilyBeforeTesting()
 		logger.trace(nameOfTestMethod + " - preparation done")

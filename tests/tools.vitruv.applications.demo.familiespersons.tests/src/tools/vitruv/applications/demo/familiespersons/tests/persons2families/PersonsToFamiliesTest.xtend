@@ -19,7 +19,6 @@ import org.junit.jupiter.params.provider.MethodSource
 import tools.vitruv.applications.demo.familiespersons.persons2families.PersonsToFamiliesChangePropagationSpecification
 import tools.vitruv.applications.demo.familiespersons.persons2families.PersonsToFamiliesHelper
 import tools.vitruv.testutils.TestUserInteraction.MultipleChoiceInteractionDescription
-import tools.vitruv.testutils.VitruvApplicationTest
 
 import static org.hamcrest.CoreMatchers.*
 import static org.hamcrest.MatcherAssert.assertThat
@@ -27,7 +26,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertThrows
 import static org.junit.jupiter.api.Assertions.assertTrue
 import static tools.vitruv.testutils.matchers.ModelMatchers.*
-import tools.vitruv.change.propagation.ChangePropagationMode
+import tools.vitruv.testutils.views.TestView
+import org.eclipse.xtend.lib.annotations.Delegate
+import tools.vitruv.change.propagation.ChangePropagationSpecification
+import tools.vitruv.testutils.TestProject
+import org.junit.jupiter.api.^extension.ExtendWith
+import tools.vitruv.testutils.TestLogging
+import tools.vitruv.testutils.TestProjectManager
+import tools.vitruv.testutils.TestUserInteraction
+import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
+import tools.vitruv.change.interaction.UserInteractionFactory
+import tools.vitruv.change.propagation.impl.DefaultChangeableModelRepository
+import tools.vitruv.testutils.views.ChangePublishingTestView
+import tools.vitruv.testutils.views.UriMode
+import tools.vitruv.change.propagation.impl.DefaultChangeRecordingModelRepository
+import org.junit.jupiter.api.AfterEach
 
 enum PositionPreference {
 	Parent,
@@ -41,9 +54,46 @@ enum FamilyPreference {
 /**Test to validate the transfer of changes from the PersonModel to the FamilyModel.
  * @author Dirk Neumann
  */
-class PersonsToFamiliesTest extends VitruvApplicationTest {
+@ExtendWith(TestLogging, TestProjectManager)
+class PersonsToFamiliesTest implements TestView {
 	static val logger = Logger.getLogger(PersonsToFamiliesTest)
 	String nameOfTestMethod = null
+
+	@Delegate var TestView testView
+
+	/**
+	 * Can be used to set a different kind of test view to be used in subclasses.
+	 */
+	protected def setTestView(TestView testView) {
+		this.testView = testView
+	}
+
+	protected def Iterable<ChangePropagationSpecification> getChangePropagationSpecifications() {
+		return #[new PersonsToFamiliesChangePropagationSpecification()]
+	}
+
+	@BeforeEach
+	def void prepare(TestInfo testInfo, @TestProject Path testProjectPath) {
+		this.nameOfTestMethod = testInfo.getDisplayName()
+		testView = prepareTestView(testProjectPath)
+	}
+
+	private def TestView prepareTestView(Path testProjectPath) {
+		val userInteraction = new TestUserInteraction()
+		val changePropagationSpecificationProvider = new ChangePropagationSpecificationRepository(
+			changePropagationSpecifications)
+		val userInteractor = UserInteractionFactory.instance.createUserInteractor(
+			new TestUserInteraction.ResultProvider(userInteraction))
+		val changeableModelRepository = new DefaultChangeableModelRepository(
+			new DefaultChangeRecordingModelRepository(), changePropagationSpecificationProvider, userInteractor)
+		return new ChangePublishingTestView(testProjectPath, userInteraction, UriMode.FILE_URIS,
+			changeableModelRepository)
+	}
+
+	@AfterEach
+	def void cleanup() {
+		testView.close()
+	}
 
 	// First Set of reused static strings for the first names of the persons
 	final static String FIRST_DAD_1 = "Anton"
@@ -66,17 +116,6 @@ class PersonsToFamiliesTest extends VitruvApplicationTest {
 	final static Path PERSONS_MODEL = Path.of('model/persons.persons')
 	final static Path FAMILIES_MODEL = Path.of('model/families.families')
 
-	/**Set the correct set of reactions and routines for this test suite
-	 */
-	override protected getChangePropagationSpecifications() {
-		return #[new PersonsToFamiliesChangePropagationSpecification()]
-	}
-
-	@BeforeEach
-	def disableTransitiveChangePropagation() {
-		virtualModel.changePropagationMode = ChangePropagationMode.SINGLE_STEP
-	}
-	
 	var boolean preferParent = false
 
 	def void decideParentOrChild(PositionPreference preference) {
