@@ -8,7 +8,7 @@ Bundle-Vendor: vitruv.tools
 Export-Package: tools.vitruv.dsls.demo.familiespersons.families2persons,
  tools.vitruv.dsls.demo.familiespersons.persons2families
 Require-Bundle: tools.vitruv.dsls.reactions.runtime;visibility:=reexport,
- edu.kit.ipd.sdq.metamodels.families,
- edu.kit.ipd.sdq.metamodels.persons,
+ edu.kit.ipd.sdq.metamodels.families;visibility:=reexport,
+ edu.kit.ipd.sdq.metamodels.persons;visibility:=reexport,
  edu.kit.ipd.sdq.activextendannotations
 Bundle-RequiredExecutionEnvironment: JavaSE-11
