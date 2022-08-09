@@ -17,8 +17,8 @@
 		<!--<module>tools.vitruv.dsls.reactions.ui.tests</module>-->
 		<module>tools.vitruv.dsls.commonalities.tests</module>
 		<module>tools.vitruv.dsls.commonalities.ui.tests</module>
-		<module>tools.vitruv.applications.demo.familiespersons.tests</module>
-		<module>tools.vitruv.applications.demo.insurancepersons.tests</module>
+		<module>tools.vitruv.dsls.demo.familiespersons.tests</module>
+		<module>tools.vitruv.dsls.demo.insurancepersons.tests</module>
 		<module>tools.vitruv.applications.demo.insurancefamilies.tests</module>
 	</modules>
 
