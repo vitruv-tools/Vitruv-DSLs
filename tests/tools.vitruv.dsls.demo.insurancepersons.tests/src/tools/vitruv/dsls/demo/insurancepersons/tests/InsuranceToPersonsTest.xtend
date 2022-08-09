@@ -1,4 +1,4 @@
-package tools.vitruv.dsls.demo.insurancepersons.tests.insurance2persons
+package tools.vitruv.dsls.demo.insurancepersons.tests
 
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

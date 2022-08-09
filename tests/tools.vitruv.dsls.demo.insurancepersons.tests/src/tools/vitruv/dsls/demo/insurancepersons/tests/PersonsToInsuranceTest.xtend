@@ -1,4 +1,4 @@
-package tools.vitruv.dsls.demo.insurancepersons.tests.persons2insurance
+package tools.vitruv.dsls.demo.insurancepersons.tests
 
 import edu.kit.ipd.sdq.metamodels.persons.PersonsFactory
 import edu.kit.ipd.sdq.metamodels.persons.PersonRegister

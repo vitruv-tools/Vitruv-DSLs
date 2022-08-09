@@ -1,4 +1,4 @@
-package tools.vitruv.dsls.demo.familiespersons.tests.families2Persons
+package tools.vitruv.dsls.demo.familiespersons.tests
 
 import edu.kit.ipd.sdq.metamodels.families.FamiliesFactory
 import edu.kit.ipd.sdq.metamodels.families.Family
