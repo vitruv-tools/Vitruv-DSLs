@@ -25,11 +25,12 @@ reaction DeletedFamilyRegister {
 }
 
 routine createInsuranceDatabase(families::FamilyRegister familyRegister) {
-	action {
-		val insuranceDatabase = create insurance::InsuranceDatabase and initialize {
-			persistProjectRelative(familyRegister, insuranceDatabase, "model/insurance.insurance")
-		}
-		add correspondence between familyRegister and insuranceDatabase
+	create {
+		val insuranceDatabase = new insurance::InsuranceDatabase
+	}
+	update {
+		persistProjectRelative(familyRegister, insuranceDatabase, "model/insurance.insurance")
+		addCorrespondenceBetween(familyRegister, insuranceDatabase)
 	}
 }
 
@@ -37,8 +38,9 @@ routine deleteInsuranceDatabase(families::FamilyRegister familyRegister) {
 	match {
 		val insuranceDatabase = retrieve insurance::InsuranceDatabase corresponding to familyRegister
 	}
-	action {
-		delete insuranceDatabase
+	update {
+		removeObject(insuranceDatabase)
+		removeCorrespondenceBetween(insuranceDatabase, familyRegister)
 	}
 }
 
@@ -93,14 +95,14 @@ reaction InsertedDaughter {
 }
 
 routine deleteFamily(families::Family family) {
-	action {
-		call family.members.forEach[deleteInsuranceClient()]
+	update {
+		family.members.forEach[deleteInsuranceClient()]
 	}
 }
 
 routine changeFamilyName(families::Family family){
-	action {
-		call family.members.forEach[updateInsuranceClientName(it)]
+	update {
+		family.members.forEach[updateInsuranceClientName(it)]
 	}
 }
 
@@ -110,29 +112,29 @@ routine tryCreateInsuranceClientFromNewMember(families::Member newMember, famili
 	match {
 		require absence of insurance::InsuranceClient corresponding to newMember
 	}
-	action {
-		call createInsuranceClient(newMember, family, isMale)
+	update {
+		createInsuranceClient(newMember, family, isMale)
 	}
 }
 
-// TODO: replace isMale by Gender
 // Creates corresponding insurance client and sets up correspondences
 routine createInsuranceClient(families::Member newMember, families::Family family, Boolean isMale) {
 	match {
 		check { assertValidFirstname(newMember) true }
 		val insuranceDatabase = retrieve insurance::InsuranceDatabase corresponding to family.register
 	}
-	action {
-		val insuranceClient = create insurance::InsuranceClient and initialize {
-			insuranceClient.name = newMember.insuranceClientName
-			insuranceClient.gender = isMale.isMaleToGender;
-			// ignore: socialSecurityNumber
-		}
-		update insuranceDatabase {
-			insuranceDatabase.insuranceclient += insuranceClient
-		}
-		add correspondence between newMember and insuranceClient
-		add correspondence between family and insuranceClient
+	create {
+		val insuranceClient = new insurance::InsuranceClient
+	}
+	update {
+		insuranceClient.name = newMember.insuranceClientName
+		insuranceClient.gender = isMale.isMaleToGender;
+		// ignore: socialSecurityNumber
+		
+		insuranceDatabase.insuranceclient += insuranceClient
+		
+		addCorrespondenceBetween(newMember, insuranceClient)
+		addCorrespondenceBetween(family, insuranceClient)
 	}
 }
 
@@ -140,17 +142,17 @@ routine createInsuranceClient(families::Member newMember, families::Family famil
 // Updates name and correspondences
 routine updateNameAndCorrespondencesOfCorrespondingInsuranceClient(families::Member newMember, families::Family newFamily, Boolean isMale) {
 	match {
-		val correspondingInsuranceClient = retrieve insurance::InsuranceClient corresponding to newMember
-		with { assertGender(correspondingInsuranceClient, isMale.isMaleToGender) true }
+		val correspondingInsuranceClient = retrieve insurance::InsuranceClient corresponding to newMember with { 
+			assertGender(it, isMale.isMaleToGender) true
+		}
 		val oldFamily = retrieve families::Family corresponding to correspondingInsuranceClient
 	}
-	action {
-		update correspondingInsuranceClient {
-			correspondingInsuranceClient.name = newMember.insuranceClientName
-		}
-		remove correspondence between correspondingInsuranceClient and oldFamily
-		add correspondence between correspondingInsuranceClient and newFamily
-		call deleteFamilyIfEmpty(oldFamily)
+	update {
+		correspondingInsuranceClient.name = newMember.insuranceClientName
+		
+		removeCorrespondenceBetween(correspondingInsuranceClient, oldFamily)
+		addCorrespondenceBetween(correspondingInsuranceClient, newFamily)
+		deleteFamilyIfEmpty(oldFamily)
 	}
 }
 
@@ -171,10 +173,8 @@ routine updateInsuranceClientName(families::Member member) {
 		check { assertValidFirstname(member) true}
 		val insuranceClient = retrieve insurance::InsuranceClient corresponding to member
 	}
-	action {
-		update insuranceClient {
-			insuranceClient.name = member.insuranceClientName
-		}
+	update {
+		insuranceClient.name = member.insuranceClientName
 	}
 }
 
@@ -183,11 +183,11 @@ routine deleteInsuranceClient(families::Member member) {
 		val insuranceClient = retrieve insurance::InsuranceClient corresponding to member
 		val family = retrieve families::Family corresponding to insuranceClient
 	}
-	action {
-		remove correspondence between member and insuranceClient
-		remove correspondence between family and insuranceClient
-		delete insuranceClient
-		call deleteFamilyIfEmpty(family)
+	update {
+		removeCorrespondenceBetween(member, insuranceClient)
+		removeCorrespondenceBetween(family, insuranceClient)
+		removeObject(insuranceClient)
+		deleteFamilyIfEmpty(family)
 	}
 }
 
@@ -197,7 +197,7 @@ routine deleteFamilyIfEmpty(families::Family family) {
 	match {
 		check family.members.size == 0
 	}
-	action {
-		delete family
+	update {
+		removeObject(family)
 	}
 }
