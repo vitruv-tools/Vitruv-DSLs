@@ -41,6 +41,7 @@ import tools.vitruv.change.propagation.impl.DefaultChangeRecordingModelRepositor
 import tools.vitruv.testutils.views.TestView
 import tools.vitruv.testutils.views.ChangePublishingTestView
 import tools.vitruv.testutils.views.UriMode
+import java.io.IOException
 
 enum MemberRole {
 	Father,
@@ -76,7 +77,7 @@ class FamiliesToPersonsTest implements TestView {
 		testView = prepareTestView(testProjectPath)
 	}
 
-	private def TestView prepareTestView(Path testProjectPath) {
+	private def TestView prepareTestView(Path testProjectPath) throws IOException {
 		val userInteraction = new TestUserInteraction()
 		val changePropagationSpecificationProvider = new ChangePropagationSpecificationRepository(
 			changePropagationSpecifications)

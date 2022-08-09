@@ -41,6 +41,7 @@ import tools.vitruv.testutils.views.ChangePublishingTestView
 import tools.vitruv.testutils.views.UriMode
 import tools.vitruv.change.propagation.impl.DefaultChangeRecordingModelRepository
 import org.junit.jupiter.api.AfterEach
+import java.io.IOException
 
 enum PositionPreference {
 	Parent,
@@ -78,7 +79,7 @@ class PersonsToFamiliesTest implements TestView {
 		testView = prepareTestView(testProjectPath)
 	}
 
-	private def TestView prepareTestView(Path testProjectPath) {
+	private def TestView prepareTestView(Path testProjectPath) throws IOException {
 		val userInteraction = new TestUserInteraction()
 		val changePropagationSpecificationProvider = new ChangePropagationSpecificationRepository(
 			changePropagationSpecifications)

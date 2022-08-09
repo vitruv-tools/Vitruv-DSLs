@@ -29,6 +29,7 @@ import tools.vitruv.change.propagation.impl.DefaultChangeableModelRepository
 import tools.vitruv.testutils.views.ChangePublishingTestView
 import tools.vitruv.change.propagation.impl.DefaultChangeRecordingModelRepository
 import org.junit.jupiter.api.AfterEach
+import java.io.IOException
 
 @ExtendWith(TestLogging, TestProjectManager)
 class PersonsToInsuranceTest implements TestView {
@@ -50,7 +51,7 @@ class PersonsToInsuranceTest implements TestView {
 		testView = prepareTestView(testProjectPath)
 	}
 
-	private def TestView prepareTestView(Path testProjectPath) {
+	private def TestView prepareTestView(Path testProjectPath) throws IOException {
 		val userInteraction = new TestUserInteraction()
 		val changePropagationSpecificationProvider = new ChangePropagationSpecificationRepository(
 			changePropagationSpecifications)
