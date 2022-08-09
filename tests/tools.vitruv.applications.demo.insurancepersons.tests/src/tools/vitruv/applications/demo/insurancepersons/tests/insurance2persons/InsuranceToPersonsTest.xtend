@@ -3,7 +3,6 @@ package tools.vitruv.applications.demo.insurancepersons.tests.insurance2persons
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.nio.file.Path
-import tools.vitruv.testutils.VitruvApplicationTest
 import tools.vitruv.applications.demo.insurancepersons.insurance2persons.InsuranceToPersonsChangePropagationSpecification
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceFactory
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceDatabase
@@ -15,9 +14,59 @@ import static org.hamcrest.CoreMatchers.*
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static tools.vitruv.testutils.matchers.ModelMatchers.*
-import tools.vitruv.change.propagation.ChangePropagationMode
+import tools.vitruv.testutils.views.TestView
+import tools.vitruv.testutils.TestProjectManager
+import tools.vitruv.testutils.TestLogging
+import org.junit.jupiter.api.^extension.ExtendWith
+import org.eclipse.xtend.lib.annotations.Delegate
+import tools.vitruv.change.propagation.ChangePropagationSpecification
+import tools.vitruv.testutils.TestProject
+import tools.vitruv.testutils.TestUserInteraction
+import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
+import tools.vitruv.change.interaction.UserInteractionFactory
+import tools.vitruv.change.propagation.impl.DefaultChangeableModelRepository
+import tools.vitruv.testutils.views.ChangePublishingTestView
+import tools.vitruv.testutils.views.UriMode
+import tools.vitruv.change.propagation.impl.DefaultChangeRecordingModelRepository
+import org.junit.jupiter.api.AfterEach
 
-class InsuranceToPersonsTest extends VitruvApplicationTest {
+@ExtendWith(TestLogging, TestProjectManager)
+class InsuranceToPersonsTest implements TestView {
+	@Delegate var TestView testView
+
+	/**
+	 * Can be used to set a different kind of test view to be used in subclasses.
+	 */
+	protected def setTestView(TestView testView) {
+		this.testView = testView
+	}
+
+	protected def Iterable<ChangePropagationSpecification> getChangePropagationSpecifications() {
+		return #[new InsuranceToPersonsChangePropagationSpecification()]
+	}
+
+	@BeforeEach
+	def void prepare(@TestProject Path testProjectPath) {
+		testView = prepareTestView(testProjectPath)
+	}
+
+	private def TestView prepareTestView(Path testProjectPath) {
+		val userInteraction = new TestUserInteraction()
+		val changePropagationSpecificationProvider = new ChangePropagationSpecificationRepository(
+			changePropagationSpecifications)
+		val userInteractor = UserInteractionFactory.instance.createUserInteractor(
+			new TestUserInteraction.ResultProvider(userInteraction))
+		val changeableModelRepository = new DefaultChangeableModelRepository(
+			new DefaultChangeRecordingModelRepository(), changePropagationSpecificationProvider, userInteractor)
+		return new ChangePublishingTestView(testProjectPath, userInteraction, UriMode.FILE_URIS,
+			changeableModelRepository)
+	}
+
+	@AfterEach
+	def void cleanup() {
+		testView.close()
+	}
+	
 	static val MALE_NAME = "Max Mustermann"
 	static val MALE_NAME_2 = "Bernd Mustermann"
 	static val FEMALE_NAME = "Erika Mustermann"
@@ -27,15 +76,6 @@ class InsuranceToPersonsTest extends VitruvApplicationTest {
 	// Model Paths
 	final static Path PERSONS_MODEL = Path.of('model/persons.persons')
 	final static Path INSURANCE_MODEL = Path.of('model/insurance.insurance')
-
-	override protected getChangePropagationSpecifications() {
-		return #[new InsuranceToPersonsChangePropagationSpecification()]
-	}
-
-	@BeforeEach
-	def disableTransitiveChangePropagation() {
-		virtualModel.changePropagationMode = ChangePropagationMode.SINGLE_STEP
-	}
 
 	/**Before each test a new {@link InsuranceDatabase} is created as starting point.
 	 * This is checked by several assertions to ensure correct preconditions for the tests. 
