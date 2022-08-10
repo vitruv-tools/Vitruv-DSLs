@@ -9,16 +9,10 @@ import edu.kit.ipd.sdq.metamodels.insurance.InsuranceFactory
 import java.nio.file.Path
 import java.util.ArrayList
 import java.util.List
-import mir.reactions.familiesToInsurance.FamiliesToInsuranceChangePropagationSpecification
-import mir.reactions.insuranceToFamilies.InsuranceToFamiliesChangePropagationSpecification
 import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.junit.jupiter.api.BeforeEach
-import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesViewFactory
-import tools.vitruv.change.propagation.ChangePropagationMode
-import tools.vitruv.framework.views.View
-import tools.vitruv.testutils.ViewBasedVitruvApplicationTest
 
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.jupiter.api.Assertions.assertEquals
@@ -27,14 +21,63 @@ import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.CreatorsUtil.c
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.CreatorsUtil.createInsuranceClient
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.FamiliesQueryUtil.claimFamilyRegister
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceQueryUtil.claimInsuranceDatabase
-import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.TransformationDirectionConfiguration.configureUnidirectionalExecution
 import static tools.vitruv.testutils.matchers.ModelMatchers.*
 import org.eclipse.emf.ecore.util.EcoreUtil
+import org.junit.jupiter.api.^extension.ExtendWith
+import tools.vitruv.testutils.TestLogging
+import tools.vitruv.testutils.TestProjectManager
+import tools.vitruv.testutils.TestProject
+import java.io.IOException
+import tools.vitruv.testutils.TestUserInteraction
+import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
+import tools.vitruv.change.interaction.UserInteractionFactory
+import tools.vitruv.change.propagation.impl.DefaultChangeableModelRepository
+import tools.vitruv.change.propagation.impl.DefaultChangeRecordingModelRepository
+import tools.vitruv.testutils.views.UriMode
+import tools.vitruv.change.propagation.ChangePropagationSpecification
+import static edu.kit.ipd.sdq.commons.util.org.eclipse.emf.common.util.URIUtil.createFileURI
+import tools.vitruv.testutils.views.NonTransactionalTestView
+import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesDefaultTestModelFactory
+import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesTestModelFactory
+import tools.vitruv.dsls.demo.insurancefamilies.families2insurance.FamiliesToInsuranceChangePropagationSpecification
+import tools.vitruv.testutils.views.ChangePublishingTestView
+import tools.vitruv.dsls.testutils.TestModel
 
-abstract class AbstractFamiliesToInsuranceTest extends ViewBasedVitruvApplicationTest {
- 	protected var extension InsuranceFamiliesViewFactory viewFactory
- 	
- 	protected enum MemberRole {
+@ExtendWith(#[TestLogging, TestProjectManager])
+abstract class AbstractFamiliesToInsuranceTest {
+	protected var extension InsuranceFamiliesTestModelFactory _testModelFactory
+	protected var Path testProjectPath
+
+	/**
+	 * Can be used to set a different kind of test model factory to be used in subclasses.
+	 */
+	protected def setTestModelFactory(InsuranceFamiliesTestModelFactory testModelFactory) {
+		this._testModelFactory = testModelFactory
+	}
+
+	@BeforeEach
+	def final void setupViewFactory(@TestProject Path testProjectPath) {
+		this.testProjectPath = testProjectPath
+		testModelFactory = new InsuranceFamiliesDefaultTestModelFactory(prepareTestView(testProjectPath))
+	}
+
+	private def NonTransactionalTestView prepareTestView(Path testProjectPath) throws IOException {
+		val userInteraction = new TestUserInteraction()
+		val changePropagationSpecificationProvider = new ChangePropagationSpecificationRepository(
+			changePropagationSpecifications)
+		val userInteractor = UserInteractionFactory.instance.createUserInteractor(
+			new TestUserInteraction.ResultProvider(userInteraction))
+		val changeableModelRepository = new DefaultChangeableModelRepository(
+			new DefaultChangeRecordingModelRepository(), changePropagationSpecificationProvider, userInteractor)
+		return new ChangePublishingTestView(testProjectPath, userInteraction, UriMode.FILE_URIS,
+			changeableModelRepository)
+	}
+
+	protected def Iterable<ChangePropagationSpecification> getChangePropagationSpecifications() {
+		return #[new FamiliesToInsuranceChangePropagationSpecification()]
+	}
+	
+	protected enum MemberRole {
  		Father,
  		Mother,
  		Son,
@@ -50,45 +93,31 @@ abstract class AbstractFamiliesToInsuranceTest extends ViewBasedVitruvApplicatio
 	@Accessors(PROTECTED_GETTER)
 	static val MODEL_FOLDER_NAME = "model"
 	
-	@BeforeEach
-	def final void setupViewFactory(){
-		viewFactory = new InsuranceFamiliesViewFactory(virtualModel);
-	}
 	
-	@BeforeEach
-	def setupTransformatonDirection() {
-		configureUnidirectionalExecution(virtualModel)
-	}
-	
-	@BeforeEach
-	def disableTransitiveChangePropagation() {
-		virtualModel.changePropagationMode = ChangePropagationMode.SINGLE_STEP
-	}
-	
-	protected def getDefaultFamilyRegister(View view) {
-		claimFamilyRegister(view)
+	protected def getDefaultFamilyRegister(TestModel<FamilyRegister> model) {
+		claimFamilyRegister(model)
 	}
 
 	protected def Path getProjectModelPath(String modelName, String modelFileExtension) {
 		Path.of(MODEL_FOLDER_NAME).resolve(modelName + "." + modelFileExtension)
 	}
-
-	override protected getChangePropagationSpecifications() {
-		return #[new FamiliesToInsuranceChangePropagationSpecification(), new InsuranceToFamiliesChangePropagationSpecification()]
+	
+	protected def URI getUri(Path viewRelativePath) {
+		createFileURI(testProjectPath.resolve(viewRelativePath).normalize().toFile())
 	}
 
-	protected def void createAndRegisterRoot(View view, EObject rootObject, URI persistenceUri) {
-		view.registerRoot(rootObject, persistenceUri)
+	protected def void createAndRegisterRoot(TestModel<FamilyRegister> model, FamilyRegister rootObject, URI persistenceUri) {
+		model.registerRoot(rootObject, persistenceUri)
 	}
 	
-	protected def void deleteRoot(View view, EObject rootObject) {
+	protected def void deleteRoot(EObject rootObject) {
 		EcoreUtil.delete(rootObject)
 	}
 	
 	// === creators ===
 	
 	private def void createFamilyRegister((FamilyRegister)=> void familyRegisterInitalization){
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			var familyRegister = FamiliesFactory.eINSTANCE.createFamilyRegister
 			familyRegisterInitalization.apply(familyRegister)
 			createAndRegisterRoot(familyRegister, getProjectModelPath("families", FAMILY_MODEL_FILE_EXTENSION).uri)
@@ -111,7 +140,7 @@ abstract class AbstractFamiliesToInsuranceTest extends ViewBasedVitruvApplicatio
 		}
 		createEmptyFamilyRegister()
 		
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilyRegister(it) => [
 				families += createFamily[
 					lastName = LAST_NAME_1
@@ -141,7 +170,7 @@ abstract class AbstractFamiliesToInsuranceTest extends ViewBasedVitruvApplicatio
 			insuranceclient += expectedInsuranceClients
 		]
 		
-		validateInsuranceView[
+		validateInsuranceModel[
 			claimInsuranceDatabase(it) => [
 				assertCorrectInsuranceDatabase(expectedInsuranceDatabase, it)
 			]
@@ -151,7 +180,7 @@ abstract class AbstractFamiliesToInsuranceTest extends ViewBasedVitruvApplicatio
 	protected def void createTwoCompleteFamilies(){
 		createOneCompleteFamily()
 		
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilyRegister(it) => [
 				families += createFamily [
 					lastName = LAST_NAME_2
@@ -166,7 +195,7 @@ abstract class AbstractFamiliesToInsuranceTest extends ViewBasedVitruvApplicatio
 		val InsuranceDatabase expectedInsuranceDatabase = InsuranceFactory.eINSTANCE.createInsuranceDatabase => [
 			insuranceclient += #[SON11, DAU11, DAD11, MOM11, SON22, DAU22, DAD22, MOM22]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			claimInsuranceDatabase(it) => [
 				assertCorrectInsuranceDatabase(expectedInsuranceDatabase, it)
 			]

@@ -31,15 +31,15 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void testDeleteFamilyRegister() {
 		createOneCompleteFamily()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			var familyRegister = claimFamilyRegister(it)
 			deleteRoot(familyRegister)
 		]
 
-		validateFamilyView[
+		validateFamilyModel[
 			assertEquals(0, it.getRootObjects().size)
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			assertEquals(0, it.getRootObjects().size)
 		]
 	}
@@ -48,7 +48,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void deleteFamilyWithMatchingName() {
 		createTwoCompleteFamilies()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it.removeIf([it.lastName.equals(LAST_NAME_2)])
 			]
@@ -57,7 +57,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[SON11, DAU11, DAD11, MOM11]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -69,14 +69,14 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		createEmptyFamilyRegister()
 		val family = createFamily[lastName = LAST_NAME_1]
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it += family
 			]
 		]
 
 		val expectedInsuraceDatabase = createInsuranceDatabase[]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuraceDatabase, insuranceDatabase)
 		]
@@ -87,7 +87,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		createEmptyFamilyRegister()
 		val family = createFamily[lastName = LAST_NAME_1]
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it += family
 				family.father = createFamilyMember [firstName = FIRST_DAD_1]
@@ -100,7 +100,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 				gender = Gender.MALE
 			]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -111,7 +111,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		createEmptyFamilyRegister()
 		val family = createFamily[lastName = LAST_NAME_1]
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it += family
 				family.mother = createFamilyMember [firstName = FIRST_MOM_1]
@@ -124,7 +124,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 				gender = Gender.FEMALE
 			]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -135,7 +135,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		createEmptyFamilyRegister()
 		val family = createFamily[lastName = LAST_NAME_1]
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it += family
 				family.sons += createFamilyMember [firstName = FIRST_SON_1]
@@ -148,7 +148,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 				gender = Gender.MALE
 			]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -159,7 +159,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		createEmptyFamilyRegister()
 		val family = createFamily[lastName = LAST_NAME_1]
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it += family
 				family.daughters += createFamilyMember [firstName = FIRST_DAU_1]
@@ -172,7 +172,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 				gender = Gender.FEMALE
 			]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -182,7 +182,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void deleteFatherFromFamily() {
 		createOneCompleteFamily()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val selectedFamily = it.findFirst [
 					it.lastName.equals(LAST_NAME_1) && it.father.firstName.equals(FIRST_DAD_1)
@@ -194,7 +194,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[SON11, DAU11, MOM11]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -204,7 +204,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void deleteMotherFromFamily() {
 		createOneCompleteFamily()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val selectedFamily = it.findFirst [
 					it.lastName.equals(LAST_NAME_1) && it.mother.firstName.equals(FIRST_MOM_1)
@@ -216,7 +216,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[SON11, DAU11, DAD11]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -226,7 +226,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void deleteSonFromFamily() {
 		createOneCompleteFamily()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val selectedFamily = it.findFirst [
 					it.lastName.equals(LAST_NAME_1) && it.sons.stream().anyMatch[s|s.firstName.equals(FIRST_SON_1)]
@@ -238,7 +238,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[DAU11, DAD11, MOM11]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -248,7 +248,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void deleteDautherFromFamily() {
 		createOneCompleteFamily()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val selectedFamily = it.findFirst [
 					it.lastName.equals(LAST_NAME_1) && it.daughters.stream().anyMatch[s|s.firstName.equals(FIRST_DAU_1)]
@@ -260,7 +260,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[SON11, DAD11, MOM11]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -270,7 +270,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void testChangelastName() {
 		createOneCompleteFamily();
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val selectedFamily = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				selectedFamily.lastName = LAST_NAME_2
@@ -280,7 +280,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[SON12, DAU12, DAD12, MOM12]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -291,7 +291,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void testChangeFirstNameFather() {
 		createOneCompleteFamily()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val selectedFamily = it.findFirst [
 					it.lastName.equals(LAST_NAME_1) && it.father.firstName.equals(FIRST_DAD_1)
@@ -303,7 +303,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[SON11, DAU11, DAD21, MOM11]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -313,7 +313,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void testChangeFirstNameMother() {
 		createOneCompleteFamily()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val selectedFamily = it.findFirst [
 					it.lastName.equals(LAST_NAME_1) && it.mother.firstName.equals(FIRST_MOM_1)
@@ -325,7 +325,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[SON11, DAU11, DAD11, MOM21]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -335,7 +335,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void testChangeFirstNameSon() {
 		createOneCompleteFamily()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val selectedFamily = it.findFirst [
 					it.lastName.equals(LAST_NAME_1) && it.sons.exists[son|son.firstName.equals(FIRST_SON_1)]
@@ -348,7 +348,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[SON21, DAU11, DAD11, MOM11]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -358,7 +358,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void testChangeFirstNameDaugther() {
 		createOneCompleteFamily()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val selectedFamily = it.findFirst [
 					it.lastName.equals(LAST_NAME_1) && it.daughters.exists[it.firstName.equals(FIRST_DAU_1)]
@@ -371,7 +371,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[SON11, DAU21, DAD11, MOM11]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -383,7 +383,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void testReplaceFatherWithNewMember() {
 		createOneCompleteFamily()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val family = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				family.father = createFamilyMember [firstName = FIRST_DAD_2]
@@ -394,7 +394,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 			insuranceclient += #[SON11, DAU11, MOM11, DAD21]
 		]
 
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -407,7 +407,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void testReplaceFatherWithExistingFather() {
 		createTwoCompleteFamilies()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val family1 = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				val family2 = it.findFirst[it.lastName.equals(LAST_NAME_2)]
@@ -418,7 +418,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[DAD21, SON11, DAU11, MOM11, SON22, DAU22, MOM22]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -430,7 +430,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	@Test
 	def void testReplaceFatherWithExistingPreviouslyLonlyFather() {
 		createOneCompleteFamily()
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it += createFamily [
 					lastName = LAST_NAME_2
@@ -439,7 +439,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 			]
 		]
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val family1 = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				val family2 = it.findFirst[it.lastName.equals(LAST_NAME_2)]
@@ -450,7 +450,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[DAD21, MOM11, SON11, DAU11]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -463,7 +463,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void testReplaceFatherWithExistingSon() {
 		createTwoCompleteFamilies()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val family1 = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				val family2 = it.findFirst[it.lastName.equals(LAST_NAME_2)]
@@ -474,7 +474,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[SON21, MOM11, SON11, DAU11, DAD22, MOM22, DAU22]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -484,7 +484,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void testReplaceMotherWithNewMember() {
 		createOneCompleteFamily()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val family = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				family.mother = createFamilyMember [firstName = FIRST_MOM_2]
@@ -495,7 +495,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 			insuranceclient += #[SON11, DAU11, DAD11, MOM21]
 		]
 
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -505,7 +505,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void testReplaceMotherWithExistingMother() {
 		createTwoCompleteFamilies()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val family1 = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				val family2 = it.findFirst[it.lastName.equals(LAST_NAME_2)]
@@ -516,7 +516,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[DAD11, SON11, DAU11, MOM21, SON22, DAU22, DAD22]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -525,7 +525,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	@Test
 	def void testReplaceMotherWithExistingPreviouslyLonlyMother() {
 		createOneCompleteFamily()
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it += createFamily [
 					lastName = LAST_NAME_2
@@ -534,7 +534,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 			]
 		]
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val family1 = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				val family2 = it.findFirst[it.lastName.equals(LAST_NAME_2)]
@@ -545,7 +545,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[DAD11, MOM21, SON11, DAU11]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -555,7 +555,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void testReplaceMotherWithExistingDaughter() {
 		createTwoCompleteFamilies()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val family1 = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				val family2 = it.findFirst[it.lastName.equals(LAST_NAME_2)]
@@ -566,7 +566,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[SON11, DAU11, DAD11, DAU21, SON22, DAD22, MOM22]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -575,14 +575,14 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	@Test
 	def void testSwitchFamilySamePositionFather() {
 		createOneCompleteFamily()
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it += createFamily[lastName = LAST_NAME_2]
 				it += createFamily[lastName = LAST_NAME_2]
 			]
 		]
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val oldFamily = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				val newFamily = it.findFirst[it.lastName.equals(LAST_NAME_2)]
@@ -593,7 +593,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[DAD12, MOM11, SON11, DAU11]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -602,13 +602,13 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	@Test
 	def void testSwitchFamilySamePositionMother() {
 		createOneCompleteFamily()
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it += createFamily[lastName = LAST_NAME_2]
 			]
 		]
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val oldFamily = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				val newFamily = it.findFirst[it.lastName.equals(LAST_NAME_2)]
@@ -619,7 +619,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[DAD11, MOM12, SON11, DAU11]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -628,13 +628,13 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	@Test
 	def void testSwitchFamilySamePositionSon() {
 		createOneCompleteFamily()
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it += createFamily[lastName = LAST_NAME_2]
 			]
 		]
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val oldFamily = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				val newFamily = it.findFirst[it.lastName.equals(LAST_NAME_2)]
@@ -645,7 +645,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[DAD11, MOM11, SON12, DAU11]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -654,12 +654,12 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	@Test
 	def void testSwitchFamilySamePositionDaugther() {
 		createOneCompleteFamily()
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it += createFamily[lastName = LAST_NAME_2]
 			]
 		]
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val oldFamily = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				val newFamily = it.findFirst[it.lastName.equals(LAST_NAME_2)]
@@ -670,7 +670,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[DAD11, MOM11, SON11, DAU12]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -683,7 +683,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceClient dad13 = createInsuranceClient [name = FIRST_DAD_1 + " " + LAST_NAME_3 gender = Gender.MALE]
 		val InsuranceClient mom33 = createInsuranceClient [name = first_mom_3 + " " + LAST_NAME_3 gender = Gender.FEMALE]
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val family1 = createFamily [lastName = LAST_NAME_1]
 				val family2 = createFamily [lastName = LAST_NAME_2]
@@ -698,7 +698,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 			]
 		]
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val family1 = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				val family2 = it.findFirst[it.lastName.equals(LAST_NAME_2)]
@@ -715,7 +715,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[dad13, DAD22, MOM11, MOM22, mom33]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -724,13 +724,13 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	@Test
 	def void testSwitchSonToFather() {
 		createOneCompleteFamily()
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it += createFamily[lastName = LAST_NAME_2]
 			]
 		]
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val oldFamily = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				val newFamily = it.findFirst[it.lastName.equals(LAST_NAME_2)]
@@ -741,7 +741,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[DAD11, MOM11, SON12, DAU11]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -750,13 +750,13 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	@Test
 	def void testSwitchFatherToSon() {
 		createOneCompleteFamily()
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it += createFamily[lastName = LAST_NAME_2]
 			]
 		]
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val oldFamily = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				val newFamily = it.findFirst[it.lastName.equals(LAST_NAME_2)]
@@ -767,7 +767,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[DAD12, MOM11, SON11, DAU11]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -776,13 +776,13 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	@Test
 	def void testSwitchDautherToMother() {
 		createOneCompleteFamily()
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it += createFamily[lastName = LAST_NAME_2]
 			]
 		]
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val oldFamily = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				val newFamily = it.findFirst[it.lastName.equals(LAST_NAME_2)]
@@ -793,7 +793,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[DAD11, MOM11, SON11, DAU12]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -802,13 +802,13 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	@Test
 	def void testSwitchMotherToDaughter() {
 		createOneCompleteFamily()
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it += createFamily[lastName = LAST_NAME_2]
 			]
 		]
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val oldFamily = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				val newFamily = it.findFirst[it.lastName.equals(LAST_NAME_2)]
@@ -819,7 +819,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val InsuranceDatabase expectedInsuranceDatabase = createInsuranceDatabase [
 			insuranceclient += #[DAD11, MOM12, SON11, DAU11]
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]
@@ -829,7 +829,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void familyGetsDeletedIfEmpty_father() {
 		createOneCompleteFamily()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val family = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				family.mother = null
@@ -841,7 +841,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		]
 
 		val FamilyRegister expectedFamilyRegister = FamiliesFactory.eINSTANCE.createFamilyRegister
-		validateFamilyView[
+		validateFamilyModel[
 			val familiyRegister = claimFamilyRegister(it)
 			assertCorrectFamilyRegister(expectedFamilyRegister, familiyRegister)
 		]
@@ -851,7 +851,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void familyGetsDeletedIfEmpty_mother() {
 		createOneCompleteFamily()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val family = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				family.father = null
@@ -863,7 +863,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		]
 
 		val FamilyRegister expectedFamilyRegister = FamiliesFactory.eINSTANCE.createFamilyRegister
-		validateFamilyView[
+		validateFamilyModel[
 			val familiyRegister = claimFamilyRegister(it)
 			assertCorrectFamilyRegister(expectedFamilyRegister, familiyRegister)
 		]
@@ -873,7 +873,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void familyGetsDeletedIfEmpty_son() {
 		createOneCompleteFamily()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val family = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				family.mother = null
@@ -885,7 +885,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		]
 
 		val FamilyRegister expectedFamilyRegister = FamiliesFactory.eINSTANCE.createFamilyRegister
-		validateFamilyView[
+		validateFamilyModel[
 			val familiyRegister = claimFamilyRegister(it)
 			assertCorrectFamilyRegister(expectedFamilyRegister, familiyRegister)
 		]
@@ -895,7 +895,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	def void familyGetsDeletedIfEmpty_daugther() {
 		createOneCompleteFamily()
 
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				val family = it.findFirst[it.lastName.equals(LAST_NAME_1)]
 				family.mother = null
@@ -907,7 +907,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		]
 
 		val FamilyRegister expectedFamilyRegister = FamiliesFactory.eINSTANCE.createFamilyRegister
-		validateFamilyView[
+		validateFamilyModel[
 			val familiyRegister = claimFamilyRegister(it)
 			assertCorrectFamilyRegister(expectedFamilyRegister, familiyRegister)
 		]
@@ -919,7 +919,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val thrownExceptionAssignMotherToFather = assertThrows(
 			UnsupportedOperationException,
 			[
-				changeFamilyRegisterView[
+				changeFamilyModel[
 					claimFamilies(it) => [
 						val family1 = it.findFirst[family|family.lastName.equals(LAST_NAME_1)]
 						val family2 = it.findFirst[family|family.lastName.equals(LAST_NAME_2)]
@@ -940,7 +940,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val thrownExceptionAssignDaughterToSon = assertThrows(
 			UnsupportedOperationException,
 			[
-				changeFamilyRegisterView[
+				changeFamilyModel[
 					claimFamilies(it) => [
 						val family1 = it.findFirst[family|family.lastName.equals(LAST_NAME_1)]
 						val family2 = it.findFirst[family|family.lastName.equals(LAST_NAME_2)]
@@ -961,7 +961,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val thrownExceptionAssignFatherToMother = assertThrows(
 			UnsupportedOperationException,
 			[
-				changeFamilyRegisterView[
+				changeFamilyModel[
 					claimFamilies(it) => [
 						val family1 = it.findFirst[family|family.lastName.equals(LAST_NAME_1)]
 						val family2 = it.findFirst[family|family.lastName.equals(LAST_NAME_2)]
@@ -982,7 +982,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val thrownExceptionAssignSonToDaughter = assertThrows(
 			UnsupportedOperationException,
 			[
-				changeFamilyRegisterView[
+				changeFamilyModel[
 					claimFamilies(it) => [
 						val family1 = it.findFirst[family|family.lastName.equals(LAST_NAME_1)]
 						val family2 = it.findFirst[family|family.lastName.equals(LAST_NAME_2)]
@@ -1011,7 +1011,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val thrownExceptionSetNullAsFirstName = assertThrows(
 			IllegalStateException,
 			[
-				changeFamilyRegisterView[
+				changeFamilyModel[
 					claimFamilies(it) => [
 						val family1 = it.findFirst[family|family.lastName.equals(LAST_NAME_1)]
 						switch role {
@@ -1046,7 +1046,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 		val thrownExceptionSetNullAsFirstName = assertThrows(
 			IllegalStateException,
 			[
-				changeFamilyRegisterView[
+				changeFamilyModel[
 					claimFamilies(it) => [
 						val family1 = it.findFirst[family|family.lastName.equals(LAST_NAME_1)]
 						val Member newMember = createFamilyMember [firstName = unescapedNewName]
@@ -1112,7 +1112,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 	@Test
 	def void testCreatingFamilyWithEmptylastName() {
 		createEmptyFamilyRegister()
-		changeFamilyRegisterView[
+		changeFamilyModel[
 			claimFamilies(it) => [
 				it += createFamily [
 					lastName = ""
@@ -1131,7 +1131,7 @@ class FamiliesToInsuranceTest extends AbstractFamiliesToInsuranceTest {
 			insuranceclient += createInsuranceClient [name = FIRST_MOM_1 gender = Gender.FEMALE]
 			
 		]
-		validateInsuranceView[
+		validateInsuranceModel[
 			val insuranceDatabase = claimInsuranceDatabase(it)
 			assertCorrectInsuranceDatabase(expectedInsuranceDatabase, insuranceDatabase)
 		]

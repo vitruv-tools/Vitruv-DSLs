@@ -15,18 +15,18 @@ import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.CreatorsUtil.c
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.CreatorsUtil.createInsuranceClient
 import tools.vitruv.dsls.demo.insurancefamilies.insurance2families.PositionPreference
 
-class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {	
+class InsuranceToFamiliesTest extends AbstractInsuranceToFamiliesTest {	
 	
 	// === TESTS: InsuranceDatabase ===
 	
 	@Test
 	def void testCreateInsuranceDatabase() {
-		changeInsuranceView[
+		changeInsuranceModel[
 			var insuranceDatabase = InsuranceFactory.eINSTANCE.createInsuranceDatabase
 			createAndRegisterRoot(insuranceDatabase,  getProjectModelPath("insurance", INSURANCE_MODEL_FILE_EXTENSION).uri)
 		]
 		
-		validateFamilyView [
+		validateFamilyModel [
 			assertEquals(1, it.getRootObjects().size)
 			assertNumberOfFamilies(0)
 		]
@@ -36,12 +36,12 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 	def void testDeleteInsuranceDatabase() {
 		createEmptyInsuranceDatabase()
 		
-		changeInsuranceView[
+		changeInsuranceModel[
 			var insuranceDatabase = claimInsuranceDatabase(it)
 			deleteRoot(insuranceDatabase)
 		]
 		
-		validateFamilyView[
+		validateFamilyModel[
 			assertEquals(0, it.getRootObjects().size)
 		]
 	}
@@ -53,7 +53,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 		createEmptyInsuranceDatabase();
 		
 		decideParentOrChild(PositionPreference.Parent)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient += createInsuranceClient [name = fullName(FIRST_DAD_1, LAST_NAME_1) gender = Gender.MALE]
 			]
@@ -63,7 +63,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 				lastName = LAST_NAME_1
 				father = createFamilyMember [ firstName = FIRST_DAD_1]
 			]
-		validateFamilyView [
+		validateFamilyModel [
 			val family = claimFamily(defaultFamilyRegister, LAST_NAME_1)
 			assertFamily(expectedFamily, family)
 		]
@@ -74,7 +74,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 		createEmptyInsuranceDatabase();
 		
 		decideParentOrChild(PositionPreference.Parent)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient += createInsuranceClient [name = fullName(FIRST_MOM_1, LAST_NAME_1) gender = Gender.FEMALE]
 			]
@@ -84,7 +84,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 				lastName = LAST_NAME_1
 				mother = createFamilyMember [ firstName = FIRST_MOM_1]
 			]
-		validateFamilyView [
+		validateFamilyModel [
 			val family = claimFamily(defaultFamilyRegister, LAST_NAME_1)
 			assertFamily(expectedFamily, family)
 		]
@@ -95,7 +95,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 		createEmptyInsuranceDatabase();
 		
 		decideParentOrChild(PositionPreference.Child)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient += createInsuranceClient [name = fullName(FIRST_SON_1, LAST_NAME_1) gender = Gender.MALE]
 			]
@@ -105,7 +105,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 				lastName = LAST_NAME_1
 				sons += createFamilyMember [ firstName = FIRST_SON_1]
 			]
-		validateFamilyView [
+		validateFamilyModel [
 			val family = claimFamily(defaultFamilyRegister, LAST_NAME_1)
 			assertFamily(expectedFamily, family)
 		]
@@ -116,7 +116,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 		createEmptyInsuranceDatabase();
 		
 		decideParentOrChild(PositionPreference.Child)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient += createInsuranceClient [name = fullName(FIRST_DAU_1, LAST_NAME_1) gender = Gender.FEMALE]
 			]
@@ -126,7 +126,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 				lastName = LAST_NAME_1
 				daughters += createFamilyMember [ firstName = FIRST_DAU_1]
 			]
-		validateFamilyView [
+		validateFamilyModel [
 			val family = claimFamily(defaultFamilyRegister, LAST_NAME_1)
 			assertFamily(expectedFamily, family)
 		]
@@ -137,42 +137,42 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 		createEmptyInsuranceDatabase();
 		
 		decideParentOrChild(PositionPreference.Parent)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient += createInsuranceClient [name = fullName(FIRST_DAD_1, LAST_NAME_1) gender = Gender.MALE]
 			]
 		]
 		decideParentOrChild(PositionPreference.Parent)
 		decideNewOrExistingFamily(FamilyPreference.Existing, 1)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient += createInsuranceClient [name = fullName(FIRST_MOM_1, LAST_NAME_1) gender = Gender.FEMALE]
 			]
 		]
 		decideParentOrChild(PositionPreference.Child)
 		decideNewOrExistingFamily(FamilyPreference.Existing, 1)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient += createInsuranceClient [name = fullName(FIRST_SON_1, LAST_NAME_1) gender = Gender.MALE]
 			]
 		]
 		decideParentOrChild(PositionPreference.Child)
 		decideNewOrExistingFamily(FamilyPreference.Existing, 1)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient += createInsuranceClient [name = fullName(FIRST_SON_2, LAST_NAME_1) gender = Gender.MALE]
 			]
 		]
 		decideParentOrChild(PositionPreference.Child)
 		decideNewOrExistingFamily(FamilyPreference.Existing, 1)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient += createInsuranceClient [name = fullName(FIRST_DAU_1, LAST_NAME_1) gender = Gender.FEMALE]
 			]
 		]
 		decideParentOrChild(PositionPreference.Child)
 		decideNewOrExistingFamily(FamilyPreference.Existing, 1)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient += createInsuranceClient [name = fullName(FIRST_DAU_2, LAST_NAME_1) gender = Gender.FEMALE]
 			]
@@ -187,7 +187,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 				daughters += createFamilyMember [ firstName = FIRST_DAU_1]
 				daughters += createFamilyMember [ firstName = FIRST_DAU_2]
 			]
-		validateFamilyView [
+		validateFamilyModel [
 			val family = claimFamily(defaultFamilyRegister, LAST_NAME_1)
 			assertFamily(expectedFamily, family)
 		]
@@ -199,7 +199,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 		
 		decideParentOrChild(PositionPreference.Parent)
 		decideNewOrExistingFamily(FamilyPreference.New, 0)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient += createInsuranceClient [name = fullName(FIRST_DAD_2, LAST_NAME_1) gender = Gender.MALE]
 			]
@@ -210,7 +210,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 			lastName = LAST_NAME_1
 			father = createFamilyMember [ firstName = FIRST_DAD_2 ]
 		]
-		validateFamilyView [
+		validateFamilyModel [
 			var families = claimFamilyRegister(it).families
 			assertNumberOfFamilies(2)
 			
@@ -225,7 +225,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 		
 		decideParentOrChild(PositionPreference.Parent)
 		decideNewOrExistingFamily(FamilyPreference.New, 0)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient += createInsuranceClient [name = fullName(FIRST_MOM_2, LAST_NAME_1) gender = Gender.FEMALE]
 			]
@@ -236,7 +236,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 			lastName = LAST_NAME_1
 			mother = createFamilyMember [ firstName = FIRST_MOM_2 ]
 		]
-		validateFamilyView [
+		validateFamilyModel [
 			var families = claimFamilyRegister(it).families
 			assertNumberOfFamilies(2)
 			assertFamily(expectedFamily1, families.get(0))
@@ -250,7 +250,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 		
 		decideParentOrChild(PositionPreference.Child)
 		decideNewOrExistingFamily(FamilyPreference.New, 0)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient += createInsuranceClient [name = fullName(FIRST_SON_2, LAST_NAME_1) gender = Gender.MALE]
 			]
@@ -261,7 +261,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 			lastName = LAST_NAME_1
 			sons += createFamilyMember [ firstName = FIRST_SON_2 ]
 		]
-		validateFamilyView [
+		validateFamilyModel [
 			var families = claimFamilyRegister(it).families
 			assertNumberOfFamilies(2)
 			assertFamily(expectedFamily1, families.get(0))
@@ -275,7 +275,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 		
 		decideParentOrChild(PositionPreference.Child)
 		decideNewOrExistingFamily(FamilyPreference.New, 0)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient += createInsuranceClient [name = fullName(FIRST_DAU_2, LAST_NAME_1) gender = Gender.FEMALE]
 			]
@@ -286,7 +286,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 			lastName = LAST_NAME_1
 			daughters += createFamilyMember [ firstName = FIRST_DAU_2 ]
 		]
-		validateFamilyView [
+		validateFamilyModel [
 			var families = claimFamilyRegister(it).families
 			assertNumberOfFamilies(2)
 			
@@ -304,7 +304,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 		awaitReplacementInformation(fullName(FIRST_DAD_1, LAST_NAME_1), LAST_NAME_1)
 		decideParentOrChild(PositionPreference.Parent)
 		decideNewOrExistingFamily(FamilyPreference.New, 0)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient += createInsuranceClient [name = fullName(FIRST_DAD_2, LAST_NAME_1) gender = Gender.MALE]
 			]
@@ -321,7 +321,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 			lastName = LAST_NAME_1
 			father = createFamilyMember [ firstName = FIRST_DAD_1 ]
 		]
-		validateFamilyView [
+		validateFamilyModel [
 			var families = claimFamilyRegister(it).families
 			assertNumberOfFamilies(2)
 			assertFamily(expectedFamily1, families.get(0))
@@ -338,7 +338,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 		awaitReplacementInformation(fullName(FIRST_MOM_1, LAST_NAME_1), LAST_NAME_1)
 		decideParentOrChild(PositionPreference.Parent)
 		decideNewOrExistingFamily(FamilyPreference.New, 0)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient += createInsuranceClient [name = fullName(FIRST_MOM_2, LAST_NAME_1) gender = Gender.FEMALE]
 			]
@@ -355,7 +355,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 			lastName = LAST_NAME_1
 			mother = createFamilyMember [ firstName = FIRST_MOM_1 ]
 		]
-		validateFamilyView [
+		validateFamilyModel [
 			var families = claimFamilyRegister(it).families
 			assertNumberOfFamilies(2)
 			
@@ -368,13 +368,13 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 	def void testDeleteClient_father(){
 		createInsuranceDatabaseWithCompleteFamily();
 		
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient -= insuranceclient.findFirst[client | client.name == fullName(FIRST_DAD_1, LAST_NAME_1)]
 			]
 		]
 		
-		validateFamilyView [
+		validateFamilyModel [
 			var expectedFamily = createFamily [
 					lastName = LAST_NAME_1
 					mother = createFamilyMember [ firstName = FIRST_MOM_1]
@@ -390,13 +390,13 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 	def void testDeleteClient_mother(){
 		createInsuranceDatabaseWithCompleteFamily();
 		
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient -= insuranceclient.findFirst[client | client.name == fullName(FIRST_MOM_1, LAST_NAME_1)]
 			]
 		]
 		
-		validateFamilyView [
+		validateFamilyModel [
 			var expectedFamily = createFamily [
 					lastName = LAST_NAME_1
 					father = createFamilyMember [ firstName = FIRST_DAD_1]
@@ -412,13 +412,13 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 	def void testDeleteClient_son(){
 		createInsuranceDatabaseWithCompleteFamily()
 		
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient -= insuranceclient.findFirst[client | client.name == fullName(FIRST_SON_1, LAST_NAME_1)]
 			]
 		]
 		
-		validateFamilyView [
+		validateFamilyModel [
 			var expectedFamily = createFamily [
 					lastName = LAST_NAME_1
 					father = createFamilyMember [ firstName = FIRST_DAD_1]
@@ -434,13 +434,13 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 	def void testDeleteClient_daughter(){
 		createInsuranceDatabaseWithCompleteFamily()
 		
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				insuranceclient -= insuranceclient.findFirst[client | client.name == fullName(FIRST_DAU_1, LAST_NAME_1)]
 			]
 		]
 		
-		validateFamilyView [
+		validateFamilyModel [
 			var expectedFamily = createFamily [
 					lastName = LAST_NAME_1
 					father = createFamilyMember [ firstName = FIRST_DAD_1]
@@ -456,7 +456,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 	def void testDeleteClient_deleteFamilyIfEmpty(){
 		createInsuranceDatabaseWithCompleteFamily()
 		
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				var existingClients = new ArrayList<InsuranceClient>(insuranceclient)
 				for(existingClient : existingClients){
@@ -465,7 +465,7 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 			]
 		]
 		
-		validateFamilyView [
+		validateFamilyModel [
 			assertNumberOfFamilies(0)
 		]
 	}
@@ -474,13 +474,13 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 	def void testChangeGender_MotherToFather(){
 		createInsuranceDataBaseWithOptionalCompleteFamily(false, true, true, true)
 		
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				claimInsuranceClient(it, FIRST_MOM_1, LAST_NAME_1).gender = Gender.MALE
 			]
 		]
 		
-		validateFamilyView [
+		validateFamilyModel [
 			var expectedFamily = createFamily [
 					lastName = LAST_NAME_1
 					father = createFamilyMember [ firstName = FIRST_MOM_1]
@@ -496,13 +496,13 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 	def void testChangeGender_FatherToMother(){
 		createInsuranceDataBaseWithOptionalCompleteFamily(true, false, true, true)
 		
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				claimInsuranceClient(it, FIRST_DAD_1, LAST_NAME_1).gender = Gender.FEMALE
 			]
 		]
 		
-		validateFamilyView [
+		validateFamilyModel [
 			var expectedFamily = createFamily [
 					lastName = LAST_NAME_1
 					mother = createFamilyMember [ firstName = FIRST_DAD_1]
@@ -518,13 +518,13 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 	def void testChangeGender_DaugtherToSon(){
 		createInsuranceDataBaseWithOptionalCompleteFamily(true, true, true, true)
 		
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				claimInsuranceClient(it, FIRST_DAU_1, LAST_NAME_1).gender = Gender.MALE
 			]
 		]
 		
-		validateFamilyView [
+		validateFamilyModel [
 			var expectedFamily = createFamily [
 					lastName = LAST_NAME_1
 					father = createFamilyMember [ firstName = FIRST_DAD_1]
@@ -541,13 +541,13 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 	def void testChangeGender_SonToDaughter(){
 		createInsuranceDataBaseWithOptionalCompleteFamily(true, true, true, true)
 		
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				claimInsuranceClient(it, FIRST_SON_1, LAST_NAME_1).gender = Gender.FEMALE
 			]
 		]
 		
-		validateFamilyView [
+		validateFamilyModel [
 			var expectedFamily = createFamily [
 					lastName = LAST_NAME_1
 					father = createFamilyMember [ firstName = FIRST_DAD_1]
@@ -567,13 +567,13 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 		awaitReplacementInformation(fullName(FIRST_DAD_1, LAST_NAME_1), LAST_NAME_1)
 		decideParentOrChild(PositionPreference.Parent)
 		decideNewOrExistingFamily(FamilyPreference.New, 0)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				claimInsuranceClient(it, FIRST_MOM_1, LAST_NAME_1).gender = Gender.MALE
 			]
 		]
 		
-		validateFamilyView [
+		validateFamilyModel [
 			var expectedFamily1 = createFamily [
 				lastName = LAST_NAME_1
 				father = createFamilyMember [ firstName = FIRST_MOM_1]
@@ -601,13 +601,13 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 		awaitReplacementInformation(fullName(FIRST_MOM_1, LAST_NAME_1), LAST_NAME_1)
 		decideParentOrChild(PositionPreference.Parent)
 		decideNewOrExistingFamily(FamilyPreference.New, 0)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				claimInsuranceClient(it, FIRST_DAD_1, LAST_NAME_1).gender = Gender.FEMALE
 			]
 		]
 		
-		validateFamilyView [
+		validateFamilyModel [
 			var expectedFamily1 = createFamily [
 				lastName = LAST_NAME_1
 				mother = createFamilyMember [ firstName = FIRST_DAD_1]
@@ -632,13 +632,13 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 	def void testChangeName_firstName(){
 		createInsuranceDatabaseWithCompleteFamily()
 		
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				claimInsuranceClient(it, FIRST_DAD_1, LAST_NAME_1).name = fullName(FIRST_DAD_2, LAST_NAME_1)
 			]
 		]
 		
-		validateFamilyView [
+		validateFamilyModel [
 			var expectedFamily = createFamily [
 					lastName = LAST_NAME_1
 					father = createFamilyMember [ firstName = FIRST_DAD_2]
@@ -655,13 +655,13 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 	def void testChangeName_onlyMemberInFamily(){
 		createInsuranceDataBaseWithOptionalCompleteFamily(false, false, true, false)
 		
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				claimInsuranceClient(it, FIRST_SON_1, LAST_NAME_1).name = fullName(FIRST_SON_1, LAST_NAME_2)
 			]
 		]
 		
-		validateFamilyView [
+		validateFamilyModel [
 			var expectedFamily = createFamily [
 					lastName = LAST_NAME_2
 					sons += createFamilyMember [ firstName = FIRST_SON_1]
@@ -677,13 +677,13 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 		createInsuranceDatabaseWithCompleteFamily()
 		
 		decideParentOrChild(PositionPreference.Parent)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				claimInsuranceClient(it, FIRST_SON_1, LAST_NAME_1).name = fullName(FIRST_SON_1, LAST_NAME_2)
 			]
 		]
 		
-		validateFamilyView [
+		validateFamilyModel [
 			var expectedFamily1 =  createFamily [
 					lastName = LAST_NAME_1
 					father = createFamilyMember [ firstName = FIRST_DAD_1]
@@ -707,13 +707,13 @@ class InsuranceFamiliesTest extends AbstractInsuranceFamiliesTest {
 		createInsuranceDatabaseWithCompleteFamily()
 		
 		decideParentOrChild(PositionPreference.Child)
-		changeInsuranceView [
+		changeInsuranceModel [
 			claimInsuranceDatabase(it) => [
 				claimInsuranceClient(it, FIRST_SON_1, LAST_NAME_1).name = fullName(FIRST_SON_1, LAST_NAME_2)
 			]
 		]
 		
-		validateFamilyView [
+		validateFamilyModel [
 			var expectedFamily1 =  createFamily [
 					lastName = LAST_NAME_1
 					father = createFamilyMember [ firstName = FIRST_DAD_1]

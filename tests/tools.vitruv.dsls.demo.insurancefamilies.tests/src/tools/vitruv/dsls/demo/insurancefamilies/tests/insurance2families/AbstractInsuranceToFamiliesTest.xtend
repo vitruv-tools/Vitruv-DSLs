@@ -6,18 +6,12 @@ import edu.kit.ipd.sdq.metamodels.insurance.Gender
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceDatabase
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceFactory
 import java.nio.file.Path
-import mir.reactions.familiesToInsurance.FamiliesToInsuranceChangePropagationSpecification
-import mir.reactions.insuranceToFamilies.InsuranceToFamiliesChangePropagationSpecification
 import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.junit.jupiter.api.BeforeEach
-import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesViewFactory
 import tools.vitruv.change.interaction.UserInteractionOptions.NotificationType
-import tools.vitruv.change.propagation.ChangePropagationMode
-import tools.vitruv.framework.views.View
 import tools.vitruv.testutils.TestUserInteraction.MultipleChoiceInteractionDescription
-import tools.vitruv.testutils.ViewBasedVitruvApplicationTest
 
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.jupiter.api.Assertions.assertEquals
@@ -25,18 +19,70 @@ import static org.junit.jupiter.api.Assertions.assertTrue
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.CreatorsUtil.createInsuranceClient
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.FamiliesQueryUtil.claimFamilyRegister
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceQueryUtil.claimInsuranceDatabase
-import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.TransformationDirectionConfiguration.configureUnidirectionalExecution
 import static tools.vitruv.testutils.matchers.ModelMatchers.*
 import tools.vitruv.dsls.demo.insurancefamilies.insurance2families.PositionPreference
 import org.eclipse.emf.ecore.util.EcoreUtil
+import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesTestModelFactory
+import tools.vitruv.testutils.TestProject
+import java.io.IOException
+import tools.vitruv.testutils.views.NonTransactionalTestView
+import tools.vitruv.testutils.TestUserInteraction
+import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
+import tools.vitruv.change.interaction.UserInteractionFactory
+import tools.vitruv.change.propagation.impl.DefaultChangeableModelRepository
+import tools.vitruv.change.propagation.impl.DefaultChangeRecordingModelRepository
+import tools.vitruv.testutils.views.ChangePublishingTestView
+import tools.vitruv.testutils.views.UriMode
+import edu.kit.ipd.sdq.metamodels.families.FamilyRegister
+import tools.vitruv.dsls.demo.insurancefamilies.insurance2families.InsuranceToFamiliesChangePropagationSpecification
+import tools.vitruv.change.propagation.ChangePropagationSpecification
+import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesDefaultTestModelFactory
+import static edu.kit.ipd.sdq.commons.util.org.eclipse.emf.common.util.URIUtil.createFileURI
+import org.junit.jupiter.api.^extension.ExtendWith
+import tools.vitruv.testutils.TestLogging
+import tools.vitruv.testutils.TestProjectManager
+import tools.vitruv.dsls.testutils.TestModel
 
 enum FamilyPreference {
 	New,
 	Existing
 }
 
-abstract class AbstractInsuranceFamiliesTest extends ViewBasedVitruvApplicationTest {
-	protected var extension InsuranceFamiliesViewFactory viewFactory
+@ExtendWith(#[TestLogging, TestProjectManager])
+abstract class AbstractInsuranceToFamiliesTest {
+	protected var extension InsuranceFamiliesTestModelFactory _testModelFactory
+	protected var Path testProjectPath
+	TestUserInteraction userInteraction
+
+	/**
+	 * Can be used to set a different kind of test model factory and test user interaction to be used in subclasses.
+	 */
+	protected def setTestExecutionContext(InsuranceFamiliesTestModelFactory testModelFactory,
+		TestUserInteraction testUserInteraction) {
+		this._testModelFactory = testModelFactory
+		this.userInteraction = testUserInteraction
+	}
+
+	@BeforeEach
+	def final void setupViewFactory(@TestProject Path testProjectPath) {
+		this.testProjectPath = testProjectPath
+		val userInteraction = new TestUserInteraction()
+		setTestExecutionContext(
+			new InsuranceFamiliesDefaultTestModelFactory(prepareTestView(testProjectPath, userInteraction)),
+			userInteraction)
+	}
+
+	private def NonTransactionalTestView prepareTestView(Path testProjectPath,
+		TestUserInteraction userInteraction) throws IOException {
+		val changePropagationSpecificationProvider = new ChangePropagationSpecificationRepository(
+			changePropagationSpecifications)
+		val userInteractor = UserInteractionFactory.instance.createUserInteractor(
+			new TestUserInteraction.ResultProvider(userInteraction))
+		val changeableModelRepository = new DefaultChangeableModelRepository(
+			new DefaultChangeRecordingModelRepository(), changePropagationSpecificationProvider, userInteractor)
+		return new ChangePublishingTestView(testProjectPath, userInteraction, UriMode.FILE_URIS,
+			changeableModelRepository)
+	}
 	
 	// === setup ===
 	
@@ -47,45 +93,34 @@ abstract class AbstractInsuranceFamiliesTest extends ViewBasedVitruvApplicationT
 	@Accessors(PROTECTED_GETTER)
 	static val MODEL_FOLDER_NAME = "model"
 	
-	@BeforeEach
-	def final void setupViewFactory(){
-		viewFactory = new InsuranceFamiliesViewFactory(virtualModel);
-	}
-	
-	@BeforeEach
-	def setupTransformatonDirection() {
-		configureUnidirectionalExecution(virtualModel)
-	}
-	
-	@BeforeEach
-	def disableTransitiveChangePropagation() {
-		virtualModel.changePropagationMode = ChangePropagationMode.SINGLE_STEP
-	}
-	
-	protected def getDefaultFamilyRegister(View view) {
-		claimFamilyRegister(view)
+	protected def getDefaultFamilyRegister(TestModel<FamilyRegister> model) {
+		claimFamilyRegister(model)
 	}
 
 	protected def Path getProjectModelPath(String modelName, String modelFileExtension) {
 		Path.of(MODEL_FOLDER_NAME).resolve(modelName + "." + modelFileExtension)
 	}
-
-	override protected getChangePropagationSpecifications() {
-		return #[new FamiliesToInsuranceChangePropagationSpecification(), new InsuranceToFamiliesChangePropagationSpecification()]
+	
+	protected def URI getUri(Path viewRelativePath) {
+		createFileURI(testProjectPath.resolve(viewRelativePath).normalize().toFile())
 	}
 
-	protected def void createAndRegisterRoot(View view, EObject rootObject, URI persistenceUri) {
-		view.registerRoot(rootObject, persistenceUri)
+	def protected Iterable<ChangePropagationSpecification> getChangePropagationSpecifications() {
+		return #[new InsuranceToFamiliesChangePropagationSpecification()]
+	}
+
+	protected def void createAndRegisterRoot(TestModel<InsuranceDatabase> model, InsuranceDatabase rootObject, URI persistenceUri) {
+		model.registerRoot(rootObject, persistenceUri)
 	}
 	
-	protected def void deleteRoot(View view, EObject rootObject) {
+	protected def void deleteRoot(EObject rootObject) {
 		EcoreUtil.delete(rootObject)
 	}
 	
 	// === creators ===
 	
 	private def void createInsuranceDatabase((InsuranceDatabase)=> void insuranceDatabaseInitialization) {
-		changeInsuranceView [
+		changeInsuranceModel [
 			var insuranceDatabase = InsuranceFactory.eINSTANCE.createInsuranceDatabase
 			insuranceDatabaseInitialization.apply(insuranceDatabase)
 			createAndRegisterRoot(insuranceDatabase,  getProjectModelPath("insurance", INSURANCE_MODEL_FILE_EXTENSION).uri)
@@ -117,7 +152,7 @@ abstract class AbstractInsuranceFamiliesTest extends ViewBasedVitruvApplicationT
 		
 		if(insertFather){
 			decideParentOrChild(PositionPreference.Parent)
-			changeInsuranceView [
+			changeInsuranceModel [
 				claimInsuranceDatabase(it) => [
 					insuranceclient += createInsuranceClient[ name = fullName(FIRST_DAD_1, LAST_NAME_1) gender = Gender.MALE]
 				]
@@ -128,7 +163,7 @@ abstract class AbstractInsuranceFamiliesTest extends ViewBasedVitruvApplicationT
 		if(insertMother){
 			decideParentOrChild(PositionPreference.Parent)
 			if(insertCount > 0) decideNewOrExistingFamily(FamilyPreference.Existing, 1)
-			changeInsuranceView [
+			changeInsuranceModel [
 				claimInsuranceDatabase(it) => [
 					insuranceclient += createInsuranceClient[ name = fullName(FIRST_MOM_1, LAST_NAME_1) gender = Gender.FEMALE]
 				]
@@ -139,7 +174,7 @@ abstract class AbstractInsuranceFamiliesTest extends ViewBasedVitruvApplicationT
 		if(insertSon){
 			decideParentOrChild(PositionPreference.Child)
 			if(insertCount > 0) decideNewOrExistingFamily(FamilyPreference.Existing, 1)
-			changeInsuranceView [
+			changeInsuranceModel [
 				claimInsuranceDatabase(it) => [
 					insuranceclient += createInsuranceClient[ name = fullName(FIRST_SON_1, LAST_NAME_1) gender = Gender.MALE]
 				]
@@ -149,7 +184,7 @@ abstract class AbstractInsuranceFamiliesTest extends ViewBasedVitruvApplicationT
 		if(insertDaugther){
 			decideParentOrChild(PositionPreference.Child)
 			if(insertCount > 0) decideNewOrExistingFamily(FamilyPreference.Existing, 1)
-			changeInsuranceView [
+			changeInsuranceModel [
 				claimInsuranceDatabase(it) => [
 					insuranceclient += createInsuranceClient[ name = fullName(FIRST_DAU_1, LAST_NAME_1) gender = Gender.FEMALE]
 				]
@@ -187,8 +222,8 @@ abstract class AbstractInsuranceFamiliesTest extends ViewBasedVitruvApplicationT
 		assertThat(actual, equalsDeeply(expected));
 	}
 	
-	protected def void assertNumberOfFamilies(View view, int expectedNumberOfFamilies){
-		assertEquals(expectedNumberOfFamilies, claimFamilyRegister(view).families.size)
+	protected def void assertNumberOfFamilies(TestModel<FamilyRegister> model, int expectedNumberOfFamilies){
+		assertEquals(expectedNumberOfFamilies, claimFamilyRegister(model).families.size)
 	}
 	
 	val String newOrExistingFamilyTitle = "New or Existing Family?"

@@ -1,17 +1,16 @@
 package tools.vitruv.dsls.demo.insurancefamilies.tests.util
 
 import edu.kit.ipd.sdq.activextendannotations.Utility
-import tools.vitruv.framework.views.View
 
 import static extension edu.kit.ipd.sdq.commons.util.java.lang.IterableUtil.claimOne
-//import static extension edu.kit.ipd.sdq.commons.util.java.lang.IterableUtil.
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceDatabase
+import tools.vitruv.dsls.testutils.TestModel
 
 @Utility
 class InsuranceQueryUtil {
 	
-	static def claimInsuranceDatabase(View view){
-		view.getRootObjects(InsuranceDatabase).claimOne
+	static def claimInsuranceDatabase(TestModel<InsuranceDatabase> model){
+		model.getTypedRootObjects().claimOne
 	}
 	
 	static def claimInsuranceClient(InsuranceDatabase insuranceDatabase, String firstName, String lastName){
