@@ -24,6 +24,12 @@
    <feature id="tools.vitruv.dsls.commonalities.feature.source" version="2.1.0.qualifier">
       <category name="Vitruv DSLs"/>
    </feature>
+   <feature url="features/tools.vitruv.dsls.testutils.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.testutils.feature" version="2.1.0.qualifier">
+      <category name="Vitruv DSLs"/>
+   </feature>
+   <feature id="tools.vitruv.dsls.testutils.feature.source" version="2.1.0.qualifier">
+      <category name="Vitruv DSLs"/>
+   </feature>
    <feature url="features/tools.vitruv.dsls.demo.familiespersons.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.demo.familiespersons.feature" version="2.1.0.qualifier">
       <category name="Vitruv Demos"/>
    </feature>
