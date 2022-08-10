@@ -36,7 +36,6 @@ enum FamilyPreference {
 }
 
 abstract class AbstractInsuranceFamiliesTest extends ViewBasedVitruvApplicationTest {
-	boolean preferParent
 	protected var extension InsuranceFamiliesViewFactory viewFactory
 	
 	// === setup ===
@@ -173,7 +172,6 @@ abstract class AbstractInsuranceFamiliesTest extends ViewBasedVitruvApplicationT
 	
 	protected def void decideParentOrChild(PositionPreference preference) {
 		val String parentChildTitle = "Parent or Child?"
-		this.preferParent = preference === PositionPreference.Parent
 		userInteraction.onMultipleChoiceSingleSelection[title.equals(parentChildTitle)].respondWithChoiceAt(if (preference === PositionPreference.Parent) 0 else 1)
 	}
 	

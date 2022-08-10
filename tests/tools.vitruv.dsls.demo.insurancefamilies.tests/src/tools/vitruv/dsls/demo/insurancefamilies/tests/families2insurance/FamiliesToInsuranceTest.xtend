@@ -7,7 +7,6 @@ import edu.kit.ipd.sdq.metamodels.insurance.Gender
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceClient
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceDatabase
 import java.util.stream.Stream
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
