@@ -28,9 +28,6 @@ import java.io.IOException
 import tools.vitruv.testutils.views.NonTransactionalTestView
 import tools.vitruv.testutils.TestUserInteraction
 import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
-import tools.vitruv.change.interaction.UserInteractionFactory
-import tools.vitruv.change.propagation.impl.DefaultChangeableModelRepository
-import tools.vitruv.change.propagation.impl.DefaultChangeRecordingModelRepository
 import tools.vitruv.testutils.views.ChangePublishingTestView
 import tools.vitruv.testutils.views.UriMode
 import edu.kit.ipd.sdq.metamodels.families.FamilyRegister
@@ -42,6 +39,7 @@ import org.junit.jupiter.api.^extension.ExtendWith
 import tools.vitruv.testutils.TestLogging
 import tools.vitruv.testutils.TestProjectManager
 import tools.vitruv.dsls.testutils.TestModel
+import static tools.vitruv.testutils.TestModelRepositoryFactory.createTestChangeableModelRepository
 
 enum FamilyPreference {
 	New,
@@ -76,10 +74,8 @@ abstract class AbstractInsuranceToFamiliesTest {
 		TestUserInteraction userInteraction) throws IOException {
 		val changePropagationSpecificationProvider = new ChangePropagationSpecificationRepository(
 			changePropagationSpecifications)
-		val userInteractor = UserInteractionFactory.instance.createUserInteractor(
-			new TestUserInteraction.ResultProvider(userInteraction))
-		val changeableModelRepository = new DefaultChangeableModelRepository(
-			new DefaultChangeRecordingModelRepository(), changePropagationSpecificationProvider, userInteractor)
+		val changeableModelRepository = createTestChangeableModelRepository(changePropagationSpecificationProvider,
+			userInteraction)
 		return new ChangePublishingTestView(testProjectPath, userInteraction, UriMode.FILE_URIS,
 			changeableModelRepository)
 	}

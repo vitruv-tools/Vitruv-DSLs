@@ -30,9 +30,6 @@ import tools.vitruv.testutils.TestProject
 import java.io.IOException
 import tools.vitruv.testutils.TestUserInteraction
 import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
-import tools.vitruv.change.interaction.UserInteractionFactory
-import tools.vitruv.change.propagation.impl.DefaultChangeableModelRepository
-import tools.vitruv.change.propagation.impl.DefaultChangeRecordingModelRepository
 import tools.vitruv.testutils.views.UriMode
 import tools.vitruv.change.propagation.ChangePropagationSpecification
 import static edu.kit.ipd.sdq.commons.util.org.eclipse.emf.common.util.URIUtil.createFileURI
@@ -42,6 +39,7 @@ import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesTest
 import tools.vitruv.dsls.demo.insurancefamilies.families2insurance.FamiliesToInsuranceChangePropagationSpecification
 import tools.vitruv.testutils.views.ChangePublishingTestView
 import tools.vitruv.dsls.testutils.TestModel
+import static tools.vitruv.testutils.TestModelRepositoryFactory.createTestChangeableModelRepository
 
 @ExtendWith(#[TestLogging, TestProjectManager])
 abstract class AbstractFamiliesToInsuranceTest {
@@ -65,10 +63,8 @@ abstract class AbstractFamiliesToInsuranceTest {
 		val userInteraction = new TestUserInteraction()
 		val changePropagationSpecificationProvider = new ChangePropagationSpecificationRepository(
 			changePropagationSpecifications)
-		val userInteractor = UserInteractionFactory.instance.createUserInteractor(
-			new TestUserInteraction.ResultProvider(userInteraction))
-		val changeableModelRepository = new DefaultChangeableModelRepository(
-			new DefaultChangeRecordingModelRepository(), changePropagationSpecificationProvider, userInteractor)
+		val changeableModelRepository = createTestChangeableModelRepository(changePropagationSpecificationProvider,
+			userInteraction)
 		return new ChangePublishingTestView(testProjectPath, userInteraction, UriMode.FILE_URIS,
 			changeableModelRepository)
 	}

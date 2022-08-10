@@ -23,13 +23,11 @@ import tools.vitruv.change.propagation.ChangePropagationSpecification
 import tools.vitruv.testutils.TestProject
 import tools.vitruv.testutils.TestUserInteraction
 import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
-import tools.vitruv.change.interaction.UserInteractionFactory
 import tools.vitruv.testutils.views.UriMode
-import tools.vitruv.change.propagation.impl.DefaultChangeableModelRepository
 import tools.vitruv.testutils.views.ChangePublishingTestView
-import tools.vitruv.change.propagation.impl.DefaultChangeRecordingModelRepository
 import org.junit.jupiter.api.AfterEach
 import java.io.IOException
+import static tools.vitruv.testutils.TestModelRepositoryFactory.createTestChangeableModelRepository
 
 @ExtendWith(TestLogging, TestProjectManager)
 class PersonsToInsuranceTest implements TestView {
@@ -55,10 +53,8 @@ class PersonsToInsuranceTest implements TestView {
 		val userInteraction = new TestUserInteraction()
 		val changePropagationSpecificationProvider = new ChangePropagationSpecificationRepository(
 			changePropagationSpecifications)
-		val userInteractor = UserInteractionFactory.instance.createUserInteractor(
-			new TestUserInteraction.ResultProvider(userInteraction))
-		val changeableModelRepository = new DefaultChangeableModelRepository(
-			new DefaultChangeRecordingModelRepository(), changePropagationSpecificationProvider, userInteractor)
+		val changeableModelRepository = createTestChangeableModelRepository(changePropagationSpecificationProvider,
+			userInteraction)
 		return new ChangePublishingTestView(testProjectPath, userInteraction, UriMode.FILE_URIS,
 			changeableModelRepository)
 	}
