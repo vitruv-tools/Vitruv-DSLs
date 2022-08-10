@@ -42,6 +42,12 @@
    <feature id="tools.vitruv.dsls.demo.insurancepersons.feature.source" version="2.1.0.qualifier">
       <category name="Vitruv Demos"/>
    </feature>
+   <feature url="features/tools.vitruv.dsls.demo.insurancefamilies.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.demo.insurancefamilies.feature" version="2.1.0.qualifier">
+      <category name="Vitruv Demos"/>
+   </feature>
+   <feature id="tools.vitruv.dsls.demo.insurancefamilies.feature.source" version="2.1.0.qualifier">
+      <category name="Vitruv Demos"/>
+   </feature>
    <feature url="features/tools.vitruv.dsls.demo.tests.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.demo.tests.feature" version="2.1.0.qualifier">
       <category name="Vitruv Demos"/>
    </feature>

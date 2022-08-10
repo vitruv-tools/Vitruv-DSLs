@@ -26,6 +26,11 @@
       <import plugin="org.hamcrest.core"/>
       <import plugin="tools.vitruv.dsls.demo.familiespersons"/>
       <import plugin="tools.vitruv.dsls.demo.insurancepersons"/>
+      <import plugin="tools.vitruv.dsls.demo.insurancefamilies"/>
+      <import plugin="tools.vitruv.dsls.testutils"/>
+      <import plugin="edu.kit.ipd.sdq.commons.util.java"/>
+      <import plugin="edu.kit.ipd.sdq.commons.util.emf"/>
+      <import plugin="edu.kit.ipd.sdq.activextendannotations"/>
    </requires>
 
    <plugin
@@ -37,6 +42,13 @@
 
    <plugin
          id="tools.vitruv.dsls.demo.insurancepersons.tests"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="tools.vitruv.dsls.demo.insurancefamilies.tests"
          download-size="0"
          install-size="0"
          version="0.0.0"
