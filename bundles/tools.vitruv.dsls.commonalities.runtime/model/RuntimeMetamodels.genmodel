@@ -21,9 +21,12 @@
   <genPackages prefix="Resources" basePackage="tools.vitruv.dsls.commonalities.runtime"
       disposableProviderFactory="true" adapterFactory="false" ecorePackage="Resources.ecore#/">
     <genDataTypes ecoreDataType="Resources.ecore#//ResourceAccess"/>
-    <genDataTypes ecoreDataType="Resources.ecore#//CorrespondenceModel"/>
+    <genDataTypes ecoreDataType="Resources.ecore#//EditableCorrespondenceModelView">
+      <genTypeParameters ecoreTypeParameter="Resources.ecore#//EditableCorrespondenceModelView/C"/>
+    </genDataTypes>
     <genDataTypes ecoreDataType="Resources.ecore#//URI"/>
     <genDataTypes ecoreDataType="Resources.ecore#//EmfResource"/>
+    <genDataTypes ecoreDataType="Resources.ecore#//ReactionsCorrespondence"/>
     <genClasses ecoreClass="Resources.ecore#//Resource">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute Resources.ecore#//Resource/name"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute Resources.ecore#//Resource/fileExtension"/>

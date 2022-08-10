@@ -1,15 +1,16 @@
 package tools.vitruv.dsls.reactions.runtime.state
 
 import tools.vitruv.change.interaction.UserInteractor
-import tools.vitruv.change.correspondence.CorrespondenceModel
 import tools.vitruv.change.propagation.ChangePropagationObservable
 import org.eclipse.xtend.lib.annotations.Data
 import tools.vitruv.change.propagation.ResourceAccess
+import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView
+import tools.vitruv.dsls.reactions.runtime.correspondence.ReactionsCorrespondence
 
 @Data
 class ReactionExecutionState {
 	val UserInteractor userInteractor
-	val CorrespondenceModel correspondenceModel
+	val EditableCorrespondenceModelView<ReactionsCorrespondence> correspondenceModel
 	val ResourceAccess resourceAccess 
 	val ChangePropagationObservable changePropagationObservable
 }

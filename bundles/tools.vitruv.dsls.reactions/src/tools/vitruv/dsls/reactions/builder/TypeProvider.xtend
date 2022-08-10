@@ -11,7 +11,6 @@ import org.eclipse.xtext.xbase.XExpression
 import org.eclipse.xtext.xbase.XFeatureCall
 import org.eclipse.xtext.xbase.XbaseFactory
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
-import tools.vitruv.change.correspondence.CorrespondenceModel
 import tools.vitruv.change.propagation.ResourceAccess
 
 import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.*
@@ -141,10 +140,6 @@ class TypeProvider implements IJvmTypeProvider {
 
 	def correspondenceModelMethod() {
 		executionStateType.findMethod('getCorrespondenceModel')
-	}
-
-	def correspondenceModelType() {
-		findTypeByName(CorrespondenceModel.canonicalName) as JvmDeclaredType
 	}
 
 	def correspondenceModel() {
