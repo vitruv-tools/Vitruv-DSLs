@@ -74,7 +74,7 @@ class InsuranceToPersonsTest implements TestView {
 	final static Path PERSONS_MODEL = Path.of('model/persons.persons')
 	final static Path INSURANCE_MODEL = Path.of('model/insurance.insurance')
 
-	/**Before each test a new {@link InsuranceDatabase} is created as starting point.
+	/**Before each test a new {@link InsuranceDatabase} has to be created as starting point.
 	 * This is checked by several assertions to ensure correct preconditions for the tests. 
 	 */
 	def void insertRegister() {

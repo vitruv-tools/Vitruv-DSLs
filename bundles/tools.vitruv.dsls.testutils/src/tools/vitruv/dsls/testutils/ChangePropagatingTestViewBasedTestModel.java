@@ -16,7 +16,7 @@ import tools.vitruv.change.composite.description.PropagatedChange;
 import tools.vitruv.testutils.views.NonTransactionalTestView;
 
 /**
- * A {@link TestModel} that propagated performed changes using the functionality
+ * A {@link TestModel} that propagates performed changes using the functionality
  * of an underlying {@link TestView}.
  * 
  * @param T the model's root element type
