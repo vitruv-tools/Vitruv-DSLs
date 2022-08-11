@@ -7,7 +7,7 @@ import org.eclipse.xtext.xbase.XBlockExpression
 import org.eclipse.xtext.xbase.XExpression
 import org.eclipse.xtext.xbase.XbaseFactory
 
-import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.*
+import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.CALL_BLOCK_FACADE_PARAMETER_NAME
 
 abstract package class FluentReactionsSegmentChildBuilder extends FluentReactionElementBuilder {
 
@@ -86,6 +86,6 @@ abstract package class FluentReactionsSegmentChildBuilder extends FluentReaction
 	}
 
 	def getJvmOperationRoutineFacade(XExpression codeBlock) {
-		codeBlock.correspondingMethodParameter(REACTION_USER_EXECUTION_ROUTINE_CALL_FACADE_PARAMETER_NAME).featureCall
+		codeBlock.correspondingMethodParameter(CALL_BLOCK_FACADE_PARAMETER_NAME).featureCall
 	}
 }

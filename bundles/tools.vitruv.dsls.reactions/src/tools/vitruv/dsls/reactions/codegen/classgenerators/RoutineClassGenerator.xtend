@@ -19,6 +19,7 @@ import org.eclipse.xtend2.lib.StringConcatenationClient
 import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.EmptyStepExecutionClassGenerator
 import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.StepExecutionClassGenerator
 import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
+import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 
 class RoutineClassGenerator extends ClassGenerator {
 	static val EXECUTION_STATE_VARIABLE = "getExecutionState()"
@@ -39,7 +40,8 @@ class RoutineClassGenerator extends ClassGenerator {
 	val StepExecutionClassGenerator matchBlockClassGenerator
 	val StepExecutionClassGenerator createBlockClassGenerator
 	val StepExecutionClassGenerator updateBlockClassGenerator
-
+	val String routinesFacadeQualifiedName
+	
 	val JvmGenericType inputValuesClass
 	var JvmGenericType generatedClass
 
@@ -50,6 +52,7 @@ class RoutineClassGenerator extends ClassGenerator {
 		}
 		this.routine = routine
 		this.routineClassNameGenerator = routine.routineClassNameGenerator
+		this.routinesFacadeQualifiedName = routine.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
 		this.inputElements = getInputElements(routine.input.modelInputElements, routine.input.javaInputElements)
 		this.inputValuesClass = if (hasInputValues) {
 			generateElementsContainerClass(INPUT_VALUES_SIMPLE_CLASS_NAME, inputElements)
@@ -66,7 +69,6 @@ class RoutineClassGenerator extends ClassGenerator {
 		} else {
 			new EmptyStepExecutionClassGenerator(typesBuilderExtensionProvider)
 		}
-		val routinesFacadeQualifiedName = routine.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
 		val updateAccessibleElements = inputElements + matchBlockClassGenerator.newlyAccessibleElementsAfterExecution +
 			createBlockClassGenerator.newlyAccessibleElementsAfterExecution
 		this.updateBlockClassGenerator = if (routine.updateBlock !== null) {
@@ -118,8 +120,8 @@ class RoutineClassGenerator extends ClassGenerator {
 	private def JvmConstructor generateConstructor(Routine routine) {
 		return routine.toConstructor [
 			visibility = JvmVisibility.PUBLIC
-			val routinesFacadeParameter = generateRoutinesFacadeParameter(routine.reactionsSegment)
-			val executionStateParameter = generateReactionExecutionStateParameter()
+			val routinesFacadeParameter = generateParameter(new AccessibleElement("routinesFacade", routinesFacadeQualifiedName))
+			val executionStateParameter = generateParameter(new AccessibleElement("reactionExecutionState", ReactionExecutionState))
 			val calledByParameter = generateParameter(new AccessibleElement("calledBy", CallHierarchyHaving))
 			val inputParameters = routine.generateParameters(inputElements)
 			parameters += routinesFacadeParameter

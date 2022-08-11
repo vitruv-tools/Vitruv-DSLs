@@ -11,6 +11,8 @@ import static com.google.common.base.Preconditions.checkNotNull
 import org.eclipse.xtend2.lib.StringConcatenationClient
 import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
 import tools.vitruv.dsls.reactions.language.toplevelelements.CodeExecutionBlock
+import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
+import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.CALL_BLOCK_FACADE_PARAMETER_NAME
 
 /**
  * Generates for an {@link UpdateBlock} of a routine a class with a method (with the name defined in 
@@ -19,7 +21,7 @@ import tools.vitruv.dsls.reactions.language.toplevelelements.CodeExecutionBlock
  */
 class UpdateBlockClassGenerator extends StepExecutionClassGenerator {
 	static val UPDATE_MODELS_METHOD_NAME = "updateModels"
-	static val ROUTINES_FACADE_CLASS_PARAMETER_NAME = "_routinesFacade"
+	static val ROUTINES_FACADE_CLASS_PARAMETER_NAME = CALL_BLOCK_FACADE_PARAMETER_NAME
 
 	val String qualifiedClassName
 	val CodeExecutionBlock updateBlock
@@ -68,7 +70,7 @@ class UpdateBlockClassGenerator extends StepExecutionClassGenerator {
 
 	private def generateConstructor() {
 		updateBlock.toConstructor [
-			val reactionExecutionStateParameter = generateReactionExecutionStateParameter()
+			val reactionExecutionStateParameter = generateParameter(new AccessibleElement("reactionExecutionState", ReactionExecutionState))
 			parameters += reactionExecutionStateParameter
 			body = '''super(«reactionExecutionStateParameter.name»);'''
 		]
