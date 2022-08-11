@@ -138,7 +138,7 @@ class FamiliesToPersonsTest implements TestView {
 
 
 	/**
-	 * Before each test a new {@link FamilyRegister} is created as starting point.
+	 * Before each test a new {@link FamilyRegister} has to be created as starting point.
 	 * This is checked by several assertions to ensure correct preconditions for the tests.
 	 */
 	def void insertRegister() {
