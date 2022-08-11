@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Vitruv Families-Persons Demo Tests
+Bundle-SymbolicName: tools.vitruv.dsls.demo.familiespersons.tests
+Automatic-Module-Name: tools.vitruv.dsls.demo.familiespersons.tests
+Bundle-Version: 2.1.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Require-Bundle: tools.vitruv.testutils,
+ org.junit.jupiter.api,
+ org.junit.jupiter.params,
+ org.hamcrest.core,
+ tools.vitruv.dsls.demo.familiespersons;visibility:=reexport
+Bundle-Vendor: vitruv.tools
+Export-Package: tools.vitruv.dsls.demo.familiespersons.tests

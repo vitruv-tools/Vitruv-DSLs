@@ -8,7 +8,6 @@ import org.eclipse.emf.ecore.util.EcoreUtil
 import tools.vitruv.dsls.reactions.runtime.helper.PersistenceHelper
 import tools.vitruv.dsls.reactions.runtime.structure.CallHierarchyHaving
 import tools.vitruv.dsls.reactions.runtime.structure.Loggable
-import tools.vitruv.change.propagation.ResourceAccess
 import org.eclipse.emf.common.util.URI
 import static com.google.common.base.Preconditions.checkState
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
@@ -148,22 +147,6 @@ abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
 
 			val _resourceURI = PersistenceHelper.getURIFromSourceProjectFolder(alreadyPersistedObject, persistencePath)
 			persistAsRoot(elementToPersist, _resourceURI)
-		}
-
-		/**
-		 * Persists the given object as root of the metadata model specified by
-		 * the given metadata key.
-		 * 
-		 * @param rootObject The root object, not <code>null</code>.
-		 * @param metadataKey The key uniquely identifying the metadata model.
-		 * 		See {@link ResourceAccess#getMetadataModelURI}.
-		 */
-		protected def persistAsMetadataRoot(EObject rootObject, String... metadataKey) {
-			if (rootObject === null) {
-				throw new IllegalArgumentException("rootObject is null!")
-			}
-			val modelURI = resourceAccess.getMetadataModelURI(metadataKey)
-			persistAsRoot(rootObject, modelURI)
 		}
 
 		private def persistAsRoot(EObject rootObject, URI uri) {

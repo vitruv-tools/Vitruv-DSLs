@@ -1,0 +1,19 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Vitruv Insurance-Families Demo Tests
+Bundle-SymbolicName: tools.vitruv.dsls.demo.insurancefamilies.tests
+Automatic-Module-Name: tools.vitruv.dsls.demo.insurancefamilies.tests
+Bundle-Version: 2.1.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Require-Bundle: tools.vitruv.dsls.demo.insurancefamilies;visibility:=reexport,
+ tools.vitruv.dsls.testutils;visibility:=reexport,
+ org.junit.jupiter.api,
+ org.junit.jupiter.params,
+ org.hamcrest.core,
+ edu.kit.ipd.sdq.commons.util.java,
+ edu.kit.ipd.sdq.commons.util.emf,
+ edu.kit.ipd.sdq.activextendannotations
+Bundle-Vendor: vitruv.tools
+Export-Package: tools.vitruv.dsls.demo.insurancefamilies.tests.families2insurance,
+ tools.vitruv.dsls.demo.insurancefamilies.tests.insurance2families,
+ tools.vitruv.dsls.demo.insurancefamilies.tests.util

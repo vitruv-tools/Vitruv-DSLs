@@ -24,10 +24,34 @@
    <feature id="tools.vitruv.dsls.commonalities.feature.source" version="2.1.0.qualifier">
       <category name="Vitruv DSLs"/>
    </feature>
-   <feature url="features/tools.vitruv.applications.demo.familiespersons.feature_2.1.0.qualifier.jar" id="tools.vitruv.applications.demo.familiespersons.feature" version="2.1.0.qualifier">
+   <feature url="features/tools.vitruv.dsls.testutils.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.testutils.feature" version="2.1.0.qualifier">
+      <category name="Vitruv DSLs"/>
+   </feature>
+   <feature id="tools.vitruv.dsls.testutils.feature.source" version="2.1.0.qualifier">
+      <category name="Vitruv DSLs"/>
+   </feature>
+   <feature url="features/tools.vitruv.dsls.demo.familiespersons.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.demo.familiespersons.feature" version="2.1.0.qualifier">
       <category name="Vitruv Demos"/>
    </feature>
-   <feature id="tools.vitruv.applications.demo.familiespersons.feature.source" version="2.1.0.qualifier">
+   <feature id="tools.vitruv.dsls.demo.familiespersons.feature.source" version="2.1.0.qualifier">
+      <category name="Vitruv Demos"/>
+   </feature>
+   <feature url="features/tools.vitruv.dsls.demo.insurancepersons.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.demo.insurancepersons.feature" version="2.1.0.qualifier">
+      <category name="Vitruv Demos"/>
+   </feature>
+   <feature id="tools.vitruv.dsls.demo.insurancepersons.feature.source" version="2.1.0.qualifier">
+      <category name="Vitruv Demos"/>
+   </feature>
+   <feature url="features/tools.vitruv.dsls.demo.insurancefamilies.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.demo.insurancefamilies.feature" version="2.1.0.qualifier">
+      <category name="Vitruv Demos"/>
+   </feature>
+   <feature id="tools.vitruv.dsls.demo.insurancefamilies.feature.source" version="2.1.0.qualifier">
+      <category name="Vitruv Demos"/>
+   </feature>
+   <feature url="features/tools.vitruv.dsls.demo.tests.feature_2.1.0.qualifier.jar" id="tools.vitruv.dsls.demo.tests.feature" version="2.1.0.qualifier">
+      <category name="Vitruv Demos"/>
+   </feature>
+   <feature id="tools.vitruv.dsls.demo.tests.feature.source" version="2.1.0.qualifier">
       <category name="Vitruv Demos"/>
    </feature>
    <category-def name="Vitruv DSLs Runtime" label="Vitruv Consistency Specification Languages Runtimes">
@@ -42,7 +66,7 @@
    </category-def>
    <category-def name="Vitruv Demos" label="Vitruv Demos">
       <description>
-         Demo domains and applications for the Vitruv framework
+         Demos for the Vitruv framework
       </description>
    </category-def>
 </site>

@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Vitruv Insurance-Persons Demo
+Bundle-SymbolicName: tools.vitruv.dsls.demo.insurancepersons;singleton:=true
+Automatic-Module-Name: tools.vitruv.dsls.demo.insurancepersons
+Bundle-Version: 2.1.0.qualifier
+Bundle-Vendor: vitruv.tools
+Export-Package: tools.vitruv.dsls.demo.insurancepersons.insurance2persons,
+ tools.vitruv.dsls.demo.insurancepersons.persons2insurance
+Require-Bundle: tools.vitruv.dsls.reactions.runtime;visibility:=reexport,
+ edu.kit.ipd.sdq.metamodels.persons;visibility:=reexport,
+ edu.kit.ipd.sdq.metamodels.insurance;visibility:=reexport,
+ edu.kit.ipd.sdq.activextendannotations
+Bundle-RequiredExecutionEnvironment: JavaSE-11

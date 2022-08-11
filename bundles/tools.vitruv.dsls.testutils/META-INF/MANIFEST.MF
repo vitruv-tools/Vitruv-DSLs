@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Vitruv DSLs Test Utilities
+Bundle-SymbolicName: tools.vitruv.dsls.testutils
+Bundle-Version: 2.1.0.qualifier
+Bundle-Vendor: tools.vitruv
+Automatic-Module-Name: tools.vitruv.dsls.testutils
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Require-Bundle: com.google.guava,
+ edu.kit.ipd.sdq.commons.util.emf,
+ tools.vitruv.testutils;visibility:=reexport
+Export-Package: tools.vitruv.dsls.testutils
