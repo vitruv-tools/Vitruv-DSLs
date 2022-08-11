@@ -5,7 +5,7 @@ import edu.kit.ipd.sdq.activextendannotations.Utility
 @Utility class ReactionsLanguageConstants {
 	public static val OVERRIDDEN_REACTIONS_SEGMENT_SEPARATOR = "::";
 	
-	public static val REACTION_USER_EXECUTION_ROUTINE_CALL_FACADE_PARAMETER_NAME = "_routinesFacade"
+	public static val CALL_BLOCK_FACADE_PARAMETER_NAME = "_routinesFacade"
 	
 	public static val CHANGE_AFFECTED_ELEMENT_ATTRIBUTE = "affectedEObject"
 	public static val CHANGE_AFFECTED_FEATURE_ATTRIBUTE = "affectedFeature"
