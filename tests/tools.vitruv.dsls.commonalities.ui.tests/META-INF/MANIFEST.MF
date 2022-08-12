@@ -8,7 +8,7 @@ Automatic-Module-Name: tools.vitruv.dsls.commonalities.ui.tests
 Bundle-ActivationPolicy: lazy
 Require-Bundle: tools.vitruv.dsls.commonalities,
  tools.vitruv.dsls.commonalities.ui,
- tools.vitruv.testutils.vsum,
+ tools.vitruv.testutils,
  tools.vitruv.testutils.metamodels,
  org.eclipse.xtext.testing,
  org.eclipse.xtext.ui.testing,

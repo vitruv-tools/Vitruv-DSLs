@@ -16,7 +16,6 @@ import static tools.vitruv.testutils.metamodels.AllElementTypesCreators.aet
 import static tools.vitruv.testutils.metamodels.AllElementTypes2Creators.aet2
 import static tools.vitruv.testutils.matchers.ModelMatchers.contains
 import static tools.vitruv.testutils.matchers.ModelMatchers.ignoringFeatures
-import tools.vitruv.testutils.VitruvApplicationTest
 import tools.vitruv.dsls.commonalities.tests.util.TestCommonalitiesGenerator
 import static extension tools.vitruv.testutils.metamodels.TestMetamodelsPathFactory.allElementTypes
 import static extension tools.vitruv.testutils.metamodels.TestMetamodelsPathFactory.allElementTypes2
@@ -25,7 +24,7 @@ import static extension tools.vitruv.testutils.metamodels.TestMetamodelsPathFact
 @InjectWith(CommonalitiesLanguageInjectorProvider)
 @TestInstance(PER_CLASS)
 @DisplayName('executing a commonality with attribute mapping operators')
-class AttributeMappingOperatorExecutionTest extends VitruvApplicationTest {
+class AttributeMappingOperatorExecutionTest extends CommonalitiesExecutionTest {
 	@Inject TestCommonalitiesGenerator generator
 	
 	@BeforeAll
