@@ -15,11 +15,7 @@ import tools.vitruv.testutils.TestLogging
 import tools.vitruv.testutils.views.TestView
 import org.eclipse.xtend.lib.annotations.Delegate
 import org.junit.jupiter.api.BeforeEach
-import tools.vitruv.testutils.TestUserInteraction
-import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
-import tools.vitruv.testutils.views.UriMode
-import tools.vitruv.testutils.views.ChangePublishingTestView
-import static tools.vitruv.testutils.TestModelRepositoryFactory.createTestChangeableModelRepository;
+import static tools.vitruv.testutils.views.ChangePublishingTestView.createDefaultChangePublishingTestView
 import org.junit.jupiter.api.AfterEach
 
 @ExtendWith(InjectionExtension)
@@ -48,13 +44,7 @@ abstract class ReactionsExecutionTest implements TestView {
 
 	@BeforeEach
 	def void prepareTestView(@TestProject Path testProjectPath) {
-		val userInteraction = new TestUserInteraction()
-		val changePropagationSpecificationProvider = new ChangePropagationSpecificationRepository(
-			changePropagationSpecifications)
-		val changeableModelRepository = createTestChangeableModelRepository(changePropagationSpecificationProvider,
-			userInteraction)
-		testView = new ChangePublishingTestView(testProjectPath, userInteraction, UriMode.FILE_URIS,
-			changeableModelRepository)
+		testView = createDefaultChangePublishingTestView(testProjectPath, changePropagationSpecifications)
 	}
 
 	@Inject
