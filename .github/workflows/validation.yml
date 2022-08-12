@@ -8,8 +8,54 @@ jobs:
     name: DSLs
     uses: ./.github/workflows/ci.yml
 
+  build_framework:
+    name: Framework
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Framework
+        uses: actions/checkout@v3
+        with:
+          path: framework
+          repository: vitruv-tools/Vitruv
+          ref: main
+          fetch-depth: 0
+      - name: Checkout Matching Framework Branch
+        run: |
+          cd framework
+          git checkout -B ${{ github.head_ref }} origin/${{ github.head_ref }} || true
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml', '**/MANIFEST.MF') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: 11
+      - name: Build Framework
+        working-directory: ./framework
+        run: >
+          ./mvnw -B -U clean package
+          -Dstyle.color=always
+          -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+          -Dorg.slf4j.simpleLogger.log.org.eclipse.tycho.core.resolver.DefaultTychoResolver=warn
+          -Dorg.slf4j.simpleLogger.log.org.eclipse.tycho.osgi.configuration.MavenContextConfigurator=warn
+          -Dorg.slf4j.simpleLogger.log.org.eclipse.sisu.equinox.launching.internal.DefaultEquinoxLauncher=warn
+          -Dorg.slf4j.simpleLogger.log.org.eclipse.xtext.maven.XtextGenerateMojo=warn
+          -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog
+        env:
+          MAVEN_OPTS: -Djansi.force=true
+      - name: Store Framework Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: framework
+          path: framework/releng/tools.vitruv.updatesite/target/repository
+          retention-days: 1
+
   validate_cbs_applications:
-    needs: validate_dsls
+    needs: [build_framework, validate_dsls]
     name: Application
     runs-on: ubuntu-latest
     steps:
@@ -18,6 +64,11 @@ jobs:
         with:
           name: dsls
           path: dsls
+      - name: Download Framework Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: framework
+          path: framework
       - name: Checkout CBS Applications
         uses: actions/checkout@v3
         with:
@@ -47,6 +98,7 @@ jobs:
           run: >
             ./mvnw -B -U clean verify
             -Dvitruv.dsls.url=file:///${{ github.workspace }}/dsls
+            -Dvitruv.framework.url=file:///${{ github.workspace }}/framework
             -Dstyle.color=always
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
             -Dorg.slf4j.simpleLogger.log.org.eclipse.tycho.core.resolver.DefaultTychoResolver=warn

@@ -15,7 +15,6 @@
 	<properties>
 		<!-- For each project, a local updatesite can be specified by overwriting these properties. They default to the Vitruv updatesites. -->
 		<vitruv.change.url>https://vitruv-tools.github.io/updatesite/nightly/change/</vitruv.change.url>
-		<vitruv.framework.url>https://vitruv-tools.github.io/updatesite/nightly/framework/</vitruv.framework.url>
 	</properties>
 
 	<repositories>
@@ -24,11 +23,6 @@
 			<id>Vitruv Change</id>
 			<layout>p2</layout>
 			<url>${vitruv.change.url}</url>
-		</repository>
-		<repository>
-			<id>Vitruv Framework</id>
-			<layout>p2</layout>
-			<url>${vitruv.framework.url}</url>
 		</repository>
 		<repository>
 			<id>Demo Metamodels</id>
@@ -117,18 +111,6 @@
 			</properties>
 		</profile>
 
-		<profile>
-			<id>local-framework</id>
-			<activation>
-				<property>
-					<name>vitruv.framework.path</name>
-				</property>
-			</activation>
-			<properties>
-				<vitruv.framework.url>file:///${vitruv.framework.path}/releng/tools.vitruv.updatesite/target/repository</vitruv.framework.url>
-			</properties>
-		</profile>
-		
 		<profile>
 			<id>dsls-generation</id>
 			<activation>
