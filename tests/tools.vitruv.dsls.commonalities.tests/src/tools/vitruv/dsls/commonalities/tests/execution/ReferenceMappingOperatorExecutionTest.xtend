@@ -1,6 +1,5 @@
 package tools.vitruv.dsls.commonalities.tests.execution
 
-import tools.vitruv.testutils.VitruvApplicationTest
 import org.junit.jupiter.api.^extension.ExtendWith
 import org.eclipse.xtext.testing.extensions.InjectionExtension
 import org.eclipse.xtext.testing.InjectWith
@@ -18,7 +17,7 @@ import org.junit.jupiter.api.Test
 @InjectWith(CommonalitiesLanguageInjectorProvider)
 @TestInstance(PER_CLASS)
 @DisplayName('executing a commonality with attribute mapping operators')
-class ReferenceMappingOperatorExecutionTest extends VitruvApplicationTest {
+class ReferenceMappingOperatorExecutionTest extends CommonalitiesExecutionTest {
 	@Inject TestCommonalitiesGenerator generator
 	
 	@BeforeAll

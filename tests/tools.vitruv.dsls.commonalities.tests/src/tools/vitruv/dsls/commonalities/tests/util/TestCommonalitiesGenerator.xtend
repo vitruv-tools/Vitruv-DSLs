@@ -66,7 +66,7 @@ class TestCommonalitiesGenerator {
 		compileGeneratedJava(testProject).forEach[generatedClasses += it]
 	}
 	
-	def Set<? extends ChangePropagationSpecification> createChangePropagationSpecifications() {
+	def Set<ChangePropagationSpecification> createChangePropagationSpecifications() {
 		checkState(!generatedClasses.empty, '''Code must have been generated before creating applications''')
 		return generatedClasses.findAndCombineChangePropagationSpecifications.toSet
 	}

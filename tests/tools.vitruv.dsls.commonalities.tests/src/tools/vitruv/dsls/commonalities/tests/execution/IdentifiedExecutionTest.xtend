@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test
 import javax.inject.Inject
 import tools.vitruv.testutils.TestProject
 import java.nio.file.Path
-import tools.vitruv.testutils.VitruvApplicationTest
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.BeforeAll
 import org.eclipse.xtend.lib.annotations.Accessors
@@ -35,7 +34,7 @@ import static extension tools.vitruv.testutils.metamodels.TestMetamodelsPathFact
 @InjectWith(CommonalitiesLanguageInjectorProvider)
 @TestInstance(PER_CLASS)
 @DisplayName('executing simple commonalities')
-class IdentifiedExecutionTest extends VitruvApplicationTest {
+class IdentifiedExecutionTest extends CommonalitiesExecutionTest {
 	@Accessors(PROTECTED_GETTER)
 	@Inject TestCommonalitiesGenerator generator
 	
