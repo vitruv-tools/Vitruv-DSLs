@@ -49,7 +49,7 @@ public class InMemoryClassesCompiler {
 	 * @throws IOException if the directory does not exist or cannot be traversed successfully
 	 */
 	public InMemoryClassesCompiler compile() throws IOException {
-		checkState(compiledClasses == null, "classes have already be compiled");
+		checkState(compiledClasses == null, "classes have already been compiled");
 		this.compiledClasses = compileJavaFiles(from(walk(javaSourcesFolder).collect(Collectors.toList()))
 				.filter(path -> path.toString().endsWith(".java")).transform(path -> new RelativeAndAbsolutePath(javaSourcesFolder, path)).toList());
 		return this;
