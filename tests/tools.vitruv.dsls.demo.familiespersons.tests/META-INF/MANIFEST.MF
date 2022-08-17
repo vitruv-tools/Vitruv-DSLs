@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Vitruv Families-Persons Demo Tests
 Bundle-SymbolicName: tools.vitruv.dsls.demo.familiespersons.tests
 Automatic-Module-Name: tools.vitruv.dsls.demo.familiespersons.tests
-Bundle-Version: 2.1.0.qualifier
+Bundle-Version: 3.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Require-Bundle: tools.vitruv.testutils,
  org.junit.jupiter.api,
