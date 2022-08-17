@@ -43,9 +43,9 @@ public class InMemoryClassesCompiler {
 	}
 
 	/**
-	 * Compiles the sources files in the directory passed to the constructor. Afterwards {@link #getCompiledClasses()} and
-	 * {@link #filterAndInstantiateClasses(Class, Predicate)} can be called.
-	 * @return {@code this}
+	 * Compiles the sources files in the directory passed to the constructor.
+	 * @return itself (i.e. {@code this}) to allow retrieval of compiled classes or their instances by calling the according
+	 * methods right after compilation
 	 * @throws IOException if the directory does not exist or cannot be traversed successfully
 	 */
 	public InMemoryClassesCompiler compile() throws IOException {
