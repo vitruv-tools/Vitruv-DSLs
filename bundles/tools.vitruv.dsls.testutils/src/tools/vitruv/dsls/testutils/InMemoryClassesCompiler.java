@@ -25,7 +25,7 @@ import static org.eclipse.xtext.xbase.lib.IterableExtensions.join;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
- * Allows to compile all Java source files in a given folder at runtime and provides the compiles classes to use
+ * Allows to compile all Java source files in a given folder at runtime and provides the compiled classes to use
  * afterwards. {@link #compile()} has to be called first to compiles the classes. Afterwards, classes can be retrieved
  * by calling {@link #getCompiledClasses()} or even instantiated calling
  * {@link #filterAndInstantiateClasses(Class, Predicate)}.
