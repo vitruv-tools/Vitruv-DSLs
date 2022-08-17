@@ -19,11 +19,11 @@ Require-Bundle: edu.kit.ipd.sdq.activextendannotations,
  org.eclipse.emf.ecore,
  org.eclipse.xtext.common.types,
  org.eclipse.xtext.xbase.lib;bundle-version="2.14.0",
- org.objectweb.asm;bundle-version="[9.1.0,9.2.0)";resolution:=optional,
  org.eclipse.xtext.util,
  org.eclipse.emf.common,
  org.eclipse.xtend.lib;bundle-version="2.14.0",
- org.antlr.runtime;bundle-version="[3.2.0,3.2.1)"
+ org.antlr.runtime;bundle-version="[3.2.0,3.2.1)",
+ org.objectweb.asm;bundle-version="[9.3.0,9.4.0)";resolution:=optional
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: tools.vitruv.dsls.commonalities,
  tools.vitruv.dsls.commonalities.conversion,
