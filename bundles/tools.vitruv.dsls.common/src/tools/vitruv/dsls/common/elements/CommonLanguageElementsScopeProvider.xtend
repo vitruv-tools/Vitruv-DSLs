@@ -52,14 +52,14 @@ class CommonLanguageElementsScopeProvider {
 		}
 		return null
 	}
-	
+
 	private def createImportsScope(Resource resource) {
 		if (resource === null) {
 			return IScope.NULLSCOPE
 		}
 		createScope(IScope.NULLSCOPE, resource.metamodelImports.iterator, [EObjectDescription.create(it.name, it)])
 	}
-	
+
 	/**
 	 * Returns all packages that have been imported by import statements
 	 * in the given resource.
@@ -141,33 +141,6 @@ class CommonLanguageElementsScopeProvider {
 	def createQualifiedEClassScopeWithoutAbstract(MetamodelImport metamodelImport) {
 		return createQualifiedEClassScope(metamodelImport, false, [
 			!abstract
-		]);
-	}
-
-	/**
-	 * Creates an {@link IScope} that represents all abstract {@link EClass}es
-	 * that are provided by the metamodel of the given {@link MetamodelImport}
-	 * by a fully qualified name.
-	 * 
-	 * @param metamodelImport - the metamodel to provide the abstract classes of
-	 */
-	def createQualifiedEClassScopeOnlyAbstract(MetamodelImport metamodelImport) {
-		return createQualifiedEClassScope(metamodelImport, true, [
-			abstract
-		]);
-	}
-
-	/**
-	 * Creates an {@link IScope} that represents all {@link EClass}es
-	 * that are provided by the metamodel of the given {@link MetamodelImport} and that
-	 * are either the given type or one of its subtypes by a fully qualified name.
-	 * 
-	 * @param metamodelImport - the metamodel to provide the abstract classes of
-	 * @param superType - the type to provide the subtypes of
-	 */
-	def createQualifiedEClassScopeOfSuperTypeChildren(MetamodelImport metamodelImport, EClass superType) {
-		return createQualifiedEClassScope(metamodelImport, true, [
-			!it.abstract && (it.EAllSuperTypes.contains(superType) || it.EAllGenericSuperTypes.contains(superType))
 		]);
 	}
 
