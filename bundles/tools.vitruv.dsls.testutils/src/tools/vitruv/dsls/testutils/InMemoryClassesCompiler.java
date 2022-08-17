@@ -24,14 +24,30 @@ import static org.eclipse.xtext.xbase.lib.IterableExtensions.join;
 
 import static com.google.common.base.Preconditions.checkState;
 
+/**
+ * Allows to compile all Java source files in a given folder at runtime and provides the compiles classes to use
+ * afterwards. {@link #compile()} has to be called first to compiles the classes. Afterwards, classes can be retrieved
+ * by calling {@link #getCompiledClasses()} or even instantiated calling
+ * {@link #filterAndInstantiateClasses(Class, Predicate)}.
+ */
 public class InMemoryClassesCompiler {
 	private final Path javaSourcesFolder;
 	private Set<? extends Class<?>> compiledClasses;
 
+	/**
+	 * Instantiates a compiler for the source files in the given directory.
+	 * @param javaSourcesFolder the directory to compile Java files in, must not be {@code null}
+	 */
 	public InMemoryClassesCompiler(Path javaSourcesFolder) {
 		this.javaSourcesFolder = javaSourcesFolder;
 	}
 
+	/**
+	 * Compiles the sources files in the directory passed to the constructor. Afterwards {@link #getCompiledClasses()} and
+	 * {@link #filterAndInstantiateClasses(Class, Predicate)} can be called.
+	 * @return {@code this}
+	 * @throws IOException if the directory does not exist or cannot be traversed successfully
+	 */
 	public InMemoryClassesCompiler compile() throws IOException {
 		checkState(compiledClasses == null, "classes have already be compiled");
 		this.compiledClasses = compileJavaFiles(from(walk(javaSourcesFolder).collect(Collectors.toList()))
@@ -77,11 +93,23 @@ public class InMemoryClassesCompiler {
 		return join(path, ".").replaceFirst("\\.java$", "");
 	}
 
+	/**
+	 * Returns the compiled classes. {@link #compile()} must be called first.
+	 * @return the compiled classes
+	 */
 	public Set<? extends Class<?>> getCompiledClasses() {
 		checkState(compiledClasses != null, "classes must have been compiled");
 		return compiledClasses;
 	}
 
+	/**
+	 * Filters the compiled classes by the given type and condition and returns instances of them. {@link #compile()} must
+	 * be called first.
+	 * @param <T> the type of classes to filter
+	 * @param typesToInstantiate the type of classes to filter
+	 * @param conditionToInstantiate a condition that must evaluate to {@code true} for a class to instantiate it
+	 * @return instances of the filtered classes
+	 */
 	public <T> Set<T> filterAndInstantiateClasses(Class<T> typesToInstantiate, Predicate<T> conditionToInstantiate) {
 		checkState(compiledClasses != null, "classes must have been compiled");
 		return from(compiledClasses).filter(InMemoryClassesCompiler::isPublicAndHasPublicConstructor).transform(InMemoryClassesCompiler::instantiate)
