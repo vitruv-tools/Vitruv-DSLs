@@ -25,6 +25,8 @@ Require-Bundle: edu.kit.ipd.sdq.activextendannotations,
  org.junit.jupiter.api,
  org.junit.jupiter.params,
  org.hamcrest.core,
- org.eclipse.xtext.xbase.lib;bundle-version="2.14.0"
+ org.eclipse.xtext.xbase.lib;bundle-version="2.14.0",
+ edu.kit.ipd.sdq.commons.util.eclipse,
+ tools.vitruv.dsls.testutils
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Bundle-ActivationPolicy: lazy

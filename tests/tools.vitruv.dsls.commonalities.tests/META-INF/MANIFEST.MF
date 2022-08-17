@@ -21,5 +21,6 @@ Require-Bundle: tools.vitruv.dsls.commonalities,
  edu.kit.ipd.sdq.activextendannotations,
  edu.kit.ipd.sdq.commons.util.eclipse,
  edu.kit.ipd.sdq.commons.util.java,
- org.eclipse.core.runtime
+ org.eclipse.core.runtime,
+ tools.vitruv.dsls.testutils
 Bundle-Vendor: vitruv.tools

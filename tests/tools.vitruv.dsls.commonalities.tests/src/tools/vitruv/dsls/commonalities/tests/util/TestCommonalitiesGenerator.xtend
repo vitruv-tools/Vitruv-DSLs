@@ -20,27 +20,14 @@ import edu.kit.ipd.sdq.commons.util.org.eclipse.core.resources.IProjectUtil
 import org.eclipse.xtext.generator.GeneratorDelegate
 import org.eclipse.xtext.generator.GeneratorContext
 import org.eclipse.xtext.generator.URIBasedFileSystemAccess
-import org.eclipse.xtext.xbase.testing.InMemoryJavaCompiler
-import org.eclipse.xtext.util.JavaVersion
-import java.util.stream.Stream
-import edu.kit.ipd.sdq.activextendannotations.CloseResource
-import static extension java.nio.file.Files.walk
-import org.eclipse.xtext.xbase.testing.JavaSource
-import static extension java.nio.file.Files.readString
-import static java.lang.System.lineSeparator
-import static java.util.stream.Collectors.toList
-import static extension edu.kit.ipd.sdq.commons.util.java.lang.IterableUtil.*
-import org.eclipse.jdt.core.compiler.CategorizedProblem
-import static extension java.lang.reflect.Modifier.*
-import java.util.List
 import static com.google.common.base.Preconditions.checkState
 import org.eclipse.core.runtime.Platform
 import static org.hamcrest.MatcherAssert.assertThat
 import static tools.vitruv.testutils.matchers.ModelMatchers.hasNoErrors
 import tools.vitruv.change.propagation.ChangePropagationSpecification
-import java.util.ArrayList
 import java.util.Set
 import tools.vitruv.dsls.commonalities.generator.changepropagationspecification.ChangePropagationSpecificationConstants
+import tools.vitruv.dsls.testutils.InMemoryClassesCompiler
 
 /**
  * Xtext’s {@link CompilationTestHelper} is bug-ridden and does not work with the Ecore generator.
@@ -50,25 +37,27 @@ class TestCommonalitiesGenerator {
 	@Inject Provider<XtextResourceSet> resourceSetProvider
 	@Inject IResourceServiceProvider.Registry resourceServiceRegistry
 
-	val List<Class<?>> generatedClasses = new ArrayList
-	
+	var InMemoryClassesCompiler classesCompiler
+
 	def void generate(Path testProject, Pair<String, CharSequence>... code) {
-		checkState(!Platform.isRunning, '''«TestCommonalitiesGenerator.simpleName» can only be used in standalone mode!''')
-		
+		checkState(
+			!Platform.isRunning, '''«TestCommonalitiesGenerator.simpleName» can only be used in standalone mode!''')
+
 		code.writeTo(testProject)
-		
+
 		loadResourceSet(testProject, code.map[key]) => [
 			index()
 			validate()
 			generateInto(testProject)
 		]
-		
-		compileGeneratedJava(testProject).forEach[generatedClasses += it]
+
+		compileGeneratedJava(testProject)
 	}
-	
+
 	def Set<ChangePropagationSpecification> createChangePropagationSpecifications() {
-		checkState(!generatedClasses.empty, '''Code must have been generated before creating applications''')
-		return generatedClasses.findAndCombineChangePropagationSpecifications.toSet
+		return classesCompiler.filterAndInstantiateClasses(ChangePropagationSpecification, [
+			it.class.packageName == ChangePropagationSpecificationConstants.changePropagationSpecificationPackageName
+		])
 	}
 
 	def private writeTo(Iterable<Pair<String, CharSequence>> code, Path testProject) {
@@ -76,7 +65,7 @@ class TestCommonalitiesGenerator {
 			testProject.getSourcePath(sourceCode.key).writeString(sourceCode.value, UTF_8)
 		}
 	}
-	
+
 	def private loadResourceSet(Path testProject, Iterable<String> paths) {
 		val resourceSet = resourceSetProvider.get()
 		for (path : paths) {
@@ -88,9 +77,8 @@ class TestCommonalitiesGenerator {
 
 	def private void index(ResourceSet resourceSet) {
 		val resourceDescriptions = resourceSet.resources.map [ resource |
-			resourceServiceRegistry.getResourceServiceProvider(resource.URI)
-				.resourceDescriptionManager
-				.getResourceDescription(resource)
+			resourceServiceRegistry.getResourceServiceProvider(resource.URI).resourceDescriptionManager.
+				getResourceDescription(resource)
 		]
 		val index = new ResourceDescriptionsData(resourceDescriptions)
 		ResourceDescriptionsData.ResourceSetAdapter.installResourceDescriptionsData(resourceSet, index)
@@ -98,13 +86,12 @@ class TestCommonalitiesGenerator {
 
 	def private void validate(ResourceSet resourceSet) {
 		for (sourceResource : resourceSet.resources.filter(XtextResource).toList) {
-			sourceResource.resourceServiceProvider
-				.resourceValidator
-				.validate(sourceResource, CheckMode.ALL, CancelIndicator.NullImpl)
+			sourceResource.resourceServiceProvider.resourceValidator.validate(sourceResource, CheckMode.ALL,
+				CancelIndicator.NullImpl)
 			assertThat(sourceResource, hasNoErrors)
 		}
 	}
-	
+
 	def private void generateInto(ResourceSet resourceSet, Path testProject) {
 		val fsa = new URIBasedFileSystemAccess => [
 			converter = resourceSet.URIConverter
@@ -113,86 +100,20 @@ class TestCommonalitiesGenerator {
 		val context = new GeneratorContext() => [
 			cancelIndicator = CancelIndicator.NullImpl
 		]
-		
+
 		for (sourceResource : resourceSet.resources.filter(XtextResource).toList) {
-			sourceResource.resourceServiceProvider
-				.get(GeneratorDelegate)
-				.generate(sourceResource, fsa, context)
+			sourceResource.resourceServiceProvider.get(GeneratorDelegate).generate(sourceResource, fsa, context)
 		}
 	}
-	
-	def private compileGeneratedJava(Path testProject) {
+
+	def private void compileGeneratedJava(Path testProject) {
 		val generatedSourcesDir = testProject.resolve(IProjectUtil.SOURCE_GEN_FOLDER)
-		compileGeneratedJava(
-			generatedSourcesDir
-				.walk()
-				.filter [toString.endsWith(".java")]
-				.map [new RelativeAndAbsolutePath(generatedSourcesDir, it)]
-		)
+		classesCompiler = new InMemoryClassesCompiler(generatedSourcesDir)
+		classesCompiler.compile()
 	}
-	
-	def private Iterable<? extends Class<?>> compileGeneratedJava(@CloseResource Stream<RelativeAndAbsolutePath> sourceFiles) {
-		val compiler = new InMemoryJavaCompiler(class.classLoader, JavaVersion.JAVA8)
-		val sourceFilePaths = sourceFiles.collect(toList())
-		val result = compiler.compile(
-			sourceFilePaths.map [new JavaSource(relative.toString, absolute.readString())]
-		)
-		// use the same class loader for all classes!
-		val classLoader = result.classLoader
-		if (result.compilationProblems.exists [isError]) {
-			throw new AssertionError("compiling the generated code failed with these errors:" + lineSeparator 
-				+ result.compilationProblems.filter [isError].join(lineSeparator) ['    • ' + format()])
-		}
-		sourceFilePaths.mapFixed [classLoader.loadClass(relative.className)]
-	}
-	
-	def private format(extension CategorizedProblem problem) {
-		'''«message» («new String(originatingFileName)»:«sourceLineNumber»)'''
-	}
-	
-	def private findAndCombineChangePropagationSpecifications(Iterable<? extends Class<?>> sourceClasses) {
-		sourceClasses.filter [
-			allInterfaces.contains(ChangePropagationSpecification) && modifiers.isPublic &&
-				getDeclaredConstructor.modifiers.isPublic
-		].filter[it.packageName == ChangePropagationSpecificationConstants.changePropagationSpecificationPackageName].
-			map [
-				getDeclaredConstructor.newInstance as ChangePropagationSpecification
-			]
-	}
-	
+
 	def private static getSourcePath(Path testProject, String fileName) {
 		testProject.resolve(fileName)
 	}
-	
-	def private static getClassName(Path path) {
-		path.join('.').replaceFirst("\\.java$", "")
-	}
-	
-	def private static Iterable<Class<?>> getAllInterfaces(Class<?> clazz) {
-		if (clazz.isInterface) {
-			List.of(clazz) + clazz.interfaces.flatMap[allInterfaces]
-		} else if (clazz.superclass != Object) {
-			clazz.interfaces.flatMap[allInterfaces] + clazz.superclass.allInterfaces
-		} else {
-			clazz.interfaces.flatMap[allInterfaces]
-		}
-	}
-	
-	private static class RelativeAndAbsolutePath {
-		val Path baseDir
-		val Path path
-		
-		new(Path baseDir, Path path) {
-			this.baseDir = baseDir
-			this.path = if (path.isAbsolute) baseDir.relativize(path) else path
-		}
-		
-		def getRelative() {
-			path
-		}
-		
-		def getAbsolute() {
-			baseDir.resolve(path)
-		}
-	}
+
 }
