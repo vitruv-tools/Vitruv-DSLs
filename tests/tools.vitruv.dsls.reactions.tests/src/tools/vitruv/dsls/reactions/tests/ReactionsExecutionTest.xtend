@@ -44,7 +44,7 @@ abstract class ReactionsExecutionTest implements TestView {
 
 	@BeforeEach
 	def void prepareTestView(@TestProject Path testProjectPath) {
-		testView = createDefaultChangePublishingTestView(testProjectPath, changePropagationSpecifications)
+		testView = createDefaultChangePublishingTestView(testProjectPath, getChangePropagationSpecifications())
 	}
 
 	@Inject
