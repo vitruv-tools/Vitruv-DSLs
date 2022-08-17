@@ -56,7 +56,7 @@ public class InMemoryClassesCompiler {
 	}
 
 	private Set<? extends Class<?>> compileJavaFiles(Iterable<RelativeAndAbsolutePath> sourceFilePaths) {
-		InMemoryJavaCompiler compiler = new InMemoryJavaCompiler(getClass().getClassLoader(), JavaVersion.JAVA8);
+		InMemoryJavaCompiler compiler = new InMemoryJavaCompiler(getClass().getClassLoader(), JavaVersion.JAVA11);
 		Result result = compiler.compile(from(sourceFilePaths)
 				.transform(path -> new JavaSource(path.getRelative().toString(), readFile(path.getAbsolute()))).toArray(JavaSource.class));
 		// use the same class loader for all classes!
