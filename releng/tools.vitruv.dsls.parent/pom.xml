@@ -172,22 +172,22 @@
 							<dependency>
 								<groupId>tools.vitruv</groupId>
 								<artifactId>tools.vitruv.dsls.reactions</artifactId>
-								<version>3.0.0-SNAPSHOT</version>
+								<version>${project.version}</version>
 							</dependency>
 							<dependency>
 								<groupId>tools.vitruv</groupId>
 								<artifactId>tools.vitruv.dsls.common</artifactId>
-								<version>3.0.0-SNAPSHOT</version>
+								<version>${project.version}</version>
 							</dependency>
 							<dependency>
 								<groupId>tools.vitruv</groupId>
 								<artifactId>tools.vitruv.dsls.reactions.runtime</artifactId>
-								<version>3.0.0-SNAPSHOT</version>
+								<version>${project.version}</version>
 							</dependency>
 							<dependency>
 								<groupId>tools.vitruv</groupId>
 								<artifactId>tools.vitruv.dsls.dependencywrapper</artifactId>
-								<version>3.0.0-SNAPSHOT</version>
+								<version>${project.version}</version>
 							</dependency>
 							<!-- Necessary for Eclipse 2021-06 due to bug and workaround described here: https://github.com/eclipse/xtext-xtend/issues/116#issuecomment-271916734
 							and https://github.com/eclipse/xtext-maven/issues/146#issue-926261661-->
