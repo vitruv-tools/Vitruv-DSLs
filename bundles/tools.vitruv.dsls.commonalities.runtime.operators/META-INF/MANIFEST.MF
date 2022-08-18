@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Vitruv Extension Commonalities Language Operators
 Bundle-SymbolicName: tools.vitruv.dsls.commonalities.runtime.operators;singleton:=true
 Automatic-Module-Name: tools.vitruv.dsls.commonalities.runtime
-Bundle-Version: 2.1.0.qualifier
+Bundle-Version: 3.0.0.qualifier
 Bundle-ClassPath: .
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Bundle-Vendor: vitruv.tools
