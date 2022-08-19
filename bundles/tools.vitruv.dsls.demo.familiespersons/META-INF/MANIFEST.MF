@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Vitruv Families-Persons Demo
 Bundle-SymbolicName: tools.vitruv.dsls.demo.familiespersons;singleton:=true
 Automatic-Module-Name: tools.vitruv.ls.demo.familiespersons
-Bundle-Version: 3.0.0
+Bundle-Version: 3.0.1.qualifier
 Bundle-Vendor: vitruv.tools
 Export-Package: tools.vitruv.dsls.demo.familiespersons.families2persons,
  tools.vitruv.dsls.demo.familiespersons.persons2families
