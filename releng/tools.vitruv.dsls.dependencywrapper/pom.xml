@@ -5,7 +5,7 @@
     <parent>
         <groupId>tools.vitruv</groupId>
         <artifactId>dsls-parent</artifactId>
-        <version>3.0.0</version>
+        <version>3.0.1-SNAPSHOT</version>
         <relativePath>../tools.vitruv.dsls.parent</relativePath>
     </parent>
     <artifactId>tools.vitruv.dsls.dependencywrapper</artifactId>

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Vitruv Insurance-Families Demo
 Bundle-SymbolicName: tools.vitruv.dsls.demo.insurancefamilies;singleton:=true
 Automatic-Module-Name: tools.vitruv.dsls.demo.insurancefamilies
-Bundle-Version: 3.0.0
+Bundle-Version: 3.0.1.qualifier
 Bundle-Vendor: vitruv.tools
 Export-Package: tools.vitruv.dsls.demo.insurancefamilies.families2insurance,
  tools.vitruv.dsls.demo.insurancefamilies.insurance2families
