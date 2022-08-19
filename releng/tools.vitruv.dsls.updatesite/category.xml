@@ -1,57 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/tools.vitruv.dsls.reactions.runtime.feature_3.0.0.qualifier.jar" id="tools.vitruv.dsls.reactions.runtime.feature" version="3.0.0.qualifier">
+   <feature url="features/tools.vitruv.dsls.reactions.runtime.feature_3.0.0.jar" id="tools.vitruv.dsls.reactions.runtime.feature" version="3.0.0">
       <category name="Vitruv DSLs Runtime"/>
    </feature>
-   <feature id="tools.vitruv.dsls.reactions.runtime.feature.source" version="3.0.0.qualifier">
+   <feature id="tools.vitruv.dsls.reactions.runtime.feature.source" version="3.0.0">
       <category name="Vitruv DSLs Runtime"/>
    </feature>
-   <feature url="features/tools.vitruv.dsls.commonalities.runtime.feature_3.0.0.qualifier.jar" id="tools.vitruv.dsls.commonalities.runtime.feature" version="3.0.0.qualifier">
+   <feature url="features/tools.vitruv.dsls.commonalities.runtime.feature_3.0.0.jar" id="tools.vitruv.dsls.commonalities.runtime.feature" version="3.0.0">
       <category name="Vitruv DSLs Runtime"/>
    </feature>
-   <feature id="tools.vitruv.dsls.commonalities.runtime.feature.source" version="3.0.0.qualifier">
+   <feature id="tools.vitruv.dsls.commonalities.runtime.feature.source" version="3.0.0">
       <category name="Vitruv DSLs Runtime"/>
    </feature>
-   <feature url="features/tools.vitruv.dsls.reactions.feature_3.0.0.qualifier.jar" id="tools.vitruv.dsls.reactions.feature" version="3.0.0.qualifier">
+   <feature url="features/tools.vitruv.dsls.reactions.feature_3.0.0.jar" id="tools.vitruv.dsls.reactions.feature" version="3.0.0">
       <category name="Vitruv DSLs"/>
    </feature>
-   <feature id="tools.vitruv.dsls.reactions.feature.source" version="3.0.0.qualifier">
+   <feature id="tools.vitruv.dsls.reactions.feature.source" version="3.0.0">
       <category name="Vitruv DSLs"/>
    </feature>
-   <feature url="features/tools.vitruv.dsls.commonalities.feature_3.0.0.qualifier.jar" id="tools.vitruv.dsls.commonalities.feature" version="3.0.0.qualifier">
+   <feature url="features/tools.vitruv.dsls.commonalities.feature_3.0.0.jar" id="tools.vitruv.dsls.commonalities.feature" version="3.0.0">
       <category name="Vitruv DSLs"/>
    </feature>
-   <feature id="tools.vitruv.dsls.commonalities.feature.source" version="3.0.0.qualifier">
+   <feature id="tools.vitruv.dsls.commonalities.feature.source" version="3.0.0">
       <category name="Vitruv DSLs"/>
    </feature>
-   <feature url="features/tools.vitruv.dsls.testutils.feature_3.0.0.qualifier.jar" id="tools.vitruv.dsls.testutils.feature" version="3.0.0.qualifier">
+   <feature url="features/tools.vitruv.dsls.testutils.feature_3.0.0.jar" id="tools.vitruv.dsls.testutils.feature" version="3.0.0">
       <category name="Vitruv DSLs"/>
    </feature>
-   <feature id="tools.vitruv.dsls.testutils.feature.source" version="3.0.0.qualifier">
+   <feature id="tools.vitruv.dsls.testutils.feature.source" version="3.0.0">
       <category name="Vitruv DSLs"/>
    </feature>
-   <feature url="features/tools.vitruv.dsls.demo.familiespersons.feature_3.0.0.qualifier.jar" id="tools.vitruv.dsls.demo.familiespersons.feature" version="3.0.0.qualifier">
+   <feature url="features/tools.vitruv.dsls.demo.familiespersons.feature_3.0.0.jar" id="tools.vitruv.dsls.demo.familiespersons.feature" version="3.0.0">
       <category name="Vitruv Demos"/>
    </feature>
-   <feature id="tools.vitruv.dsls.demo.familiespersons.feature.source" version="3.0.0.qualifier">
+   <feature id="tools.vitruv.dsls.demo.familiespersons.feature.source" version="3.0.0">
       <category name="Vitruv Demos"/>
    </feature>
-   <feature url="features/tools.vitruv.dsls.demo.insurancepersons.feature_3.0.0.qualifier.jar" id="tools.vitruv.dsls.demo.insurancepersons.feature" version="3.0.0.qualifier">
+   <feature url="features/tools.vitruv.dsls.demo.insurancepersons.feature_3.0.0.jar" id="tools.vitruv.dsls.demo.insurancepersons.feature" version="3.0.0">
       <category name="Vitruv Demos"/>
    </feature>
-   <feature id="tools.vitruv.dsls.demo.insurancepersons.feature.source" version="3.0.0.qualifier">
+   <feature id="tools.vitruv.dsls.demo.insurancepersons.feature.source" version="3.0.0">
       <category name="Vitruv Demos"/>
    </feature>
-   <feature url="features/tools.vitruv.dsls.demo.insurancefamilies.feature_3.0.0.qualifier.jar" id="tools.vitruv.dsls.demo.insurancefamilies.feature" version="3.0.0.qualifier">
+   <feature url="features/tools.vitruv.dsls.demo.insurancefamilies.feature_3.0.0.jar" id="tools.vitruv.dsls.demo.insurancefamilies.feature" version="3.0.0">
       <category name="Vitruv Demos"/>
    </feature>
-   <feature id="tools.vitruv.dsls.demo.insurancefamilies.feature.source" version="3.0.0.qualifier">
+   <feature id="tools.vitruv.dsls.demo.insurancefamilies.feature.source" version="3.0.0">
       <category name="Vitruv Demos"/>
    </feature>
-   <feature url="features/tools.vitruv.dsls.demo.tests.feature_3.0.0.qualifier.jar" id="tools.vitruv.dsls.demo.tests.feature" version="3.0.0.qualifier">
+   <feature url="features/tools.vitruv.dsls.demo.tests.feature_3.0.0.jar" id="tools.vitruv.dsls.demo.tests.feature" version="3.0.0">
       <category name="Vitruv Demos"/>
    </feature>
-   <feature id="tools.vitruv.dsls.demo.tests.feature.source" version="3.0.0.qualifier">
+   <feature id="tools.vitruv.dsls.demo.tests.feature.source" version="3.0.0">
       <category name="Vitruv Demos"/>
    </feature>
    <category-def name="Vitruv DSLs Runtime" label="Vitruv Consistency Specification Languages Runtimes">

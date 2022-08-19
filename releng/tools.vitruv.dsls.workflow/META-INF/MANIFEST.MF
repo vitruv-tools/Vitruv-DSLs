@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Vitruv DSLs Metamodel Generation Workflow
 Bundle-SymbolicName: tools.vitruv.dsls.workflow
-Bundle-Version: 3.0.0.qualifier
+Bundle-Version: 3.0.0
 Bundle-Vendor: vitruv.tools
 Automatic-Module-Name: tools.vitruv.dsls.workflow
 Bundle-RequiredExecutionEnvironment: JavaSE-11

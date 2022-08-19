@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Vitruv Insurance-Families Demo Tests
 Bundle-SymbolicName: tools.vitruv.dsls.demo.insurancefamilies.tests
 Automatic-Module-Name: tools.vitruv.dsls.demo.insurancefamilies.tests
-Bundle-Version: 3.0.0.qualifier
+Bundle-Version: 3.0.0
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Require-Bundle: tools.vitruv.dsls.demo.insurancefamilies;visibility:=reexport,
  tools.vitruv.dsls.testutils;visibility:=reexport,
