@@ -60,7 +60,7 @@ class CommonalitiesProjectSetup {
 			Bundle-ManifestVersion: 2
 			Bundle-Name: Commonalities Language Test Project
 			Bundle-Vendor: vitruv.tools
-			Bundle-Version: 3.0.0.qualifier
+			Bundle-Version: 3.0.1.qualifier
 			Bundle-SymbolicName: «project.name.replace(' ', '-')»; singleton:=true
 			Bundle-ActivationPolicy: lazy
 			Require-Bundle: «CommonalitiesLanguageConstants.RUNTIME_BUNDLE»

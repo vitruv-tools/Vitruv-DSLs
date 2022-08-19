@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: tools.vitruv.dsls.dependencywrapper
 Bundle-SymbolicName: tools.vitruv.dsls.dependencywrapper
 Automatic-Module-Name: tools.vitruv.dsls.dependencywrapper
-Bundle-Version: 3.0.0.qualifier
+Bundle-Version: 3.0.1.qualifier
 Require-Bundle: tools.vitruv.change.composite,
  tools.vitruv.change.atomic,
  tools.vitruv.change.propagation,
