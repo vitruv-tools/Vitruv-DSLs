@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Vitruv DSLs Test Utilities
 Bundle-SymbolicName: tools.vitruv.dsls.testutils
-Bundle-Version: 3.0.0.qualifier
+Bundle-Version: 3.0.0
 Bundle-Vendor: tools.vitruv
 Automatic-Module-Name: tools.vitruv.dsls.testutils
 Bundle-RequiredExecutionEnvironment: JavaSE-11
