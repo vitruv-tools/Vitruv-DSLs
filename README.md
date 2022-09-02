@@ -1,5 +1,6 @@
 # Vitruv DSLs
-[![GitHub Action CI](https://github.com/vitruv-tools/Vitruv-DSLs/workflows/CI/badge.svg)](https://github.com/vitruv-tools/Vitruv-DSLs/actions?query=workflow%3ACI)
+[![GitHub Action CI](https://github.com/vitruv-tools/Vitruv-DSLs/actions/workflows/ci.yml/badge.svg)](https://github.com/vitruv-tools/Vitruv-DSLs/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/release/vitruv-tools/Vitruv-DSLs.svg)](https://github.com/vitruv-tools/Vitruv-DSLs/releases/latest)
 [![Issues](https://img.shields.io/github/issues/vitruv-tools/Vitruv-DSLs.svg)](https://github.com/vitruv-tools/Vitruv-DSLs/issues)
 [![License](https://img.shields.io/github/license/vitruv-tools/Vitruv-DSLs.svg)](https://raw.githubusercontent.com/vitruv-tools/Vitruv-DSLs/main/LICENSE)
 
