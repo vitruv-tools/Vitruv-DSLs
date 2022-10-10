@@ -6,7 +6,7 @@ on:
   release:
     types: [created]
   schedule:
-    - cron: '0 3 30 * *' # run nightly at 3:30 am
+    - cron: '30 3 * * *' # run nightly at 3:30 am
   workflow_call:
 
 jobs:
