@@ -32,8 +32,8 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v2
         with:
-          distribution: 'zulu'
-          java-version: 11
+          distribution: 'temurin'
+          java-version: 17
       - name: Build Framework
         working-directory: ./framework
         run: >
@@ -89,8 +89,8 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v2
         with:
-          distribution: 'zulu'
-          java-version: 11
+          distribution: 'temurin'
+          java-version: 17
       - name: Build and Verify Case Studies
         uses: GabrielBB/xvfb-action@v1
         with:
