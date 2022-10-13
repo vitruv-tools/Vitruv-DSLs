@@ -47,6 +47,7 @@ class MissingBundlesQuickfixTest extends BugFixedAbstractQuickfixTest {
 				apply(new NullProgressMonitor)
 			]
 		]
+		Thread.sleep(200)
 
 		val testCommonality = '''
 			concept test
