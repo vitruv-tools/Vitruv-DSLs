@@ -47,6 +47,8 @@ class MissingBundlesQuickfixTest extends BugFixedAbstractQuickfixTest {
 				apply(new NullProgressMonitor)
 			]
 		]
+		// workaround to fix Windows CI builds as <code>apply</code> does not correctly report its done status.
+		// Detailed problem description: https://github.com/vitruv-tools/Vitruv-DSLs/pull/71
 		Thread.sleep(200)
 
 		val testCommonality = '''
