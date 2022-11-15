@@ -21,26 +21,22 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import tools.vitruv.change.propagation.ChangePropagationSpecification
-import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
 import tools.vitruv.dsls.demo.familiespersons.families2persons.FamiliesToPersonsChangePropagationSpecification
 import tools.vitruv.dsls.demo.familiespersons.persons2families.PersonsToFamiliesChangePropagationSpecification
 import tools.vitruv.dsls.demo.familiespersons.persons2families.PersonsToFamiliesHelper
 import tools.vitruv.testutils.TestLogging
 import tools.vitruv.testutils.TestProject
 import tools.vitruv.testutils.TestProjectManager
-import tools.vitruv.testutils.TestUserInteraction
 import tools.vitruv.testutils.TestUserInteraction.MultipleChoiceInteractionDescription
-import tools.vitruv.testutils.views.ChangePublishingTestView
 import tools.vitruv.testutils.views.TestView
-import tools.vitruv.testutils.views.UriMode
 
 import static org.hamcrest.CoreMatchers.*
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertThrows
 import static org.junit.jupiter.api.Assertions.assertTrue
-import static tools.vitruv.testutils.TestModelRepositoryFactory.createTestChangeableModelRepository
 import static tools.vitruv.testutils.matchers.ModelMatchers.*
+import static tools.vitruv.testutils.views.ChangePublishingTestView.createDefaultChangePublishingTestView
 
 enum PositionPreference {
 	Parent,
@@ -79,13 +75,7 @@ class PersonsToFamiliesTest implements TestView {
 	}
 
 	private def TestView prepareTestView(Path testProjectPath) throws IOException {
-		val userInteraction = new TestUserInteraction()
-		val changePropagationSpecificationProvider = new ChangePropagationSpecificationRepository(
-			changePropagationSpecifications)
-		val changeableModelRepository = createTestChangeableModelRepository(changePropagationSpecificationProvider,
-			userInteraction)
-		return new ChangePublishingTestView(testProjectPath, userInteraction, UriMode.FILE_URIS,
-			changeableModelRepository)
+		return createDefaultChangePublishingTestView(testProjectPath, changePropagationSpecifications)
 	}
 
 	@AfterEach
