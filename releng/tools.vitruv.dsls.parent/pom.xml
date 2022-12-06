@@ -189,23 +189,6 @@
 								<artifactId>tools.vitruv.dsls.dependencywrapper</artifactId>
 								<version>${project.version}</version>
 							</dependency>
-							<!-- Necessary for Eclipse 2021-06 due to bug and workaround described here: https://github.com/eclipse/xtext-xtend/issues/116#issuecomment-271916734
-							and https://github.com/eclipse/xtext-maven/issues/146#issue-926261661-->
-							<dependency>
-								<groupId>org.eclipse.jdt</groupId>
-								<artifactId>org.eclipse.jdt.compiler.apt</artifactId>
-								<version>1.4.100</version>
-							</dependency>
-							<dependency>
-								<groupId>org.eclipse.platform</groupId>
-								<artifactId>org.eclipse.core.runtime</artifactId>
-								<version>3.25.0</version>
-							</dependency>
-							<dependency>
-								<groupId>org.eclipse.platform</groupId>
-								<artifactId>org.eclipse.equinox.common</artifactId>
-								<version>3.16.100</version>
-							</dependency>
 						</dependencies>
 					</plugin>
 				</plugins>
