@@ -11,4 +11,4 @@ Require-Bundle: tools.vitruv.dsls.reactions.runtime;visibility:=reexport,
  edu.kit.ipd.sdq.metamodels.persons;visibility:=reexport,
  edu.kit.ipd.sdq.metamodels.insurance;visibility:=reexport,
  edu.kit.ipd.sdq.activextendannotations
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17

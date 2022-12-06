@@ -24,7 +24,7 @@ Require-Bundle: edu.kit.ipd.sdq.activextendannotations,
  org.eclipse.xtend.lib;bundle-version="2.14.0",
  org.antlr.runtime;bundle-version="[3.2.0,3.2.1)",
  org.objectweb.asm;bundle-version="[9.3.0,9.4.0)";resolution:=optional
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: tools.vitruv.dsls.commonalities,
  tools.vitruv.dsls.commonalities.conversion,
  tools.vitruv.dsls.commonalities.export;x-internal:=true,

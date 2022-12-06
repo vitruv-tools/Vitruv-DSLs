@@ -22,7 +22,7 @@ Require-Bundle: tools.vitruv.dsls.commonalities,
  edu.kit.ipd.sdq.activextendannotations,
  edu.kit.ipd.sdq.commons.util.eclipse,
  tools.vitruv.dsls.reactions.ui
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: tools.vitruv.dsls.commonalities.ui.quickfix;x-internal=true,
  tools.vitruv.dsls.commonalities.ui.setup;x-internal=true,
  tools.vitruv.dsls.commonalities.ui.tests;x-internal=true

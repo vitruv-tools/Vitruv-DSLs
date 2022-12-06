@@ -14,7 +14,7 @@ Require-Bundle: tools.vitruv.dsls.reactions.ui,
  org.eclipse.xtext.testing,
  org.eclipse.xtext.xbase.testing,
  org.eclipse.xtext.ui.testing
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: tools.vitruv.dsls.reactions.ui.tests;x-internal=true
 Import-Package: org.hamcrest.core,
  org.junit;version="4.5.0",

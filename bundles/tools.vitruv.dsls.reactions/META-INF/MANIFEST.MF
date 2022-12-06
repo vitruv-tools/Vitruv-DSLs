@@ -26,7 +26,7 @@ Require-Bundle: edu.kit.ipd.sdq.activextendannotations,
  edu.kit.ipd.sdq.commons.util.java,
  org.objectweb.asm;bundle-version="[9.3.0,9.4.0)";resolution:=optional
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: tools.vitruv.dsls.reactions,
  tools.vitruv.dsls.reactions.api.generator,
  tools.vitruv.dsls.reactions.builder,
