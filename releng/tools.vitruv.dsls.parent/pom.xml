@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>tools.vitruv</groupId>
 		<artifactId>parent</artifactId>
-		<version>2.0.2</version>
+		<version>2.1.1</version>
 	</parent>
 	<artifactId>dsls-parent</artifactId>
 	<version>3.0.1-SNAPSHOT</version>
@@ -27,17 +27,17 @@
 		<repository>
 			<id>Demo Metamodels</id>
 			<layout>p2</layout>
-			<url>https://kit-sdq.github.io/updatesite/release/metamodels/demo/latest/</url>
+			<url>https://kit-sdq.github.io/updatesite/release/metamodels/demo/${sdq.demometamodels.version}</url>
 		</repository>
 		<repository>
 			<id>SDQ Commons</id>
 			<layout>p2</layout>
-			<url>https://kit-sdq.github.io/updatesite/release/commons/latest/</url>
+			<url>https://kit-sdq.github.io/updatesite/release/commons/${sdq.commons.version}</url>
 		</repository>
 		<repository>
 			<id>XAnnotations</id>
 			<layout>p2</layout>
-			<url>https://kit-sdq.github.io/updatesite/release/xannotations/latest/</url>
+			<url>https://kit-sdq.github.io/updatesite/release/xannotations/${sdq.xannotations.version}</url>
 		</repository>
 	</repositories>
 
@@ -188,23 +188,6 @@
 								<groupId>tools.vitruv</groupId>
 								<artifactId>tools.vitruv.dsls.dependencywrapper</artifactId>
 								<version>${project.version}</version>
-							</dependency>
-							<!-- Necessary for Eclipse 2021-06 due to bug and workaround described here: https://github.com/eclipse/xtext-xtend/issues/116#issuecomment-271916734
-							and https://github.com/eclipse/xtext-maven/issues/146#issue-926261661-->
-							<dependency>
-								<groupId>org.eclipse.jdt</groupId>
-								<artifactId>org.eclipse.jdt.compiler.apt</artifactId>
-								<version>1.4.100</version>
-							</dependency>
-							<dependency>
-								<groupId>org.eclipse.platform</groupId>
-								<artifactId>org.eclipse.core.runtime</artifactId>
-								<version>3.25.0</version>
-							</dependency>
-							<dependency>
-								<groupId>org.eclipse.platform</groupId>
-								<artifactId>org.eclipse.equinox.common</artifactId>
-								<version>3.16.100</version>
 							</dependency>
 						</dependencies>
 					</plugin>

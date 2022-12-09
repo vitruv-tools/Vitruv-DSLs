@@ -4,7 +4,7 @@ Bundle-Name: Vitruv DSLs Commonalities Language Core Tests
 Bundle-SymbolicName: tools.vitruv.dsls.commonalities.tests;singleton:=true
 Automatic-Module-Name: tools.vitruv.dsls.commonalities.tests
 Bundle-Version: 3.0.1.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Bundle-ActivationPolicy: lazy
 Export-Package: tools.vitruv.dsls.commonalities.tests.util,
  tools.vitruv.dsls.commonalities.tests;x-internal=true
@@ -13,7 +13,7 @@ Require-Bundle: tools.vitruv.dsls.commonalities,
  org.eclipse.xtext.testing,
  org.eclipse.xtext.xbase.testing,
  org.hamcrest.core,
- org.eclipse.xtext.xbase.lib;bundle-version="2.14.0",
+ org.eclipse.xtext.xbase.lib;bundle-version="2.29.0",
  org.junit.jupiter.api,
  org.junit.jupiter.params,
  tools.vitruv.testutils.metamodels,

@@ -25,7 +25,7 @@ import org.eclipse.jdt.core.IClasspathEntry
 
 @Utility
 class CommonalitiesProjectSetup {
-	static val String COMPLIANCE_LEVEL = '11';
+	static val String COMPLIANCE_LEVEL = '17';
 
 	def static IProject setupAsCommonalitiesProject(IProject project) {
 		project.open(null)

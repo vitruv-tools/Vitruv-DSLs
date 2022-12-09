@@ -7,7 +7,7 @@ Bundle-Version: 3.0.1.qualifier
 Bundle-ClassPath: .
 Bundle-Vendor: %providerName
 Bundle-Localization: plugin
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Require-Bundle: org.apache.log4j;visibility:=reexport,
  org.eclipse.xtend.lib;visibility:=reexport,
  org.eclipse.core.resources,
