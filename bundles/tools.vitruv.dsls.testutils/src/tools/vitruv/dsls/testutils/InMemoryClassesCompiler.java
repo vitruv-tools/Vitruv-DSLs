@@ -1,28 +1,25 @@
 package tools.vitruv.dsls.testutils;
 
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.FluentIterable.from;
+import static java.lang.System.lineSeparator;
+import static java.lang.reflect.Modifier.isPublic;
+import static java.nio.file.Files.readString;
+import static java.nio.file.Files.walk;
+import static org.eclipse.xtext.xbase.lib.IterableExtensions.join;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
-import static java.lang.System.lineSeparator;
-import static java.nio.file.Files.readString;
-import org.eclipse.jdt.core.compiler.CategorizedProblem;
-
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import static java.nio.file.Files.walk;
-import static com.google.common.collect.FluentIterable.from;
-
+import org.eclipse.jdt.core.compiler.CategorizedProblem;
 import org.eclipse.xtext.util.JavaVersion;
 import org.eclipse.xtext.xbase.testing.InMemoryJavaCompiler;
 import org.eclipse.xtext.xbase.testing.InMemoryJavaCompiler.Result;
 import org.eclipse.xtext.xbase.testing.JavaSource;
-import static java.lang.reflect.Modifier.isPublic;
+
 import com.google.common.base.Predicate;
-
-import static org.eclipse.xtext.xbase.lib.IterableExtensions.join;
-
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Allows to compile all Java source files in a given folder at runtime and provides the compiled classes to use
@@ -50,7 +47,7 @@ public class InMemoryClassesCompiler {
 	 */
 	public InMemoryClassesCompiler compile() throws IOException {
 		checkState(compiledClasses == null, "classes have already been compiled");
-		this.compiledClasses = compileJavaFiles(from(walk(javaSourcesFolder).collect(Collectors.toList()))
+		this.compiledClasses = compileJavaFiles(from(walk(javaSourcesFolder).toList())
 				.filter(path -> path.toString().endsWith(".java")).transform(path -> new RelativeAndAbsolutePath(javaSourcesFolder, path)).toList());
 		return this;
 	}
