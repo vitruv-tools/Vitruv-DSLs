@@ -7,40 +7,40 @@ import edu.kit.ipd.sdq.metamodels.families.Member
 import edu.kit.ipd.sdq.metamodels.persons.Person
 import edu.kit.ipd.sdq.metamodels.persons.PersonRegister
 import edu.kit.ipd.sdq.metamodels.persons.PersonsFactory
+import java.io.IOException
 import java.nio.file.Path
 import java.util.stream.Stream
 import org.apache.log4j.Logger
+import org.eclipse.xtend.lib.annotations.Delegate
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
+import org.junit.jupiter.api.^extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import tools.vitruv.change.propagation.ChangePropagationSpecification
+import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
 import tools.vitruv.dsls.demo.familiespersons.families2persons.FamiliesToPersonsChangePropagationSpecification
 import tools.vitruv.dsls.demo.familiespersons.persons2families.PersonsToFamiliesChangePropagationSpecification
 import tools.vitruv.dsls.demo.familiespersons.persons2families.PersonsToFamiliesHelper
+import tools.vitruv.testutils.TestLogging
+import tools.vitruv.testutils.TestProject
+import tools.vitruv.testutils.TestProjectManager
+import tools.vitruv.testutils.TestUserInteraction
 import tools.vitruv.testutils.TestUserInteraction.MultipleChoiceInteractionDescription
+import tools.vitruv.testutils.views.ChangePublishingTestView
+import tools.vitruv.testutils.views.TestView
+import tools.vitruv.testutils.views.UriMode
 
 import static org.hamcrest.CoreMatchers.*
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertThrows
 import static org.junit.jupiter.api.Assertions.assertTrue
-import static tools.vitruv.testutils.matchers.ModelMatchers.*
-import tools.vitruv.testutils.views.TestView
-import org.eclipse.xtend.lib.annotations.Delegate
-import tools.vitruv.change.propagation.ChangePropagationSpecification
-import tools.vitruv.testutils.TestProject
-import org.junit.jupiter.api.^extension.ExtendWith
-import tools.vitruv.testutils.TestLogging
-import tools.vitruv.testutils.TestProjectManager
-import tools.vitruv.testutils.TestUserInteraction
-import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
-import tools.vitruv.testutils.views.ChangePublishingTestView
-import tools.vitruv.testutils.views.UriMode
-import org.junit.jupiter.api.AfterEach
-import java.io.IOException
 import static tools.vitruv.testutils.TestModelRepositoryFactory.createTestChangeableModelRepository
+import static tools.vitruv.testutils.matchers.ModelMatchers.*
 
 enum PositionPreference {
 	Parent,
@@ -1490,31 +1490,26 @@ class PersonsToFamiliesTest implements TestView {
 
 
 		// Father
-		decideParentOrChild(PositionPreference.Parent)
 		PersonRegister.from(PERSONS_MODEL).propagate [
 			val searchedDad = persons.findFirst[person|person.fullName.equals(FIRST_DAD_1 + " " + LAST_NAME_1)]
 			searchedDad.fullName = FIRST_DAD_2 + " " + LAST_NAME_1
 		]
 		// Mother
-		decideParentOrChild(PositionPreference.Parent)
 		PersonRegister.from(PERSONS_MODEL).propagate [
 			val searchedMom = persons.findFirst[person|person.fullName.equals(FIRST_MOM_1 + " " + LAST_NAME_2)]
 			searchedMom.fullName = FIRST_MOM_2 + " " + LAST_NAME_2
 		]
 		// Son
-		decideParentOrChild(PositionPreference.Child)
 		PersonRegister.from(PERSONS_MODEL).propagate [
 			val searchedSon = persons.findFirst[person|person.fullName.equals(FIRST_SON_1 + " " + LAST_NAME_2)]
 			searchedSon.fullName = FIRST_SON_2 + " " + LAST_NAME_2
 		]
 		// Daugther
-		decideParentOrChild(PositionPreference.Child)
 		PersonRegister.from(PERSONS_MODEL).propagate [
 			val searchedDaughter = persons.findFirst[person|person.fullName.equals(FIRST_DAU_1 + " " + LAST_NAME_1)]
 			searchedDaughter.fullName = FIRST_DAU_2 + " " + LAST_NAME_1
 		]
 		logger.trace(this.nameOfTestMethod + " - propagation done")
-		userInteraction.assertAllInteractionsOccurred()
 		val FamilyRegister expectedFamilyRegister = FamiliesFactory.eINSTANCE.createFamilyRegister => [
 			families += #[
 				FamiliesFactory.eINSTANCE.createFamily => [
@@ -1534,6 +1529,69 @@ class PersonsToFamiliesTest implements TestView {
 			persons += PersonsFactory.eINSTANCE.createFemale => [fullName = FIRST_MOM_2 + " " + LAST_NAME_2]
 			persons += PersonsFactory.eINSTANCE.createMale => [fullName = FIRST_SON_2 + " " + LAST_NAME_2]
 			persons += PersonsFactory.eINSTANCE.createFemale => [fullName = FIRST_DAU_2 + " " + LAST_NAME_1]
+		]
+		assertCorrectFamilyRegister(expectedFamilyRegister)
+		assertCorrectPersonRegister(expectedPersonRegister)
+		logger.trace(this.nameOfTestMethod + " - finished without errors")
+	}
+	
+	@Test
+	def void testChangeFamilyRoleAfterRenaming() {
+		logger.trace(this.nameOfTestMethod + " - begin")
+		createFamiliesForTesting()
+		logger.trace(this.nameOfTestMethod + " - preparation done")
+
+
+		// Father
+		decideParentOrChild(PositionPreference.Child)
+		decideNewOrExistingFamily(FamilyPreference.Existing)
+		PersonRegister.from(PERSONS_MODEL).propagate [
+			val searchedDad = persons.findFirst[person|person.fullName.equals(FIRST_DAD_1 + " " + LAST_NAME_1)]
+			searchedDad.fullName = FIRST_DAD_1 + " " + LAST_NAME_2
+		]
+		// Mother
+		decideParentOrChild(PositionPreference.Parent)
+		decideNewOrExistingFamily(FamilyPreference.Existing)
+		PersonRegister.from(PERSONS_MODEL).propagate [
+			val searchedMom = persons.findFirst[person|person.fullName.equals(FIRST_MOM_1 + " " + LAST_NAME_2)]
+			searchedMom.fullName = FIRST_MOM_1 + " " + LAST_NAME_1
+		]
+		// Son
+		//TODO: JW for some reason moving a son / daughter from a family with more than one sons / daughters results in an invalid change sequence
+//		decideParentOrChild(PositionPreference.Parent)
+//		decideNewOrExistingFamily(FamilyPreference.Existing)
+//		PersonRegister.from(PERSONS_MODEL).propagate [
+//			val searchedSon = persons.findFirst[person|person.fullName.equals(FIRST_SON_1 + " " + LAST_NAME_2)]
+//			searchedSon.fullName = FIRST_SON_1 + " " + LAST_NAME_1
+//		]
+		// Daugther
+		decideParentOrChild(PositionPreference.Child)
+		decideNewOrExistingFamily(FamilyPreference.Existing)
+		PersonRegister.from(PERSONS_MODEL).propagate [
+			val searchedDaughter = persons.findFirst[person|person.fullName.equals(FIRST_DAU_1 + " " + LAST_NAME_1)]
+			searchedDaughter.fullName = FIRST_DAU_1 + " " + LAST_NAME_2
+		]
+		logger.trace(this.nameOfTestMethod + " - propagation done")
+		userInteraction.assertAllInteractionsOccurred()
+		val FamilyRegister expectedFamilyRegister = FamiliesFactory.eINSTANCE.createFamilyRegister => [
+			families += #[
+				FamiliesFactory.eINSTANCE.createFamily => [
+					lastName = LAST_NAME_1
+					mother = FamiliesFactory.eINSTANCE.createMember => [firstName = FIRST_MOM_1]
+				],
+				FamiliesFactory.eINSTANCE.createFamily => [
+					lastName = LAST_NAME_2
+					daughters += FamiliesFactory.eINSTANCE.createMember => [firstName = FIRST_DAU_1]
+					sons += FamiliesFactory.eINSTANCE.createMember => [firstName = FIRST_SON_1]
+					sons += FamiliesFactory.eINSTANCE.createMember => [firstName = FIRST_DAD_1]
+				]
+			]
+		]
+		val PersonRegister expectedPersonRegister = PersonsFactory.eINSTANCE.createPersonRegister => [
+			persons += PersonsFactory.eINSTANCE.createMale => [fullName = FIRST_DAD_1 + " " + LAST_NAME_2]
+			persons += PersonsFactory.eINSTANCE.createFemale => [fullName = FIRST_MOM_1 + " " + LAST_NAME_1]
+			persons += PersonsFactory.eINSTANCE.createMale => [fullName = FIRST_SON_1 + " " + LAST_NAME_2]
+			persons += PersonsFactory.eINSTANCE.createFemale => [fullName = FIRST_DAU_1 + " " + LAST_NAME_2]
 		]
 		assertCorrectFamilyRegister(expectedFamilyRegister)
 		assertCorrectPersonRegister(expectedPersonRegister)
@@ -1570,6 +1628,7 @@ class PersonsToFamiliesTest implements TestView {
 		]
 		// Daugther
 		decideParentOrChild(PositionPreference.Child)
+		decideNewOrExistingFamily(FamilyPreference.New)
 		PersonRegister.from(PERSONS_MODEL).propagate [
 			val searchedDaughter = persons.findFirst[person|person.fullName.equals(FIRST_DAU_1 + " " + LAST_NAME_1)]
 			searchedDaughter.fullName = "Daenerys_Targaryen"
@@ -1578,10 +1637,6 @@ class PersonsToFamiliesTest implements TestView {
 		userInteraction.assertAllInteractionsOccurred()
 		val FamilyRegister expectedFamilyRegister = FamiliesFactory.eINSTANCE.createFamilyRegister => [
 			families += #[
-				FamiliesFactory.eINSTANCE.createFamily => [
-					lastName = ""
-					daughters += FamiliesFactory.eINSTANCE.createMember => [firstName = "Daenerys_Targaryen"]
-				],
 				FamiliesFactory.eINSTANCE.createFamily => [
 					lastName = ""
 					sons += FamiliesFactory.eINSTANCE.createMember => [firstName = "Saruman"]
@@ -1593,6 +1648,10 @@ class PersonsToFamiliesTest implements TestView {
 				FamiliesFactory.eINSTANCE.createFamily => [
 					lastName = "Marzahn"
 					mother = FamiliesFactory.eINSTANCE.createMember => [firstName = "Cindy aus"]
+				],
+				FamiliesFactory.eINSTANCE.createFamily => [
+					lastName = ""
+					daughters += FamiliesFactory.eINSTANCE.createMember => [firstName = "Daenerys_Targaryen"]
 				]
 			]
 		]
