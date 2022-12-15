@@ -9,37 +9,38 @@ import edu.kit.ipd.sdq.metamodels.persons.Male
 import edu.kit.ipd.sdq.metamodels.persons.Person
 import edu.kit.ipd.sdq.metamodels.persons.PersonRegister
 import edu.kit.ipd.sdq.metamodels.persons.PersonsFactory
+import java.io.IOException
 import java.nio.file.Path
 import java.util.stream.Stream
 import org.apache.log4j.Logger
+import org.eclipse.xtend.lib.annotations.Delegate
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
+import org.junit.jupiter.api.^extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import tools.vitruv.change.propagation.ChangePropagationSpecification
+import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
 import tools.vitruv.dsls.demo.familiespersons.families2persons.FamiliesToPersonsChangePropagationSpecification
 import tools.vitruv.dsls.demo.familiespersons.families2persons.FamiliesToPersonsHelper
+import tools.vitruv.dsls.demo.familiespersons.persons2families.PersonsToFamiliesChangePropagationSpecification
+import tools.vitruv.testutils.TestLogging
+import tools.vitruv.testutils.TestProject
+import tools.vitruv.testutils.TestProjectManager
+import tools.vitruv.testutils.TestUserInteraction
+import tools.vitruv.testutils.views.ChangePublishingTestView
+import tools.vitruv.testutils.views.TestView
+import tools.vitruv.testutils.views.UriMode
 
 import static org.hamcrest.CoreMatchers.*
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertThrows
-import static tools.vitruv.testutils.matchers.ModelMatchers.*
-import tools.vitruv.testutils.TestProject
-import org.junit.jupiter.api.AfterEach
-import tools.vitruv.testutils.TestProjectManager
-import tools.vitruv.testutils.TestLogging
-import org.junit.jupiter.api.^extension.ExtendWith
-import org.eclipse.xtend.lib.annotations.Delegate
-import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
-import tools.vitruv.testutils.TestUserInteraction
-import tools.vitruv.change.propagation.ChangePropagationSpecification
-import tools.vitruv.testutils.views.TestView
-import tools.vitruv.testutils.views.ChangePublishingTestView
-import tools.vitruv.testutils.views.UriMode
-import java.io.IOException
 import static tools.vitruv.testutils.TestModelRepositoryFactory.createTestChangeableModelRepository
+import static tools.vitruv.testutils.matchers.ModelMatchers.*
 
 enum MemberRole {
 	Father,
@@ -66,7 +67,7 @@ class FamiliesToPersonsTest implements TestView {
 	}
 
 	protected def Iterable<ChangePropagationSpecification> getChangePropagationSpecifications() {
-		return #[new FamiliesToPersonsChangePropagationSpecification()]
+		return #[new FamiliesToPersonsChangePropagationSpecification(), new PersonsToFamiliesChangePropagationSpecification()]
 	}
 
 	@BeforeEach

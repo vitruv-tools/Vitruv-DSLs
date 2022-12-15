@@ -29,6 +29,9 @@ reaction InsertedPersonRegister {
 }
 
 routine createFamilyRegister(persons::PersonRegister createdPersonRegister) {
+	match {
+		require absence of families::FamilyRegister corresponding to createdPersonRegister
+	}
 	create {
 		val newFamilyRegister = new families::FamilyRegister
 	}
@@ -63,6 +66,7 @@ reaction InsertedPerson {
 
 routine insertAsParentOrChild(persons::Person insertedPerson) {
 	match {
+		require absence of families::Member corresponding to insertedPerson 
 		check {
 			assertValidFullname(insertedPerson)
 			true
@@ -191,9 +195,11 @@ routine changeNames(persons::Person renamedPerson, String oldFullname) {
 	}
 	update {
 		// Update firstname
-		correspondingMember.firstName = renamedPerson.firstname
-		// Update lastname and/or role
-		reactToLastnameAndFamilyRoleChanges(renamedPerson, oldFullname)
+		correspondingMember.firstName = renamedPerson.firstname	
+		if (correspondingMember.family.lastName != renamedPerson.lastname) {
+			// Update lastname and potentially role
+			reactToLastnameAndFamilyRoleChanges(renamedPerson, oldFullname)
+		}
 	}
 }
 

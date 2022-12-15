@@ -20,6 +20,9 @@ reaction InsertedFamilyRegister {
 }
 
 routine createPersonRegister(families::FamilyRegister familyRegister) {
+	match {
+		require absence of persons::PersonRegister corresponding to familyRegister
+	}
 	create {
 		val personRegister = new persons::PersonRegister
 	}
