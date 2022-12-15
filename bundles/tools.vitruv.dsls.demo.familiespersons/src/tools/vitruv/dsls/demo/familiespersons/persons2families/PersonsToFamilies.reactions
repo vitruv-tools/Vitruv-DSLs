@@ -11,6 +11,7 @@ import static tools.vitruv.dsls.demo.familiespersons.persons2families.PersonsToF
 import static extension tools.vitruv.dsls.demo.familiespersons.persons2families.PersonsToFamiliesHelper.getFirstname
 import static extension tools.vitruv.dsls.demo.familiespersons.persons2families.PersonsToFamiliesHelper.getLastname
 import static extension tools.vitruv.dsls.demo.familiespersons.persons2families.PersonsToFamiliesHelper.getRegister
+import static extension edu.kit.ipd.sdq.metamodels.families.FamiliesUtil.getFamily
 import static extension edu.kit.ipd.sdq.metamodels.families.FamiliesUtil.getMembers
 
 import "edu.kit.ipd.sdq.metamodels.persons" as persons
@@ -29,6 +30,9 @@ reaction InsertedPersonRegister {
 }
 
 routine createFamilyRegister(persons::PersonRegister createdPersonRegister) {
+	match {
+		require absence of families::FamilyRegister corresponding to createdPersonRegister
+	}
 	create {
 		val newFamilyRegister = new families::FamilyRegister
 	}
@@ -63,6 +67,7 @@ reaction InsertedPerson {
 
 routine insertAsParentOrChild(persons::Person insertedPerson) {
 	match {
+		require absence of families::Member corresponding to insertedPerson 
 		check {
 			assertValidFullname(insertedPerson)
 			true
@@ -191,9 +196,11 @@ routine changeNames(persons::Person renamedPerson, String oldFullname) {
 	}
 	update {
 		// Update firstname
-		correspondingMember.firstName = renamedPerson.firstname
-		// Update lastname and/or role
-		reactToLastnameAndFamilyRoleChanges(renamedPerson, oldFullname)
+		correspondingMember.firstName = renamedPerson.firstname	
+		if (correspondingMember.family.lastName != renamedPerson.lastname) {
+			// Update lastname and potentially role
+			reactToLastnameAndFamilyRoleChanges(renamedPerson, oldFullname)
+		}
 	}
 }
 
@@ -201,44 +208,41 @@ routine reactToLastnameAndFamilyRoleChanges(persons::Person renamedPerson, Strin
 	match {
 		val oldFamily = retrieve families::Family corresponding to renamedPerson
 		val correspondingMember = retrieve families::Member corresponding to renamedPerson
+		val familiesRegister = retrieve families::FamilyRegister corresponding to renamedPerson.register
 	}
 	update {
 		val boolean wasChildBeforeRenaming = correspondingMember.familySon === oldFamily ||
 			correspondingMember.familyDaughter === oldFamily
 		val boolean isSupposedToBeAChild = askUserWhetherPersonIsParentOrChildDuringRenaming(userInteractor,
 			oldFullname, renamedPerson.fullName, wasChildBeforeRenaming) == FamilyRole.Child
-
-		// If neither the lastname, nor the role of the member inside the family changed,
-		// then only the firstname changed and nothing else must be done.
-		if ((wasChildBeforeRenaming !== isSupposedToBeAChild) || (oldFamily.lastName != renamedPerson.lastname)) {
-			if (oldFamily.members.size == 1) {
-				// If the member is alone in its family just rename the oldFamily
-				// and maybe adjust the role of the member which is no problem
-				// since the member is alone.
-				oldFamily.lastName = renamedPerson.lastname
-				// and re-insert member as either child or parent if role is supposed to change
-				if (wasChildBeforeRenaming !== isSupposedToBeAChild) {
-					if (isSupposedToBeAChild) {
-						switch renamedPerson {
-							Male: oldFamily.father = correspondingMember
-							Female: oldFamily.mother = correspondingMember
-						}
-					} else {
-						switch renamedPerson {
-							Male: oldFamily.sons += correspondingMember
-							Female: oldFamily.daughters += correspondingMember
-						}
+			
+		if (oldFamily.members.size == 1 && familiesRegister.families.filter(sameLastname(renamedPerson)).isEmpty) {
+			// If the member is alone in its family just rename the oldFamily
+			// and maybe adjust the role of the member which is no problem
+			// since the member is alone.
+			oldFamily.lastName = renamedPerson.lastname
+			if (wasChildBeforeRenaming !== isSupposedToBeAChild) {
+				if (isSupposedToBeAChild) {
+					switch renamedPerson {
+						Male: oldFamily.sons += correspondingMember
+						Female: oldFamily.daughters += correspondingMember
+					}
+				} else {
+					switch renamedPerson {
+						Male: oldFamily.father = correspondingMember
+						Female: oldFamily.mother = correspondingMember
 					}
 				}
-			} else {
-				// If the member is not alone move it to
-				// a different family depending on lastname and supposed role
-				if (isSupposedToBeAChild) {
-					insertExistingMemberIntoUserChosenFamilyAsChild(renamedPerson)
-				} else {
-					insertExistingMemberIntoUserChosenFamilyAsParent(renamedPerson)
-				}
 			}
+		} else {
+			// If the member is not alone move it to
+			// a different family depending on lastname and supposed role
+			if (isSupposedToBeAChild) {
+				insertExistingMemberIntoUserChosenFamilyAsChild(renamedPerson)
+			} else {
+				insertExistingMemberIntoUserChosenFamilyAsParent(renamedPerson)
+			}
+			deleteFamilyIfEmpty(oldFamily)
 		}
 	}
 }
