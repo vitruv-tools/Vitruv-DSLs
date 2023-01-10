@@ -25,6 +25,7 @@ import tools.vitruv.dsls.common.elements.MetaclassEReferenceReference
 import com.google.inject.Inject
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import com.google.inject.Provider
+import org.eclipse.emf.ecore.EEnum
 
 class CommonLanguageElementsScopeProvider {
 	@Inject IQualifiedNameProvider qualifiedNameProvider
@@ -139,8 +140,8 @@ class CommonLanguageElementsScopeProvider {
 	 * @param metamodelImport - the metamodel to provide the non-abstract classes of
 	 */
 	def createQualifiedEClassScopeWithoutAbstract(MetamodelImport metamodelImport) {
-		return createQualifiedEClassScope(metamodelImport, false, [
-			!abstract
+		return createQualifiedEClassScope(metamodelImport, false, [if(it instanceof EClass)!abstract
+			else false
 		]);
 	}
 
@@ -152,7 +153,7 @@ class CommonLanguageElementsScopeProvider {
 	 * @see #createQualifiedEClassifierScope(Resource)
 	 */
 	private def createQualifiedEClassScope(MetamodelImport metamodelImport, boolean includeEObject,
-		Function<EClass, Boolean> filter) {
+		Function<EClassifier, Boolean> filter) {
 		val classifierDescriptions = if (metamodelImport === null || metamodelImport.package === null) {
 				if (includeEObject) {
 					#[createEObjectDescription(EcorePackage.Literals.EOBJECT, false)];
@@ -182,7 +183,7 @@ class CommonLanguageElementsScopeProvider {
 	}
 	
 	private def Iterable<IEObjectDescription> collectObjectDescriptions(EPackage pckg, boolean includeSubpackages,
-		boolean useQualifiedNames, Function<EClass, Boolean> filter) {
+		boolean useQualifiedNames, Function<EClassifier, Boolean> filter) {
 		var classes = collectEClasses(pckg, includeSubpackages)
 		if (filter !== null) {
 			classes = classes.filter(filter)
@@ -190,12 +191,12 @@ class CommonLanguageElementsScopeProvider {
 		classes.map[it.createEObjectDescription(useQualifiedNames)]
 	}
 
-	private def Iterable<EClass> collectEClasses(EPackage pckg, boolean includeSubpackages) {
-		var recursiveResult = <EClass>newArrayList();
+	private def Iterable<EClassifier> collectEClasses(EPackage pckg, boolean includeSubpackages) {
+		var recursiveResult = <EClassifier>newArrayList();
 		if (includeSubpackages) {
 			recursiveResult += pckg.ESubpackages.map[it|collectEClasses(it, includeSubpackages)].flatten
 		}
-		val result = pckg.EClassifiers.filter(EClass);
+		val result = pckg.EClassifiers.filter[it instanceof EClass || it instanceof EEnum];
 		return recursiveResult + result;
 	}
 
