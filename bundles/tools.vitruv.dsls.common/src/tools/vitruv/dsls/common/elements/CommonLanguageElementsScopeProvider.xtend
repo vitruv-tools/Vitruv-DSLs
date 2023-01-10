@@ -50,6 +50,11 @@ class CommonLanguageElementsScopeProvider {
 		} else if (reference.equals(METACLASS_REFERENCE__METACLASS)) {
 			val potentialMetaclassReference = if(context instanceof MetaclassReference) context
 			return createQualifiedEClassScope(potentialMetaclassReference?.metamodel)
+		} else if (reference.equals(METAENUM_REFERENCE__METAMODEL)) {
+			return createImportsScope(context.eResource)
+		} else if (reference.equals(METAENUM_REFERENCE__METAENUM)) {
+			val potentialMetaenumReference = if(context instanceof MetaenumReference) context
+			return createQualifiedEClassScope(potentialMetaenumReference?.metamodel, false, null, EcorePackage.Literals.EENUM)
 		}
 		return null
 	}
@@ -117,7 +122,7 @@ class CommonLanguageElementsScopeProvider {
 	 * @param metamodelImport - the metamodel to provide all classes of
 	 */
 	def createQualifiedEClassScope(MetamodelImport metamodelImport) {
-		return createQualifiedEClassScope(metamodelImport, false, null);
+		return createQualifiedEClassScope(metamodelImport, false, null, EcorePackage.Literals.EOBJECT);
 	}
 
 	/**
@@ -129,7 +134,7 @@ class CommonLanguageElementsScopeProvider {
 	 * @param metamodelImport - the metamodel to provide the classes of
 	 */
 	def createQualifiedEClassScopeWithEObject(MetamodelImport metamodelImport) {
-		return createQualifiedEClassScope(metamodelImport, true, null);
+		return createQualifiedEClassScope(metamodelImport, true, null, EcorePackage.Literals.EOBJECT);
 	}
 
 	/**
@@ -142,21 +147,21 @@ class CommonLanguageElementsScopeProvider {
 	def createQualifiedEClassScopeWithoutAbstract(MetamodelImport metamodelImport) {
 		return createQualifiedEClassScope(metamodelImport, false, [if(it instanceof EClass)!abstract
 			else false
-		]);
+		], EcorePackage.Literals.EOBJECT);
 	}
 
 	/**
-	 * Create an {@link IScope} that represents all {@link EClass}es
+	 * Create an {@link IScope} that represents all {@link EClasses}s
 	 * that are referencable inside the {@link Resource} via {@link Import}s
-	 * by a fully qualified name.
+	 * by a fully qualified name and have the type of the given {@link #type}.
 	 * 
 	 * @see #createQualifiedEClassifierScope(Resource)
 	 */
 	private def createQualifiedEClassScope(MetamodelImport metamodelImport, boolean includeEObject,
-		Function<EClassifier, Boolean> filter) {
+		Function<EClassifier, Boolean> filter, EClass type) {
 		val classifierDescriptions = if (metamodelImport === null || metamodelImport.package === null) {
 				if (includeEObject) {
-					#[createEObjectDescription(EcorePackage.Literals.EOBJECT, false)];
+					#[createEObjectDescription(type, false)];
 				} else {
 					#[];
 				}

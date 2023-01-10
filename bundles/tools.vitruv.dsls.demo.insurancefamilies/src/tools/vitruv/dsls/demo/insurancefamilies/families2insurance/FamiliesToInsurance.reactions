@@ -3,7 +3,7 @@ import static tools.vitruv.dsls.demo.insurancefamilies.families2insurance.Famili
 import static extension edu.kit.ipd.sdq.metamodels.families.FamiliesUtil.getMembers
 import static extension edu.kit.ipd.sdq.metamodels.families.FamiliesUtil.getRegister
 import static extension tools.vitruv.dsls.demo.insurancefamilies.families2insurance.FamiliesToInsuranceHelper.getInsuranceClientName
-import static extension tools.vitruv.dsls.demo.insurancefamilies.families2insurance.FamiliesToInsuranceHelper.isMaleToGender
+import edu.kit.ipd.sdq.metamodels.insurance.Gender
 
 import "edu.kit.ipd.sdq.metamodels.families" as families
 import "edu.kit.ipd.sdq.metamodels.insurance" as insurance
@@ -60,7 +60,7 @@ reaction CreatedFather {
 	after element families::Member replaced at families::Family[father]
 		with newValue !== null
 	call {
-		updateNameAndCorrespondencesOfCorrespondingInsuranceClient(newValue, affectedEObject, true)
+		updateNameAndCorrespondencesOfCorrespondingInsuranceClient(newValue, affectedEObject, Gender.MALE)
 		tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, Gender::MALE)
 	}
 }
@@ -69,29 +69,29 @@ reaction CreatedMother {
 	after element families::Member replaced at families::Family[mother]
 		with newValue !== null
 	call {
-		updateNameAndCorrespondencesOfCorrespondingInsuranceClient(newValue, affectedEObject, false)
-		tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, Gender::FEMALE)
+		updateNameAndCorrespondencesOfCorrespondingInsuranceClient(newValue, affectedEObject, Gender.FEMALE)
+		tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, Gender.FEMALE)
 	}
 }
 
 reaction CreatedAndInsertedSon {
 	after element families::Member inserted in families::Family[sons]
-	call tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, Gender::MALE)
+	call tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, Gender.MALE)
 }
 
 reaction InsertedSon {
 	after element families::Member inserted in families::Family[sons]
-	call updateNameAndCorrespondencesOfCorrespondingInsuranceClient(newValue, affectedEObject, true)
+	call updateNameAndCorrespondencesOfCorrespondingInsuranceClient(newValue, affectedEObject, Gender.MALE)
 }
 
 reaction CreatedAndInsertedDaughter {
 	after element families::Member inserted in families::Family[daughters]
-	call tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, Gender::FEMALE)
+	call tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, Gender.FEMALE)
 }
 
 reaction InsertedDaughter {
 	after element families::Member inserted in families::Family[daughters]
-	call updateNameAndCorrespondencesOfCorrespondingInsuranceClient(newValue, affectedEObject, false)
+	call updateNameAndCorrespondencesOfCorrespondingInsuranceClient(newValue, affectedEObject, Gender.FEMALE)
 }
 
 routine deleteFamily(families::Family family) {
@@ -140,10 +140,10 @@ routine createInsuranceClient(families::Member newMember, families::Family famil
 
 // Checks if member already existed (as expected gender), and breaks if not
 // Updates name and correspondences
-routine updateNameAndCorrespondencesOfCorrespondingInsuranceClient(families::Member newMember, families::Family newFamily, Boolean isMale) {
+routine updateNameAndCorrespondencesOfCorrespondingInsuranceClient(families::Member newMember, families::Family newFamily, enum insurance::Gender gender) {
 	match {
 		val correspondingInsuranceClient = retrieve insurance::InsuranceClient corresponding to newMember with { 
-			assertGender(it, isMale.isMaleToGender) true
+			assertGender(it, gender) true
 		}
 		val oldFamily = retrieve families::Family corresponding to correspondingInsuranceClient
 	}
