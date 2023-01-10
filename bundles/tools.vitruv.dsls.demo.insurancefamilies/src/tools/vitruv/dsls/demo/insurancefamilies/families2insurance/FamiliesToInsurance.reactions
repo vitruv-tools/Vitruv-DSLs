@@ -61,7 +61,7 @@ reaction CreatedFather {
 		with newValue !== null
 	call {
 		updateNameAndCorrespondencesOfCorrespondingInsuranceClient(newValue, affectedEObject, true)
-		tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, true)
+		tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, Gender::MALE)
 	}
 }
 
@@ -70,13 +70,13 @@ reaction CreatedMother {
 		with newValue !== null
 	call {
 		updateNameAndCorrespondencesOfCorrespondingInsuranceClient(newValue, affectedEObject, false)
-		tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, false)
+		tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, Gender::FEMALE)
 	}
 }
 
 reaction CreatedAndInsertedSon {
 	after element families::Member inserted in families::Family[sons]
-	call tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, true)
+	call tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, Gender::MALE)
 }
 
 reaction InsertedSon {
@@ -86,7 +86,7 @@ reaction InsertedSon {
 
 reaction CreatedAndInsertedDaughter {
 	after element families::Member inserted in families::Family[daughters]
-	call tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, false)
+	call tryCreateInsuranceClientFromNewMember(newValue, affectedEObject, Gender::FEMALE)
 }
 
 reaction InsertedDaughter {
@@ -108,17 +108,17 @@ routine changeFamilyName(families::Family family){
 
 // Checks whether the member was actually just created (has no corresponding person) or not.
 // Only continues if member is a newly created member.
-routine tryCreateInsuranceClientFromNewMember(families::Member newMember, families::Family family, Boolean isMale) {
+routine tryCreateInsuranceClientFromNewMember(families::Member newMember, families::Family family, enum insurance::Gender gender) {
 	match {
 		require absence of insurance::InsuranceClient corresponding to newMember
 	}
 	update {
-		createInsuranceClient(newMember, family, isMale)
+		createInsuranceClient(newMember, family, gender)
 	}
 }
 
 // Creates corresponding insurance client and sets up correspondences
-routine createInsuranceClient(families::Member newMember, families::Family family, Boolean isMale) {
+routine createInsuranceClient(families::Member newMember, families::Family family, enum insurance::Gender gender) {
 	match {
 		check { assertValidFirstname(newMember) true }
 		val insuranceDatabase = retrieve insurance::InsuranceDatabase corresponding to family.register
@@ -128,7 +128,7 @@ routine createInsuranceClient(families::Member newMember, families::Family famil
 	}
 	update {
 		insuranceClient.name = newMember.insuranceClientName
-		insuranceClient.gender = isMale.isMaleToGender;
+		insuranceClient.gender = gender;
 		// ignore: socialSecurityNumber
 		
 		insuranceDatabase.insuranceclient += insuranceClient
