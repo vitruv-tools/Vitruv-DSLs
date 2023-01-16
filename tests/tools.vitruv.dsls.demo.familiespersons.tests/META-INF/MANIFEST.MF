@@ -5,9 +5,12 @@ Bundle-SymbolicName: tools.vitruv.dsls.demo.familiespersons.tests
 Automatic-Module-Name: tools.vitruv.dsls.demo.familiespersons.tests
 Bundle-Version: 3.0.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-17
-Require-Bundle: tools.vitruv.testutils,
- org.junit.jupiter.api,
+Import-Package: org.junit.jupiter.api,
+ org.junit.jupiter.api.extension,
+ org.junit.jupiter.api.function,
  org.junit.jupiter.params,
+ org.junit.jupiter.params.provider
+Require-Bundle: tools.vitruv.testutils,
  org.hamcrest.core,
  tools.vitruv.dsls.demo.familiespersons;visibility:=reexport
 Bundle-Vendor: vitruv.tools

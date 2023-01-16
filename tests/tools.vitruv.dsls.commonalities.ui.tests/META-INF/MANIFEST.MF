@@ -6,6 +6,8 @@ Bundle-Version: 3.0.1.qualifier
 Bundle-SymbolicName: tools.vitruv.dsls.commonalities.ui.tests; singleton:=true
 Automatic-Module-Name: tools.vitruv.dsls.commonalities.ui.tests
 Bundle-ActivationPolicy: lazy
+Import-Package: org.junit.jupiter.api,
+ org.junit.jupiter.api.extension
 Require-Bundle: tools.vitruv.dsls.commonalities,
  tools.vitruv.dsls.commonalities.ui,
  tools.vitruv.testutils,
@@ -13,7 +15,6 @@ Require-Bundle: tools.vitruv.dsls.commonalities,
  org.eclipse.xtext.testing,
  org.eclipse.xtext.ui.testing,
  org.eclipse.xtext.xbase.testing,
- org.junit.jupiter.api,
  org.hamcrest.core,
  org.eclipse.pde.core,
  org.eclipse.xtext.xbase.junit,
