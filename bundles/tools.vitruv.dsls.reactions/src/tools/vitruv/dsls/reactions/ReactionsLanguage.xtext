@@ -125,8 +125,8 @@ RoutineOverrideImportPath returns toplevelelements::RoutineOverrideImportPath:
 
 RoutineInput returns toplevelelements::RoutineInput:
 	{toplevelelements::RoutineInput}
-	'(' ((modelInputElements+=NamedMetaclassReference | "plain" javaInputElements+=NamedJavaElementReference)
-	(',' (modelInputElements+=NamedMetaclassReference | "plain" javaInputElements+=NamedJavaElementReference))*)? ')';
+	'(' ((modelInputElements+=NamedMetaclassReference | "plain" javaInputElements+=NamedJavaElementReference | "enum" enumInputElements+=NamedMetaenumReference)
+	(',' (modelInputElements+=NamedMetaclassReference | "plain" javaInputElements+=NamedJavaElementReference | "enum" enumInputElements+=NamedMetaenumReference))*)? ')';
 
 // *********** MATCH ***********
 MatchBlock returns toplevelelements::MatchBlock:
@@ -194,3 +194,9 @@ MetaclassEAttributeReference returns common::MetaclassEAttributeReference:
 
 MetaclassEReferenceReference returns common::MetaclassEReferenceReference:
 	MetaclassReference '[' feature=[ecore::EReference|ValidID] ']';
+	
+fragment MetaenumReference returns common::MetaenumReference:
+	(metamodel=[common::MetamodelImport] '::')? metaenum=[ecore::EEnum|QualifiedName];
+	
+NamedMetaenumReference returns common::NamedMetaenumReference:
+	MetaenumReference name=ValidID;

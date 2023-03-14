@@ -25,6 +25,7 @@ import tools.vitruv.dsls.common.elements.MetaclassEReferenceReference
 import com.google.inject.Inject
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import com.google.inject.Provider
+import org.eclipse.emf.ecore.EEnum
 
 class CommonLanguageElementsScopeProvider {
 	@Inject IQualifiedNameProvider qualifiedNameProvider
@@ -49,6 +50,11 @@ class CommonLanguageElementsScopeProvider {
 		} else if (reference.equals(METACLASS_REFERENCE__METACLASS)) {
 			val potentialMetaclassReference = if(context instanceof MetaclassReference) context
 			return createQualifiedEClassScope(potentialMetaclassReference?.metamodel)
+		} else if (reference.equals(METAENUM_REFERENCE__METAMODEL)) {
+			return createImportsScope(context.eResource)
+		} else if (reference.equals(METAENUM_REFERENCE__METAENUM)) {
+			val potentialMetaenumReference = if(context instanceof MetaenumReference) context
+			return createQualifiedEClassScope(potentialMetaenumReference?.metamodel, false, null, EcorePackage.Literals.EENUM)
 		}
 		return null
 	}
@@ -116,7 +122,7 @@ class CommonLanguageElementsScopeProvider {
 	 * @param metamodelImport - the metamodel to provide all classes of
 	 */
 	def createQualifiedEClassScope(MetamodelImport metamodelImport) {
-		return createQualifiedEClassScope(metamodelImport, false, null);
+		return createQualifiedEClassScope(metamodelImport, false, null, EcorePackage.Literals.EOBJECT);
 	}
 
 	/**
@@ -128,7 +134,7 @@ class CommonLanguageElementsScopeProvider {
 	 * @param metamodelImport - the metamodel to provide the classes of
 	 */
 	def createQualifiedEClassScopeWithEObject(MetamodelImport metamodelImport) {
-		return createQualifiedEClassScope(metamodelImport, true, null);
+		return createQualifiedEClassScope(metamodelImport, true, null, EcorePackage.Literals.EOBJECT);
 	}
 
 	/**
@@ -139,23 +145,23 @@ class CommonLanguageElementsScopeProvider {
 	 * @param metamodelImport - the metamodel to provide the non-abstract classes of
 	 */
 	def createQualifiedEClassScopeWithoutAbstract(MetamodelImport metamodelImport) {
-		return createQualifiedEClassScope(metamodelImport, false, [
-			!abstract
-		]);
+		return createQualifiedEClassScope(metamodelImport, false, [if(it instanceof EClass)!abstract
+			else false
+		], EcorePackage.Literals.EOBJECT);
 	}
 
 	/**
-	 * Create an {@link IScope} that represents all {@link EClass}es
+	 * Create an {@link IScope} that represents all {@link EClasses}s
 	 * that are referencable inside the {@link Resource} via {@link Import}s
-	 * by a fully qualified name.
+	 * by a fully qualified name and have the type of the given {@link #type}.
 	 * 
 	 * @see #createQualifiedEClassifierScope(Resource)
 	 */
 	private def createQualifiedEClassScope(MetamodelImport metamodelImport, boolean includeEObject,
-		Function<EClass, Boolean> filter) {
+		Function<EClassifier, Boolean> filter, EClass type) {
 		val classifierDescriptions = if (metamodelImport === null || metamodelImport.package === null) {
 				if (includeEObject) {
-					#[createEObjectDescription(EcorePackage.Literals.EOBJECT, false)];
+					#[createEObjectDescription(type, false)];
 				} else {
 					#[];
 				}
@@ -182,7 +188,7 @@ class CommonLanguageElementsScopeProvider {
 	}
 	
 	private def Iterable<IEObjectDescription> collectObjectDescriptions(EPackage pckg, boolean includeSubpackages,
-		boolean useQualifiedNames, Function<EClass, Boolean> filter) {
+		boolean useQualifiedNames, Function<EClassifier, Boolean> filter) {
 		var classes = collectEClasses(pckg, includeSubpackages)
 		if (filter !== null) {
 			classes = classes.filter(filter)
@@ -190,12 +196,12 @@ class CommonLanguageElementsScopeProvider {
 		classes.map[it.createEObjectDescription(useQualifiedNames)]
 	}
 
-	private def Iterable<EClass> collectEClasses(EPackage pckg, boolean includeSubpackages) {
-		var recursiveResult = <EClass>newArrayList();
+	private def Iterable<EClassifier> collectEClasses(EPackage pckg, boolean includeSubpackages) {
+		var recursiveResult = <EClassifier>newArrayList();
 		if (includeSubpackages) {
 			recursiveResult += pckg.ESubpackages.map[it|collectEClasses(it, includeSubpackages)].flatten
 		}
-		val result = pckg.EClassifiers.filter(EClass);
+		val result = pckg.EClassifiers.filter[it instanceof EClass || it instanceof EEnum];
 		return recursiveResult + result;
 	}
 

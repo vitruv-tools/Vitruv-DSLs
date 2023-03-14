@@ -9,6 +9,8 @@ import static extension tools.vitruv.dsls.reactions.codegen.helper.ReactionsLang
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 import tools.vitruv.dsls.reactions.language.toplevelelements.NamedJavaElementReference
 import tools.vitruv.dsls.common.elements.NamedMetaclassReference
+import tools.vitruv.dsls.common.elements.NamedMetaenumReference
+import org.eclipse.emf.ecore.EEnum
 
 class ParameterGenerator {
 	static val MISSING_PARAMETER_NAME = "/* Name missing */"
@@ -29,12 +31,13 @@ class ParameterGenerator {
 		elements.map[toParameter(contextObject, it.name, it.generateTypeRef(_typeReferenceBuilder))]
 	}
 	
-	def Iterable<AccessibleElement> getInputElements(Iterable<NamedMetaclassReference> metaclassReferences, Iterable<NamedJavaElementReference> javaElements) {
+	def Iterable<AccessibleElement> getInputElements(Iterable<NamedMetaclassReference> metaclassReferences, Iterable<NamedJavaElementReference> javaElements, Iterable<NamedMetaenumReference> metaenumReferences) {
 		return metaclassReferences.map[new AccessibleElement(it.name ?: MISSING_PARAMETER_NAME, it.metaclass?.mappedInstanceClassCanonicalName)]
-			+ javaElements.map[new AccessibleElement(it.name ?: MISSING_PARAMETER_NAME, it.type?.qualifiedName)];
+			+ javaElements.map[new AccessibleElement(it.name ?: MISSING_PARAMETER_NAME, it.type?.qualifiedName)]
+			+ metaenumReferences.map[new AccessibleElement(it.name ?: MISSING_PARAMETER_NAME, it.metaenum?.mappedInstanceClassCanonicalName)];
 	}
 	
-	private def getMappedInstanceClassCanonicalName(EClass eClass) {
+	private dispatch def getMappedInstanceClassCanonicalName(EClass eClass) {
 		switch eClass {
 			case InputTypesPackage.Literals.STRING: String.name
 			case InputTypesPackage.Literals.INTEGER: Integer.name
@@ -47,6 +50,10 @@ class ParameterGenerator {
 			case InputTypesPackage.Literals.DOUBLE: Double.name
 			default: eClass.javaClassName
 		}
+	}
+	
+	private dispatch def getMappedInstanceClassCanonicalName(EEnum eEnum) {
+		return eEnum.javaClassName
 	}
 	
 }
