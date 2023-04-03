@@ -22,4 +22,11 @@
   <eClassifiers xsi:type="ecore:EClass" name="MetaclassEReferenceReference" eSuperTypes="#//MetaclassReference">
     <eStructuralFeatures xsi:type="ecore:EReference" name="feature" eType="ecore:EClass ../../org.eclipse.emf.ecore/model/Ecore.ecore#//EReference"/>
   </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="MetaenumReference">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="metamodel" eType="#//MetamodelImport"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="metaenum" eType="ecore:EClass ../../org.eclipse.emf.ecore/model/Ecore.ecore#//EEnum"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="NamedMetaenumReference" eSuperTypes="#//MetaenumReference">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType ../../org.eclipse.emf.ecore/model/Ecore.ecore#//EString"/>
+  </eClassifiers>
 </ecore:EPackage>
