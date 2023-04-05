@@ -2,44 +2,46 @@ package tools.vitruv.dsls.demo.insurancefamilies.tests.insurance2families;
 
 import edu.kit.ipd.sdq.metamodels.families.FamiliesFactory
 import edu.kit.ipd.sdq.metamodels.families.Family
+import edu.kit.ipd.sdq.metamodels.families.FamilyRegister
 import edu.kit.ipd.sdq.metamodels.insurance.Gender
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceDatabase
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceFactory
+import java.io.IOException
+import java.nio.file.Files
 import java.nio.file.Path
 import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.^extension.ExtendWith
 import tools.vitruv.change.interaction.UserInteractionOptions.NotificationType
+import tools.vitruv.change.propagation.ChangePropagationSpecification
+import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
+import tools.vitruv.change.propagation.impl.DefaultChangeRecordingModelRepository
+import tools.vitruv.dsls.demo.insurancefamilies.insurance2families.InsuranceToFamiliesChangePropagationSpecification
+import tools.vitruv.dsls.demo.insurancefamilies.insurance2families.PositionPreference
+import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesDefaultTestModelFactory
+import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesTestModelFactory
+import tools.vitruv.dsls.testutils.TestModel
+import tools.vitruv.testutils.TestLogging
+import tools.vitruv.testutils.TestProject
+import tools.vitruv.testutils.TestProjectManager
+import tools.vitruv.testutils.TestUserInteraction
 import tools.vitruv.testutils.TestUserInteraction.MultipleChoiceInteractionDescription
+import tools.vitruv.testutils.views.ChangePublishingTestView
+import tools.vitruv.testutils.views.NonTransactionalTestView
+import tools.vitruv.testutils.views.UriMode
 
+import static edu.kit.ipd.sdq.commons.util.org.eclipse.emf.common.util.URIUtil.createFileURI
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertTrue
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.CreatorsUtil.createInsuranceClient
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.FamiliesQueryUtil.claimFamilyRegister
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceQueryUtil.claimInsuranceDatabase
-import static tools.vitruv.testutils.matchers.ModelMatchers.*
-import tools.vitruv.dsls.demo.insurancefamilies.insurance2families.PositionPreference
-import org.eclipse.emf.ecore.util.EcoreUtil
-import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesTestModelFactory
-import tools.vitruv.testutils.TestProject
-import java.io.IOException
-import tools.vitruv.testutils.views.NonTransactionalTestView
-import tools.vitruv.testutils.TestUserInteraction
-import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
-import tools.vitruv.testutils.views.ChangePublishingTestView
-import tools.vitruv.testutils.views.UriMode
-import edu.kit.ipd.sdq.metamodels.families.FamilyRegister
-import tools.vitruv.dsls.demo.insurancefamilies.insurance2families.InsuranceToFamiliesChangePropagationSpecification
-import tools.vitruv.change.propagation.ChangePropagationSpecification
-import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesDefaultTestModelFactory
-import static edu.kit.ipd.sdq.commons.util.org.eclipse.emf.common.util.URIUtil.createFileURI
-import org.junit.jupiter.api.^extension.ExtendWith
-import tools.vitruv.testutils.TestLogging
-import tools.vitruv.testutils.TestProjectManager
-import tools.vitruv.dsls.testutils.TestModel
 import static tools.vitruv.testutils.TestModelRepositoryFactory.createTestChangeableModelRepository
+import static tools.vitruv.testutils.matchers.ModelMatchers.equalsDeeply
 
 enum FamilyPreference {
 	New,
@@ -74,10 +76,11 @@ abstract class AbstractInsuranceToFamiliesTest {
 		TestUserInteraction userInteraction) throws IOException {
 		val changePropagationSpecificationProvider = new ChangePropagationSpecificationRepository(
 			changePropagationSpecifications)
-		val changeableModelRepository = createTestChangeableModelRepository(changePropagationSpecificationProvider,
-			userInteraction)
+		val modelRepository = new DefaultChangeRecordingModelRepository(null, Files.createTempDirectory(null));
+		val changeableModelRepository = createTestChangeableModelRepository(modelRepository,
+			changePropagationSpecificationProvider, userInteraction)
 		return new ChangePublishingTestView(testProjectPath, userInteraction, UriMode.FILE_URIS,
-			changeableModelRepository)
+			changeableModelRepository, modelRepository.uuidResolver) [ modelRepository.getModelResource(it) ]
 	}
 	
 	// === setup ===

@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
@@ -14,6 +15,7 @@ import com.google.common.collect.FluentIterable;
 import edu.kit.ipd.sdq.commons.util.org.eclipse.emf.common.util.URIUtil;
 import tools.vitruv.change.composite.description.PropagatedChange;
 import tools.vitruv.testutils.views.NonTransactionalTestView;
+import tools.vitruv.testutils.views.TestView;
 
 /**
  * A {@link TestModel} that propagates performed changes using the functionality
@@ -68,9 +70,10 @@ public class ChangePropagatingTestViewBasedTestModel<T extends EObject> implemen
 	@Override
 	public void applyChanges(Consumer<TestModel<T>> modelModificationFunction,
 			TestViewBasedTestModel<?> otherTestModelToUpdate) {
-		FluentIterable.from(getRootObjects()).forEach(object -> testView.startRecordingChanges(object.eResource()));
+		Set<Resource> resources = getRootObjects().stream().map(it -> it.eResource()).collect(Collectors.toSet());
+		resources.forEach(resource -> testView.startRecordingChanges(resource));
 		modelModificationFunction.accept(this);
-		FluentIterable.from(getRootObjects()).forEach(object -> testView.stopRecordingChanges(object.eResource()));
+		resources.forEach(resource -> testView.stopRecordingChanges(resource));
 		Iterable<PropagatedChange> changes = testView.propagate();
 		FluentIterable.from(changes)
 				.transformAndConcat(change -> change.getConsequentialChanges().getAffectedEObjects())

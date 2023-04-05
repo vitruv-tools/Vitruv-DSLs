@@ -1,33 +1,29 @@
 package tools.vitruv.dsls.demo.insurancepersons.tests
 
+import edu.kit.ipd.sdq.metamodels.insurance.Gender
+import edu.kit.ipd.sdq.metamodels.insurance.InsuranceDatabase
+import edu.kit.ipd.sdq.metamodels.insurance.InsuranceFactory
+import edu.kit.ipd.sdq.metamodels.persons.PersonRegister
+import edu.kit.ipd.sdq.metamodels.persons.PersonsFactory
+import java.io.IOException
+import java.nio.file.Path
+import org.eclipse.xtend.lib.annotations.Delegate
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.nio.file.Path
+import org.junit.jupiter.api.^extension.ExtendWith
+import tools.vitruv.change.propagation.ChangePropagationSpecification
 import tools.vitruv.dsls.demo.insurancepersons.insurance2persons.InsuranceToPersonsChangePropagationSpecification
-import edu.kit.ipd.sdq.metamodels.insurance.InsuranceFactory
-import edu.kit.ipd.sdq.metamodels.insurance.InsuranceDatabase
-import edu.kit.ipd.sdq.metamodels.persons.PersonRegister
-import edu.kit.ipd.sdq.metamodels.insurance.Gender
-import edu.kit.ipd.sdq.metamodels.persons.PersonsFactory
+import tools.vitruv.testutils.TestLogging
+import tools.vitruv.testutils.TestProject
+import tools.vitruv.testutils.TestProjectManager
+import tools.vitruv.testutils.views.TestView
 
 import static org.hamcrest.CoreMatchers.*
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static tools.vitruv.testutils.matchers.ModelMatchers.*
-import tools.vitruv.testutils.views.TestView
-import tools.vitruv.testutils.TestProjectManager
-import tools.vitruv.testutils.TestLogging
-import org.junit.jupiter.api.^extension.ExtendWith
-import org.eclipse.xtend.lib.annotations.Delegate
-import tools.vitruv.change.propagation.ChangePropagationSpecification
-import tools.vitruv.testutils.TestProject
-import tools.vitruv.testutils.TestUserInteraction
-import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
-import tools.vitruv.testutils.views.ChangePublishingTestView
-import tools.vitruv.testutils.views.UriMode
-import org.junit.jupiter.api.AfterEach
-import java.io.IOException
-import static tools.vitruv.testutils.TestModelRepositoryFactory.createTestChangeableModelRepository
+import static tools.vitruv.testutils.views.ChangePublishingTestView.createDefaultChangePublishingTestView
 
 @ExtendWith(TestLogging, TestProjectManager)
 class InsuranceToPersonsTest implements TestView {
@@ -50,13 +46,7 @@ class InsuranceToPersonsTest implements TestView {
 	}
 
 	private def TestView prepareTestView(Path testProjectPath) throws IOException {
-		val userInteraction = new TestUserInteraction()
-		val changePropagationSpecificationProvider = new ChangePropagationSpecificationRepository(
-			changePropagationSpecifications)
-		val changeableModelRepository = createTestChangeableModelRepository(changePropagationSpecificationProvider,
-			userInteraction)
-		return new ChangePublishingTestView(testProjectPath, userInteraction, UriMode.FILE_URIS,
-			changeableModelRepository)
+		return createDefaultChangePublishingTestView(testProjectPath, changePropagationSpecifications)
 	}
 
 	@AfterEach
