@@ -6,14 +6,27 @@ import edu.kit.ipd.sdq.metamodels.insurance.Gender
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceClient
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceDatabase
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceFactory
+import java.io.IOException
 import java.nio.file.Path
 import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.^extension.ExtendWith
+import tools.vitruv.change.propagation.ChangePropagationSpecification
+import tools.vitruv.dsls.demo.insurancefamilies.families2insurance.FamiliesToInsuranceChangePropagationSpecification
+import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesDefaultTestModelFactory
+import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesTestModelFactory
+import tools.vitruv.dsls.testutils.TestModel
+import tools.vitruv.testutils.TestLogging
+import tools.vitruv.testutils.TestProject
+import tools.vitruv.testutils.TestProjectManager
+import tools.vitruv.testutils.views.NonTransactionalTestView
 
+import static edu.kit.ipd.sdq.commons.util.org.eclipse.emf.common.util.URIUtil.createFileURI
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.CreatorsUtil.createFamily
@@ -21,25 +34,9 @@ import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.CreatorsUtil.c
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.CreatorsUtil.createInsuranceClient
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.FamiliesQueryUtil.claimFamilyRegister
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceQueryUtil.claimInsuranceDatabase
-import static tools.vitruv.testutils.matchers.ModelMatchers.*
-import org.eclipse.emf.ecore.util.EcoreUtil
-import org.junit.jupiter.api.^extension.ExtendWith
-import tools.vitruv.testutils.TestLogging
-import tools.vitruv.testutils.TestProjectManager
-import tools.vitruv.testutils.TestProject
-import java.io.IOException
-import tools.vitruv.testutils.TestUserInteraction
-import tools.vitruv.change.propagation.ChangePropagationSpecificationRepository
-import tools.vitruv.testutils.views.UriMode
-import tools.vitruv.change.propagation.ChangePropagationSpecification
-import static edu.kit.ipd.sdq.commons.util.org.eclipse.emf.common.util.URIUtil.createFileURI
-import tools.vitruv.testutils.views.NonTransactionalTestView
-import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesDefaultTestModelFactory
-import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesTestModelFactory
-import tools.vitruv.dsls.demo.insurancefamilies.families2insurance.FamiliesToInsuranceChangePropagationSpecification
-import tools.vitruv.testutils.views.ChangePublishingTestView
-import tools.vitruv.dsls.testutils.TestModel
-import static tools.vitruv.testutils.TestModelRepositoryFactory.createTestChangeableModelRepository
+import static tools.vitruv.testutils.matchers.ModelMatchers.containsAllOf
+import static tools.vitruv.testutils.matchers.ModelMatchers.equalsDeeply
+import static tools.vitruv.testutils.views.ChangePublishingTestView.createDefaultChangePublishingTestView
 
 @ExtendWith(#[TestLogging, TestProjectManager])
 abstract class AbstractFamiliesToInsuranceTest {
@@ -60,13 +57,7 @@ abstract class AbstractFamiliesToInsuranceTest {
 	}
 
 	private def NonTransactionalTestView prepareTestView(Path testProjectPath) throws IOException {
-		val userInteraction = new TestUserInteraction()
-		val changePropagationSpecificationProvider = new ChangePropagationSpecificationRepository(
-			changePropagationSpecifications)
-		val changeableModelRepository = createTestChangeableModelRepository(changePropagationSpecificationProvider,
-			userInteraction)
-		return new ChangePublishingTestView(testProjectPath, userInteraction, UriMode.FILE_URIS,
-			changeableModelRepository)
+		return createDefaultChangePublishingTestView(testProjectPath, changePropagationSpecifications)
 	}
 
 	protected def Iterable<ChangePropagationSpecification> getChangePropagationSpecifications() {
