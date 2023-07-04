@@ -1,11 +1,13 @@
 package tools.vitruv.dsls.reactions.codegen.changetyperepresentation
 
 import org.eclipse.emf.ecore.EStructuralFeature
-import org.eclipse.xtend2.lib.StringConcatenationClient
-import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
-import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.*
-import tools.vitruv.change.atomic.feature.single.ReplaceSingleValuedFeatureEChange
 import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.xtend2.lib.StringConcatenationClient
+import tools.vitruv.change.atomic.feature.single.ReplaceSingleValuedFeatureEChange
+import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
+
+import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.*
+import java.util.List
 
 /**
  * This class is responsible for representing the relevant change information for generating reactions
@@ -40,9 +42,15 @@ class ChangeTypeRepresentation {
 	final EStructuralFeature affectedFeature
 	@Accessors(PUBLIC_GETTER)
 	final String name
+	final List<String> explicitGenericTypeParameters
 	
 	protected new(String name, Class<?> changeType, String affectedElementClassCanonicalName, String affectedValueClassCanonicalName, boolean hasOldValue,
 		boolean hasNewValue, EStructuralFeature affectedFeature, boolean hasIndex) {
+		this(name, changeType, affectedElementClassCanonicalName, affectedValueClassCanonicalName, hasOldValue, hasNewValue, affectedFeature, hasIndex, null)
+	}
+	
+	protected new(String name, Class<?> changeType, String affectedElementClassCanonicalName, String affectedValueClassCanonicalName, boolean hasOldValue,
+		boolean hasNewValue, EStructuralFeature affectedFeature, boolean hasIndex, List<String> explicitGenericTypeParameters) {
 		this.name = name
 		this.changeType = changeType
 		this.affectedElementClassCanonicalName = affectedElementClassCanonicalName.mapToNonPrimitiveType
@@ -51,6 +59,7 @@ class ChangeTypeRepresentation {
 		this.hasOldValue = hasOldValue
 		this.hasNewValue = hasNewValue
 		this.hasIndex = hasIndex
+		this.explicitGenericTypeParameters = explicitGenericTypeParameters
 	}
 
 	def getAffectedElementClass() {
@@ -70,6 +79,9 @@ class ChangeTypeRepresentation {
 	}
 	
 	def getGenericTypeParameters() {
+		if (explicitGenericTypeParameters !== null) {
+			return explicitGenericTypeParameters
+		}
 		#[affectedElementClassCanonicalName, affectedValueClassCanonicalName].filterNull
 	}
 
@@ -94,7 +106,7 @@ class ChangeTypeRepresentation {
 	
 	private def StringConcatenationClient generateElementChecks(String parameterName) '''
 		«IF hasAffectedElement»
-			if (!(«parameterName».getAffectedEObject() instanceof «affectedElementClass»)) {
+			if (!(«parameterName».getAffectedElement() instanceof «affectedElementClass»)) {
 				return false;
 			}
 		«ENDIF»
@@ -141,16 +153,16 @@ class ChangeTypeRepresentation {
 	def StringConcatenationClient generatePropertiesAssignmentCode() {
 		'''
 			«IF affectedElementClass !== null»
-				«affectedElementClass» «CHANGE_AFFECTED_ELEMENT_ATTRIBUTE» = «name».get«CHANGE_AFFECTED_ELEMENT_ATTRIBUTE.toFirstUpper»();
+				«affectedElementClass» «CHANGE_AFFECTED_ELEMENT_ATTRIBUTE» = («affectedElementClass»)«name».«CHANGE_AFFECTED_ELEMENT_ACCESSOR»;
 			«ENDIF»
 			«IF affectedFeature !== null»
 				«affectedFeature.eClass.instanceClass» «CHANGE_AFFECTED_FEATURE_ATTRIBUTE» = «name».get«CHANGE_AFFECTED_FEATURE_ATTRIBUTE.toFirstUpper»();
 			«ENDIF»
 			«IF hasOldValue»
-				«affectedValueClass» «CHANGE_OLD_VALUE_ATTRIBUTE» = «name».get«CHANGE_OLD_VALUE_ATTRIBUTE.toFirstUpper»();
+				«affectedValueClass» «CHANGE_OLD_VALUE_ATTRIBUTE» = («affectedValueClass»)«name».get«CHANGE_OLD_VALUE_ATTRIBUTE.toFirstUpper»();
 			«ENDIF»
 			«IF hasNewValue»
-				«affectedValueClass» «CHANGE_NEW_VALUE_ATTRIBUTE» = «name».get«CHANGE_NEW_VALUE_ATTRIBUTE.toFirstUpper»();
+				«affectedValueClass» «CHANGE_NEW_VALUE_ATTRIBUTE» = («affectedValueClass»)«name».get«CHANGE_NEW_VALUE_ATTRIBUTE.toFirstUpper»();
 			«ENDIF»
 			«IF hasIndex»
 				int «CHANGE_INDEX_ATTRIBUTE» = «name».get«CHANGE_INDEX_ATTRIBUTE.toFirstUpper»();
