@@ -1,17 +1,19 @@
 package tools.vitruv.dsls.reactions.runtime.reactions
 
-import tools.vitruv.change.composite.MetamodelDescriptor
-import org.apache.log4j.Logger
-import tools.vitruv.change.propagation.impl.AbstractChangePropagationSpecification
 import java.util.List
+import org.apache.log4j.Logger
+import org.eclipse.emf.ecore.EObject
 import tools.vitruv.change.atomic.EChange
-import tools.vitruv.change.interaction.UserInteractor
-import tools.vitruv.change.propagation.ResourceAccess
-import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
-import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView
+import tools.vitruv.change.composite.MetamodelDescriptor
 import tools.vitruv.change.correspondence.Correspondence
-import tools.vitruv.dsls.reactions.runtime.correspondence.ReactionsCorrespondence
+import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView
+import tools.vitruv.change.interaction.UserInteractor
+import tools.vitruv.change.propagation.ChangePropagationSpecification
+import tools.vitruv.change.propagation.ResourceAccess
+import tools.vitruv.change.propagation.impl.AbstractChangePropagationSpecification
 import tools.vitruv.dsls.reactions.runtime.correspondence.CorrespondenceFactory
+import tools.vitruv.dsls.reactions.runtime.correspondence.ReactionsCorrespondence
+import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 
 /**
  * A {@link ChangePropagationSpecification} that executes {@link Reaction}s.
@@ -31,11 +33,11 @@ abstract class AbstractReactionsChangePropagationSpecification extends AbstractC
 		this.reactions += reaction
 	}
 
-	override doesHandleChange(EChange change, EditableCorrespondenceModelView<Correspondence> correspondenceModel) {
+	override doesHandleChange(EChange<EObject> change, EditableCorrespondenceModelView<Correspondence> correspondenceModel) {
 		return true
 	}
 
-	override propagateChange(EChange change, EditableCorrespondenceModelView<Correspondence> correspondenceModel, ResourceAccess resourceAccess) {
+	override propagateChange(EChange<EObject> change, EditableCorrespondenceModelView<Correspondence> correspondenceModel, ResourceAccess resourceAccess) {
 		LOGGER.trace("Call relevant reactions from " + sourceMetamodelDescriptor + " to " + targetMetamodelDescriptor)
 		for (reaction : reactions) {
 			LOGGER.trace("Calling reaction: " + reaction.class.simpleName + " with change: " + change)

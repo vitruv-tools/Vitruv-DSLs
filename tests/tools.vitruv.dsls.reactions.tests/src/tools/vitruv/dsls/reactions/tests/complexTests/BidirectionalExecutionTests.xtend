@@ -1,24 +1,26 @@
 package tools.vitruv.dsls.reactions.tests.complexTests
 
 import allElementTypes.Root
+import org.eclipse.emf.ecore.EObject
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import tools.vitruv.change.atomic.eobject.CreateEObject
+import tools.vitruv.change.atomic.eobject.DeleteEObject
+import tools.vitruv.change.atomic.feature.reference.RemoveEReference
+import tools.vitruv.change.atomic.feature.reference.ReplaceSingleValuedEReference
+import tools.vitruv.change.atomic.root.RemoveRootEObject
 import tools.vitruv.change.composite.description.CompositeContainerChange
 import tools.vitruv.change.composite.description.PropagatedChange
 import tools.vitruv.change.composite.description.VitruviusChange
-import tools.vitruv.change.atomic.eobject.CreateEObject
-import tools.vitruv.change.atomic.feature.reference.ReplaceSingleValuedEReference
-
-import static org.hamcrest.CoreMatchers.*
-import static tools.vitruv.testutils.metamodels.AllElementTypesCreators.aet
-import static tools.vitruv.testutils.matchers.ModelMatchers.*
-import static org.hamcrest.MatcherAssert.assertThat
-import static tools.vitruv.testutils.matchers.ModelMatchers.containsModelOf
-import tools.vitruv.change.atomic.feature.reference.RemoveEReference
-import tools.vitruv.change.atomic.eobject.DeleteEObject
-import tools.vitruv.change.atomic.root.RemoveRootEObject
 import tools.vitruv.dsls.reactions.tests.ReactionsExecutionTest
 import tools.vitruv.dsls.reactions.tests.TestReactionsCompiler
+
+import static org.hamcrest.CoreMatchers.*
+import static org.hamcrest.MatcherAssert.assertThat
+import static tools.vitruv.testutils.matchers.ModelMatchers.*
+import static tools.vitruv.testutils.matchers.ModelMatchers.containsModelOf
+import static tools.vitruv.testutils.metamodels.AllElementTypesCreators.aet
+
 import static extension tools.vitruv.testutils.metamodels.TestMetamodelsPathFactory.allElementTypes
 
 class BidirectionalExecutionTests extends ReactionsExecutionTest {
@@ -51,8 +53,8 @@ class BidirectionalExecutionTests extends ReactionsExecutionTest {
 		assertThat(resourceAt(TARGET_MODEL), containsModelOf(resourceAt(SOURCE_MODEL)))
 	}
 
-	private def VitruviusChange getSourceModelChanges(PropagatedChange propagatedChange) {
-		return (propagatedChange.consequentialChanges as CompositeContainerChange).changes.findFirst [
+	private def VitruviusChange<EObject> getSourceModelChanges(PropagatedChange propagatedChange) {
+		return (propagatedChange.consequentialChanges as CompositeContainerChange<EObject>).changes.findFirst [
 			changedURIs.exists [lastSegment == SOURCE_MODEL.toString]
 		]
 	}

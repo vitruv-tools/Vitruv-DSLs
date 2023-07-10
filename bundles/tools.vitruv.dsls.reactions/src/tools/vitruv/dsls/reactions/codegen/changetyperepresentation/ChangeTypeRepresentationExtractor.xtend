@@ -130,7 +130,7 @@ final class ChangeTypeRepresentationExtractor {
 		val affectedValue = if (elementClass !== null) elementClass.javaClassName else modelElementChange.feature?.feature?.EType?.javaClassName
 		
 		val affectedFeature = modelElementChange.feature?.feature
-		return new ChangeTypeRepresentation(name, clazz.instanceClass, affectedEObject, affectedValue, hasOldValue, hasNewValue, affectedFeature, hasIndex)
+		return new ChangeTypeRepresentation(name, clazz.instanceClass, affectedEObject, affectedValue, hasOldValue, hasNewValue, affectedFeature, hasIndex, #[EObject.canonicalName])
 	}
 	
 	private static def dispatch ChangeTypeRepresentation generateChangeTypeRepresentation(ElementExistenceChangeType modelElementChange, EClass elementClass) {
