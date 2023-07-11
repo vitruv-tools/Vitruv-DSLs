@@ -15,6 +15,9 @@
 	<properties>
 		<!-- For each project, a local updatesite can be specified by overwriting these properties. They default to the Vitruv updatesites. -->
 		<vitruv.change.url>https://vitruv-tools.github.io/updatesite/nightly/change</vitruv.change.url>
+		<!-- Explicitly set source and target compiler levels to run Xtext with specified Java version -->
+		<maven.compiler.source>${maven.compiler.release}</maven.compiler.source>
+		<maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
 	</properties>
 
 	<repositories>
