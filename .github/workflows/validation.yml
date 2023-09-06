@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Framework
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: framework
           repository: vitruv-tools/Vitruv
@@ -70,7 +70,7 @@ jobs:
           name: framework
           path: framework
       - name: Checkout Case Studies
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: casestudies
           repository: vitruv-tools/Vitruv-CaseStudies
