@@ -190,7 +190,11 @@ NamedJavaElementReference returns toplevelelements::NamedJavaElementReference:
 	type=JvmTypeReference 'as' name=ValidID;
 
 MetaclassEAttributeReference returns common::MetaclassEAttributeReference:
-	MetaclassReference '[' feature=[ecore::EAttribute|ValidID] ']';
+	MetaclassReference '[' feature=[ecore::EAttribute|EAttributeReference] ']';
+
+EAttributeReference:
+	ValidID
+;
 
 MetaclassEReferenceReference returns common::MetaclassEReferenceReference:
 	MetaclassReference '[' feature=[ecore::EReference|ValidID] ']';

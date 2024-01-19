@@ -8,6 +8,7 @@ import org.eclipse.xtext.naming.IQualifiedNameConverter
 import org.eclipse.xtext.linking.ILinkingService
 import tools.vitruv.dsls.reactions.linking.ReactionsLinkingService
 import org.eclipse.xtext.generator.IGenerator2
+import tools.vitruv.dsls.reactions.conversion.ReactionsLanguageValueConverterService
 import tools.vitruv.dsls.reactions.generator.ReactionsLanguageGenerator
 import tools.vitruv.dsls.reactions.generator.InternalReactionsGenerator
 import tools.vitruv.dsls.reactions.api.generator.IReactionsGenerator
@@ -19,6 +20,10 @@ import tools.vitruv.dsls.common.elements.CommonLanguageElementsQualifiedNameConv
  * Use this class to register components to be used at runtime / without the Equinox extension registry.
  */
 class ReactionsLanguageRuntimeModule extends AbstractReactionsLanguageRuntimeModule {
+
+	override bindIValueConverterService() {
+		return ReactionsLanguageValueConverterService
+	}
 
 	override Class<? extends IQualifiedNameConverter> bindIQualifiedNameConverter() {
 		return CommonLanguageElementsQualifiedNameConverter;
