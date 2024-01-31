@@ -422,7 +422,7 @@ class ReactionsLanguageValidator extends AbstractReactionsLanguageValidator {
 			if (elementType !== null && featureType !== null) {
 				if (!elementType.equals(featureType) && !elementType.EAllSuperTypes.contains(featureType) &&
 					!featureType.EAllSuperTypes.contains(elementType)) {
-					warning(
+					error(
 						"Element of specified type cannot be contained in the specified features",
 						elementChange,
 						LanguagePackage.Literals.MODEL_ELEMENT_CHANGE__ELEMENT_TYPE
