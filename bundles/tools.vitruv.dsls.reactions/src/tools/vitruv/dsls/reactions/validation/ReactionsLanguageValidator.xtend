@@ -25,6 +25,9 @@ import static extension tools.vitruv.dsls.reactions.util.ReactionsLanguageUtil.*
 import tools.vitruv.dsls.reactions.language.LanguagePackage
 import tools.vitruv.dsls.reactions.language.toplevelelements.CreateBlock
 import tools.vitruv.dsls.common.elements.ElementsPackage
+import org.eclipse.emf.ecore.ETypedElement
+import tools.vitruv.dsls.reactions.language.ElementInsertionInListChangeType
+import tools.vitruv.dsls.reactions.language.ElementRemovalFromListChangeType
 
 /**
  * This class contains custom validation rules. 
@@ -419,13 +422,34 @@ class ReactionsLanguageValidator extends AbstractReactionsLanguageValidator {
 			if (elementType !== null && featureType !== null) {
 				if (!elementType.equals(featureType) && !elementType.EAllSuperTypes.contains(featureType) &&
 					!featureType.EAllSuperTypes.contains(elementType)) {
-					warning(
+					error(
 						"Element of specified type cannot be contained in the specified features",
 						elementChange,
 						LanguagePackage.Literals.MODEL_ELEMENT_CHANGE__ELEMENT_TYPE
 					)
 				}
 			}
+		}
+		
+		if (atomicChangeType instanceof ElementReferenceChangeType) {
+			val featureVal = atomicChangeType.feature?.feature;
+			if(featureVal instanceof ETypedElement) {
+				if(!featureVal.isMany()) {
+					if(elementChangeType instanceof ElementInsertionInListChangeType) {
+						error(
+							"Element cannot be inserted into single valued reference",
+							elementChange,
+							LanguagePackage.Literals.MODEL_ELEMENT_CHANGE__CHANGE_TYPE
+						)
+					}else if(elementChangeType instanceof ElementRemovalFromListChangeType) {
+						error(
+							"Element cannot be removed from single valued reference",
+							elementChange,
+							LanguagePackage.Literals.MODEL_ELEMENT_CHANGE__CHANGE_TYPE
+						)
+					}	
+				}
+			}		
 		}
 	}
 	
