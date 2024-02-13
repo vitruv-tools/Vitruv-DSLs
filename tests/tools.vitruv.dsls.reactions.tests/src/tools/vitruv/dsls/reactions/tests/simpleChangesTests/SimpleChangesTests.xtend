@@ -10,6 +10,7 @@ import static org.hamcrest.MatcherAssert.assertThat
 import static tools.vitruv.dsls.reactions.tests.ExecutionMonitor.observedExecutions
 import static tools.vitruv.testutils.metamodels.AllElementTypesCreators.aet
 import static tools.vitruv.testutils.matchers.ModelMatchers.containsModelOf
+import static tools.vitruv.testutils.matchers.ModelMatchers.hasNoErrors
 import static org.hamcrest.CoreMatchers.is
 import static tools.vitruv.testutils.matchers.ModelMatchers.exists
 import static tools.vitruv.testutils.matchers.ModelMatchers.doesNotExist
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Disabled
 import tools.vitruv.dsls.reactions.tests.ReactionsExecutionTest
 import tools.vitruv.dsls.reactions.tests.TestReactionsCompiler
 import static extension tools.vitruv.testutils.metamodels.TestMetamodelsPathFactory.allElementTypes
+import org.eclipse.emf.edit.ui.provider.DiagnosticDecorator.StyledError.ErrorStyler
 
 class SimpleChangesTests extends ReactionsExecutionTest {
 	static val SOURCE_MODEL = 'SimpleChangeSource'.allElementTypes

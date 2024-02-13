@@ -5,11 +5,12 @@ Bundle-SymbolicName: tools.vitruv.dsls.common;singleton:=true
 Automatic-Module-Name: tools.vitruv.dsls.common
 Bundle-Version: 3.0.1.qualifier
 Bundle-ClassPath: .
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Require-Bundle: org.eclipse.xtext,
  org.eclipse.xtext.xbase,
  org.eclipse.core.runtime,
  org.eclipse.emf.ecore;visibility:=reexport,
+ org.eclipse.xtext.common.types;visibility:=reexport,
  edu.kit.ipd.sdq.activextendannotations
 Bundle-ActivationPolicy: lazy
 Export-Package: tools.vitruv.dsls.common,

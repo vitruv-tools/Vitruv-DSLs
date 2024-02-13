@@ -26,13 +26,14 @@ Require-Bundle: edu.kit.ipd.sdq.activextendannotations,
  edu.kit.ipd.sdq.commons.util.java,
  org.objectweb.asm;bundle-version="[9.3.0,9.4.0)";resolution:=optional
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: tools.vitruv.dsls.reactions,
  tools.vitruv.dsls.reactions.api.generator,
  tools.vitruv.dsls.reactions.builder,
  tools.vitruv.dsls.reactions.codegen,
  tools.vitruv.dsls.reactions.codegen.changetyperepresentation,
- tools.vitruv.dsls.reactions.generator; x-friends:="tools.vitruv.dsls.reactions.tests",
+ tools.vitruv.dsls.reactions.generator;
+  x-friends:="tools.vitruv.dsls.reactions.tests",
  tools.vitruv.dsls.reactions.jvmmodel,
  tools.vitruv.dsls.reactions.parser.antlr,
  tools.vitruv.dsls.reactions.parser.antlr.internal,

@@ -54,6 +54,7 @@
     <genClasses ecoreClass="TopLevelElements.ecore#//RoutineInput">
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//RoutineInput/modelInputElements"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//RoutineInput/javaInputElements"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//RoutineInput/enumInputElements"/>
     </genClasses>
     <genClasses ecoreClass="TopLevelElements.ecore#//MatchBlock">
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//MatchBlock/matchStatements"/>
@@ -62,15 +63,14 @@
     <genClasses ecoreClass="TopLevelElements.ecore#//CreateBlock">
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//CreateBlock/createStatements"/>
     </genClasses>
-    <genClasses ecoreClass="TopLevelElements.ecore#//CodeBlock">
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//CodeBlock/code"/>
-    </genClasses>
-    <genClasses ecoreClass="TopLevelElements.ecore#//PreconditionCodeBlock"/>
     <genClasses ecoreClass="TopLevelElements.ecore#//NamedJavaElementReference">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute TopLevelElements.ecore#//NamedJavaElementReference/name"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//NamedJavaElementReference/type"/>
     </genClasses>
-    <genClasses ecoreClass="TopLevelElements.ecore#//RoutineCallBlock"/>
-    <genClasses ecoreClass="TopLevelElements.ecore#//ReactionRoutineCall"/>
+    <genClasses ecoreClass="TopLevelElements.ecore#//RoutineCall"/>
+    <genClasses ecoreClass="TopLevelElements.ecore#//UpdateBlock"/>
+    <genClasses ecoreClass="TopLevelElements.ecore#//CodeExecutionBlock">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference TopLevelElements.ecore#//CodeExecutionBlock/code"/>
+    </genClasses>
   </genPackages>
 </genmodel:GenModel>

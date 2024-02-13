@@ -38,6 +38,7 @@ import tools.vitruv.dsls.reactions.language.RetrieveOrRequireAbscenceOfModelElem
 import tools.vitruv.dsls.common.elements.CommonLanguageElementsScopeProvider
 import tools.vitruv.dsls.reactions.language.toplevelelements.CreateBlock
 import tools.vitruv.dsls.reactions.language.toplevelelements.MatchBlock
+import org.eclipse.emf.ecore.EClass
 
 /**
  * This class contains custom scoping description.
@@ -153,7 +154,7 @@ class ReactionsLanguageScopeProvider extends AbstractReactionsLanguageScopeProvi
 					throw new IllegalStateException();
 				}
 			createScope(IScope.NULLSCOPE,
-				featureReference.metaclass.EAllStructuralFeatures.filter(multiplicityFilterFunction).filter(
+				(featureReference.metaclass as EClass).EAllStructuralFeatures.filter(multiplicityFilterFunction).filter(
 					typeFilterFunction).iterator, [
 					EObjectDescription.create(it.name, it)
 				])
