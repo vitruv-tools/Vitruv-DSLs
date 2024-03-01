@@ -29,5 +29,12 @@
     <genClasses ecoreClass="CommonLanguageElements.ecore#//MetaclassEReferenceReference">
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference CommonLanguageElements.ecore#//MetaclassEReferenceReference/feature"/>
     </genClasses>
+    <genClasses ecoreClass="CommonLanguageElements.ecore#//MetaenumReference">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference CommonLanguageElements.ecore#//MetaenumReference/metamodel"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference CommonLanguageElements.ecore#//MetaenumReference/metaenum"/>
+    </genClasses>
+    <genClasses ecoreClass="CommonLanguageElements.ecore#//NamedMetaenumReference">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute CommonLanguageElements.ecore#//NamedMetaenumReference/name"/>
+    </genClasses>
   </genPackages>
 </genmodel:GenModel>

@@ -40,11 +40,11 @@ class CommonLanguageElementsScopeProvider {
 		if (reference.equals(METAMODEL_IMPORT__PACKAGE)) {
 			return packagesScope.get()
 		} else if (reference.equals(METACLASS_FEATURE_REFERENCE__FEATURE)) {
-			return createEStructuralFeatureScope((context as MetaclassFeatureReference)?.metaclass)
+			return createEStructuralFeatureScope((context as MetaclassFeatureReference)?.metaclass as EClass)
 		} else if (reference.equals(METACLASS_EATTRIBUTE_REFERENCE__FEATURE)) {
-			return createEAttributeScope((context as MetaclassEAttributeReference)?.metaclass)
+			return createEAttributeScope((context as MetaclassEAttributeReference)?.metaclass as EClass)
 		} else if (reference.equals(METACLASS_EREFERENCE_REFERENCE__FEATURE)) {
-			return createEReferenceScope((context as MetaclassEReferenceReference)?.metaclass)
+			return createEReferenceScope((context as MetaclassEReferenceReference)?.metaclass as EClass)
 		} else if (reference.equals(METACLASS_REFERENCE__METAMODEL)) {
 			return createImportsScope(context.eResource)
 		} else if (reference.equals(METACLASS_REFERENCE__METACLASS)) {

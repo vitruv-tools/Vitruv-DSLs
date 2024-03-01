@@ -31,10 +31,9 @@ class ParameterGenerator {
 		elements.map[toParameter(contextObject, it.name, it.generateTypeRef(_typeReferenceBuilder))]
 	}
 	
-	def Iterable<AccessibleElement> getInputElements(Iterable<NamedMetaclassReference> metaclassReferences, Iterable<NamedJavaElementReference> javaElements, Iterable<NamedMetaenumReference> metaenumReferences) {
+	def Iterable<AccessibleElement> getInputElements(Iterable<NamedMetaclassReference> metaclassReferences, Iterable<NamedJavaElementReference> javaElements) {
 		return metaclassReferences.map[new AccessibleElement(it.name ?: MISSING_PARAMETER_NAME, it.metaclass?.mappedInstanceClassCanonicalName)]
-			+ javaElements.map[new AccessibleElement(it.name ?: MISSING_PARAMETER_NAME, it.type?.qualifiedName)]
-			+ metaenumReferences.map[new AccessibleElement(it.name ?: MISSING_PARAMETER_NAME, it.metaenum?.mappedInstanceClassCanonicalName)];
+			+ javaElements.map[new AccessibleElement(it.name ?: MISSING_PARAMETER_NAME, it.type?.qualifiedName)];
 	}
 	
 	private dispatch def getMappedInstanceClassCanonicalName(EClass eClass) {

@@ -9,6 +9,7 @@ import tools.vitruv.dsls.reactions.builder.FluentRoutineBuilder.InputBuilder
 import tools.vitruv.dsls.reactions.language.toplevelelements.Reaction
 import tools.vitruv.dsls.reactions.language.toplevelelements.Routine
 import tools.vitruv.dsls.reactions.language.toplevelelements.TopLevelElementsFactory
+import org.eclipse.emf.ecore.EClass
 
 /**
  * Entry point for fluent reaction builders. The offered methods each create a 
@@ -74,7 +75,7 @@ class FluentReactionsLanguageBuilder {
 			val contents = EcoreUtil.getAllContents(#[routine])
 			contents.filter[it instanceof MetaclassReference].forEach [
 				val ref = it as MetaclassReference
-				ref.reference(ref.metaclass)
+				ref.reference(ref.metaclass as EClass)
 			]
 		}
 	}

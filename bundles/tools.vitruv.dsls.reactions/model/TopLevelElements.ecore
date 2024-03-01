@@ -73,9 +73,6 @@
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="javaInputElements" upperBound="-1"
         eType="#//NamedJavaElementReference" containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="enumInputElements" upperBound="-1"
-        eType="ecore:EClass ../../tools.vitruv.dsls.common/model/CommonLanguageElements.ecore#//NamedMetaenumReference"
-        containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="MatchBlock">
     <eStructuralFeatures xsi:type="ecore:EReference" name="matchStatements" upperBound="-1"
