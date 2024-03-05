@@ -132,7 +132,7 @@ class RoutineFacadeClassGenerator extends ClassGenerator {
 	}
 	
 	private def Iterable<JvmFormalParameter> getInputElementsParameter(Routine routine) {
-		routine.generateParameters(getInputElements(routine.input.modelInputElements, routine.input.javaInputElements, routine.input.enumInputElements))
+		routine.generateParameters(getInputElements(routine.input.modelInputElements, routine.input.javaInputElements))
 	}
 
 	protected def StringConcatenationClient generateGetOwnRoutinesFacade() '''

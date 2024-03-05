@@ -108,7 +108,7 @@ routine changeFamilyName(families::Family family){
 
 // Checks whether the member was actually just created (has no corresponding person) or not.
 // Only continues if member is a newly created member.
-routine tryCreateInsuranceClientFromNewMember(families::Member newMember, families::Family family, enum insurance::Gender gender) {
+routine tryCreateInsuranceClientFromNewMember(families::Member newMember, families::Family family, insurance::Gender gender) {
 	match {
 		require absence of insurance::InsuranceClient corresponding to newMember
 	}
@@ -118,7 +118,7 @@ routine tryCreateInsuranceClientFromNewMember(families::Member newMember, famili
 }
 
 // Creates corresponding insurance client and sets up correspondences
-routine createInsuranceClient(families::Member newMember, families::Family family, enum insurance::Gender gender) {
+routine createInsuranceClient(families::Member newMember, families::Family family, insurance::Gender gender) {
 	match {
 		check { assertValidFirstname(newMember) true }
 		val insuranceDatabase = retrieve insurance::InsuranceDatabase corresponding to family.register
@@ -140,7 +140,7 @@ routine createInsuranceClient(families::Member newMember, families::Family famil
 
 // Checks if member already existed (as expected gender), and breaks if not
 // Updates name and correspondences
-routine updateNameAndCorrespondencesOfCorrespondingInsuranceClient(families::Member newMember, families::Family newFamily, enum insurance::Gender gender) {
+routine updateNameAndCorrespondencesOfCorrespondingInsuranceClient(families::Member newMember, families::Family newFamily, insurance::Gender gender) {
 	match {
 		val correspondingInsuranceClient = retrieve insurance::InsuranceClient corresponding to newMember with { 
 			assertGender(it, gender) true
