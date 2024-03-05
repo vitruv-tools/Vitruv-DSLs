@@ -410,7 +410,7 @@ class ReactionsLanguageValidator extends AbstractReactionsLanguageValidator {
 
 	@Check
 	def checkMetaclassFeature(ModelElementChange elementChange) {
-		val elementType = elementChange?.elementType?.metaclass;
+		val elementType = elementChange?.elementType?.metaclass as EClass;
 		val elementChangeType = elementChange?.changeType;
 		// Only continue if element type is specified and its a feature change
 		var ElementChangeType atomicChangeType = null;
@@ -422,7 +422,7 @@ class ReactionsLanguageValidator extends AbstractReactionsLanguageValidator {
 			if (elementType !== null && featureType !== null) {
 				if (!elementType.equals(featureType) && !elementType.EAllSuperTypes.contains(featureType) &&
 					!featureType.EAllSuperTypes.contains(elementType)) {
-					warning(
+					error(
 						"Element of specified type cannot be contained in the specified features",
 						elementChange,
 						LanguagePackage.Literals.MODEL_ELEMENT_CHANGE__ELEMENT_TYPE

@@ -53,7 +53,7 @@ class RoutineClassGenerator extends ClassGenerator {
 		this.routine = routine
 		this.routineClassNameGenerator = routine.routineClassNameGenerator
 		this.routinesFacadeQualifiedName = routine.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
-		this.inputElements = getInputElements(routine.input.modelInputElements, routine.input.javaInputElements, routine.input.enumInputElements)
+		this.inputElements = getInputElements(routine.input.modelInputElements, routine.input.javaInputElements)
 		this.inputValuesClass = if (hasInputValues) {
 			generateElementsContainerClass(INPUT_VALUES_SIMPLE_CLASS_NAME, inputElements)
 		}

@@ -76,7 +76,7 @@ final class ChangeTypeRepresentationExtractor {
 		if (modelElementChange?.changeType === null) {
 			return new ChangeTypeRepresentation(GENERAL_CHANGE_NAME, EChange, null, null, false, false, null, false)
 		} else {
-			return generateChangeTypeRepresentation(modelElementChange.changeType, modelElementChange.elementType?.metaclass)
+			return generateChangeTypeRepresentation(modelElementChange.changeType, modelElementChange.elementType?.metaclass as EClass)
 		}
 	}	
 	
