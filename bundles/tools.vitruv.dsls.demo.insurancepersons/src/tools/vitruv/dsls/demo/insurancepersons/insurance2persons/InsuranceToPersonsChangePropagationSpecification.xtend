@@ -1,4 +1,0 @@
-package tools.vitruv.dsls.demo.insurancepersons.insurance2persons
-
-class InsuranceToPersonsChangePropagationSpecification extends mir.reactions.insuranceToPersons.InsuranceToPersonsChangePropagationSpecification {
-}
