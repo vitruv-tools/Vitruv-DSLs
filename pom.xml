@@ -31,6 +31,7 @@
   <modules>
     <module>common</module>
     <module>commonalities</module>
+    <module>demo</module>
     <module>reactions</module>
     <module>testutils</module>
   </modules>
@@ -39,6 +40,7 @@
   <properties>
     <repo.emf-compare.version>3.3</repo.emf-compare.version>
     <repo.sdq-commons.version>2.2.0</repo.sdq-commons.version>
+    <repo.sdq-demo-metamodels.version>1.9.0</repo.sdq-demo-metamodels.version>
     <repo.xannotations.version>1.6.0</repo.xannotations.version>
   </properties>
 
@@ -73,6 +75,12 @@
       <id>sdq-commons</id>
       <name>SDQ Commons</name>
       <url>https://kit-sdq.github.io/updatesite/release/commons/${repo.sdq-commons.version}</url>
+      <layout>p2</layout>
+    </repository>
+    <repository>
+      <id>sdq-demo-metamodels</id>
+      <name>SDQ Demo Metamodels</name>
+      <url>https://kit-sdq.github.io/updatesite/release/metamodels/demo/${repo.sdq-demo-metamodels.version}</url>
       <layout>p2</layout>
     </repository>
     <repository>
@@ -281,6 +289,11 @@
       </dependency>
       <dependency>
         <groupId>org.eclipse.xtend</groupId>
+        <artifactId>org.eclipse.xtend.core</artifactId>
+        <version>2.35.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.xtend</groupId>
         <artifactId>org.eclipse.xtend.lib</artifactId>
         <version>2.35.0</version>
       </dependency>
@@ -389,6 +402,16 @@
             <artifactId>*</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>sdq-demo-metamodels</groupId>
+        <artifactId>edu.kit.ipd.sdq.metamodels.families</artifactId>
+        <version>1.9.0.202311201524</version>
+      </dependency>
+      <dependency>
+        <groupId>sdq-demo-metamodels</groupId>
+        <artifactId>edu.kit.ipd.sdq.metamodels.persons</artifactId>
+        <version>1.9.0.202311201524</version>
       </dependency>
       <dependency>
         <groupId>xannotations</groupId>
