@@ -2,7 +2,7 @@ package tools.vitruv.dsls.commonalities.tests.util
 
 import com.google.inject.Provider
 import java.nio.file.Path
-import jakarta.inject.Inject
+import javax.inject.Inject
 import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.xbase.testing.CompilationTestHelper
 

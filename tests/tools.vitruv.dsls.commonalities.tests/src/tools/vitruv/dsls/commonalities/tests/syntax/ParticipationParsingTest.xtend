@@ -1,7 +1,7 @@
 package tools.vitruv.dsls.commonalities.tests.syntax
 
 import org.junit.jupiter.api.DisplayName
-import jakarta.inject.Inject
+import javax.inject.Inject
 import org.junit.jupiter.api.^extension.ExtendWith
 import org.eclipse.xtext.testing.extensions.InjectionExtension
 import org.eclipse.xtext.testing.InjectWith

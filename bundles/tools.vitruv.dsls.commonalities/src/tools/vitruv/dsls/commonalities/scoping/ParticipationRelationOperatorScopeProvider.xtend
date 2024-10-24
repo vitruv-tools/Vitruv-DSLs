@@ -5,7 +5,7 @@ import tools.vitruv.dsls.commonalities.runtime.operators.participation.relation.
 
 import org.eclipse.xtend.lib.annotations.Delegate
 import org.eclipse.xtext.scoping.IScopeProvider
-import jakarta.inject.Inject
+import javax.inject.Inject
 
 @Singleton
 class ParticipationRelationOperatorScopeProvider implements IScopeProvider {

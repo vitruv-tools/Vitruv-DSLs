@@ -7,7 +7,7 @@ import org.eclipse.emf.ecore.EReference
 import tools.vitruv.dsls.commonalities.participation.ReferenceContainment
 import tools.vitruv.dsls.commonalities.runtime.operators.participation.relation.ContainmentOperator
 import tools.vitruv.dsls.commonalities.generator.util.guice.GenerationScoped
-import jakarta.inject.Inject
+import javax.inject.Inject
 import tools.vitruv.dsls.commonalities.generator.GenerationContext
 
 @GenerationScoped

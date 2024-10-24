@@ -5,7 +5,7 @@ import allElementTypes2.AllElementTypes2Package
 import org.eclipse.emf.ecore.EcorePackage
 import org.eclipse.xtext.testing.InjectWith
 import tools.vitruv.dsls.reactions.tests.ReactionsLanguageInjectorProvider
-import jakarta.inject.Inject
+import javax.inject.Inject
 import org.junit.jupiter.api.^extension.ExtendWith
 import org.eclipse.xtext.testing.extensions.InjectionExtension
 

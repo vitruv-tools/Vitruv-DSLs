@@ -4,7 +4,7 @@ import org.hamcrest.TypeSafeMatcher
 import org.hamcrest.Description
 import org.eclipse.xtext.validation.Issue
 import java.util.List
-import jakarta.inject.Inject
+import javax.inject.Inject
 import com.google.inject.Singleton
 import org.eclipse.xtext.validation.IResourceValidator
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor

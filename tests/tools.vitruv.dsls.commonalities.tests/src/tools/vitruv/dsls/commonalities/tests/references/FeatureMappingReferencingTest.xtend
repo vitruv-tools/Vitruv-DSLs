@@ -8,7 +8,7 @@ import org.eclipse.xtext.testing.InjectWith
 import tools.vitruv.testutils.printing.UseModelPrinter
 import tools.vitruv.dsls.commonalities.tests.util.CommonalitiesLanguageElementsPrinter
 import org.junit.jupiter.api.DisplayName
-import jakarta.inject.Inject
+import javax.inject.Inject
 import tools.vitruv.dsls.commonalities.tests.util.CommonalityParseHelper
 import static org.hamcrest.MatcherAssert.assertThat
 import static tools.vitruv.testutils.matchers.ModelMatchers.equalsDeeply
