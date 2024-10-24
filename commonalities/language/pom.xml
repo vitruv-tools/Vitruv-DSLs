@@ -80,8 +80,8 @@
       <artifactId>guice</artifactId>
     </dependency>
     <dependency>
-      <groupId>javax.inject</groupId>
-      <artifactId>javax.inject</artifactId>
+      <groupId>jakarta.inject</groupId>
+      <artifactId>jakarta.inject</artifactId>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>

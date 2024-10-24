@@ -19,6 +19,8 @@
 
   <modules>
     <module>familiespersons</module>
+    <module>insurancefamilies</module>
+    <module>insurancepersons</module>
     <module>sdq-demo-metamodels-wrapper</module>
   </modules>
 

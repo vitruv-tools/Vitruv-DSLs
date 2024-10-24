@@ -25,5 +25,9 @@
       <groupId>sdq-demo-metamodels</groupId>
       <artifactId>edu.kit.ipd.sdq.metamodels.persons</artifactId>
     </dependency>
+    <dependency>
+      <groupId>sdq-demo-metamodels</groupId>
+      <artifactId>edu.kit.ipd.sdq.metamodels.insurance</artifactId>
+    </dependency>
   </dependencies>
 </project>

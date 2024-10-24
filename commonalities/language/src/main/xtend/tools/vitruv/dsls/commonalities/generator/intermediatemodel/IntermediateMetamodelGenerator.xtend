@@ -31,7 +31,7 @@ import static extension tools.vitruv.dsls.commonalities.generator.intermediatemo
 import static extension tools.vitruv.dsls.commonalities.language.extensions.CommonalitiesLanguageModelExtensions.*
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import tools.vitruv.dsls.commonalities.generator.util.guice.GenerationScoped
-import javax.inject.Inject
+import jakarta.inject.Inject
 import tools.vitruv.dsls.commonalities.language.elements.LeastSpecificType
 
 @GenerationScoped

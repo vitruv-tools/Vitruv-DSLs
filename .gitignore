@@ -12,3 +12,6 @@ plugin.properties
 
 # Xtext
 .antlr-generator-*-patch.jar
+
+# IntelliJ
+.idea/
