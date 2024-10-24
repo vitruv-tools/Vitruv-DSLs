@@ -19,7 +19,7 @@ import java.nio.file.Path
 import tools.vitruv.testutils.TestProject
 import static extension edu.kit.ipd.sdq.commons.util.org.eclipse.core.resources.IProjectUtil.*
 import java.util.Set
-import javax.inject.Inject
+import jakarta.inject.Inject
 import static tools.vitruv.dsls.commonalities.ui.quickfix.XtextAssertions.getCurrentlyOpenedXtextDocument
 import org.eclipse.xtext.ui.testing.util.IResourcesSetupUtil
 import tools.vitruv.dsls.commonalities.ui.util.BugFixedAbstractQuickfixTest

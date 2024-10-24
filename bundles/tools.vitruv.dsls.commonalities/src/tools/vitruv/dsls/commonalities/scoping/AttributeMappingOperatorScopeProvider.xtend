@@ -5,7 +5,7 @@ import tools.vitruv.dsls.commonalities.runtime.operators.mapping.attribute.IAttr
 
 import org.eclipse.xtend.lib.annotations.Delegate
 import org.eclipse.xtext.scoping.IScopeProvider
-import javax.inject.Inject
+import jakarta.inject.Inject
 
 @Singleton
 class AttributeMappingOperatorScopeProvider implements IScopeProvider {

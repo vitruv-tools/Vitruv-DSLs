@@ -7,7 +7,7 @@ import tools.vitruv.dsls.commonalities.tests.CommonalitiesLanguageInjectorProvid
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.DisplayName
 import tools.vitruv.dsls.commonalities.tests.util.TestCommonalitiesGenerator
-import javax.inject.Inject
+import jakarta.inject.Inject
 import org.junit.jupiter.api.BeforeAll
 import tools.vitruv.testutils.TestProject
 import java.nio.file.Path

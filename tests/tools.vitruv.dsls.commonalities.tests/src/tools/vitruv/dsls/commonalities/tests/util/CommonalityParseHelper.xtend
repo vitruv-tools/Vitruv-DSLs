@@ -11,7 +11,7 @@ import static tools.vitruv.testutils.matchers.ModelMatchers.hasNoErrors
 import org.eclipse.xtext.testing.validation.ValidationTestHelper
 import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.xtext.resource.XtextResourceSet
-import javax.inject.Provider
+import jakarta.inject.Provider
 
 @Singleton
 class CommonalityParseHelper {

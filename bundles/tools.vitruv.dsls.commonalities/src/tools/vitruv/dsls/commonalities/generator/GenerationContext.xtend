@@ -32,7 +32,7 @@ import static com.google.common.base.Preconditions.*
 
 import static extension tools.vitruv.dsls.commonalities.generator.intermediatemodel.IntermediateModelConstants.*
 import static extension tools.vitruv.dsls.commonalities.language.extensions.CommonalitiesLanguageModelExtensions.*
-import javax.inject.Inject
+import jakarta.inject.Inject
 import java.util.Set
 import tools.vitruv.dsls.commonalities.language.elements.MetamodelAdapter
 

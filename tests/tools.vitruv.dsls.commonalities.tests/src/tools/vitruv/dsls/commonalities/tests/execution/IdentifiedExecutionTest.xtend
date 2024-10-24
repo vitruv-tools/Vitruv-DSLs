@@ -4,7 +4,7 @@ import org.junit.jupiter.api.^extension.ExtendWith
 import org.eclipse.xtext.testing.extensions.InjectionExtension
 import org.eclipse.xtext.testing.InjectWith
 import org.junit.jupiter.api.Test
-import javax.inject.Inject
+import jakarta.inject.Inject
 import tools.vitruv.testutils.TestProject
 import java.nio.file.Path
 import org.junit.jupiter.api.TestInstance

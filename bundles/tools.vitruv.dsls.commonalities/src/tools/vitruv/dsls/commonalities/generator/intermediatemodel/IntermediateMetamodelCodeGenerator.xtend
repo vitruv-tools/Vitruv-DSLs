@@ -24,7 +24,7 @@ import static java.lang.System.lineSeparator
 import java.util.List
 import tools.vitruv.dsls.commonalities.generator.util.guice.GenerationScoped
 import tools.vitruv.dsls.commonalities.generator.GenerationContext
-import javax.inject.Inject
+import jakarta.inject.Inject
 import static org.eclipse.emf.common.util.URI.*
 import edu.kit.ipd.sdq.activextendannotations.CloseResource
 import static com.google.common.base.Preconditions.checkArgument

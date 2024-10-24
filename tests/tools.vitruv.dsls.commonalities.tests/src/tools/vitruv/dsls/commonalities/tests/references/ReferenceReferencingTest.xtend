@@ -8,7 +8,7 @@ import tools.vitruv.dsls.commonalities.tests.CommonalitiesLanguageInjectorProvid
 import tools.vitruv.testutils.printing.UseModelPrinter
 import tools.vitruv.dsls.commonalities.tests.util.CommonalitiesLanguageElementsPrinter
 import org.junit.jupiter.api.DisplayName
-import javax.inject.Inject
+import jakarta.inject.Inject
 import tools.vitruv.dsls.commonalities.tests.util.CommonalityParseHelper
 import org.junit.jupiter.api.Test
 import static tools.vitruv.testutils.matchers.ModelMatchers.equalsDeeply
