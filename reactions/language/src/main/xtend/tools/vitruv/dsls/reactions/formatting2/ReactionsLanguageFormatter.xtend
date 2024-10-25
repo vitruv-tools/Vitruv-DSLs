@@ -43,7 +43,7 @@ class ReactionsLanguageFormatter extends XbaseFormatter {
 		reactionsFile.metamodelImports.tail.forEach[prepend [newLine]]
 		reactionsFile.metamodelImports.last?.append[newLines = 2]
 		reactionsFile.reactionsSegments.forEach[it.format(document)]
-		reactionsFile.reactionsSegments.tail.forEach[prepend [newLines = 4]]
+		reactionsFile.reactionsSegments.tail.forEach[prepend [newLines = 2]]
 	}
 
 	def dispatch void format(MetamodelImport metamodelImport, extension IFormattableDocument document) {
