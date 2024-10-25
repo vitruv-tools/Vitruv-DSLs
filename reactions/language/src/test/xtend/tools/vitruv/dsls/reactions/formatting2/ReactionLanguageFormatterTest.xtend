@@ -43,9 +43,6 @@ class ReactionLanguageFormatterTest {
 		"tools/vitruv/dsls/reactions/tests/importTests/TransitiveSN.reactions"
 	])
 	def void testExistingReactionsFilesFormatting(String filePathInSourceFolder) {
-	println("________________________________________________")
-	    println(java.lang.ClassLoader.getResource("reactions/tools/vitruv/dsls/reactions/tests/AllElementTypesRedundancy.reactions"))
-	    println(java.lang.ClassLoader.getResource("reactions/tools/vitruv/dsls/reactions/tests/AllElementTypesRedundancy.reactions"))
 		val content = filePathInSourceFolder.loadJavaFileContents()
 		assertThat(content.destroyFormatting().format(), hasEachLineEqualTo(content))
 	}
