@@ -69,6 +69,10 @@
       <groupId>tools.vitruv</groupId>
       <artifactId>tools.vitruv.change.composite</artifactId>
     </dependency>
+    <dependency>
+      <groupId>tools.vitruv</groupId>
+      <artifactId>tools.vitruv.change.propagation</artifactId>
+    </dependency>
 
     <!-- external compile dependencies -->
     <dependency>
@@ -81,7 +85,7 @@
     </dependency>
     <dependency>
       <groupId>jakarta.inject</groupId>
-      <artifactId>jakarta.inject</artifactId>
+      <artifactId>jakarta.inject-api</artifactId>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
@@ -104,6 +108,14 @@
       <artifactId>org.eclipse.emf.ecore</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.eclipse.emf</groupId>
+      <artifactId>org.eclipse.emf.ecore.xmi</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.platform</groupId>
+      <artifactId>org.eclipse.core.runtime</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.eclipse.xtend</groupId>
       <artifactId>org.eclipse.xtend.lib</artifactId>
     </dependency>
@@ -113,11 +125,11 @@
     </dependency>
     <dependency>
       <groupId>org.eclipse.xtext</groupId>
-      <artifactId>org.eclipse.xtext.testing</artifactId>
+      <artifactId>org.eclipse.xtext.common.types</artifactId>
     </dependency>
     <dependency>
       <groupId>org.eclipse.xtext</groupId>
-      <artifactId>org.eclipse.xtext.common.types</artifactId>
+      <artifactId>org.eclipse.xtext.util</artifactId>
     </dependency>
     <dependency>
       <groupId>org.eclipse.xtext</groupId>
@@ -128,8 +140,19 @@
       <artifactId>org.eclipse.xtext.xbase.lib</artifactId>
     </dependency>
     <dependency>
+      <groupId>sdq-commons</groupId>
+      <artifactId>edu.kit.ipd.sdq.commons.util.java</artifactId>
+    </dependency>
+    <dependency>
       <groupId>xannotations</groupId>
       <artifactId>edu.kit.ipd.sdq.activextendannotations</artifactId>
+    </dependency>
+
+    <!-- external test dependencies -->
+    <dependency>
+      <groupId>org.eclipse.xtext</groupId>
+      <artifactId>org.eclipse.xtext.testing</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

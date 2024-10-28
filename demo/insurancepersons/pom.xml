@@ -102,13 +102,17 @@
     </dependency>
     <dependency>
       <groupId>tools.vitruv</groupId>
-      <artifactId>tools.vitruv.change.interaction</artifactId>
+      <artifactId>tools.vitruv.change.composite</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>tools.vitruv</groupId>
+      <artifactId>tools.vitruv.change.propagation</artifactId>
     </dependency>
 
     <!-- external compile dependencies -->
     <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
     </dependency>
     <dependency>
       <groupId>org.eclipse.emf</groupId>
@@ -129,10 +133,6 @@
     <dependency>
       <groupId>sdq-demo-metamodels</groupId>
       <artifactId>edu.kit.ipd.sdq.metamodels.insurance</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>xannotations</groupId>
-      <artifactId>edu.kit.ipd.sdq.activextendannotations</artifactId>
     </dependency>
   </dependencies>
 </project>

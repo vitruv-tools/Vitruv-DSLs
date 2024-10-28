@@ -102,13 +102,25 @@
     </dependency>
     <dependency>
       <groupId>tools.vitruv</groupId>
+      <artifactId>tools.vitruv.change.composite</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>tools.vitruv</groupId>
       <artifactId>tools.vitruv.change.interaction</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>tools.vitruv</groupId>
+      <artifactId>tools.vitruv.change.propagation</artifactId>
     </dependency>
 
     <!-- external compile dependencies -->
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
     </dependency>
     <dependency>
       <groupId>org.eclipse.emf</groupId>

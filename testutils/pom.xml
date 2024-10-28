@@ -34,6 +34,10 @@
 
     <!-- external compile dependencies -->
     <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.eclipse.emf</groupId>
       <artifactId>org.eclipse.emf.common</artifactId>
     </dependency>
@@ -42,8 +46,24 @@
       <artifactId>org.eclipse.emf.ecore</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.eclipse.jdt</groupId>
+      <artifactId>ecj</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.xtext</groupId>
+      <artifactId>org.eclipse.xtext.util</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.xtext</groupId>
+      <artifactId>org.eclipse.xtext.xbase.lib</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.eclipse.xtext</groupId>
       <artifactId>org.eclipse.xtext.xbase.testing</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>sdq-commons</groupId>
+      <artifactId>edu.kit.ipd.sdq.commons.util.emf</artifactId>
     </dependency>
   </dependencies>
 </project>

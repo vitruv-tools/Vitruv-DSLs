@@ -94,6 +94,10 @@
       <artifactId>org.eclipse.xtext.xbase.lib</artifactId>
     </dependency>
     <dependency>
+      <groupId>sdq-commons</groupId>
+      <artifactId>edu.kit.ipd.sdq.commons.util.java</artifactId>
+    </dependency>
+    <dependency>
       <groupId>xannotations</groupId>
       <artifactId>edu.kit.ipd.sdq.activextendannotations</artifactId>
     </dependency>
