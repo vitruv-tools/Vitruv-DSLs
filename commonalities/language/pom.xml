@@ -64,6 +64,20 @@
       <version>${project.version}</version>
     </dependency>
 
+    <!-- project test dependencies -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tools.vitruv.dsls.reactions.runtime</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tools.vitruv.dsls.testutils</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
     <!-- Vitruvius compile dependencies -->
     <dependency>
       <groupId>tools.vitruv</groupId>
@@ -72,6 +86,28 @@
     <dependency>
       <groupId>tools.vitruv</groupId>
       <artifactId>tools.vitruv.change.propagation</artifactId>
+    </dependency>
+
+    <!-- Vitruvius test dependencies -->
+    <dependency>
+      <groupId>tools.vitruv</groupId>
+      <artifactId>tools.vitruv.change.testutils.core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>tools.vitruv</groupId>
+      <artifactId>tools.vitruv.change.testutils.integration</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>tools.vitruv</groupId>
+      <artifactId>tools.vitruv.change.testutils.metamodels</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>tools.vitruv</groupId>
+      <artifactId>tools.vitruv.change.utils</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <!-- external compile dependencies -->
@@ -152,6 +188,26 @@
     <dependency>
       <groupId>org.eclipse.xtext</groupId>
       <artifactId>org.eclipse.xtext.testing</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>sdq-commons</groupId>
+      <artifactId>edu.kit.ipd.sdq.commons.util.eclipse</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
