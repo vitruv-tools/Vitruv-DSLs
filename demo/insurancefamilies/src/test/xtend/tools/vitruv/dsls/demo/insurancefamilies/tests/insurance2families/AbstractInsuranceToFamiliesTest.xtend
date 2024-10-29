@@ -24,14 +24,14 @@ import tools.vitruv.dsls.demo.insurancefamilies.insurance2families.PositionPrefe
 import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesDefaultTestModelFactory
 import tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceFamiliesTestModelFactory
 import tools.vitruv.dsls.testutils.TestModel
-import tools.vitruv.testutils.TestLogging
-import tools.vitruv.testutils.TestProject
-import tools.vitruv.testutils.TestProjectManager
-import tools.vitruv.testutils.TestUserInteraction
-import tools.vitruv.testutils.TestUserInteraction.MultipleChoiceInteractionDescription
-import tools.vitruv.testutils.views.ChangePublishingTestView
-import tools.vitruv.testutils.views.NonTransactionalTestView
-import tools.vitruv.testutils.views.UriMode
+import tools.vitruv.change.testutils.TestLogging
+import tools.vitruv.change.testutils.TestProject
+import tools.vitruv.change.testutils.TestProjectManager
+import tools.vitruv.change.testutils.TestUserInteraction
+import tools.vitruv.change.testutils.TestUserInteraction.MultipleChoiceInteractionDescription
+import tools.vitruv.change.testutils.views.ChangePublishingTestView
+import tools.vitruv.change.testutils.views.NonTransactionalTestView
+import tools.vitruv.change.testutils.views.UriMode
 
 import static edu.kit.ipd.sdq.commons.util.org.eclipse.emf.common.util.URIUtil.createFileURI
 import static org.hamcrest.MatcherAssert.assertThat
@@ -40,8 +40,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.CreatorsUtil.createInsuranceClient
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.FamiliesQueryUtil.claimFamilyRegister
 import static tools.vitruv.dsls.demo.insurancefamilies.tests.util.InsuranceQueryUtil.claimInsuranceDatabase
-import static tools.vitruv.testutils.TestModelRepositoryFactory.createTestChangeableModelRepository
-import static tools.vitruv.testutils.matchers.ModelMatchers.equalsDeeply
+import static tools.vitruv.change.testutils.TestModelRepositoryFactory.createTestChangeableModelRepository
+import static tools.vitruv.change.testutils.matchers.ModelMatchers.equalsDeeply
 
 enum FamilyPreference {
 	New,

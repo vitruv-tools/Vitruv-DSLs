@@ -84,6 +84,18 @@
           </dependency>
         </dependencies>
       </plugin>
+      <plugin>
+        <groupId>org.eclipse.xtend</groupId>
+        <artifactId>xtend-maven-plugin</artifactId>
+        <executions>
+          <!-- disable Java code generation from Xtend code for non-test code, as this is done by
+          the xtext-maven-plugin -->
+          <execution>
+            <id>compile-xtend</id>
+            <phase />
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
@@ -107,6 +119,18 @@
     <dependency>
       <groupId>tools.vitruv</groupId>
       <artifactId>tools.vitruv.change.propagation</artifactId>
+    </dependency>
+
+    <!-- Vitruvius test dependencies -->
+    <dependency>
+      <groupId>tools.vitruv</groupId>
+      <artifactId>tools.vitruv.change.testutils.core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>tools.vitruv</groupId>
+      <artifactId>tools.vitruv.change.testutils.integration</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <!-- external compile dependencies -->
@@ -133,6 +157,23 @@
     <dependency>
       <groupId>sdq-demo-metamodels</groupId>
       <artifactId>edu.kit.ipd.sdq.metamodels.insurance</artifactId>
+    </dependency>
+
+    <!-- external test dependencies -->
+    <dependency>
+      <groupId>org.eclipse.xtend</groupId>
+      <artifactId>org.eclipse.xtend.lib</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

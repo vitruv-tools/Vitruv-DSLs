@@ -84,6 +84,18 @@
           </dependency>
         </dependencies>
       </plugin>
+      <plugin>
+        <groupId>org.eclipse.xtend</groupId>
+        <artifactId>xtend-maven-plugin</artifactId>
+        <executions>
+          <!-- disable Java code generation from Xtend code for non-test code, as this is done by
+          the xtext-maven-plugin -->
+          <execution>
+            <id>compile-xtend</id>
+            <phase />
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
@@ -93,6 +105,14 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tools.vitruv.dsls.reactions.runtime</artifactId>
       <version>${project.version}</version>
+    </dependency>
+
+    <!-- project test dependencies -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tools.vitruv.dsls.testutils</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
     </dependency>
 
     <!-- Vitruvius compile dependencies -->
@@ -111,6 +131,18 @@
     <dependency>
       <groupId>tools.vitruv</groupId>
       <artifactId>tools.vitruv.change.propagation</artifactId>
+    </dependency>
+
+    <!-- Vitruvius test dependencies -->
+    <dependency>
+      <groupId>tools.vitruv</groupId>
+      <artifactId>tools.vitruv.change.testutils.core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>tools.vitruv</groupId>
+      <artifactId>tools.vitruv.change.testutils.integration</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <!-- external compile dependencies -->
@@ -145,6 +177,38 @@
     <dependency>
       <groupId>xannotations</groupId>
       <artifactId>edu.kit.ipd.sdq.activextendannotations</artifactId>
+    </dependency>
+
+    <!-- external test dependencies -->
+    <dependency>
+      <groupId>org.eclipse.xtend</groupId>
+      <artifactId>org.eclipse.xtend.lib</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>sdq-commons</groupId>
+      <artifactId>edu.kit.ipd.sdq.commons.util.emf</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>sdq-commons</groupId>
+      <artifactId>edu.kit.ipd.sdq.commons.util.java</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

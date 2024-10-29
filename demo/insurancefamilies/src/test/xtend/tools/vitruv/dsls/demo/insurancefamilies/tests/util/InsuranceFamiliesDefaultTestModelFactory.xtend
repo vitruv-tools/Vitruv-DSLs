@@ -1,6 +1,6 @@
 package tools.vitruv.dsls.demo.insurancefamilies.tests.util
 
-import tools.vitruv.testutils.views.NonTransactionalTestView
+import tools.vitruv.change.testutils.views.NonTransactionalTestView
 import edu.kit.ipd.sdq.metamodels.families.FamilyRegister
 import edu.kit.ipd.sdq.metamodels.insurance.InsuranceDatabase
 import tools.vitruv.dsls.testutils.TestViewBasedTestModel

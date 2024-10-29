@@ -14,16 +14,16 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.^extension.ExtendWith
 import tools.vitruv.change.propagation.ChangePropagationSpecification
 import tools.vitruv.dsls.demo.insurancepersons.insurance2persons.InsuranceToPersonsChangePropagationSpecification
-import tools.vitruv.testutils.TestLogging
-import tools.vitruv.testutils.TestProject
-import tools.vitruv.testutils.TestProjectManager
-import tools.vitruv.testutils.views.TestView
+import tools.vitruv.change.testutils.TestLogging
+import tools.vitruv.change.testutils.TestProject
+import tools.vitruv.change.testutils.TestProjectManager
+import tools.vitruv.change.testutils.views.TestView
 
 import static org.hamcrest.CoreMatchers.*
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.jupiter.api.Assertions.assertEquals
-import static tools.vitruv.testutils.matchers.ModelMatchers.*
-import static tools.vitruv.testutils.views.ChangePublishingTestView.createDefaultChangePublishingTestView
+import static tools.vitruv.change.testutils.matchers.ModelMatchers.*
+import static tools.vitruv.change.testutils.views.ChangePublishingTestView.createDefaultChangePublishingTestView
 
 @ExtendWith(TestLogging, TestProjectManager)
 class InsuranceToPersonsTest implements TestView {

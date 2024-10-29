@@ -24,19 +24,19 @@ import tools.vitruv.change.propagation.ChangePropagationSpecification
 import tools.vitruv.dsls.demo.familiespersons.families2persons.FamiliesToPersonsChangePropagationSpecification
 import tools.vitruv.dsls.demo.familiespersons.persons2families.PersonsToFamiliesChangePropagationSpecification
 import tools.vitruv.dsls.demo.familiespersons.persons2families.PersonsToFamiliesHelper
-import tools.vitruv.testutils.TestLogging
-import tools.vitruv.testutils.TestProject
-import tools.vitruv.testutils.TestProjectManager
-import tools.vitruv.testutils.TestUserInteraction.MultipleChoiceInteractionDescription
-import tools.vitruv.testutils.views.TestView
+import tools.vitruv.change.testutils.TestLogging
+import tools.vitruv.change.testutils.TestProject
+import tools.vitruv.change.testutils.TestProjectManager
+import tools.vitruv.change.testutils.TestUserInteraction.MultipleChoiceInteractionDescription
+import tools.vitruv.change.testutils.views.TestView
 
 import static org.hamcrest.CoreMatchers.*
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertThrows
 import static org.junit.jupiter.api.Assertions.assertTrue
-import static tools.vitruv.testutils.matchers.ModelMatchers.*
-import static tools.vitruv.testutils.views.ChangePublishingTestView.createDefaultChangePublishingTestView
+import static tools.vitruv.change.testutils.matchers.ModelMatchers.*
+import static tools.vitruv.change.testutils.views.ChangePublishingTestView.createDefaultChangePublishingTestView
 
 enum PositionPreference {
 	Parent,
