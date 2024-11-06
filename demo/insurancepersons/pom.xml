@@ -62,23 +62,23 @@
         </configuration>
         <dependencies>
           <dependency>
-            <groupId>tools.vitruv</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>tools.vitruv.dsls.common</artifactId>
             <version>${project.version}</version>
           </dependency>
           <dependency>
-            <groupId>tools.vitruv</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>tools.vitruv.dsls.reactions.language</artifactId>
             <version>${project.version}</version>
           </dependency>
           <dependency>
-            <groupId>tools.vitruv</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>tools.vitruv.dsls.reactions.runtime</artifactId>
             <version>${project.version}</version>
           </dependency>
           <!-- p2 dependencies cannot directly be referenced in plugin dependencies -->
           <dependency>
-            <groupId>tools.vitruv</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>tools.vitruv.dsls.demo.sdq-demo-metamodels-wrapper</artifactId>
             <version>${project.version}</version>
           </dependency>
