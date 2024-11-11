@@ -6,7 +6,7 @@
     <eStructuralFeatures xsi:type="ecore:EReference" name="namespaceImports" eType="ecore:EClass http://www.eclipse.org/xtext/xbase/Xtype#//XImportSection"
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="metamodelImports" upperBound="-1"
-        eType="ecore:EClass platform:/resource/tools.vitruv.dsls.common/src/main/ecore/CommonLanguageElements.ecore#//MetamodelImport"
+        eType="ecore:EClass http://vitruv.tools/dsls/common/elements#//MetamodelImport"
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="reactionsSegments" upperBound="-1"
         eType="#//ReactionsSegment" containment="true"/>
@@ -14,9 +14,9 @@
   <eClassifiers xsi:type="ecore:EClass" name="ReactionsSegment">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="fromMetamodels" upperBound="-1"
-        eType="ecore:EClass platform:/resource/tools.vitruv.dsls.common/src/main/ecore/CommonLanguageElements.ecore#//MetamodelImport"/>
+        eType="ecore:EClass http://vitruv.tools/dsls/common/elements#//MetamodelImport"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="toMetamodels" upperBound="-1"
-        eType="ecore:EClass platform:/resource/tools.vitruv.dsls.common/src/main/ecore/CommonLanguageElements.ecore#//MetamodelImport"/>
+        eType="ecore:EClass http://vitruv.tools/dsls/common/elements#//MetamodelImport"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="reactionsImports" upperBound="-1"
         eType="#//ReactionsImport" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="reactions" upperBound="-1"
@@ -69,7 +69,7 @@
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="RoutineInput">
     <eStructuralFeatures xsi:type="ecore:EReference" name="modelInputElements" upperBound="-1"
-        eType="ecore:EClass platform:/resource/tools.vitruv.dsls.common/src/main/ecore/CommonLanguageElements.ecore#//NamedMetaclassReference"
+        eType="ecore:EClass http://vitruv.tools/dsls/common/elements#//NamedMetaclassReference"
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="javaInputElements" upperBound="-1"
         eType="#//NamedJavaElementReference" containment="true"/>
@@ -81,7 +81,7 @@
   <eClassifiers xsi:type="ecore:EClass" name="MatchStatement"/>
   <eClassifiers xsi:type="ecore:EClass" name="CreateBlock">
     <eStructuralFeatures xsi:type="ecore:EReference" name="createStatements" upperBound="-1"
-        eType="ecore:EClass platform:/resource/tools.vitruv.dsls.common/src/main/ecore/CommonLanguageElements.ecore#//NamedMetaclassReference"
+        eType="ecore:EClass http://vitruv.tools/dsls/common/elements#//NamedMetaclassReference"
         containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="NamedJavaElementReference">
