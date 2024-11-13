@@ -63,7 +63,7 @@ class FamiliesToPersonsTest implements TestView {
 	}
 
 	protected def Iterable<ChangePropagationSpecification> getChangePropagationSpecifications() {
-		return #[new FamiliesToPersonsChangePropagationSpecification() as ChangePropagationSpecification, new PersonsToFamiliesChangePropagationSpecification() as ChangePropagationSpecification]
+		return #[new FamiliesToPersonsChangePropagationSpecification(), new PersonsToFamiliesChangePropagationSpecification()]
 	}
 
 	@BeforeEach
