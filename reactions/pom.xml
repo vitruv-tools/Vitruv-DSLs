@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>tools.vitruv</groupId>
+    <artifactId>tools.vitruv.dsls</artifactId>
+    <version>3.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>tools.vitruv.dsls.reactions</artifactId>
+  <packaging>pom</packaging>
+
+  <name>Vitruv Reactions</name>
+  <description>Language for developing transformations with an imperative, change-driven paradigm</description>
+
+  <modules>
+    <module>language</module>
+    <module>runtime</module>
+  </modules>
+</project>

@@ -1,0 +1,26 @@
+import tools.vitruv.dsls.reactions.tests.importTests.ImportTestsExecutionMonitor
+import static tools.vitruv.dsls.reactions.tests.importTests.ImportTestsExecutionMonitor.ExecutionType.*
+
+import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as minimal
+
+reactions: importTestsCommonRoutines
+in reaction to changes in minimal
+execute actions in minimal
+
+routine commonRoutinesRoutine1() {
+	update {
+		ImportTestsExecutionMonitor.instance.set(CommonRoutinesRoutine1)
+	}
+}
+
+routine commonRoutinesRoutine2() {
+	update {
+		ImportTestsExecutionMonitor.instance.set(CommonRoutinesRoutine2)
+	}
+}
+
+routine commonRoutinesRoutine3() {
+	update {
+		ImportTestsExecutionMonitor.instance.set(CommonRoutinesRoutine3)
+	}
+}
