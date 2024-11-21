@@ -176,7 +176,7 @@
       <dependency>
         <groupId>jakarta.inject</groupId>
         <artifactId>jakarta.inject-api</artifactId>
-        <version>2.0.1</version>
+        <version>2.0.1.MR</version>
       </dependency>
       <dependency>
         <groupId>log4j</groupId>
@@ -201,7 +201,7 @@
       <dependency>
         <groupId>org.eclipse.emf</groupId>
         <artifactId>org.eclipse.emf.ecore</artifactId>
-        <version>2.37.0</version>
+        <version>2.38.0</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.emf</groupId>
@@ -231,7 +231,7 @@
       <dependency>
         <groupId>org.eclipse.xtend</groupId>
         <artifactId>org.eclipse.xtend.lib</artifactId>
-        <version>2.36.0</version>
+        <version>2.37.0</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.xtend</groupId>
@@ -266,12 +266,12 @@
       <dependency>
         <groupId>org.eclipse.xtext</groupId>
         <artifactId>org.eclipse.xtext.xbase.lib</artifactId>
-        <version>2.36.0</version>
+        <version>2.37.0</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.xtext</groupId>
         <artifactId>org.eclipse.xtext.xbase.testing</artifactId>
-        <version>2.36.0</version>
+        <version>2.37.0</version>
       </dependency>
       <dependency>
         <groupId>org.hamcrest</groupId>
