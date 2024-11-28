@@ -111,8 +111,8 @@ class InsuranceToFamiliesHelper {
 	}
 	
 	/**Checks if a insurance clients name is <code>null</code>, empty or contains escape sequences.
-	 * @param person The insurance client of which the name has to be valid.
-	 * @throws <code>IllegalStateException</code>, if the insurance clients name in invalid.
+	 * @param insuranceClient The insurance client of which the name has to be valid.
+	 * @throws IllegalStateException if the insurance clients name in invalid.
 	 */
 	def static void assertValidName(InsuranceClient insuranceClient) {
 		if (insuranceClient.name === null) {

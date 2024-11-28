@@ -31,7 +31,7 @@ class FamiliesToInsuranceHelper {
 	
 	/**Checks if a members firstname is <code>null</code>, empty or contains escape sequences.
 	 * @param member The member whose firstname is checked
-	 * @throws <code>IllegalArgumentException</code> if firstname is not valid
+	 * @throws IllegalArgumentException if firstname is not valid
 	 */
 	def static void assertValidFirstname(Member member) {
 		if (member.firstName === null) {
@@ -46,7 +46,7 @@ class FamiliesToInsuranceHelper {
 	/**Checks if a InsuranceClient has the expected gender and throws an exception if not.
 	 * @param insuranceClient The Insurance Client which is supposed to be of the expected gender.
 	 * @param expectedGender The expected Gender of the insuranceClient
-	 * @throws <code>UnsupportedOperationException</code>, if the insuranceClient is not of the expected gender.
+	 * @throws UnsupportedOperationException if the insuranceClient is not of the expected gender.
 	 */
 	def static void assertGender(InsuranceClient insuranceClient, Gender expectedGender) {
 		if (!(insuranceClient.gender === expectedGender)) {

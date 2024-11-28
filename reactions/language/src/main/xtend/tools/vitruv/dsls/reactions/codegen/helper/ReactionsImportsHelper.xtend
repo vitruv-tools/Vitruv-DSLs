@@ -506,7 +506,7 @@ class ReactionsImportsHelper {
 	/**
 	 * Walks down the import hierarchy starting at the given root reactions segment along the given reactions import path and
 	 * asks the <code>visitor</code> at each reactions segment along the path (including the root reactions segment)
-	 * for a return value and returns the first one that isn't </code>null</code>.
+	 * for a return value and returns the first one that isn't <code>null</code>.
 	 * <p>
 	 * The given import path is expected to be relative to the specified root reactions segment.
 	 * <p>

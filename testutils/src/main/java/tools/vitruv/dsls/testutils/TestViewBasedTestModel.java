@@ -6,16 +6,16 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 
 /**
- * A specific {@link TestModel} that can be used with {@link TestView}s, which
+ * A specific {@link TestModel} that can be used with {@link tools.vitruv.change.testutils.views.TestView}s, which
  * require existing root elements to be registered upon their creation via
  * change propagation.
  * 
- * @param T the root element type
+ * @param <T> the root element type
  */
 public interface TestViewBasedTestModel<T extends EObject> extends TestModel<T> {
 	/**
 	 * Registers an existing root element with its resource URI. It can be retrieved
-	 * from {@link #getRootElements} afterwards.
+	 * from {@link #getRootObjects} afterwards.
 	 * 
 	 * @param rootResourceURI the URI of the root element resource to add
 	 */

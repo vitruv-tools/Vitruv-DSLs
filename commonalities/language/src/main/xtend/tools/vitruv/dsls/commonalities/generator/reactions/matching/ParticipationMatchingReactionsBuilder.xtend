@@ -57,7 +57,7 @@ import tools.vitruv.dsls.commonalities.runtime.resources.ResourcesPackage
  * However, we also expect that one reactions segment contains the matching
  * reactions and routines for at most one participation's own context.
  * <p>
- * Rationale for taking the containment context into account:</br>
+ * Rationale for taking the containment context into account:<br/>
  * The objects specified by participation classes may have different roles
  * depending on the context in which they exist. For instance, a Java class may
  * represent a PCM component, PCM system or PCM datatype, depending on the Java
@@ -112,7 +112,7 @@ import tools.vitruv.dsls.commonalities.runtime.resources.ResourcesPackage
  * original containment relation is removed. And we then re-establish the
  * participation and rebuild the commonality afterwards during the insertion
  * into the new container. This is prone to information loss in the commonality
- * instance and any corresponding participations.</br>
+ * instance and any corresponding participations.<br/>
  * One solution to this could be to defer the actual deletion of the
  * commonality instance and match and re-attach it again during a later
  * insertion. But this hasn't been implemented yet.
@@ -123,7 +123,7 @@ import tools.vitruv.dsls.commonalities.runtime.resources.ResourcesPackage
  * This is prone to errors in a user's model editing leading to unexpected
  * deletions of parts in other models. It is therefore currently recommended to
  * limit any checked conditions to those that are absolutely necessary for the
- * participation's existence.</br>
+ * participation's existence.<br/>
  * One solution to this could be to prompt the user before performing any
  * deletions of other participations.
  * <p>

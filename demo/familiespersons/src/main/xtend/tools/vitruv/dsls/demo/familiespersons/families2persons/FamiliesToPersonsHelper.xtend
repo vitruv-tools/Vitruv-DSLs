@@ -37,7 +37,7 @@ class FamiliesToPersonsHelper {
 	 * are not allowed but empty lastnames for families are, a member's firstname can not be allowed to be
 	 * empty to avoid conversions between the models which lead to invalid models.
 	 * @param member The member whose firstname is checked
-	 * @throws <code>IllegalArgumentException</code> if firstname is not valid
+	 * @throws IllegalArgumentException if firstname is not valid
 	 */
 	def static void assertValidFirstname(Member member) {
 		if (member.firstName === null) {
@@ -54,7 +54,7 @@ class FamiliesToPersonsHelper {
 	 * which requires no or a male corresponding person. For example is the user tries to assign a former
 	 * mother to be a father from now on, this is considered an unsupported operation.
 	 * @param person The person which is supposed to be a <code>Male</code>.
-	 * @throws <code>UnsupportedOperationException</code>, if the person is not a <code>Male</code>.
+	 * @throws UnsupportedOperationException if the person is not a <code>Male</code>.
 	 */
 	def static void assertMale(Person person) {
 		if (!(person instanceof Male)) {
@@ -69,7 +69,7 @@ class FamiliesToPersonsHelper {
 	 * which requires no or a female corresponding person. For example is the user tries to assign a former
 	 * father to be a mother from now on, this is considered an unsupported operation.
 	 * @param person The person which is supposed to be a <code>Female</code>.
-	 * @throws <code>UnsupportedOperationException</code>, if the person is not a <code>Female</code>.
+	 * @throws UnsupportedOperationException if the person is not a <code>Female</code>.
 	 */
 	def static void assertFemale(Person person) {
 		if (!(person instanceof Female)) {

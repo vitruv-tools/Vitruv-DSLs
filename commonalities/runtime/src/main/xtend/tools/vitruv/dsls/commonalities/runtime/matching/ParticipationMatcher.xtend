@@ -36,7 +36,7 @@ class ParticipationMatcher {
 	 * 
 	 * @param containmentContext
 	 * 		the containment context
-	 * @param start
+	 * @param startObject
 	 * 		an existing object inside the containment hierarchy that is used to
 	 * 		find the containment hierarchy's root object
 	 * @param followAttributeReferences

@@ -15,7 +15,7 @@ import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.CALL_BLOCK_FACADE_PARAMETER_NAME
 
 /**
- * Generates for an {@link UpdateBlock} of a routine a class with a method (with the name defined in 
+ * Generates for an {@link CodeExecutionBlock} of a routine a class with a method (with the name defined in 
  * {@link #UPDATE_MODELS_METHOD_NAME}) that accepts the specified accessible elements and performs the 
  * given update code on them.
  */

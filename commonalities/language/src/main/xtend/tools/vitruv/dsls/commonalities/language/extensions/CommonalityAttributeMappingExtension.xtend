@@ -72,7 +72,7 @@ package class CommonalityAttributeMappingExtension {
 	}
 	
 	/**
-	 * Returns <code>true<code> if the commonality side of the mapping is
+	 * Returns <code>true</code> if the commonality side of the mapping is
 	 * multi-valued.
 	 */
 	static def dispatch boolean isMultiValuedRead(SimpleAttributeMapping mapping) {
@@ -85,7 +85,7 @@ package class CommonalityAttributeMappingExtension {
 	}
 
 	/**
-	 * Returns <code>true<code> if the participation side of the mapping is
+	 * Returns <code>true</code> if the participation side of the mapping is
 	 * multi-valued.
 	 */
 	static def dispatch boolean isMultiValuedWrite(SimpleAttributeMapping mapping) {

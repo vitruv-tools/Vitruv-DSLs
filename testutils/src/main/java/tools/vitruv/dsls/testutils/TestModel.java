@@ -9,7 +9,7 @@ import org.eclipse.emf.ecore.EObject;
  * A model that can be used in tests to encapsulate access to root elements of
  * test model.
  *
- * @param T the root element type
+ * @param <T> the root element type
  */
 public interface TestModel<T extends EObject> {
 	Class<T> getRootElementType();

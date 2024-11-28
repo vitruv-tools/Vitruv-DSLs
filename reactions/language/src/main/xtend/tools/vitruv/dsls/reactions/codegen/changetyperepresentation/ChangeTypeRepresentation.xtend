@@ -13,7 +13,7 @@ import java.util.List
  * This class is responsible for representing the relevant change information for generating reactions
  * code for changes. 
  * The information for the changes are extracted by the {@link ChangeTypeRepresentationExtractor} from 
- * a {@link Trigger} of the reactions language.
+ * a {@link tools.vitruv.dsls.reactions.language.toplevelelements.Trigger} of the reactions language.
  */
 class ChangeTypeRepresentation {
 	static final String TEMPORARY_TYPED_CHANGE_NAME = "_localTypedChange"

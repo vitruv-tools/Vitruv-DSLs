@@ -168,7 +168,7 @@ class PersonsToFamiliesHelper {
 
 	/**Checks if a persons fullname is <code>null</code>, empty or contains escape sequences.
 	 * @param person The person of which the fullname has to be valid.
-	 * @throws <code>IllegalStateException</code>, if the persons fullname in invalid.
+	 * @throws IllegalStateException if the persons fullname in invalid.
 	 */
 	def static void assertValidFullname(Person person) {
 		if (person.fullName === null) {
