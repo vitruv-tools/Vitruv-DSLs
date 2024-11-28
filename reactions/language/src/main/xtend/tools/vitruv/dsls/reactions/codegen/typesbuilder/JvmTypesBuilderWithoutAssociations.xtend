@@ -106,12 +106,11 @@ class JvmTypesBuilderWithoutAssociations extends JvmTypesBuilder {
 	 * Associates a source element with a target element. This association is used for tracing. Navigation, for
 	 * instance, uses this information to find the real declaration of a Jvm element.
 	 * 
-	 * @see IJvmModelAssociator
-	 * @see IJvmModelAssociations
+	 * @see org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociator
+	 * @see org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 	 * 
 	 * @return the target for convenience.
 	 */
-	/* @Nullable */
 	override <T extends EObject> T associate( /* @Nullable */ EObject sourceElement, /* @Nullable */ T target) {
 		if (sourceElement !== null && target !== null && sourceElement.eResource !== null &&
 			isValidSource(sourceElement))
@@ -124,12 +123,11 @@ class JvmTypesBuilderWithoutAssociations extends JvmTypesBuilder {
 	 * on both sides. This association is used for tracing. Navigation, for
 	 * instance, uses this information to find the real declaration of a Jvm element.
 	 * 
-	 * @see IJvmModelAssociator
-	 * @see IJvmModelAssociations
+	 * @see org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociator
+	 * @see org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations
 	 * 
 	 * @return the target for convenience.
 	 */
-	/* @Nullable */
 	def <T extends EObject> T associatePrimary( /* @Nullable */ EObject sourceElement, /* @Nullable */ T target) {
 		if (sourceElement !== null && target !== null && sourceElement.eResource !== null &&
 			isValidSource(sourceElement))

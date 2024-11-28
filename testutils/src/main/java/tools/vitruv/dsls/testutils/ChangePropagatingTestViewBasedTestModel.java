@@ -21,7 +21,7 @@ import tools.vitruv.change.testutils.views.TestView;
  * A {@link TestModel} that propagates performed changes using the functionality
  * of an underlying {@link TestView}.
  * 
- * @param T the model's root element type
+ * @param <T> the model's root element type
  */
 public class ChangePropagatingTestViewBasedTestModel<T extends EObject> implements TestViewBasedTestModel<T> {
 	private final NonTransactionalTestView testView;

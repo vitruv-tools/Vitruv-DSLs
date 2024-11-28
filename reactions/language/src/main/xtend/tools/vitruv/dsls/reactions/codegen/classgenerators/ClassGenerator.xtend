@@ -14,8 +14,7 @@ import org.eclipse.xtext.common.types.JvmVisibility
  * <li>After linking is done, generate the bodies</li>
  * </ol>
  * Therefore, the {@link ClassGenerator}s provide separated methods 
- * {@link ClassGenerator#generateEmptyClass() generateEmptyClass}
- * and {@link ClassGenerator#generateBody(JvmGenericType) generateBody} for those steps.
+ * {@link #generateEmptyClass()} and {@link #generateBody()} for those steps.
  */
 abstract class ClassGenerator extends TypesBuilderExtensionProvider {
 	protected def generateAccessibleElementsParameters(EObject sourceObject,

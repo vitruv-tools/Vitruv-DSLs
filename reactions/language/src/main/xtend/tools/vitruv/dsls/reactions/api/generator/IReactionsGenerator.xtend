@@ -14,12 +14,12 @@ import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsFile
  * Generates all code that is necessary to run reactions. Reactions to generate
  * code for can be added in different ways: 
  * <ul>
- * <li>Artificial reactions, created through {@link ReactionBuilder}, can be
+ * <li>Artificial reactions, created through {@link tools.vitruv.dsls.reactions.builder.FluentReactionBuilder}, can be
  * added through {@link #addReaction}.
  * <li>Artificial reaction files, created by {@link FluentReactionsFileBuilder},
- * can be added through {@link #addReactionFile(FluentReactionsFileBuilder)}.
+ * can be added through {@link #addReactionsFile(FluentReactionsFileBuilder)}.
  * <li>Reaction files parsed by Xtext can be added by adding their
- * {@link XtextResourceSet} through {@link addReactionFiles}.
+ * {@link XtextResourceSet} through {@link #addReactionsFile}.
  * </ul>
  * 
  * <p>Reaction generation requires linking to elements inside and outside of

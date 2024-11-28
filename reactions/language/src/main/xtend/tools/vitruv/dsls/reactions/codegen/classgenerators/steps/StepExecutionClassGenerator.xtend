@@ -10,7 +10,7 @@ import org.eclipse.xtext.common.types.JvmGenericType
  * Defines a step of the execution of a Reaction or Routine.
  * The class has to be generated and nested into another class by calling {@link #generateEmptyClass()}
  * and {@link #generateBody()}. The code for executing the step is delivered by calling 
- * {@link #generateStepExecutionCode(String, String, Iterable<String>)}.
+ * {@link #generateStepExecutionCode(StringConcatenationClient, String, String, Iterable<String>, StringConcatenationClient)}.
  * A step may provide new accessible elements (see {@link #getNewlyAccessibleElementsAfterExecution()}),
  * which, in that case, are returned from the execution code and provide an elements of the type 
  * delivered by {@link #getNewlyAccessibleElementsContainerType()}.

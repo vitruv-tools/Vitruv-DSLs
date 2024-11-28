@@ -12,7 +12,7 @@ import tools.vitruv.dsls.commonalities.language.ParticipationClass
  * context.
  * <p>
  * In the context of participation matching the term 'root' has a different
- * meaning than the term 'root (container) class(es)':</br>
+ * meaning than the term 'root (container) class(es)':<br/>
  * Usually a participation will specify <code>Resource</code> as its root
  * container class. This Resource participation class is then also the 'root'
  * of the participation. However, while participations only support a single

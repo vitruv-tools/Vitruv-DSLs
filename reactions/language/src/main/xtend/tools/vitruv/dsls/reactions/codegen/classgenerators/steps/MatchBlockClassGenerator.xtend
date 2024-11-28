@@ -27,7 +27,7 @@ import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 
 /**
- * Generates for a {@link Matcher} block of a routine a class providing a method (with the name defined in 
+ * Generates for a {@link MatchBlock} of a routine a class providing a method (with the name defined in 
  * {@link #MATCH_METHOD_NAME}) that accepts the inputs values of the routine as parameters and performs the 
  * defined match statements.
  */
@@ -57,7 +57,7 @@ class MatchBlockClassGenerator extends StepExecutionClassGenerator {
 	 * 
 	 * @param typesBuilderExtensionProvider the Xtext types builder, must not be {@code null}
 	 * @param qualifiedClassName the qualified name of the class to create, may not be {@code null} or empty
-	 * @param matcher the matcher to create a class for, must not be {@code null}
+	 * @param matchBlock the match block to create a class for, must not be {@code null}
 	 * @param inputElements the elements to be passed to the generated {@code match} method, must not be {@code null}
 	 */
 	new(TypesBuilderExtensionProvider typesBuilderExtensionProvider, String qualifiedClassName, MatchBlock matchBlock,
