@@ -41,7 +41,7 @@ jobs:
         --no-transfer-progress
 
     - name: Stage build results
-      run: mkdir staging-${{ matrix.os }} && cp **/target/*.jar staging-${{ matrix.os }}/
+      run: mkdir staging-${{ matrix.os }} && find . -path '*/target/*.jar' -exec cp {} staging-${{ matrix.os }}/ \;
 
     - name: Upload build results
       uses: actions/upload-artifact@v3.1.3
