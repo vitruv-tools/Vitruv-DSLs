@@ -18,3 +18,17 @@ The DSLs only depend on the [change definition](https://github.com/vitruv-tools/
 
 This project depends on the following other projects from the Vitruvius framework:
 - [Vitruv-Change](https://github.com/vitruv-tools/Vitruv-Change)
+
+## Module Overview
+
+| Name          | Description                                                                       |
+|---------------|-----------------------------------------------------------------------------------|
+| common        | Common consistency specification language infrastructure.                         |
+| reactions     | Language for the definition of imperative consistency preservation rules.         |
+| - language    | Definition of the language infrastructure (grammar, parser, validation, etc.).    |
+| - runtime     | Definition of the runtime environment for executing consistency specifications.   |
+| commonalities | Language for the definition of shared concepts between meta-models.               |
+| - language    | Definition of the language infrastructure (grammar, parser, validation, etc.).    |
+| - runtime     | Definition of the runtime environment for executing consistency specifications.   |
+| *demo*        | *Small projects demonstrating the use of our consistency preservation languages.* |
+| *testutils*   | *Utilities for testing in Vitruvius or V-SUM projects.*                           |
