@@ -1,7 +1,8 @@
 package tools.vitruv.dsls.commonalities.generator.reactions.matching
 
 import com.google.inject.Inject
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import tools.vitruv.dsls.commonalities.generator.reactions.ReactionsSubGenerator
 import tools.vitruv.dsls.commonalities.generator.util.guice.InjectingFactoryBase
 import tools.vitruv.dsls.commonalities.language.Participation
@@ -17,7 +18,7 @@ import static extension tools.vitruv.dsls.commonalities.participation.Participat
  */
 class MatchParticipationReactionsBuilder extends ReactionsSubGenerator {
 
-	static val Logger logger = Logger.getLogger(MatchParticipationReactionsBuilder)
+	static val Logger logger = LogManager.getLogger(MatchParticipationReactionsBuilder)
 
 	static class Factory extends InjectingFactoryBase {
 		def createFor(Participation participation) {

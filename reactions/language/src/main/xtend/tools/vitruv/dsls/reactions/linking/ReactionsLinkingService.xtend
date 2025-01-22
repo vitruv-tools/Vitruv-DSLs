@@ -11,7 +11,8 @@ import org.eclipse.xtext.linking.impl.DefaultLinkingService
 import org.eclipse.xtext.linking.impl.IllegalNodeException
 import org.eclipse.xtext.nodemodel.ILeafNode
 import org.eclipse.xtext.nodemodel.INode
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.eclipse.emf.ecore.EPackage
 import org.eclipse.emf.ecore.EcorePackage
 
@@ -21,7 +22,7 @@ import org.eclipse.emf.ecore.EcorePackage
  * Uses <code>EPackage.Registry</code> to deresolve URIs.
  */
 class ReactionsLinkingService extends DefaultLinkingService {
-	static final Logger log = Logger.getLogger(typeof(ReactionsLinkingService));
+	static final Logger log = LogManager.getLogger(typeof(ReactionsLinkingService));
 	
 	@Inject
 	IValueConverterService valueConverterService;
