@@ -2,13 +2,14 @@ package tools.vitruv.dsls.commonalities.runtime.operators.participation.conditio
 
 import java.util.List
 import java.util.Objects
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import tools.vitruv.dsls.commonalities.runtime.operators.AttributeOperand
 
 @ParticipationConditionOperator(name = '=')
 class EqualsOperator extends AbstractSingleArgumentConditionOperator {
 
-	static val Logger logger = Logger.getLogger(EqualsOperator)
+	static val Logger logger = LogManager.getLogger(EqualsOperator)
 
 	new(Object leftOperand, List<?> rightOperands) {
 		super(leftOperand, rightOperands)

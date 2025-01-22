@@ -12,7 +12,7 @@ import edu.kit.ipd.sdq.metamodels.persons.PersonsFactory
 import java.io.IOException
 import java.nio.file.Path
 import java.util.stream.Stream
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.eclipse.xtend.lib.annotations.Delegate
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -50,7 +50,7 @@ enum MemberRole {
  */
 @ExtendWith(#[TestLogging, TestProjectManager])
 class FamiliesToPersonsTest implements TestView {
-	static val logger = Logger.getLogger(FamiliesToPersonsTest)
+	static val logger = LogManager.getLogger(FamiliesToPersonsTest)
 	String nameOfTestMethod = null
 
 	@Delegate var TestView testView

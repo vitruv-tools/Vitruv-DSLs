@@ -3,7 +3,8 @@ package tools.vitruv.dsls.commonalities.runtime.matching
 import edu.kit.ipd.sdq.commons.util.java.lang.StringUtil
 import java.util.Collections
 import java.util.Objects
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.eclipse.emf.ecore.EClass
 import org.eclipse.emf.ecore.EObject
 import tools.vitruv.dsls.commonalities.runtime.intermediatemodelbase.Intermediate
@@ -23,7 +24,7 @@ import tools.vitruv.dsls.reactions.runtime.correspondence.ReactionsCorrespondenc
  */
 class ParticipationMatcher {
 
-	val static Logger logger = Logger.getLogger(ParticipationMatcher)
+	val static Logger logger = LogManager.getLogger(ParticipationMatcher)
 
 	val ContainmentContext containmentContext
 	val EObject startObject

@@ -2,7 +2,8 @@ package tools.vitruv.dsls.reactions.generator
 
 import com.google.inject.Inject
 import com.google.inject.Provider
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.eclipse.emf.common.util.URI
 import org.eclipse.xtend.lib.annotations.Delegate
 import org.eclipse.xtext.resource.IGlobalServiceProvider
@@ -10,7 +11,7 @@ import tools.vitruv.dsls.reactions.api.generator.IReactionsGenerator
 
 class ExternalReactionsGenerator implements IReactionsGenerator {
 
-	static Logger logger = Logger.getLogger(ExternalReactionsGenerator)
+	static Logger logger = LogManager.getLogger(ExternalReactionsGenerator)
 
 	// Injected during the setup of the runtime module (see ReactionsLanguageRuntimeModule).
 	@Inject

@@ -1,7 +1,7 @@
 package tools.vitruv.dsls.reactions.runtime.reactions
 
 import java.util.List
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.eclipse.emf.ecore.EObject
 import tools.vitruv.change.atomic.EChange
 import tools.vitruv.change.composite.MetamodelDescriptor
@@ -19,7 +19,7 @@ import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
  * A {@link ChangePropagationSpecification} that executes {@link Reaction}s.
  */
 abstract class AbstractReactionsChangePropagationSpecification extends AbstractChangePropagationSpecification {
-	static val LOGGER = Logger.getLogger(AbstractReactionsChangePropagationSpecification)
+	static val LOGGER = LogManager.getLogger(AbstractReactionsChangePropagationSpecification)
 
 	val List<Reaction> reactions
 

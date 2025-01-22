@@ -3,7 +3,8 @@ package tools.vitruv.dsls.commonalities.generator.reactions.matching
 import com.google.inject.Inject
 import java.util.HashMap
 import java.util.Map
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.eclipse.emf.ecore.EcorePackage
 import org.eclipse.xtext.xbase.XbaseFactory
 import tools.vitruv.dsls.commonalities.generator.helper.ContainmentHelper
@@ -144,7 +145,7 @@ import tools.vitruv.dsls.commonalities.runtime.resources.ResourcesPackage
  */
 class ParticipationMatchingReactionsBuilder extends ReactionsGenerationHelper {
 
-	static val Logger logger = Logger.getLogger(ParticipationMatchingReactionsBuilder)
+	static val Logger logger = LogManager.getLogger(ParticipationMatchingReactionsBuilder)
 
 	static class Provider extends ReactionsSegmentScopedProvider<ParticipationMatchingReactionsBuilder> {
 		protected override createFor(FluentReactionsSegmentBuilder segment) {

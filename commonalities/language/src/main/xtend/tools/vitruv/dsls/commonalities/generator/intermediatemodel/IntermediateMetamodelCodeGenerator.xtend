@@ -2,7 +2,8 @@ package tools.vitruv.dsls.commonalities.generator.intermediatemodel
 
 import edu.kit.ipd.sdq.activextendannotations.Lazy
 import java.util.Collections
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.eclipse.emf.codegen.ecore.generator.Generator
 import org.eclipse.emf.codegen.ecore.generator.GeneratorAdapterFactory
 import org.eclipse.emf.codegen.ecore.genmodel.GenJDKLevel
@@ -33,7 +34,7 @@ import org.eclipse.core.runtime.Platform
 
 @GenerationScoped
 class IntermediateMetamodelCodeGenerator implements SubGenerator {
-	static val Logger log = Logger.getLogger(IntermediateMetamodelCodeGenerator)
+	static val Logger log = LogManager.getLogger(IntermediateMetamodelCodeGenerator)
 	static val GENERATED_CODE_COMPLIANCE_LEVEL = GenJDKLevel.JDK80_LITERAL
 	static val GENERATED_CODE_FOLDER = "."
 	static val INTERMEDIATEMODELBASE_GENMODEL_URI = EcorePlugin.getEPackageNsURIToGenModelLocationMap(true)
