@@ -2,7 +2,8 @@ package tools.vitruv.dsls.commonalities.generator.reactions
 
 import com.google.inject.Inject
 import com.google.inject.Provider
-import org.apache.log4j.Logger
+import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.LogManager
 import org.eclipse.emf.common.util.URI
 import org.eclipse.xtext.resource.IGlobalServiceProvider
 import tools.vitruv.dsls.commonalities.generator.SubGenerator
@@ -25,7 +26,7 @@ import static extension tools.vitruv.dsls.commonalities.generator.reactions.Reac
  * code to transform changes between a commonality and its participations.
  */
 class ReactionsGenerator implements SubGenerator {
-	static val Logger logger = Logger.getLogger(ReactionsGenerator)
+	static val Logger logger = LogManager.getLogger(ReactionsGenerator)
 
 	@Inject IGlobalServiceProvider globalServiceProvider
 	@Inject Provider<IReactionsGenerator> reactionsGeneratorProvider
