@@ -93,13 +93,17 @@
       <groupId>org.eclipse.xtext</groupId>
       <artifactId>org.eclipse.xtext.xbase.lib</artifactId>
     </dependency>
+
+    <!-- p2 compile dependencies -->
     <dependency>
-      <groupId>sdq-commons</groupId>
-      <artifactId>edu.kit.ipd.sdq.commons.util.java</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tools.vitruv.dsls.p2wrappers.activextendannotations</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>xannotations</groupId>
-      <artifactId>edu.kit.ipd.sdq.activextendannotations</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tools.vitruv.dsls.p2wrappers.javautils</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 </project>

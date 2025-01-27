@@ -151,14 +151,6 @@
       <groupId>org.eclipse.xtext</groupId>
       <artifactId>org.eclipse.xtext.xbase.lib</artifactId>
     </dependency>
-    <dependency>
-      <groupId>sdq-commons</groupId>
-      <artifactId>edu.kit.ipd.sdq.commons.util.java</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>xannotations</groupId>
-      <artifactId>edu.kit.ipd.sdq.activextendannotations</artifactId>
-    </dependency>
 
     <!-- external test dependencies -->
     <dependency>
@@ -186,9 +178,24 @@
       <artifactId>junit-jupiter-params</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <!-- p2 compile dependencies -->
     <dependency>
-      <groupId>sdq-commons</groupId>
-      <artifactId>edu.kit.ipd.sdq.commons.util.eclipse</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tools.vitruv.dsls.p2wrappers.activextendannotations</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tools.vitruv.dsls.p2wrappers.javautils</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- p2 test dependencies -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tools.vitruv.dsls.p2wrappers.eclipseutils</artifactId>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

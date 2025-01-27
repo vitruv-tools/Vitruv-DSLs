@@ -166,10 +166,6 @@
       <groupId>sdq-demo-metamodels</groupId>
       <artifactId>edu.kit.ipd.sdq.metamodels.persons</artifactId>
     </dependency>
-    <dependency>
-      <groupId>xannotations</groupId>
-      <artifactId>edu.kit.ipd.sdq.activextendannotations</artifactId>
-    </dependency>
 
     <!-- external test dependencies -->
     <dependency>
@@ -191,6 +187,13 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-params</artifactId>
       <scope>test</scope>
+    </dependency>
+
+    <!-- p2 compile dependencies -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tools.vitruv.dsls.p2wrappers.activextendannotations</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 </project>
