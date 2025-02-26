@@ -177,23 +177,7 @@ class ChangePropagationSpecificationGenerator implements SubGenerator {
 	}
 
 	private def getChangePropagationSpecificationUri(String changePropagationSpecificationName) {
-		// When calling this in beforeGenerate, the generated files folder does not exist yet,
-		// which leads to the URI not having a trailing slash in comparison to the URI generated
-		// when calling this in the generate method. In consequence, calling this method with the
-		// same argument leads to different URIs, which do not resolve to the same resource in the
-		// same resource set. To ensure consistent URIs, we add the trailing slash if missing.
-		fsa.getURI(".").ensureHasTrailingSlash().appendSegment(
-			changePropagationSpecificationPackageName + "." + changePropagationSpecificationName + ".java"
-		)
-	}
-	
-	private def ensureHasTrailingSlash(URI uri) {
-		val uriString = uri.toString
-		if (uri.file && !uriString.endsWith("/")) {
-			URI.createURI(uriString + "/")
-		} else {
-			uri
-		}
+		fsa.getURI(changePropagationSpecificationPackageName + "." + changePropagationSpecificationName + ".java")
 	}
 
 }
