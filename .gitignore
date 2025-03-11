@@ -5,8 +5,6 @@
 target/
 *.log
 .mvn/wrapper/*.jar
-.flattened-pom.xml
-dependency-reduced-pom.xml
 
 # Eclipse
 META-INF

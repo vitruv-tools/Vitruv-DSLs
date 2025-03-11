@@ -51,12 +51,9 @@
       <groupId>org.eclipse.xtext</groupId>
       <artifactId>org.eclipse.xtext.xbase.lib</artifactId>
     </dependency>
-
-    <!-- p2 compile dependencies -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tools.vitruv.dsls.p2wrappers.activextendannotations</artifactId>
-      <version>${project.version}</version>
+      <groupId>xannotations</groupId>
+      <artifactId>edu.kit.ipd.sdq.activextendannotations</artifactId>
     </dependency>
   </dependencies>
 </project>

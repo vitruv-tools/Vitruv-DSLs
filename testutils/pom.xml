@@ -61,12 +61,9 @@
       <groupId>org.eclipse.xtext</groupId>
       <artifactId>org.eclipse.xtext.xbase.testing</artifactId>
     </dependency>
-
-    <!-- p2 compile dependencies -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tools.vitruv.dsls.p2wrappers.emfutils</artifactId>
-      <version>${project.version}</version>
+      <groupId>sdq-commons</groupId>
+      <artifactId>edu.kit.ipd.sdq.commons.util.emf</artifactId>
     </dependency>
   </dependencies>
 </project>

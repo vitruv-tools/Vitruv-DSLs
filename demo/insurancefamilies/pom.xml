@@ -151,8 +151,8 @@
       <artifactId>guava</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
     </dependency>
     <dependency>
       <groupId>org.eclipse.emf</groupId>
@@ -173,6 +173,10 @@
     <dependency>
       <groupId>sdq-demo-metamodels</groupId>
       <artifactId>edu.kit.ipd.sdq.metamodels.insurance</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>xannotations</groupId>
+      <artifactId>edu.kit.ipd.sdq.activextendannotations</artifactId>
     </dependency>
 
     <!-- external test dependencies -->
@@ -196,25 +200,14 @@
       <artifactId>junit-jupiter-params</artifactId>
       <scope>test</scope>
     </dependency>
-
-    <!-- p2 compile dependencies -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tools.vitruv.dsls.p2wrappers.activextendannotations</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-    <!-- p2 test dependencies -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tools.vitruv.dsls.p2wrappers.javautils</artifactId>
-      <version>${project.version}</version>
+      <groupId>sdq-commons</groupId>
+      <artifactId>edu.kit.ipd.sdq.commons.util.emf</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tools.vitruv.dsls.p2wrappers.emfutils</artifactId>
-      <version>${project.version}</version>
+      <groupId>sdq-commons</groupId>
+      <artifactId>edu.kit.ipd.sdq.commons.util.java</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
