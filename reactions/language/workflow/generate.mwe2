@@ -5,8 +5,11 @@ import org.eclipse.emf.mwe.utils.StandaloneSetup
 
 import org.eclipse.xtext.xtext.generator.*
 import org.eclipse.xtext.xtext.generator.model.project.*
+import org.eclipse.xtext.xtext.generator.textmate.*
 
-var workspaceRoot = ".."
+/*var workspaceRoot = ".." */
+var workspaceRoot = "."
+var rootPath = "${workspaceRoot}/.."
 
 Workflow {
 
@@ -45,6 +48,11 @@ Workflow {
                     src = "${workspaceRoot}/src/test/xtend"
                     srcGen = "${workspaceRoot}/target/generated-test-sources/xtext-java"
                 }
+                genericIde = {
+                					enabled = true
+                					name = "ide"
+                					srcGen = "${workspaceRoot}/ide/target/generated-sources/xtext-java"
+                				}
             }
             code = {
                 preferXtendStubs = true
@@ -59,6 +67,10 @@ Workflow {
             
             referencedResource = "platform:/resource/tools.vitruv.dsls.common/src/main/ecore/CommonLanguageElements.genmodel"
             referencedResource = "platform:/resource/tools.vitruv.dsls.reactions/src/main/ecore/TopLevelElements.genmodel"
+
+fragment = TextMateHighlightingFragment {
+				absolutePath = "${workspaceRoot}/ide/target/"
+			}
 
             formatter = {
                 generateStub = true
