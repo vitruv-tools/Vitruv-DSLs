@@ -26,6 +26,18 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
       </plugin>
+
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+      </plugin>
+
+
       <plugin>
         <groupId>org.eclipse.xtend</groupId>
         <artifactId>xtend-maven-plugin</artifactId>
@@ -95,6 +107,12 @@
       <groupId>tools.vitruv</groupId>
       <artifactId>tools.vitruv.change.testutils.metamodels</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <!-- for TextMate grammar generation -->
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.11.0</version>
     </dependency>
 
     <!-- external compile dependencies -->
