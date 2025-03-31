@@ -63,8 +63,8 @@ Workflow {
         language = StandardLanguage {
             name = "tools.vitruv.dsls.reactions.ReactionsLanguage"
             fileExtensions = "reactions"
-            grammarUri = "platform:/resource/tools.vitruv.dsls.reactions/src/main/xtext/tools/vitruv/dsls/reactions/ReactionsLanguage.xtext"
 
+            grammarUri = "platform:/resource/tools.vitruv.dsls.reactions/src/main/xtext/tools/vitruv/dsls/reactions/ReactionsLanguage.xtext"
             referencedResource = "platform:/resource/tools.vitruv.dsls.common/src/main/ecore/CommonLanguageElements.genmodel"
             referencedResource = "platform:/resource/tools.vitruv.dsls.reactions/src/main/ecore/TopLevelElements.genmodel"
 
@@ -79,7 +79,7 @@ Workflow {
 	        parserGenerator = {
 			}
 			generator = {
-            		generateStub = false
+            		generateStub = true
             }
             scopeProvider = {
             		generateStub = true
@@ -88,7 +88,7 @@ Workflow {
                     generateStub = true
             }
             serializer = {
-                    generateStub = false
+                    generateStub = true
             }
 
             junitSupport = junit.JUnitFragment {
