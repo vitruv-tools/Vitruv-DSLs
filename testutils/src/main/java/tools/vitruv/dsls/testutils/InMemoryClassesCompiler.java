@@ -13,11 +13,13 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.Set;
+import com.google.common.collect.ImmutableList;
 import org.eclipse.jdt.core.compiler.CategorizedProblem;
 import org.eclipse.xtext.util.JavaVersion;
 import org.eclipse.xtext.xbase.testing.InMemoryJavaCompiler;
 import org.eclipse.xtext.xbase.testing.InMemoryJavaCompiler.Result;
 import org.eclipse.xtext.xbase.testing.JavaSource;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Allows to compile all Java source files in a given folder at runtime and provides the compiled
@@ -45,14 +47,21 @@ public class InMemoryClassesCompiler {
    *     calling the according methods right after compilation
    * @throws IOException if the directory does not exist or cannot be traversed successfully
    */
-  public InMemoryClassesCompiler compile() throws IOException {
+  public InMemoryClassesCompiler compile() {
     checkState(compiledClasses == null, "classes have already been compiled");
-    this.compiledClasses =
-        compileJavaFiles(
-            from(walk(javaSourcesFolder).toList())
-                .filter(path -> path.toString().endsWith(".java"))
-                .transform(path -> new RelativeAndAbsolutePath(javaSourcesFolder, path))
-                .toList());
+
+    ImmutableList<@NonNull RelativeAndAbsolutePath> sourceFiles;
+
+    try (var pathStream = walk(javaSourcesFolder)) {
+      sourceFiles = from(pathStream.toList())  // Convert stream to List
+              .filter(path -> path.toString().endsWith(".java"))
+              .transform(path -> new RelativeAndAbsolutePath(javaSourcesFolder, path))
+              .toList();
+    } catch (IOException e) {
+      throw new IllegalStateException("Failed to compile Java files in: " + javaSourcesFolder, e);
+    }
+    this.compiledClasses = compileJavaFiles(sourceFiles);
+
     return this;
   }
 
