@@ -45,7 +45,6 @@ public class InMemoryClassesCompiler {
    *
    * @return itself (i.e. {@code this}) to allow retrieval of compiled classes or their instances by
    *     calling the according methods right after compilation
-   * @throws IOException if the directory does not exist or cannot be traversed successfully
    */
   public InMemoryClassesCompiler compile() {
     checkState(compiledClasses == null, "classes have already been compiled");
