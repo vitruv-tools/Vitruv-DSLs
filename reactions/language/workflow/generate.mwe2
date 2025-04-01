@@ -33,6 +33,7 @@ Workflow {
             project = StandardProjectConfig {
                 baseName = "."
                 rootPath = workspaceRoot
+                mavenLayout = true
 
                 runtime = {
                     root = workspaceRoot
@@ -46,12 +47,12 @@ Workflow {
                     src = "${workspaceRoot}/src/test/xtend"
                     srcGen = "${workspaceRoot}/target/generated-test-sources/xtext-java"
                 }
-
                 genericIde = {
-                					enabled = true
-                					name = "../ide"
-                					srcGen = "${workspaceRoot}/../ide/target/generated-sources/xtext-java"
-                				}
+                    enabled = true
+                    name = "../ide"
+                    src = "${workspaceRoot}/../ide/src/main/xtend"
+                    srcGen = "${workspaceRoot}/../ide/target/generated-sources/xtext-java"
+                }
 
             }
             code = {
@@ -63,7 +64,6 @@ Workflow {
         language = StandardLanguage {
             name = "tools.vitruv.dsls.reactions.ReactionsLanguage"
             fileExtensions = "reactions"
-
             grammarUri = "platform:/resource/tools.vitruv.dsls.reactions/src/main/xtext/tools/vitruv/dsls/reactions/ReactionsLanguage.xtext"
             referencedResource = "platform:/resource/tools.vitruv.dsls.common/src/main/ecore/CommonLanguageElements.genmodel"
             referencedResource = "platform:/resource/tools.vitruv.dsls.reactions/src/main/ecore/TopLevelElements.genmodel"
@@ -78,17 +78,18 @@ Workflow {
 
 	        parserGenerator = {
 			}
-			generator = {
-            		generateStub = true
+
+			serializer = {
+            	generateStub = true
+            }
+            generator = {
+                generateStub = true
             }
             scopeProvider = {
-            		generateStub = true
+                generateStub = true
             }
             validator = {
-                    generateStub = true
-            }
-            serializer = {
-                    generateStub = true
+                generateStub = true
             }
 
             junitSupport = junit.JUnitFragment {

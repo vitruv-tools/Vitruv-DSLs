@@ -12,8 +12,8 @@
 
     <artifactId>tools.vitruv.dsls.reactions.ide</artifactId>
 
-    <name>Vitruv Reactions Ide</name>
-    <description>IDE integration with LSP server and visualization server</description>
+    <name>Vitruv Reactions IDE</name>
+    <description>IDE integration with LSP server</description>
 
     <dependencies>
         <dependency>
@@ -44,6 +44,10 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.eclipse.xtend</groupId>
+                <artifactId>xtend-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
