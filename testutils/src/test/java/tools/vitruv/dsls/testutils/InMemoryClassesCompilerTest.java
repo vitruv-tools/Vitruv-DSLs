@@ -78,12 +78,10 @@ class InMemoryClassesCompilerTest {
 
   @Test
   void testCompileFailsForInvalidJavaFile() {
-    InMemoryClassesCompiler compiler = new InMemoryClassesCompiler(Path.of("invalid/java/file/path"));
+    compiler = new InMemoryClassesCompiler(Path.of("invalid/java/file/path"));
 
     // Adjust the expected exception type to AssertionError
-    assertThrows(IllegalStateException.class, () -> {  // Expect the actual exception
-      compiler.compile();
-    });
+    assertThrows(IllegalStateException.class, compiler::compile);
   }
 
   @Test
