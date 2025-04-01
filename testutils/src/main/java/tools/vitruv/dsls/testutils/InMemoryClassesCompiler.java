@@ -13,13 +13,11 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.Set;
-import com.google.common.collect.ImmutableList;
 import org.eclipse.jdt.core.compiler.CategorizedProblem;
 import org.eclipse.xtext.util.JavaVersion;
 import org.eclipse.xtext.xbase.testing.InMemoryJavaCompiler;
 import org.eclipse.xtext.xbase.testing.InMemoryJavaCompiler.Result;
 import org.eclipse.xtext.xbase.testing.JavaSource;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Allows to compile all Java source files in a given folder at runtime and provides the compiled
@@ -48,7 +46,6 @@ public class InMemoryClassesCompiler {
    */
   public InMemoryClassesCompiler compile() throws IOException {
     checkState(compiledClasses == null, "classes have already been compiled");
-
     try (var pathsStream = walk(javaSourcesFolder)) {
       this.compiledClasses =
               compileJavaFiles(
