@@ -17,7 +17,12 @@
   <name>Vitruv Reactions</name>
   <description>Language for developing transformations with an imperative, change-driven paradigm</description>
 
+  <properties>
+    <xtextVersion>2.38.0</xtextVersion>
+  </properties>
+
   <modules>
+    <module>ide</module>
     <module>language</module>
     <module>runtime</module>
   </modules>
