@@ -43,17 +43,18 @@ public class InMemoryClassesCompiler {
    *
    * @return itself (i.e. {@code this}) to allow retrieval of compiled classes or their instances by
    *     calling the according methods right after compilation
-   * @throws IOException if the directory does not exist or cannot be traversed successfully
    */
   public InMemoryClassesCompiler compile() throws IOException {
     checkState(compiledClasses == null, "classes have already been compiled");
-    this.compiledClasses =
-        compileJavaFiles(
-            from(walk(javaSourcesFolder).toList())
-                .filter(path -> path.toString().endsWith(".java"))
-                .transform(path -> new RelativeAndAbsolutePath(javaSourcesFolder, path))
-                .toList());
-    return this;
+    try (var pathsStream = walk(javaSourcesFolder)) {
+      this.compiledClasses =
+              compileJavaFiles(
+                      from(pathsStream.toList())
+                              .filter(path -> path.toString().endsWith(".java"))
+                              .transform(path -> new RelativeAndAbsolutePath(javaSourcesFolder, path))
+                              .toList());
+      return this;
+    }
   }
 
   private Set<? extends Class<?>> compileJavaFiles(
