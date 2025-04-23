@@ -80,9 +80,17 @@ jobs:
         check-latest: true
         cache: 'maven'
 
-    - name: Verify JavaDoc
+    - name: clean JavaDoc
       run: >
-        ./mvnw clean package javadoc:javadoc
+        ./mvnw clean 
+        -DskipTests
+        --batch-mode
+        --update-snapshots
+        --no-transfer-progress
+
+    - name: verify JavaDoc
+      run: >
+        ./mvnw package javadoc:javadoc
         -DskipTests
         --batch-mode
         --update-snapshots
