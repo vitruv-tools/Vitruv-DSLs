@@ -35,7 +35,8 @@ jobs:
 
     - name: Verify build
       run: >
-        ./mvnw clean verify
+        ./mvnw clean
+        ./mvnw verify
         --batch-mode
         --update-snapshots
         --no-transfer-progress
