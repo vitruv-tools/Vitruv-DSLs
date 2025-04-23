@@ -51,9 +51,8 @@ Workflow {
                     enabled = true
                     name = "../ide"
                     src = "${workspaceRoot}/../ide/src/main/xtend"
-                    srcGen = "${workspaceRoot}/../ide/target/generated-sources/xtext-java"
+                    srcGen = "${workspaceRoot}/../ide/src-gen/generated-sources/xtext-java"
                 }
-
             }
             code = {
                 preferXtendStubs = true
