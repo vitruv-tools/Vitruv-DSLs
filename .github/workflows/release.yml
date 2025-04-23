@@ -36,9 +36,18 @@ jobs:
         --update-snapshots
         --no-transfer-progress
 
-    - name: Verify build
+    - name: clean JavaDoc
       run: >
-        ./mvnw verify
+        ./mvnw clean 
+        -DskipTests
+        --batch-mode
+        --update-snapshots
+        --no-transfer-progress
+
+    - name: verify JavaDoc
+      run: >
+        ./mvnw package javadoc:javadoc
+        -DskipTests
         --batch-mode
         --update-snapshots
         --no-transfer-progress
