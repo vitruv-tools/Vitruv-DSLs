@@ -51,7 +51,7 @@ Workflow {
                     enabled = true
                     name = "../ide"
                     src = "${workspaceRoot}/../ide/src/main/xtend"
-                    srcGen = "${workspaceRoot}/../ide/src-gen/generated-sources/xtext-java"
+                    srcGen = "${workspaceRoot}/../ide/target/generated-sources/xtext-java"
                 }
             }
             code = {
@@ -72,7 +72,7 @@ Workflow {
             }
 
             fragment = TextMateHighlightingFragment {
-            	absolutePath = "${workspaceRoot}/../ide/src-gen"
+            	absolutePath = "${workspaceRoot}/../ide/"
             }
 
 	        parserGenerator = {
