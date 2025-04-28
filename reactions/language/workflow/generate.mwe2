@@ -72,7 +72,7 @@ Workflow {
             }
 
             fragment = TextMateHighlightingFragment {
-            	absolutePath = "${workspaceRoot}/../ide/target"
+            	absolutePath = "${workspaceRoot}/../ide/src-gen"
             }
 
 	        parserGenerator = {
