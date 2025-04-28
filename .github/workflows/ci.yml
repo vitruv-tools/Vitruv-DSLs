@@ -33,16 +33,9 @@ jobs:
         check-latest: true
         cache: 'maven'
 
-    - name: clean build
-      run: >
-        ./mvnw clean
-        --batch-mode
-        --update-snapshots
-        --no-transfer-progress
-
     - name: Verify build
       run: >
-        ./mvnw verify
+        ./mvnw clean verify
         --batch-mode
         --update-snapshots
         --no-transfer-progress
@@ -80,17 +73,9 @@ jobs:
         check-latest: true
         cache: 'maven'
 
-    - name: clean JavaDoc
+    - name: Verify JavaDoc
       run: >
-        ./mvnw clean 
-        -DskipTests
-        --batch-mode
-        --update-snapshots
-        --no-transfer-progress
-
-    - name: verify JavaDoc
-      run: >
-        ./mvnw package javadoc:javadoc
+        ./mvnw clean package javadoc:javadoc
         -DskipTests
         --batch-mode
         --update-snapshots
@@ -116,18 +101,9 @@ jobs:
         check-latest: true
         cache: 'maven'
 
-    - name: Run Cleaning SonarQube analysis
+    - name: Run SonarQube analysis
       run: >
-        ./mvnw clean 
-        --batch-mode
-        --update-snapshots
-        --no-transfer-progress
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-    - name: Run Verifying SonarQube analysis
-      run: >
-        ./mvnw verify sonar:sonar -P coverage
+        ./mvnw clean verify sonar:sonar -P coverage
         --batch-mode
         --update-snapshots
         --no-transfer-progress
