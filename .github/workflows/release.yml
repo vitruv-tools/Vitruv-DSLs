@@ -29,25 +29,9 @@ jobs:
         check-latest: true
         cache: 'maven'
 
-    - name: clean build
+    - name: Verify build
       run: >
-        ./mvnw clean
-        --batch-mode
-        --update-snapshots
-        --no-transfer-progress
-
-    - name: clean JavaDoc
-      run: >
-        ./mvnw clean 
-        -DskipTests
-        --batch-mode
-        --update-snapshots
-        --no-transfer-progress
-
-    - name: verify JavaDoc
-      run: >
-        ./mvnw package javadoc:javadoc
-        -DskipTests
+        ./mvnw clean verify
         --batch-mode
         --update-snapshots
         --no-transfer-progress
