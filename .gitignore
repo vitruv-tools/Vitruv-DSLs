@@ -3,6 +3,7 @@
 
 # Maven
 target/
+src-gen/
 *.log
 .mvn/wrapper/*.jar
 .flattened-pom.xml
