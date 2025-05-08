@@ -24,10 +24,6 @@
     {
       "match": "//[^\\\n\\\r]*(\\\r?\\\n)?",
       "name": "comment.line.reactionslanguage"
-    },
-    {
-      "match": ".",
-      "name": "invalid.reactionslanguage"
     }
   ],
   "scopeName": "source.reactionslanguage"
