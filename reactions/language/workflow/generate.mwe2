@@ -5,6 +5,7 @@ import org.eclipse.emf.mwe.utils.StandaloneSetup
 
 import org.eclipse.xtext.xtext.generator.*
 import org.eclipse.xtext.xtext.generator.model.project.*
+import org.eclipse.xtext.xtext.generator.textmate.*
 
 var workspaceRoot = ".."
 
@@ -32,6 +33,7 @@ Workflow {
             project = StandardProjectConfig {
                 baseName = "."
                 rootPath = workspaceRoot
+                mavenLayout = true
 
                 runtime = {
                     root = workspaceRoot
@@ -45,6 +47,12 @@ Workflow {
                     src = "${workspaceRoot}/src/test/xtend"
                     srcGen = "${workspaceRoot}/target/generated-test-sources/xtext-java"
                 }
+                genericIde = {
+                    enabled = true
+                    name = "../ide"
+                    src = "${workspaceRoot}/../ide/src/main/xtend"
+                    srcGen = "${workspaceRoot}/../ide/src-gen/xtext/"
+                }
             }
             code = {
                 preferXtendStubs = true
@@ -56,11 +64,30 @@ Workflow {
             name = "tools.vitruv.dsls.reactions.ReactionsLanguage"
             fileExtensions = "reactions"
             grammarUri = "platform:/resource/tools.vitruv.dsls.reactions/src/main/xtext/tools/vitruv/dsls/reactions/ReactionsLanguage.xtext"
-            
             referencedResource = "platform:/resource/tools.vitruv.dsls.common/src/main/ecore/CommonLanguageElements.genmodel"
             referencedResource = "platform:/resource/tools.vitruv.dsls.reactions/src/main/ecore/TopLevelElements.genmodel"
 
             formatter = {
+                generateStub = true
+            }
+
+            fragment = TextMateHighlightingFragment {
+            	absolutePath = "${workspaceRoot}/../ide/"
+            }
+
+	        parserGenerator = {
+			}
+
+			serializer = {
+            	generateStub = true
+            }
+            generator = {
+                generateStub = true
+            }
+            scopeProvider = {
+                generateStub = true
+            }
+            validator = {
                 generateStub = true
             }
 
