@@ -51,7 +51,7 @@ Workflow {
                     enabled = true
                     name = "../ide"
                     src = "${workspaceRoot}/../ide/src/main/xtend"
-                    srcGen = "${workspaceRoot}/../ide/src-gen/generated-sources/xtext/"
+                    srcGen = "${workspaceRoot}/../ide/src-gen/xtext/"
                 }
             }
             code = {
