@@ -82,12 +82,12 @@ class RoutineClassGenerator extends ClassGenerator {
 		} else {
 			new EmptyStepExecutionClassGenerator(typesBuilderExtensionProvider)
 		}
-		this.logBlockBeforeMatchGenerator = if (routine.logBlockBeforMatch !== null) {
+		this.logBlockBeforeMatchGenerator = if (routine.logBlockBeforeMatch !== null) {
 			val routinesFacadeClassName = routine.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
 			new LogBlockGenerator(
 				typesBuilderExtensionProvider,
 				getNestedClassName("LogBeforeMatch"),
-				routine.logBlockBeforMatch,
+				routine.logBlockBeforeMatch,
 				typeRef(routinesFacadeClassName),
 				inputElements
 			)
