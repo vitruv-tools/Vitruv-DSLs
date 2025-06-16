@@ -20,6 +20,7 @@ import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.EmptyStepExecut
 import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.StepExecutionClassGenerator
 import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
+import tools.vitruv.dsls.reactions.language.toplevelelements.LogBlock
 
 class RoutineClassGenerator extends ClassGenerator {
 	static val EXECUTION_STATE_VARIABLE = "getExecutionState()"
@@ -33,6 +34,11 @@ class RoutineClassGenerator extends ClassGenerator {
 	static val MATCH_SIMPLE_CLASS_NAME = "Match"
 	static val CREATE_SIMPLE_CLASS_NAME = "Create"
 	static val UPDATE_SIMPLE_CLASS_NAME = "Update"
+	
+	static val LOG_BEFORE_MATCH_METHOD_NAME = "logActionBeforeMatch"
+	static val LOG_BEFORE_CREATE_METHOD_NAME = "logActionBeforeCreate"
+	static val LOG_BEFORE_UPDATE_METHOD_NAME = "logActionBeforeUpdate"
+	static val LOG_AFTER_UPDATE_METHOD_NAME = "logActionAfterUpdate"
 
 	val Routine routine
 	val ClassNameGenerator routineClassNameGenerator
@@ -41,6 +47,7 @@ class RoutineClassGenerator extends ClassGenerator {
 	val StepExecutionClassGenerator createBlockClassGenerator
 	val StepExecutionClassGenerator updateBlockClassGenerator
 	val String routinesFacadeQualifiedName
+	final TypesBuilderExtensionProvider typesBuilderExtensionProvider
 	
 	val JvmGenericType inputValuesClass
 	var JvmGenericType generatedClass
@@ -54,6 +61,7 @@ class RoutineClassGenerator extends ClassGenerator {
 		this.routineClassNameGenerator = routine.routineClassNameGenerator
 		this.routinesFacadeQualifiedName = routine.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
 		this.inputElements = getInputElements(routine.input.modelInputElements, routine.input.javaInputElements)
+		this.typesBuilderExtensionProvider = typesBuilderExtensionProvider
 		this.inputValuesClass = if (hasInputValues) {
 			generateElementsContainerClass(INPUT_VALUES_SIMPLE_CLASS_NAME, inputElements)
 		}
@@ -105,9 +113,25 @@ class RoutineClassGenerator extends ClassGenerator {
 				routine.toField(CREATED_VALUES_FIELD_NAME,
 					typeRef(createBlockClassGenerator.newlyAccessibleElementsContainerType))
 			members += inputValuesClass
+			if (routine.logBlockBeforMatch != null) {
+			   val logBlockBeforMatchGenerator = new LogBlockGenerator(routine.logBlockBeforMatch, typesBuilderExtensionProvider, inputElements)
+			    members += logBlockBeforMatchGenerator.generateLogMethod(LOG_BEFORE_MATCH_METHOD_NAME)
+		    } 
 			members += matchBlockClassGenerator.generateBody()
+			if (routine.logBlockBeforeCreate != null) {
+			   val logBlockBeforeCreateGenerator = new LogBlockGenerator(routine.logBlockBeforeCreate, typesBuilderExtensionProvider, inputElements)
+			    members += logBlockBeforeCreateGenerator.generateLogMethod(LOG_BEFORE_CREATE_METHOD_NAME)
+		    } 
 			members += createBlockClassGenerator.generateBody()
+			if (routine.logBlockBeforeUpdate != null) {
+			   val logBlockBeforeUpdateGenerator = new LogBlockGenerator(routine.logBlockBeforeUpdate, typesBuilderExtensionProvider, inputElements)
+			    members += logBlockBeforeUpdateGenerator.generateLogMethod(LOG_BEFORE_UPDATE_METHOD_NAME)
+		    } 
 			members += updateBlockClassGenerator.generateBody()
+			if (routine.logBlockAfterUpdate != null) {
+			   val logBlockAfterUpdateGenerator = new LogBlockGenerator(routine.logBlockAfterUpdate, typesBuilderExtensionProvider, inputElements)
+			    members += logBlockAfterUpdateGenerator.generateLogMethod(LOG_AFTER_UPDATE_METHOD_NAME)
+		    } 
 			members += routine.generateConstructor()
 			members += executeMethod
 		]
@@ -154,9 +178,13 @@ class RoutineClassGenerator extends ClassGenerator {
 			exceptions += typeRef(IOException)
 			body = '''
 				«generateDebugCode(inputElements)»
+				«IF routine.logBlockBeforMatch !== null»«LOG_BEFORE_MATCH_METHOD_NAME»(«FOR input : inputElements SEPARATOR ', '»«input»«ENDFOR»);«ENDIF»
 				«generateMatchCode(inputElements)»
+				«IF routine.logBlockBeforeCreate !== null»«LOG_BEFORE_CREATE_METHOD_NAME»(«FOR input : inputElements SEPARATOR ', '»«input»«ENDFOR»);«ENDIF»
 				«generateCreateCode(inputAndRetrievedElements)»
+				«IF routine.logBlockBeforeUpdate !== null»«LOG_BEFORE_UPDATE_METHOD_NAME»(«FOR input : inputElements SEPARATOR ', '»«input»«ENDFOR»);«ENDIF»
 				«generateUpdateCode(inputAndRetrievedAndCreatedElements)»
+				«IF routine.logBlockAfterUpdate !== null»«LOG_AFTER_UPDATE_METHOD_NAME»(«FOR input : inputElements SEPARATOR ', '»«input»«ENDFOR»);«ENDIF»
 				return true;
 			'''
 		]

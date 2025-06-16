@@ -20,6 +20,7 @@ import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 import java.util.function.Function
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 import tools.vitruv.change.atomic.EChange
+import tools.vitruv.dsls.reactions.language.toplevelelements.LogBlock
 
 class ReactionClassGenerator extends ClassGenerator {
 	static val EXECUTION_STATE_VARIABLE = "executionState"
@@ -34,9 +35,11 @@ class ReactionClassGenerator extends ClassGenerator {
 	final String reactionClassQualifiedName
 	final StepExecutionClassGenerator routineCallClassGenerator
 	var JvmGenericType generatedClass
+	final TypesBuilderExtensionProvider typesBuilderExtensionProvider
 
 	new(Reaction reaction, TypesBuilderExtensionProvider typesBuilderExtensionProvider) {
 		super(typesBuilderExtensionProvider)
+		this.typesBuilderExtensionProvider = typesBuilderExtensionProvider
 		checkArgument(reaction !== null, "reaction must not be null")
 		checkArgument(!reaction.name.nullOrEmpty, "reaction must have a name")
 		checkArgument(reaction.trigger !== null, "reaction must have a defined trigger")
@@ -68,6 +71,13 @@ class ReactionClassGenerator extends ClassGenerator {
 			members += reaction.generateConstructor()
 			members += routineCallClassGenerator.generateBody()
 			members += generateMethodExecuteReactionAndDependentMethods()
+			 // Delegate LogBlock generation to LogBlockGenerator
+		    if (reaction.logBlock !== null) {
+		            val logBlockGenerator = new LogBlockGenerator(reaction.logBlock, typesBuilderExtensionProvider, 
+		            	changeType.generatePropertiesParameterList
+		            )
+		            members += logBlockGenerator.generateLogMethod("logAction")
+		    }
 		]
 	}
 
@@ -103,6 +113,7 @@ class ReactionClassGenerator extends ClassGenerator {
 					getLogger().trace("Passed complete precondition check of Reaction " + this.getClass().getName());
 				}
 				
+				«IF reaction.logBlock !== null»logAction(«changeType.generatePropertiesParameterList.map[name].join(", ")»);«ENDIF»
 				«generateCallRoutineCode»
 			'''
 		]
