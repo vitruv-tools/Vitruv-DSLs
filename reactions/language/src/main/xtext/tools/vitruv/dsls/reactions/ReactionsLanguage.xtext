@@ -34,6 +34,7 @@ Reaction returns toplevelelements::Reaction:
 	(documentation=ML_COMMENT)?
 	'reaction' (overriddenReactionsSegment=[toplevelelements::ReactionsSegment] '::')? name=ValidID '{'
 	trigger=Trigger
+	logBlock=LogBlock?
 	callRoutine=RoutineCall
 	'}';
 
@@ -114,9 +115,13 @@ ElementChangeType returns ElementChangeType:
 Routine returns toplevelelements::Routine:
 	(documentation=ML_COMMENT)?
 	'routine' (overrideImportPath=RoutineOverrideImportPath '::')? name=ValidID input=RoutineInput '{'
+	logBlockBeforeMatch=LogBlock?
 	matchBlock=MatchBlock?
+	logBlockBeforeCreate=LogBlock?
 	createBlock=CreateBlock?
+	logBlockBeforeUpdate=LogBlock?
 	updateBlock=UpdateBlock?
+	logBlockAfterUpdate=LogBlock?
 	'}';
 
 RoutineOverrideImportPath returns toplevelelements::RoutineOverrideImportPath:
@@ -194,4 +199,18 @@ MetaclassEAttributeReference returns common::MetaclassEAttributeReference:
 
 MetaclassEReferenceReference returns common::MetaclassEReferenceReference:
 	MetaclassReference '[' feature=[ecore::EReference|ValidID] ']';
-	
+
+// *********** LOGGING *************
+LogBlock returns toplevelelements::LogBlock:
+	{toplevelelements::LogBlock}
+    'log' '{'
+      'level' level=LogLevel
+      'message' message=STRING
+      ('details' '{' details+=LogDetail+ '}')?
+    '}';
+    
+LogDetail returns toplevelelements::LogDetail:
+    key=ValidID '=' value=QualifiedName;
+
+LogLevel returns toplevelelements::LogLevel:
+    'INFO' | 'DEBUG' | 'WARN' | 'ERROR';

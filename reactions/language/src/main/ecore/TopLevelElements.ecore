@@ -41,6 +41,7 @@
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="reactionsSegment" lowerBound="1"
         eType="#//ReactionsSegment" eOpposite="#//ReactionsSegment/reactions"/>
+	<eStructuralFeatures xsi:type="ecore:EReference" name="logBlock" eType="#//LogBlock" containment="true" lowerBound="0" upperBound="1"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Trigger">
     <eStructuralFeatures xsi:type="ecore:EReference" name="precondition" eType="ecore:EClass http://www.eclipse.org/xtext/xbase/Xbase#//XExpression"
@@ -61,6 +62,10 @@
         eType="#//ReactionsSegment" eOpposite="#//ReactionsSegment/routines"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="updateBlock" eType="#//UpdateBlock"
         containment="true"/>
+	<eStructuralFeatures xsi:type="ecore:EReference" name="logBlockBeforeMatch" eType="#//LogBlock" containment="true" lowerBound="0" upperBound="1"/>
+	<eStructuralFeatures xsi:type="ecore:EReference" name="logBlockBeforeCreate" eType="#//LogBlock" containment="true" lowerBound="0" upperBound="1"/>
+	<eStructuralFeatures xsi:type="ecore:EReference" name="logBlockBeforeUpdate" eType="#//LogBlock" containment="true" lowerBound="0" upperBound="1"/>
+	<eStructuralFeatures xsi:type="ecore:EReference" name="logBlockAfterUpdate" eType="#//LogBlock" containment="true" lowerBound="0" upperBound="1"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="RoutineOverrideImportPath">
     <eStructuralFeatures xsi:type="ecore:EReference" name="reactionsSegment" eType="#//ReactionsSegment"/>
@@ -94,5 +99,21 @@
   <eClassifiers xsi:type="ecore:EClass" name="CodeExecutionBlock">
     <eStructuralFeatures xsi:type="ecore:EReference" name="code" eType="ecore:EClass http://www.eclipse.org/xtext/xbase/Xbase#//XExpression"
         containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="LogBlock">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="level" eType="#//LogLevel"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="message" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="details" upperBound="-1"
+        eType="#//LogDetail" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="LogDetail">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="key" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>     
+  </eClassifiers>
+   <eClassifiers xsi:type="ecore:EEnum" name="LogLevel">
+    <eLiterals name="INFO"/>
+    <eLiterals name="DEBUG" value="1"/>
+    <eLiterals name="WARN" value="2"/>
+    <eLiterals name="ERROR" value="3"/>
   </eClassifiers>
 </ecore:EPackage>

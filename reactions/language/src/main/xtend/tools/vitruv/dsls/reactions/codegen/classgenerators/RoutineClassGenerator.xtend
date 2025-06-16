@@ -42,6 +42,11 @@ class RoutineClassGenerator extends ClassGenerator {
 	val StepExecutionClassGenerator updateBlockClassGenerator
 	val String routinesFacadeQualifiedName
 	
+	final StepExecutionClassGenerator logBlockBeforeMatchGenerator
+	final StepExecutionClassGenerator logBlockBeforeCreateGenerator
+	final StepExecutionClassGenerator logBlockBeforeUpdateGenerator
+	final StepExecutionClassGenerator logBlockAfterUpdateGenerator
+		
 	val JvmGenericType inputValuesClass
 	var JvmGenericType generatedClass
 
@@ -77,6 +82,55 @@ class RoutineClassGenerator extends ClassGenerator {
 		} else {
 			new EmptyStepExecutionClassGenerator(typesBuilderExtensionProvider)
 		}
+		this.logBlockBeforeMatchGenerator = if (routine.logBlockBeforeMatch !== null) {
+			val routinesFacadeClassName = routine.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
+			new LogBlockGenerator(
+				typesBuilderExtensionProvider,
+				getNestedClassName("LogBeforeMatch"),
+				routine.logBlockBeforeMatch,
+				typeRef(routinesFacadeClassName),
+				inputElements
+			)
+		} else {
+			new EmptyStepExecutionClassGenerator(typesBuilderExtensionProvider)
+		}
+		this.logBlockBeforeCreateGenerator = if (routine.logBlockBeforeCreate !== null) {
+			val mactchAccessibleElements = inputElements + matchBlockClassGenerator.newlyAccessibleElementsAfterExecution 
+			val routinesFacadeClassName = routine.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
+			new LogBlockGenerator(
+				typesBuilderExtensionProvider,
+				getNestedClassName("LogBeforeCreate"),
+				routine.logBlockBeforeCreate,
+				typeRef(routinesFacadeClassName),
+				mactchAccessibleElements
+			)
+		} else {
+			new EmptyStepExecutionClassGenerator(typesBuilderExtensionProvider)
+		}
+		this.logBlockBeforeUpdateGenerator = if (routine.logBlockBeforeUpdate !== null) {
+			val routinesFacadeClassName = routine.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
+			new LogBlockGenerator(
+				typesBuilderExtensionProvider,
+				getNestedClassName("LogBeforeUpdate"),
+				routine.logBlockBeforeUpdate,
+				typeRef(routinesFacadeClassName),
+				updateAccessibleElements
+			)
+		} else {
+			new EmptyStepExecutionClassGenerator(typesBuilderExtensionProvider)
+		}
+		this.logBlockAfterUpdateGenerator = if (routine.logBlockAfterUpdate !== null) {
+			val routinesFacadeClassName = routine.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
+			new LogBlockGenerator(
+				typesBuilderExtensionProvider,
+				getNestedClassName("LogAfterUpdate"),
+				routine.logBlockAfterUpdate,
+				typeRef(routinesFacadeClassName),
+				updateAccessibleElements
+			)
+		} else {
+			new EmptyStepExecutionClassGenerator(typesBuilderExtensionProvider)
+		}
 	}
 
 	private def getNestedClassName(String nestedClassSimpleName) {
@@ -84,9 +138,13 @@ class RoutineClassGenerator extends ClassGenerator {
 	}
 
 	override JvmGenericType generateEmptyClass() {
+		logBlockBeforeMatchGenerator.generateEmptyClass()
 		matchBlockClassGenerator.generateEmptyClass()
+		logBlockBeforeCreateGenerator.generateEmptyClass()
 		createBlockClassGenerator.generateEmptyClass()
+		logBlockBeforeUpdateGenerator.generateEmptyClass()
 		updateBlockClassGenerator.generateEmptyClass()
+		logBlockAfterUpdateGenerator.generateEmptyClass()
 		generatedClass = routine.toClass(routineClassNameGenerator.qualifiedName) [
 			visibility = JvmVisibility.PUBLIC
 		]
@@ -105,9 +163,13 @@ class RoutineClassGenerator extends ClassGenerator {
 				routine.toField(CREATED_VALUES_FIELD_NAME,
 					typeRef(createBlockClassGenerator.newlyAccessibleElementsContainerType))
 			members += inputValuesClass
+			members += logBlockBeforeMatchGenerator.generateBody()
 			members += matchBlockClassGenerator.generateBody()
+			members += logBlockBeforeCreateGenerator.generateBody()
 			members += createBlockClassGenerator.generateBody()
+			members += logBlockBeforeUpdateGenerator.generateBody()
 			members += updateBlockClassGenerator.generateBody()
+			members += logBlockAfterUpdateGenerator.generateBody()
 			members += routine.generateConstructor()
 			members += executeMethod
 		]
@@ -154,14 +216,28 @@ class RoutineClassGenerator extends ClassGenerator {
 			exceptions += typeRef(IOException)
 			body = '''
 				«generateDebugCode(inputElements)»
+				«generateLogCall(logBlockBeforeMatchGenerator, inputElements)»
 				«generateMatchCode(inputElements)»
+				«generateLogCall(logBlockBeforeCreateGenerator, inputAndRetrievedElements)»
 				«generateCreateCode(inputAndRetrievedElements)»
+				«generateLogCall(logBlockBeforeUpdateGenerator, inputAndRetrievedAndCreatedElements)»
 				«generateUpdateCode(inputAndRetrievedAndCreatedElements)»
+				«generateLogCall(logBlockAfterUpdateGenerator, inputAndRetrievedAndCreatedElements)»
+				
 				return true;
 			'''
 		]
 	}
-
+	
+	private def StringConcatenationClient generateLogCall(StepExecutionClassGenerator generator, Iterable<String> args) {
+		return generator.generateStepExecutionCode(
+			'''''',
+			EXECUTION_STATE_VARIABLE,
+			ROUTINES_FACADE_VARIABLE,
+			args,
+			'''''' )
+    }
+	
 	private def StringConcatenationClient generateDebugCode(Iterable<String> inputElementsAccessExpressions) {
 		return '''
 			if (getLogger().isTraceEnabled()) {

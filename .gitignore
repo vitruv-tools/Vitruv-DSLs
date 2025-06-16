@@ -13,9 +13,14 @@ dependency-reduced-pom.xml
 META-INF
 build.properties
 plugin.properties
+**/.settings
+**/.project
+**/.classpath
 
 # Xtext
 .antlr-generator-*-patch.jar
+**/xtend-gen/
 
 # IntelliJ
 .idea/
+**/ide/

@@ -24,6 +24,7 @@ import org.eclipse.xtext.xbase.XBlockExpression
 import tools.vitruv.dsls.common.elements.NamedMetaclassReference
 import org.eclipse.xtext.xbase.XFeatureCall
 import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
+import tools.vitruv.dsls.reactions.language.toplevelelements.LogLevel
 
 class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 
@@ -141,6 +142,14 @@ class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 			creates.accept(statementBuilder)
 			new UpdateBuilder(builder)
 		}
+		
+		def logBlockBeforeCreate(LogLevel level, String message) {
+			val logBlock = TopLevelElementsFactory.eINSTANCE.createLogBlock
+	        logBlock.setLevel(level)
+	        logBlock.setMessage(message)
+		    routine.logBlockBeforeCreate = logBlock
+		    this
+		}
 	}
 	
 	static class MatchBlockOrCreatorOrUpdateBuilder extends CreatorOrUpdateBuilder {
@@ -159,6 +168,14 @@ class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 				routine.matchBlock = null
 			}
 			new CreatorOrUpdateBuilder(builder)
+		}
+		
+		def logBlockBeforeMatch(LogLevel level, String message) {
+			val logBlock = TopLevelElementsFactory.eINSTANCE.createLogBlock
+	        logBlock.setLevel(level)
+	        logBlock.setMessage(message)
+		    routine.logBlockBeforeMatch = logBlock
+		    this
 		}
 	}
 	
@@ -468,6 +485,22 @@ class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 			updates.accept(statementBuilder)
 			readyToBeAttached = true
 			return builder
+		}
+		
+		def logBlockBeforeUpdate(LogLevel level, String message) {
+			val logBlock = TopLevelElementsFactory.eINSTANCE.createLogBlock
+	        logBlock.setLevel(level)
+	        logBlock.setMessage(message)
+		    routine.logBlockBeforeUpdate = logBlock
+		    this
+		}
+		
+		def logBlockAfterUpdate(LogLevel level, String message) {
+			val logBlock = TopLevelElementsFactory.eINSTANCE.createLogBlock
+	        logBlock.setLevel(level)
+	        logBlock.setMessage(message)
+		    routine.logBlockAfterUpdate = logBlock
+		    this
 		}
 	}
 
