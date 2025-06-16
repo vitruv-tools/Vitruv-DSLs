@@ -13,6 +13,7 @@ import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.StepExecutionCl
 import org.eclipse.xtext.common.types.JvmTypeReference
 import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.CALL_BLOCK_FACADE_PARAMETER_NAME
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
+import tools.vitruv.dsls.reactions.runtime.structure.AbstractLogStep
 
 class LogBlockGenerator extends StepExecutionClassGenerator {
 	
@@ -59,13 +60,13 @@ class LogBlockGenerator extends StepExecutionClassGenerator {
 		logBlock.toConstructor [
 			val reactionExecutionStateParameter = generateParameter(new AccessibleElement("reactionExecutionState", ReactionExecutionState))
 			parameters += reactionExecutionStateParameter
-			//body = '''super(«reactionExecutionStateParameter.name»);'''
+			body = '''super(«reactionExecutionStateParameter.name»);'''
 		]
 	}
 
     override generateBody() {
         generatedClass => [
-            //superTypes += typeRef(AbstractLogStep)
+            superTypes += typeRef(AbstractLogStep)
             members += generateConstructor()
             members += generateLogMethod(LOG_MODELS_METHOD_NAME)
             
@@ -83,30 +84,9 @@ class LogBlockGenerator extends StepExecutionClassGenerator {
         ]
     }
 
-    def StringConcatenationClient generateLogMethodBody(LogBlock logBlock) '''
-        try {
-            java.util.logging.Logger fileLogger = java.util.logging.Logger.getLogger("ReactionLogger");
-
-            if (fileLogger.getHandlers().length == 0) {
-                java.util.logging.FileHandler fh = new java.util.logging.FileHandler("target/log-reactions.txt", true);
-                fh.setLevel(java.util.logging.Level.ALL);
-
-                fh.setFormatter(new java.util.logging.Formatter() {
-                    @Override
-                    public String format(java.util.logging.LogRecord record) {
-                        String timestamp = new java.text.SimpleDateFormat("MMM dd, yyyy hh:mm:ss a").format(new java.util.Date(record.getMillis()));
-                        String className = record.getSourceClassName();
-                        if (className.contains(".")) {
-                            className = className.substring(className.lastIndexOf('.') + 1);
-                        }
-                        return String.format("%s  %s %s: %s%n", timestamp, className, record.getLevel(), record.getMessage());
-                    }
-                });
-
-                fileLogger.addHandler(fh);
-                fileLogger.setLevel(java.util.logging.Level.ALL);
-            }
-
+    def StringConcatenationClient generateLogMethodBody(LogBlock logBlock) 
+    '''
+            if (!ENABLE_LOGGING) return;
             StringBuilder logMessage = new StringBuilder("«logBlock.message»");
 
             «IF logBlock.details.size > 0»
@@ -118,10 +98,8 @@ class LogBlockGenerator extends StepExecutionClassGenerator {
                 logMessage.append("}");
             «ENDIF»
 
-            fileLogger.«logBlock.level.getName().toLowerCase()»(logMessage.toString());
-        } catch (java.io.IOException e) {
-            e.printStackTrace(); 
-        }
+            log(logMessage.toString(), java.util.logging.Level.parse("«logBlock.level.getName().toUpperCase()»"));
+
     '''
 
     def String toGetterCall(String qualifiedName) {
@@ -138,7 +116,7 @@ class LogBlockGenerator extends StepExecutionClassGenerator {
 	    Iterable<String> accessibleElementsAccessExpressions,
 	    StringConcatenationClient suffix
 	) '''
-	    «prefix»new «qualifiedClassName»(«executionStateAccessExpression»).«LOG_MODELS_METHOD_NAME»(« //
+	    «prefix»new «qualifiedClassName»(«executionStateAccessExpression»).«LOG_MODELS_METHOD_NAME»(«
 	    FOR argument : accessibleElementsAccessExpressions SEPARATOR ", " AFTER ", "»«argument»«ENDFOR»«routinesFacadeAccessExpression»);
 	    «suffix»
 	'''

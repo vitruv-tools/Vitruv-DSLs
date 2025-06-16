@@ -23,6 +23,7 @@ import static com.google.common.base.Preconditions.*
 import tools.vitruv.dsls.common.elements.ElementsFactory
 import tools.vitruv.dsls.reactions.language.LanguageFactory
 import tools.vitruv.dsls.reactions.language.toplevelelements.RoutineCall
+import tools.vitruv.dsls.reactions.language.toplevelelements.LogLevel
 
 class FluentReactionBuilder extends FluentReactionsSegmentChildBuilder {
 
@@ -46,6 +47,16 @@ class FluentReactionBuilder extends FluentReactionsSegmentChildBuilder {
 	def package start() {
 		return new OverrideOrTriggerBuilder(this)
 	}
+	
+	def FluentReactionBuilder log(LogLevel level, String message) {
+        val logBlock = TopLevelElementsFactory.eINSTANCE.createLogBlock
+        logBlock.setLevel(level)
+        logBlock.setMessage(message)
+        reaction.setLogBlock(logBlock)
+        
+        return this
+    }
+	
 
 	override protected attachmentPreparation() {
 		super.attachmentPreparation()
@@ -318,6 +329,10 @@ class FluentReactionBuilder extends FluentReactionsSegmentChildBuilder {
 			]
 			return new RoutineCallBuilder(builder)
 		}
+		
+		def FluentReactionBuilder log(LogLevel level, String message) {
+        	return builder.log(level, message)
+    	}
 	}
 
 	def package getReaction() {

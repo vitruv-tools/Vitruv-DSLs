@@ -62,7 +62,7 @@
         eType="#//ReactionsSegment" eOpposite="#//ReactionsSegment/routines"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="updateBlock" eType="#//UpdateBlock"
         containment="true"/>
-	<eStructuralFeatures xsi:type="ecore:EReference" name="logBlockBeforMatch" eType="#//LogBlock" containment="true" lowerBound="0" upperBound="1"/>
+	<eStructuralFeatures xsi:type="ecore:EReference" name="logBlockBeforeMatch" eType="#//LogBlock" containment="true" lowerBound="0" upperBound="1"/>
 	<eStructuralFeatures xsi:type="ecore:EReference" name="logBlockBeforeCreate" eType="#//LogBlock" containment="true" lowerBound="0" upperBound="1"/>
 	<eStructuralFeatures xsi:type="ecore:EReference" name="logBlockBeforeUpdate" eType="#//LogBlock" containment="true" lowerBound="0" upperBound="1"/>
 	<eStructuralFeatures xsi:type="ecore:EReference" name="logBlockAfterUpdate" eType="#//LogBlock" containment="true" lowerBound="0" upperBound="1"/>
