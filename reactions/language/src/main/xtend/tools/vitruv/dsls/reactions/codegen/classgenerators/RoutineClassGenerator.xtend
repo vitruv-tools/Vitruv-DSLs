@@ -20,7 +20,6 @@ import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.EmptyStepExecut
 import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.StepExecutionClassGenerator
 import tools.vitruv.dsls.reactions.runtime.routines.AbstractRoutine
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
-import tools.vitruv.dsls.reactions.language.toplevelelements.LogBlock
 
 class RoutineClassGenerator extends ClassGenerator {
 	static val EXECUTION_STATE_VARIABLE = "getExecutionState()"
@@ -35,11 +34,6 @@ class RoutineClassGenerator extends ClassGenerator {
 	static val CREATE_SIMPLE_CLASS_NAME = "Create"
 	static val UPDATE_SIMPLE_CLASS_NAME = "Update"
 	
-	static val LOG_BEFORE_MATCH_METHOD_NAME = "logActionBeforeMatch"
-	static val LOG_BEFORE_CREATE_METHOD_NAME = "logActionBeforeCreate"
-	static val LOG_BEFORE_UPDATE_METHOD_NAME = "logActionBeforeUpdate"
-	static val LOG_AFTER_UPDATE_METHOD_NAME = "logActionAfterUpdate"
-
 	val Routine routine
 	val ClassNameGenerator routineClassNameGenerator
 	val Iterable<AccessibleElement> inputElements
@@ -47,8 +41,12 @@ class RoutineClassGenerator extends ClassGenerator {
 	val StepExecutionClassGenerator createBlockClassGenerator
 	val StepExecutionClassGenerator updateBlockClassGenerator
 	val String routinesFacadeQualifiedName
-	final TypesBuilderExtensionProvider typesBuilderExtensionProvider
 	
+	final StepExecutionClassGenerator logBlockBeforeMatchGenerator
+	final StepExecutionClassGenerator logBlockBeforeCreateGenerator
+	final StepExecutionClassGenerator logBlockBeforeUpdateGenerator
+	final StepExecutionClassGenerator logBlockAfterUpdateGenerator
+		
 	val JvmGenericType inputValuesClass
 	var JvmGenericType generatedClass
 
@@ -61,7 +59,6 @@ class RoutineClassGenerator extends ClassGenerator {
 		this.routineClassNameGenerator = routine.routineClassNameGenerator
 		this.routinesFacadeQualifiedName = routine.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
 		this.inputElements = getInputElements(routine.input.modelInputElements, routine.input.javaInputElements)
-		this.typesBuilderExtensionProvider = typesBuilderExtensionProvider
 		this.inputValuesClass = if (hasInputValues) {
 			generateElementsContainerClass(INPUT_VALUES_SIMPLE_CLASS_NAME, inputElements)
 		}
@@ -85,6 +82,55 @@ class RoutineClassGenerator extends ClassGenerator {
 		} else {
 			new EmptyStepExecutionClassGenerator(typesBuilderExtensionProvider)
 		}
+		this.logBlockBeforeMatchGenerator = if (routine.logBlockBeforMatch !== null) {
+			val routinesFacadeClassName = routine.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
+			new LogBlockGenerator(
+				typesBuilderExtensionProvider,
+				getNestedClassName("LogBeforeMatch"),
+				routine.logBlockBeforMatch,
+				typeRef(routinesFacadeClassName),
+				inputElements
+			)
+		} else {
+			new EmptyStepExecutionClassGenerator(typesBuilderExtensionProvider)
+		}
+		this.logBlockBeforeCreateGenerator = if (routine.logBlockBeforeCreate !== null) {
+			val mactchAccessibleElements = inputElements + matchBlockClassGenerator.newlyAccessibleElementsAfterExecution 
+			val routinesFacadeClassName = routine.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
+			new LogBlockGenerator(
+				typesBuilderExtensionProvider,
+				getNestedClassName("LogBeforeCreate"),
+				routine.logBlockBeforeCreate,
+				typeRef(routinesFacadeClassName),
+				mactchAccessibleElements
+			)
+		} else {
+			new EmptyStepExecutionClassGenerator(typesBuilderExtensionProvider)
+		}
+		this.logBlockBeforeUpdateGenerator = if (routine.logBlockBeforeUpdate !== null) {
+			val routinesFacadeClassName = routine.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
+			new LogBlockGenerator(
+				typesBuilderExtensionProvider,
+				getNestedClassName("LogBeforeUpdate"),
+				routine.logBlockBeforeUpdate,
+				typeRef(routinesFacadeClassName),
+				updateAccessibleElements
+			)
+		} else {
+			new EmptyStepExecutionClassGenerator(typesBuilderExtensionProvider)
+		}
+		this.logBlockAfterUpdateGenerator = if (routine.logBlockAfterUpdate !== null) {
+			val routinesFacadeClassName = routine.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
+			new LogBlockGenerator(
+				typesBuilderExtensionProvider,
+				getNestedClassName("LogAfterUpdate"),
+				routine.logBlockAfterUpdate,
+				typeRef(routinesFacadeClassName),
+				updateAccessibleElements
+			)
+		} else {
+			new EmptyStepExecutionClassGenerator(typesBuilderExtensionProvider)
+		}
 	}
 
 	private def getNestedClassName(String nestedClassSimpleName) {
@@ -92,9 +138,13 @@ class RoutineClassGenerator extends ClassGenerator {
 	}
 
 	override JvmGenericType generateEmptyClass() {
+		logBlockBeforeMatchGenerator.generateEmptyClass()
 		matchBlockClassGenerator.generateEmptyClass()
+		logBlockBeforeCreateGenerator.generateEmptyClass()
 		createBlockClassGenerator.generateEmptyClass()
+		logBlockBeforeUpdateGenerator.generateEmptyClass()
 		updateBlockClassGenerator.generateEmptyClass()
+		logBlockAfterUpdateGenerator.generateEmptyClass()
 		generatedClass = routine.toClass(routineClassNameGenerator.qualifiedName) [
 			visibility = JvmVisibility.PUBLIC
 		]
@@ -113,25 +163,13 @@ class RoutineClassGenerator extends ClassGenerator {
 				routine.toField(CREATED_VALUES_FIELD_NAME,
 					typeRef(createBlockClassGenerator.newlyAccessibleElementsContainerType))
 			members += inputValuesClass
-			if (routine.logBlockBeforMatch != null) {
-			   val logBlockBeforMatchGenerator = new LogBlockGenerator(routine.logBlockBeforMatch, typesBuilderExtensionProvider, inputElements)
-			    members += logBlockBeforMatchGenerator.generateLogMethod(LOG_BEFORE_MATCH_METHOD_NAME)
-		    } 
+			members += logBlockBeforeMatchGenerator.generateBody()
 			members += matchBlockClassGenerator.generateBody()
-			if (routine.logBlockBeforeCreate != null) {
-			   val logBlockBeforeCreateGenerator = new LogBlockGenerator(routine.logBlockBeforeCreate, typesBuilderExtensionProvider, inputElements)
-			    members += logBlockBeforeCreateGenerator.generateLogMethod(LOG_BEFORE_CREATE_METHOD_NAME)
-		    } 
+			members += logBlockBeforeCreateGenerator.generateBody()
 			members += createBlockClassGenerator.generateBody()
-			if (routine.logBlockBeforeUpdate != null) {
-			   val logBlockBeforeUpdateGenerator = new LogBlockGenerator(routine.logBlockBeforeUpdate, typesBuilderExtensionProvider, inputElements)
-			    members += logBlockBeforeUpdateGenerator.generateLogMethod(LOG_BEFORE_UPDATE_METHOD_NAME)
-		    } 
+			members += logBlockBeforeUpdateGenerator.generateBody()
 			members += updateBlockClassGenerator.generateBody()
-			if (routine.logBlockAfterUpdate != null) {
-			   val logBlockAfterUpdateGenerator = new LogBlockGenerator(routine.logBlockAfterUpdate, typesBuilderExtensionProvider, inputElements)
-			    members += logBlockAfterUpdateGenerator.generateLogMethod(LOG_AFTER_UPDATE_METHOD_NAME)
-		    } 
+			members += logBlockAfterUpdateGenerator.generateBody()
 			members += routine.generateConstructor()
 			members += executeMethod
 		]
@@ -178,18 +216,28 @@ class RoutineClassGenerator extends ClassGenerator {
 			exceptions += typeRef(IOException)
 			body = '''
 				«generateDebugCode(inputElements)»
-				«IF routine.logBlockBeforMatch !== null»«LOG_BEFORE_MATCH_METHOD_NAME»(«FOR input : inputElements SEPARATOR ', '»«input»«ENDFOR»);«ENDIF»
+				«generateLogCall(logBlockBeforeMatchGenerator, inputElements)»
 				«generateMatchCode(inputElements)»
-				«IF routine.logBlockBeforeCreate !== null»«LOG_BEFORE_CREATE_METHOD_NAME»(«FOR input : inputElements SEPARATOR ', '»«input»«ENDFOR»);«ENDIF»
+				«generateLogCall(logBlockBeforeCreateGenerator, inputAndRetrievedElements)»
 				«generateCreateCode(inputAndRetrievedElements)»
-				«IF routine.logBlockBeforeUpdate !== null»«LOG_BEFORE_UPDATE_METHOD_NAME»(«FOR input : inputElements SEPARATOR ', '»«input»«ENDFOR»);«ENDIF»
+				«generateLogCall(logBlockBeforeUpdateGenerator, inputAndRetrievedAndCreatedElements)»
 				«generateUpdateCode(inputAndRetrievedAndCreatedElements)»
-				«IF routine.logBlockAfterUpdate !== null»«LOG_AFTER_UPDATE_METHOD_NAME»(«FOR input : inputElements SEPARATOR ', '»«input»«ENDFOR»);«ENDIF»
+				«generateLogCall(logBlockAfterUpdateGenerator, inputAndRetrievedAndCreatedElements)»
+				
 				return true;
 			'''
 		]
 	}
-
+	
+	private def StringConcatenationClient generateLogCall(StepExecutionClassGenerator generator, Iterable<String> args) {
+		return generator.generateStepExecutionCode(
+			'''''',
+			EXECUTION_STATE_VARIABLE,
+			ROUTINES_FACADE_VARIABLE,
+			args,
+			'''''' )
+    }
+	
 	private def StringConcatenationClient generateDebugCode(Iterable<String> inputElementsAccessExpressions) {
 		return '''
 			if (getLogger().isTraceEnabled()) {
