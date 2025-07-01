@@ -8,7 +8,7 @@
   <parent>
     <groupId>tools.vitruv</groupId>
     <artifactId>tools.vitruv.dsls.demo</artifactId>
-    <version>3.2.0-SNAPSHOT</version>
+    <version>3.2.2</version>
   </parent>
 
   <artifactId>tools.vitruv.dsls.demo.sdq-demo-metamodels-wrapper</artifactId>
