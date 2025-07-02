@@ -14,7 +14,7 @@
   <artifactId>tools.vitruv.dsls.commonalities.language</artifactId>
 
   <name>Vitruv Commonalities Language</name>
-  <description />
+  <description>Definition of the Commonalities Language with Xtext and Generation of Reactions from them.</description>
 
   <build>
     <plugins>

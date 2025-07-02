@@ -14,7 +14,7 @@
   <artifactId>tools.vitruv.dsls.commonalities.runtime</artifactId>
 
   <name>Vitruv Commonalities Language Runtime</name>
-  <description />
+  <description>Runtime components to execute Commonalities as Consistency Preservation Rules on Model Repositories.</description>
 
   <build>
     <plugins>
