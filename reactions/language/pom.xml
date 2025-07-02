@@ -14,7 +14,7 @@
   <artifactId>tools.vitruv.dsls.reactions.language</artifactId>
 
   <name>Vitruv Reactions Language</name>
-  <description />
+  <description>Definition of the Reactions Language with Xtext and Code Generation.</description>
 
 
   <build>

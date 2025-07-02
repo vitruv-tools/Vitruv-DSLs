@@ -14,7 +14,7 @@
   <artifactId>tools.vitruv.dsls.commonalities.testutils</artifactId>
 
   <name>Vitruv Commonalities Language Test Utils</name>
-  <description />
+  <description>Testing Utilites for Commonalities.</description>
 
   <build>
     <plugins>

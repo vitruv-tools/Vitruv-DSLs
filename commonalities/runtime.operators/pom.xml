@@ -14,7 +14,7 @@
   <artifactId>tools.vitruv.dsls.commonalities.runtime.operators</artifactId>
 
   <name>Vitruv Commonalities Language Runtime Operators</name>
-  <description />
+  <description>Mapping and Participation Operators required for Commonalities.</description>
 
   <build>
     <plugins>
