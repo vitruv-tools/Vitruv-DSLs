@@ -14,7 +14,7 @@
   <artifactId>tools.vitruv.dsls.reactions.runtime</artifactId>
 
   <name>Vitruv Reactions Language Runtime</name>
-  <description />
+  <description>Runtime components to execute Reactions as Consistency Preservation Rules on Model Repositories.</description>
 
   <build>
     <plugins>

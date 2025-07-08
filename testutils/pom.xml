@@ -14,7 +14,7 @@
   <artifactId>tools.vitruv.dsls.testutils</artifactId>
 
   <name>Vitruv DSLs Test Utils</name>
-  <description />
+  <description>Common Testing Utilites for DSLs in the Vitruvius Framework.</description>
 
   <build>
     <plugins>

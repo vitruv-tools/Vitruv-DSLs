@@ -15,7 +15,7 @@
   <packaging>pom</packaging>
 
   <name>Vitruv DSLs Demos</name>
-  <description />
+  <description>Demo projects for writing Reactions.</description>
 
   <modules>
     <module>familiespersons</module>
