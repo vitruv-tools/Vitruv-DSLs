@@ -9,7 +9,7 @@
   <parent>
     <groupId>tools.vitruv</groupId>
     <artifactId>parent</artifactId>
-    <version>3.2.2</version>
+    <version>3.3.2-SNAPSHOT</version>
   </parent>
 
   <!-- Project Information -->
@@ -39,7 +39,6 @@
   <modules>
     <module>common</module>
     <module>commonalities</module>
-    <module>demo</module>
     <module>reactions</module>
     <module>testutils</module>
     <module>p2wrappers</module>
