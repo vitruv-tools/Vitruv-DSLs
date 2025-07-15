@@ -8,14 +8,14 @@
   <parent>
     <groupId>tools.vitruv</groupId>
     <artifactId>tools.vitruv.dsls</artifactId>
-    <version>3.2.0-SNAPSHOT</version>
+    <version>3.2.3-SNAPSHOT</version>
   </parent>
 
   <artifactId>tools.vitruv.dsls.p2wrappers</artifactId>
   <packaging>pom</packaging>
 
   <name>p2 Dependency Wrappers</name>
-  <description />
+  <description>Wrappers for p2 dependencies.</description>
 
   <modules>
     <module>activextendannotations</module>
