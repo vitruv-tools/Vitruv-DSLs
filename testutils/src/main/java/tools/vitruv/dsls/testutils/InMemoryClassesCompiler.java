@@ -8,7 +8,7 @@ import static java.nio.file.Files.readString;
 import static java.nio.file.Files.walk;
 import static org.eclipse.xtext.xbase.lib.IterableExtensions.join;
 
-import com.google.common.base.Predicate;
+import java.util.function.Predicate;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
@@ -139,7 +139,7 @@ public class InMemoryClassesCompiler {
         .filter(InMemoryClassesCompiler::isPublicAndHasPublicConstructor)
         .transform(InMemoryClassesCompiler::instantiate)
         .filter(typesToInstantiate)
-        .filter(conditionToInstantiate)
+        .filter((T t) -> conditionToInstantiate.test(t))
         .toSet();
   }
 
