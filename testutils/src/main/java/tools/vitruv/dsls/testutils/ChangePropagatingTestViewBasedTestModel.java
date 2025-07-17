@@ -79,10 +79,10 @@ public class ChangePropagatingTestViewBasedTestModel<T extends EObject>
       Consumer<TestModel<T>> modelModificationFunction,
       TestViewBasedTestModel<?> otherTestModelToUpdate) {
     Set<Resource> resources =
-        getRootObjects().stream().map(it -> it.eResource()).collect(Collectors.toSet());
-    resources.forEach(resource -> testView.startRecordingChanges(resource));
+        getRootObjects().stream().map(EObject::eResource).collect(Collectors.toSet());
+    resources.forEach(testView::startRecordingChanges);
     modelModificationFunction.accept(this);
-    resources.forEach(resource -> testView.stopRecordingChanges(resource));
+    resources.forEach(testView::stopRecordingChanges);
     Iterable<PropagatedChange> changes = testView.propagate();
     FluentIterable.from(changes)
         .transformAndConcat(change -> change.getConsequentialChanges().getAffectedEObjects())
