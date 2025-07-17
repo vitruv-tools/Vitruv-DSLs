@@ -14,6 +14,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.Set;
 import org.eclipse.jdt.core.compiler.CategorizedProblem;
+import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.xtext.util.JavaVersion;
 import org.eclipse.xtext.xbase.testing.InMemoryJavaCompiler;
 import org.eclipse.xtext.xbase.testing.InMemoryJavaCompiler.Result;
@@ -70,12 +71,12 @@ public class InMemoryClassesCompiler {
                 .toArray(JavaSource.class));
     // use the same class loader for all classes!
     ClassLoader classLoader = result.getClassLoader();
-    if (from(result.getCompilationProblems()).anyMatch(problem -> problem.isError())) {
+    if (from(result.getCompilationProblems()).anyMatch(IProblem::isError)) {
       throw new AssertionError(
           "compiling the generated code failed with these errors:"
               + lineSeparator()
               + join(
-                  from(result.getCompilationProblems()).filter(problem -> problem.isError()),
+                  from(result.getCompilationProblems()).filter(IProblem::isError),
                   lineSeparator(),
                   (problem -> "    • " + format(problem))));
     }
