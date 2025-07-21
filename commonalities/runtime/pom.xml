@@ -8,13 +8,13 @@
   <parent>
     <groupId>tools.vitruv</groupId>
     <artifactId>tools.vitruv.dsls.commonalities</artifactId>
-    <version>3.2.0-SNAPSHOT</version>
+    <version>3.2.3-SNAPSHOT</version>
   </parent>
 
   <artifactId>tools.vitruv.dsls.commonalities.runtime</artifactId>
 
   <name>Vitruv Commonalities Language Runtime</name>
-  <description />
+  <description>Runtime components to execute Commonalities as Consistency Preservation Rules on Model Repositories.</description>
 
   <build>
     <plugins>
