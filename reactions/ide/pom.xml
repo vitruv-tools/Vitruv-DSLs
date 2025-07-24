@@ -37,7 +37,7 @@
         <finalName>${project.artifactId}</finalName>
         <resources>
             <resource>
-                <directory>${project.build.directory}/generated-sources/xtext-java</directory>
+                <directory>${project.basedir}/src-gen/xtext</directory>
             </resource>
         </resources>
         <plugins>
