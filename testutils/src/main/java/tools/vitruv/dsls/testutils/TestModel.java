@@ -18,7 +18,7 @@ public interface TestModel<T extends EObject> {
   Class<T> getRootElementType();
 
   /** Provides the root elements of this model. */
-  Collection<? extends EObject> getRootObjects();
+  Collection<EObject> getRootObjects();
 
   /** Provides all root elements of this model that conform to the root element type. */
   Collection<T> getTypedRootObjects();

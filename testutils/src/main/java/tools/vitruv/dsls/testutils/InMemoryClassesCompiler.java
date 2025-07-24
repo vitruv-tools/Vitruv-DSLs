@@ -8,12 +8,13 @@ import static java.nio.file.Files.readString;
 import static java.nio.file.Files.walk;
 import static org.eclipse.xtext.xbase.lib.IterableExtensions.join;
 
-import com.google.common.base.Predicate;
+import java.util.function.Predicate;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.Set;
 import org.eclipse.jdt.core.compiler.CategorizedProblem;
+import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.xtext.util.JavaVersion;
 import org.eclipse.xtext.xbase.testing.InMemoryJavaCompiler;
 import org.eclipse.xtext.xbase.testing.InMemoryJavaCompiler.Result;
@@ -70,12 +71,12 @@ public class InMemoryClassesCompiler {
                 .toArray(JavaSource.class));
     // use the same class loader for all classes!
     ClassLoader classLoader = result.getClassLoader();
-    if (from(result.getCompilationProblems()).anyMatch(problem -> problem.isError())) {
+    if (from(result.getCompilationProblems()).anyMatch(IProblem::isError)) {
       throw new AssertionError(
           "compiling the generated code failed with these errors:"
               + lineSeparator()
               + join(
-                  from(result.getCompilationProblems()).filter(problem -> problem.isError()),
+                  from(result.getCompilationProblems()).filter(IProblem::isError),
                   lineSeparator(),
                   (problem -> "    • " + format(problem))));
     }
@@ -139,7 +140,7 @@ public class InMemoryClassesCompiler {
         .filter(InMemoryClassesCompiler::isPublicAndHasPublicConstructor)
         .transform(InMemoryClassesCompiler::instantiate)
         .filter(typesToInstantiate)
-        .filter(conditionToInstantiate)
+        .filter((T t) -> conditionToInstantiate.test(t))
         .toSet();
   }
 
