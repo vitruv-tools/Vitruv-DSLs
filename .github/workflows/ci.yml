@@ -52,7 +52,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: build-results-${{ matrix.os }}
-        path: staging-*/
+        path: staging-${{ matrix.os }}
 
   verify-vscode:
     name: Verify VSCode extension build on ${{ matrix.os }}
