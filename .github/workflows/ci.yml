@@ -54,6 +54,53 @@ jobs:
         name: build-results-${{ matrix.os }}
         path: staging-*/
 
+  verify-vscode:
+    name: Verify VSCode extension build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    needs: [verify]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4.2.2
+
+    - name: Download Maven build results
+      uses: actions/download-artifact@v4
+      with:
+        name: build-results-${{ matrix.os }}
+        path: build-results
+
+    - name: Extract IDE package
+      run: cp build-results/tools.vitruv.dsls.reactions.ide.jar reactions/vscode-plugin/
+
+    - name: Setup node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+        check-latest: true
+        cache: npm
+        cache-dependency-path: reactions/vscode-plugin/package-lock.json
+
+    - name: Install dependencies
+      working-directory: reactions/vscode-plugin
+      run: npm clean-install
+
+    - name: Package extension
+      working-directory: reactions/vscode-plugin
+      run: npx @vscode/vsce package
+
+    - name: Stage build results
+      run: mkdir staging-${{ matrix.os }} && cp reactions/vscode-plugin/*.vsix staging-${{ matrix.os }}/;
+
+    - name: Upload build results
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-results-vscode-${{ matrix.os }}
+        path: staging-${{ matrix.os }}
+
   verify-javadoc:
     name: Verify JavaDoc
     runs-on: ubuntu-latest
