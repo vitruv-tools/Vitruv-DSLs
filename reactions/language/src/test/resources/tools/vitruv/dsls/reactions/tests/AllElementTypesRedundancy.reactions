@@ -1,5 +1,5 @@
-import tools.vitruv.dsls.reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor
-import static tools.vitruv.dsls.reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor.ChangeType.*;
+import tools.vitruv.dsls.^reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor
+import static tools.vitruv.dsls.^reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor.ChangeType.*;
 import org.eclipse.emf.ecore.change.FeatureChange
 import tools.vitruv.change.atomic.^root.RootEChange
 import tools.vitruv.change.atomic.eobject.EObjectExistenceEChange
