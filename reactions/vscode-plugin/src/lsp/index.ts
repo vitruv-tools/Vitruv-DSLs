@@ -31,8 +31,8 @@ export async function activate(context: ExtensionContext) {
 	};
 
 	const client = new LanguageClient(
-		"hw-lsp",
-		"hw Language Server",
+		"reactions-lsp",
+		"Reactions Language Server",
 		xtextServerOptions,
 		clientOptions
 	);
