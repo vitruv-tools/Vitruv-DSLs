@@ -18,3 +18,10 @@ updates:
   commit-message:
     prefix: "GitHub Actions"
     include: "scope"
+- package-ecosystem: npm
+  directory: "/reactions/vscode-plugin"
+  schedule:
+    interval: daily
+  commit-message:
+    prefix: "NPM"
+    include: "scope"
