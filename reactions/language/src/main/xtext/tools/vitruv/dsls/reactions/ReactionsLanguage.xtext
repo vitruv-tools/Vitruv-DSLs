@@ -15,7 +15,7 @@ MetamodelImport returns common::MetamodelImport:
 	'import' package=[ecore::EPackage|STRING] 'as' name=ValidID (useQualifiedNames?='using' 'qualified' 'names')?;
 
 ReactionsSegment returns toplevelelements::ReactionsSegment:
-	'reactions:' name=ValidID
+	'reactions' ':' name=ValidID
 	'in' 'reaction' 'to' 'changes' 'in' fromMetamodels+=[common::MetamodelImport] ('and'
 	fromMetamodels+=[common::MetamodelImport])*
 	'execute' 'actions' 'in' toMetamodels+=[common::MetamodelImport] ('and' toMetamodels+=[common::MetamodelImport])*

@@ -24,7 +24,7 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 			]
 
 		val reactionResult = '''
-			import tools.vitruv.dsls.reactions.runtime.^routines.AbstractRoutine.Update
+			import tools.vitruv.dsls.^reactions.runtime.^routines.AbstractRoutine.Update
 			
 			import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as allElementTypes
 			
@@ -63,7 +63,7 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 			]
 
 		val reactionResult = '''
-			import tools.vitruv.dsls.reactions.runtime.^routines.AbstractRoutine.Update
+			import tools.vitruv.dsls.^reactions.runtime.^routines.AbstractRoutine.Update
 			
 			import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as allElementTypes
 			
@@ -122,7 +122,7 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		builder += extendedSegment
 
 		val reactionResult = '''
-			import tools.vitruv.dsls.reactions.runtime.^routines.AbstractRoutine.Update
+			import tools.vitruv.dsls.^reactions.runtime.^routines.AbstractRoutine.Update
 			
 			import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as allElementTypes
 			
@@ -206,7 +206,7 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		builder += extendedSegment
 
 		val reactionResult = '''
-			import tools.vitruv.dsls.reactions.runtime.^routines.AbstractRoutine.Update
+			import tools.vitruv.dsls.^reactions.runtime.^routines.AbstractRoutine.Update
 			
 			import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as allElementTypes
 			
@@ -295,7 +295,7 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		builder += extendedSegment2
 
 		val reactionResult = '''
-			import tools.vitruv.dsls.reactions.runtime.^routines.AbstractRoutine.Update
+			import tools.vitruv.dsls.^reactions.runtime.^routines.AbstractRoutine.Update
 			
 			import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as allElementTypes
 			
@@ -387,7 +387,7 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 			]
 
 		val expectedReaction = '''
-			import tools.vitruv.dsls.reactions.runtime.^routines.AbstractRoutine.Update
+			import tools.vitruv.dsls.^reactions.runtime.^routines.AbstractRoutine.Update
 			
 			import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as allElementTypes
 			
@@ -425,7 +425,7 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		reactionsFile += reactionsSegment
 
 		val expectedReaction = '''
-			import tools.vitruv.dsls.reactions.runtime.^routines.AbstractRoutine.Update
+			import tools.vitruv.dsls.^reactions.runtime.^routines.AbstractRoutine.Update
 			
 			import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as allElementTypes
 			import "http://www.eclipse.org/emf/2002/Ecore" as ecore
@@ -480,7 +480,7 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		reactionsFile += reactionsSegment
 
 		val expectedReaction = '''
-			import tools.vitruv.dsls.reactions.runtime.^routines.AbstractRoutine.Update
+			import tools.vitruv.dsls.^reactions.runtime.^routines.AbstractRoutine.Update
 			
 			import "http://www.eclipse.org/emf/2002/Ecore" as ecore
 			import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as allElementTypes
@@ -585,7 +585,7 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 
 		val expectedReaction = '''
 			import «objectExtensionsFqn»
-			import tools.vitruv.dsls.reactions.runtime.^routines.AbstractRoutine.Update
+			import tools.vitruv.dsls.^reactions.runtime.^routines.AbstractRoutine.Update
 			
 			import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as allElementTypes
 			
@@ -639,7 +639,7 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 				create.reaction('CreateRoot2Test').afterElement(Root2).created.call(commonRoutine)
 
 		val expectedReaction = '''
-			import tools.vitruv.dsls.reactions.runtime.^routines.AbstractRoutine.Update
+			import tools.vitruv.dsls.^reactions.runtime.^routines.AbstractRoutine.Update
 			
 			import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as allElementTypes
 			import "http://www.eclipse.org/emf/2002/Ecore" as ecore
@@ -705,7 +705,7 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 		reactionsFile += secondSegment
 
 		val expectedReaction = '''
-			import tools.vitruv.dsls.reactions.runtime.^routines.AbstractRoutine.Update
+			import tools.vitruv.dsls.^reactions.runtime.^routines.AbstractRoutine.Update
 			
 			import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as allElementTypes
 			import "http://tools.vitruv.change.testutils.metamodels.allElementTypes2" as allElementTypes2
