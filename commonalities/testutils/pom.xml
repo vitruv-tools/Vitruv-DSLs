@@ -8,13 +8,13 @@
   <parent>
     <groupId>tools.vitruv</groupId>
     <artifactId>tools.vitruv.dsls.commonalities</artifactId>
-    <version>3.2.0-SNAPSHOT</version>
+    <version>3.2.3-SNAPSHOT</version>
   </parent>
 
   <artifactId>tools.vitruv.dsls.commonalities.testutils</artifactId>
 
   <name>Vitruv Commonalities Language Test Utils</name>
-  <description />
+  <description>Testing Utilites for Commonalities.</description>
 
   <build>
     <plugins>
