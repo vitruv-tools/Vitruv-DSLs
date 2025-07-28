@@ -1,0 +1,34 @@
+{
+  "patterns": [
+    {
+      "match": "\\b(absence|actions|after|and|anychange|as|asserted|at|attribute|call|case|catch|changes|check|corresponding|create|created|default|deleted|do|element|else|execute|extends|extension|false|finally|for|from|if|import|in|inserted|instanceof|many|match|names|new|null|of|optional|plain|qualified|reaction|reactions|removed|replaced|require|retrieve|return|root|routine|routines|static|super|switch|synchronized|tagged|throw|to|true|try|typeof|update|using|val|var|while|with)\\b",
+      "name": "keyword.control.reactionslanguage"
+    },
+    {
+      "match": "[0-9]([0-9]|_)*",
+      "name": "constant.numeric.reactionslanguage"
+    },
+    {
+      "match": "\\^?([a-z]|[A-Z]|\\$|_)([a-z]|[A-Z]|\\$|_|[0-9])*",
+      "name": "variable.reactionslanguage"
+    },
+    {
+      "match": "(\\\"(\\\\.|[^\\\\\\\"])*\\\"?|\u0027(\\\\.|[^\\\\\u0027])*\u0027?)",
+      "name": "string.quoted.reactionslanguage"
+    },
+    {
+      "begin": "/\\*",
+      "end": "\\*/",
+      "name": "comment.block.reactionslanguage"
+    },
+    {
+      "match": "//[^\\\n\\\r]*(\\\r?\\\n)?",
+      "name": "comment.line.reactionslanguage"
+    },
+    {
+      "match": ".",
+      "name": "invalid.reactionslanguage"
+    }
+  ],
+  "scopeName": "source.reactionslanguage"
+}

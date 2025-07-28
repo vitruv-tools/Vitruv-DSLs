@@ -52,8 +52,11 @@ class ReactionsLanguageFormatter extends XbaseFormatter {
 	}
 
 	def dispatch void format(ReactionsSegment segment, extension IFormattableDocument document) {
-		segment.regionFor.keyword("reactions:") => [
+		segment.regionFor.keyword("reactions") => [
 			prepend[newLines = 2]
+		]
+		segment.regionFor.keyword(":") => [
+			prepend[noSpace]
 			append[oneSpace]
 		]
 		segment.regionFor.keywordPairs("in", "reaction").forEach [

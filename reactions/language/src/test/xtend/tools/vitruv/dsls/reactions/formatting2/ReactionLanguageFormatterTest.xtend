@@ -61,7 +61,7 @@ class ReactionLanguageFormatterTest {
 	@Test
 	def void testAllStatementTypes() {
 		val expected = '''
-		import static tools.vitruv.dsls.reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor.ChangeType.*;
+		import static tools.vitruv.dsls.^reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor.ChangeType.*;
 		import tools.vitruv.change.atomic.eobject.EObjectExistenceEChange
 		import static extension tools.vitruv.change.testutils.metamodels.TestMetamodelsPathFactory.allElementTypes
 		
