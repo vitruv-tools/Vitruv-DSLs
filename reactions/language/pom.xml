@@ -48,6 +48,17 @@
           </archive>
         </configuration>
       </plugin>
+      <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <configuration>
+          <filesets>
+            <fileset>
+              <!-- The language module generates ide/src-gen, so language needs to clean it too. -->
+              <directory>../ide/src-gen</directory>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
