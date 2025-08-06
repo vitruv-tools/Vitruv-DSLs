@@ -68,7 +68,7 @@ jobs:
       uses: actions/checkout@v4.2.2
 
     - name: Download Maven build results
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: build-results-${{ matrix.os }}
         path: build-results
