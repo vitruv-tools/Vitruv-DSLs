@@ -23,7 +23,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v5.0.0
 
     - name: Setup Java and Maven cache
       uses: actions/setup-java@v4.7.1
@@ -65,7 +65,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v5.0.0
 
     - name: Download Maven build results
       uses: actions/download-artifact@v5
@@ -110,7 +110,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v5.0.0
 
     - name: Setup Java and Maven cache
       uses: actions/setup-java@v4.7.1
@@ -138,7 +138,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v5.0.0
 
     - name: Setup Java and Maven cache
       uses: actions/setup-java@v4.7.1
@@ -167,7 +167,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v5.0.0
 
     - name: Setup Java and Maven cache
       uses: actions/setup-java@v4.7.1
