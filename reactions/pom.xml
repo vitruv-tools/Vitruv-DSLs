@@ -18,7 +18,7 @@
   <description>Language for developing transformations with an imperative, change-driven paradigm</description>
 
   <properties>
-    <xtextVersion>2.39.0</xtextVersion>
+    <xtextVersion>2.40.0</xtextVersion>
   </properties>
 
   <modules>
