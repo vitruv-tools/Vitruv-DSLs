@@ -9,8 +9,6 @@ import "http://vitruv.tools/dsls/reactions/language/toplevelelements" as topleve
 ReactionsFile returns toplevelelements::ReactionsFile:
 	(namespaceImports=XImportSection)?
 	(metamodelImports+=MetamodelImport)*
-	// (maturityImports+=MaturityModelImport)?
-    // ('maturity' '=' defaultModelMaturity=[MaturityLevel])?
     (maturityModels+=MaturityModel)?
 	(reactionsSegments+=ReactionsSegment)+;
 
