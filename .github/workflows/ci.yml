@@ -23,10 +23,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v5.0.0
 
     - name: Setup Java and Maven cache
-      uses: actions/setup-java@v4.7.1
+      uses: actions/setup-java@v5.0.0
       with:
         distribution: 'temurin'
         java-version: '17'
@@ -65,10 +65,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v5.0.0
 
     - name: Download Maven build results
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: build-results-${{ matrix.os }}
         path: build-results
@@ -77,9 +77,9 @@ jobs:
       run: cp build-results/tools.vitruv.dsls.reactions.ide.jar reactions/vscode-plugin/
 
     - name: Setup node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v5
       with:
-        node-version: 18
+        node-version: 20
         check-latest: true
         cache: npm
         cache-dependency-path: reactions/vscode-plugin/package-lock.json
@@ -110,10 +110,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v5.0.0
 
     - name: Setup Java and Maven cache
-      uses: actions/setup-java@v4.7.1
+      uses: actions/setup-java@v5.0.0
       with:
         distribution: 'temurin'
         java-version: '17'
@@ -138,10 +138,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v5.0.0
 
     - name: Setup Java and Maven cache
-      uses: actions/setup-java@v4.7.1
+      uses: actions/setup-java@v5.0.0
       with:
         distribution: 'temurin'
         java-version: '17'
@@ -167,10 +167,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v5.0.0
 
     - name: Setup Java and Maven cache
-      uses: actions/setup-java@v4.7.1
+      uses: actions/setup-java@v5.0.0
       with:
         distribution: 'temurin'
         java-version: '17'
