@@ -5,6 +5,7 @@ import tools.vitruv.change.interaction.UserInteractor;
 import tools.vitruv.change.propagation.ChangePropagationObservable;
 import tools.vitruv.change.utils.ResourceAccess;
 import tools.vitruv.dsls.reactions.runtime.correspondence.ReactionsCorrespondence;
+import tools.vitruv.dsls.reactions.runtime.reactions.Reaction;
 
 /**
  * When executed, a {@link Reaction} uses a {@link ReactionExecutionState} to look at the V-SUM.

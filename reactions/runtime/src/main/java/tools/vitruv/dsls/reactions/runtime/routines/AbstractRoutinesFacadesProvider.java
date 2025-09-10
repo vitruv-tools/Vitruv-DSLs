@@ -46,7 +46,7 @@ public abstract class AbstractRoutinesFacadesProvider implements RoutinesFacades
       ReactionsImportPath reactionsImportPath) {
     checkNotNull(reactionsImportPath, "reactionsImportPath is null");
     // check if we already created the requested routines facade:
-    var routinesFacade = (T) routinesFacades.get(reactionsImportPath);
+    T routinesFacade = (T) routinesFacades.get(reactionsImportPath);
     if (routinesFacade != null) {
       return routinesFacade;
     }

@@ -39,7 +39,6 @@ public abstract class AbstractReaction extends CallHierarchyHaving implements Re
 
   /**
    * Acutally executes this reaction with the appropriate routines, as represented by routineFacade.
-   * See also {@link this#execute()}.
    *
    * @param change - {@link EChange}
    * @param executionState - {@link ReactionExecutionState}
