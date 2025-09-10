@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
  */
 public record ReactionsImportPath(List<String> segments) {
 
-  public static final ReactionsImportPath EMPTY_PATH = new ReactionsImportPath(List.of());
+  private static final ReactionsImportPath EMPTY_PATH = new ReactionsImportPath(List.of());
 
   /**
    * The separator used between path segments in the String representation of
@@ -159,8 +159,8 @@ public record ReactionsImportPath(List<String> segments) {
    * @param pathSegments The path segments to prepend. Can be <code>null</code>
    * @return the resulting reactions import path
    */
-  public ReactionsImportPath prepend(String... pathSegments) {
-    return this.prepend(pathSegments);
+  public ReactionsImportPath prepend(String pathSegments) {
+    return this.prepend(List.of(pathSegments));
   }
 
   /**
@@ -205,8 +205,9 @@ public record ReactionsImportPath(List<String> segments) {
 
   /**
    * Creates a reactions import path that is the sub-path of this path,
-   * starting with the segment following the specified segment.
+   * starting with the segment following <code>pathSegment</code>.
    *
+   * @param pathSegment - {@link String}
    * @return The resulting reactions import path, or an empty path
    *      if the specified segment is not contained or the last segment of this path.
    */
@@ -222,8 +223,9 @@ public record ReactionsImportPath(List<String> segments) {
 
   /**
    * Creates a reactions import path that is the sub-path of this path,
-   * ending with the specified segment.
+   * ending with <code>pathSegment</code>.
    *
+   * @param pathSegment - {@link String}
    * @return the resulting reactions import path, or an empty path
    *      if the specified segment is not contained in this path
    */

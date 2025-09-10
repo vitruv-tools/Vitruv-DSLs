@@ -10,7 +10,7 @@ public interface RoutinesFacadesProvider {
   /**
    * Gets the routines facade for the specified absolute reactions import path.
    *
-   * @typeparam T - the type of the requested routines facade
+   * @param <T> - the type of the requested routines facade
    * @param reactionsImportPath -
    *     The absolute import path (starting with the root of the import hierarchy).
    * 

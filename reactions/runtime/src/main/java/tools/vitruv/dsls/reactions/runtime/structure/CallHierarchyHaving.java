@@ -2,6 +2,8 @@ package tools.vitruv.dsls.reactions.runtime.structure;
 
 import lombok.AccessLevel;
 import lombok.Getter;
+import tools.vitruv.dsls.reactions.runtime.reactions.Reaction;
+import tools.vitruv.dsls.reactions.runtime.routines.Routine;
 
 /**
  * A CallHierarchyHaving object can be used to trace the calling hierarchy of {@link Reaction}s
