@@ -54,7 +54,7 @@ public abstract class AbstractRoutinesFacadesProvider implements RoutinesFacades
     // create the routines facade:
     routinesFacade = (T) this.createRoutinesFacade(reactionsImportPath);
     if (routinesFacade != null) {
-      routinesFacade._setExecutionState(executionState);
+      routinesFacade.setExecutionState(executionState);
       // store created routines facade:
       routinesFacades.put(reactionsImportPath, routinesFacade);
       return routinesFacade;

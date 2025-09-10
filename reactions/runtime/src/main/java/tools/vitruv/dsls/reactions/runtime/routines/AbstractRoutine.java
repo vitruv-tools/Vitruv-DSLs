@@ -48,7 +48,7 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
 
   @Override
   public boolean execute() {
-    routinesFacade._pushCaller(this);
+    routinesFacade.pushCaller(this);
     var success = false;
 
     try {
@@ -56,7 +56,7 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
     } catch (Exception e) {
       throw Exceptions.sneakyThrow(e);
     } finally {
-      routinesFacade._dropLastCaller();
+      routinesFacade.dropLastCaller();
     }
     return success;
   }

@@ -29,11 +29,11 @@ public abstract class AbstractReaction extends CallHierarchyHaving implements Re
   @Override
   public void execute(EChange<EObject> change, ReactionExecutionState reactionExecutionState) {
     val routinesFacade = routinesFacadeGenerator.apply(reactionExecutionState);
-    routinesFacade._pushCaller(this);
+    routinesFacade.pushCaller(this);
     try {
       executeReaction(change, reactionExecutionState, routinesFacade);
     } finally {
-      routinesFacade._dropLastCaller();
+      routinesFacade.dropLastCaller();
     }
   }
 

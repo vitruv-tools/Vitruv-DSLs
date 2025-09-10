@@ -46,7 +46,7 @@ public abstract class AbstractRoutinesFacade extends Loggable implements Routine
    *
    * @return routinesFacadesProvider
    */
-  protected RoutinesFacadesProvider _getRoutinesFacadesProvider() {
+  protected RoutinesFacadesProvider getRoutinesFacadesProvider() {
     return routinesFacadesProvider;
   }
 
@@ -55,32 +55,32 @@ public abstract class AbstractRoutinesFacade extends Loggable implements Routine
    *
    * @return reactionsImportPath
    */
-  protected ReactionsImportPath _getReactionsImportPath() {
+  protected ReactionsImportPath getReactionsImportPath() {
     return reactionsImportPath;
   }
 
   @Override
-  public void _setExecutionState(ReactionExecutionState executionState) {
+  public void setExecutionState(ReactionExecutionState executionState) {
     this.executionState = executionState;
   }
   
   @Override
-  public ReactionExecutionState _getExecutionState() {
+  public ReactionExecutionState getExecutionState() {
     return executionState;
   }
   
   @Override
-  public void _pushCaller(CallHierarchyHaving caller) {
+  public void pushCaller(CallHierarchyHaving caller) {
     callerStack.push(caller);
   }
   
   @Override
-  public CallHierarchyHaving _getCurrentCaller() {
+  public CallHierarchyHaving getCurrentCaller() {
     return (!callerStack.isEmpty()) ? callerStack.peek() : null;
   }
   
   @Override
-  public void _dropLastCaller() {
+  public void dropLastCaller() {
     callerStack.pop();
   }
 }
