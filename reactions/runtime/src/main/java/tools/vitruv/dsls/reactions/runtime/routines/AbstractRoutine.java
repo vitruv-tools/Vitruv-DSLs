@@ -8,6 +8,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.val;
+
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -93,8 +95,9 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
       return _correspondenceModel
         .getCorrespondingEObjects(correspondenceSource, expectedTag)
         .stream()
-        .filter(e -> e.getClass().equals(expectedType))
-        .map(e -> (T) e)
+        .filter(e -> e != null)
+        .filter(expectedType::isInstance)
+        .map(expectedType::cast)
         .filter(preconditionMethod::test)
         .toList();
     }
@@ -115,7 +118,7 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
           correspondenceSource, 
           retrievedElements);
 
-      return retrievedElements.iterator().next();
+      return retrievedElements.isEmpty() ? null : retrievedElements.iterator().next();
     }
 
   }
@@ -184,10 +187,10 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
 
     private void persistAsRoot(EObject rootObject, URI uri) {
       getLogger().trace("Registered to persist root %s in %s", rootObject, uri);
-      var resource = rootObject.eResource();
-      if (resource != null && !resource.getURI().equals(uri)) {
+      val existingURI = rootObject.eContainer() != null ? rootObject.eResource().getURI() : null;
+      if (existingURI != uri) {
         EcoreUtil.remove(rootObject);
-        executionState.getResourceAccess().persistAsRoot(rootObject, uri);
+        this.executionState.getResourceAccess().persistAsRoot(rootObject, uri);
       }
     }
 
