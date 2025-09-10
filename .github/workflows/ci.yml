@@ -79,7 +79,7 @@ jobs:
     - name: Setup node
       uses: actions/setup-node@v5
       with:
-        node-version: 18
+        node-version: 20
         check-latest: true
         cache: npm
         cache-dependency-path: reactions/vscode-plugin/package-lock.json
