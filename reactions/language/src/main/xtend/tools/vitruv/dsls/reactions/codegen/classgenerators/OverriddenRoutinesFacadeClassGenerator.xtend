@@ -70,5 +70,5 @@ class OverriddenRoutinesFacadeClassGenerator extends RoutineFacadeClassGenerator
 	'''
 
 	protected override StringConcatenationClient generateGetOwnRoutinesFacade() '''
-		this._getRoutinesFacadesProvider().getRoutinesFacade(this._getReactionsImportPath().subPathTo("«reactionsSegment.name»"))'''
+		this.getRoutinesFacadesProvider().getRoutinesFacade(this.getReactionsImportPath().subPathTo("«reactionsSegment.name»"))'''
 }
