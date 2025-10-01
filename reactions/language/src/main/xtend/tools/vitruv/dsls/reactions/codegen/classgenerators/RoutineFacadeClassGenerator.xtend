@@ -22,7 +22,7 @@ import org.eclipse.xtext.common.types.JvmFormalParameter
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 
 class RoutineFacadeClassGenerator extends ClassGenerator {
-	protected static val EXECUTION_STATE_ACCESS_CODE = "_getExecutionState()"
+	protected static val EXECUTION_STATE_ACCESS_CODE = "getExecutionState()"
 	
 	val ReactionsSegment reactionsSegment
 	val ClassNameGenerator routinesFacadeNameGenerator
@@ -109,7 +109,7 @@ class RoutineFacadeClassGenerator extends ClassGenerator {
 			body = '''
 				«typeRef(routinesFacadeNameGenerator.qualifiedName)» _routinesFacade = «generateGetOwnRoutinesFacade()»;
 				«ReactionExecutionState» _executionState = «EXECUTION_STATE_ACCESS_CODE»;
-				«CallHierarchyHaving» _caller = this._getCurrentCaller();
+				«CallHierarchyHaving» _caller = this.getCurrentCaller();
 				«typeRef(routineNameGenerator.qualifiedName)» routine = new «typeRef(routineNameGenerator.qualifiedName)»(_routinesFacade, _executionState, _caller«
 					»«FOR parameter : parameters BEFORE ', ' SEPARATOR ', '»«parameter.name»«ENDFOR»);
 				return routine.execute();
@@ -139,5 +139,5 @@ class RoutineFacadeClassGenerator extends ClassGenerator {
 	this'''
 
 	private def StringConcatenationClient generateGetRoutinesFacadeCall(ReactionsImportPath relativeImportPath) '''
-	this._getRoutinesFacadesProvider().getRoutinesFacade(this._getReactionsImportPath().append(«ReactionsImportPath».fromPathString("«relativeImportPath.pathString»")))'''
+	this.getRoutinesFacadesProvider().getRoutinesFacade(this.getReactionsImportPath().append(«ReactionsImportPath».fromPathString("«relativeImportPath.pathString»")))'''
 }
