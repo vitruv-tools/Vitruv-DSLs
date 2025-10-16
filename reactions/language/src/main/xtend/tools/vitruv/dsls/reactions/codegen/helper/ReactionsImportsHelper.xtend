@@ -193,7 +193,7 @@ class ReactionsImportsHelper {
 		// initialize the data being passed along:
 		val data = dataInitializer?.get();
 		// start walking:
-		val rootImportPath = ReactionsImportPath.create(rootReactionsSegment.name);
+		val rootImportPath = ReactionsImportPath.fromPathString(rootReactionsSegment.name);
 		_walkImportHierarchy(null, rootImportPath, rootReactionsSegment, data, earlyVisitor, lateVisitor, importFilter ?: [true]);
 		// return calculated return value:
 		return returnValueFunction.apply(data);
@@ -532,7 +532,7 @@ class ReactionsImportsHelper {
 			return null;
 		}
 
-		val rootImportPath = ReactionsImportPath.create(rootReactionsSegment.name);
+		val rootImportPath = ReactionsImportPath.fromPathString(rootReactionsSegment.name);
 		return _walkImportPath(null, rootImportPath, rootReactionsSegment, relativeImportPath, visitor);
 	}
 
