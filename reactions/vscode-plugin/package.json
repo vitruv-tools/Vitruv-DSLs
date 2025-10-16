@@ -53,7 +53,7 @@
 		"package": "npm run check-types && node esbuild.cjs --production"
 	},
 	"devDependencies": {
-		"@eslint/js": "^9.13.0",
+		"@eslint/js": "^9.37.0",
 		"@stylistic/eslint-plugin": "^5.4.0",
 		"@types/node": "^20",
 		"@types/vscode": "^1.104.0",
