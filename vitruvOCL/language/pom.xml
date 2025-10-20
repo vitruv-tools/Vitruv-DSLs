@@ -7,7 +7,7 @@
     <parent>
         <groupId>tools.vitruv.dsls</groupId>
         <artifactId>vitruvOCL</artifactId>
-        <version>0.1.0-SNAPSHOT</version> 
+        <version>0.1.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -18,24 +18,64 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <antlr4.version>4.13.2</antlr4.version>
+        <junit.jupiter.version>5.10.2</junit.jupiter.version>
+        <junit.platform.version>1.10.2</junit.platform.version>
     </properties>
 
     <dependencies>
+        <!-- ANTLR Runtime -->
         <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>
             <version>${antlr4.version}</version>
         </dependency>
+
+        <!-- JUnit 5 API -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>5.10.2</version>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- JUnit 5 Engine -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- JUnit 5 Parameterized Tests -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- JUnit Platform Commons -->
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-commons</artifactId>
+            <version>${junit.platform.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Optional: AssertJ -->
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.24.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
+        <sourceDirectory>${project.build.directory}/generated-sources/antlr4</sourceDirectory>
+
         <plugins>
+            <!-- ANTLR Plugin -->
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
@@ -44,17 +84,35 @@
                     <execution>
                         <id>generate-antlr</id>
                         <phase>generate-sources</phase>
-                        <goals><goal>antlr4</goal></goals>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
                         <configuration>
-                            <packageName>tools.vitruv.dsls.vitruvocl.parser</packageName>
-                            <arguments>
-                                <argument>-visitor</argument>
-                                <argument>-listener</argument>
-                            </arguments>
+                            <sourceDirectory>${project.basedir}/src/main/antlr4</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-sources/antlr4</outputDirectory>
+                            <visitor>true</visitor>
+                            <listener>true</listener>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Surefire Plugin für JUnit 5 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.3</version>
+                <configuration>
+                    <useModulePath>false</useModulePath>
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
+                    </includes>
+                    <printSummary>true</printSummary>
+                </configuration>
+            </plugin>
+
+            <!-- Exec Maven Plugin -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -62,7 +120,13 @@
                 <configuration>
                     <mainClass>tools.vitruv.dsls.vitruvOCL.TestMain</mainClass>
                 </configuration>
-           </plugin>
+                <executions>
+                    <execution>
+                        <id>execute-mwe2-generate</id>
+                        <phase>none</phase> <!-- deaktiviert -->
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

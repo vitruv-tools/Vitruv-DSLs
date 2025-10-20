@@ -11,9 +11,6 @@
  *******************************************************************************/
  grammar VitruvOCL;
 
-@header {
-    package tools.vitruv.dsls.vitruvOCL.parser;
-}
 
 
  contextDeclCS
