@@ -10,7 +10,9 @@
         <version>3.2.3-SNAPSHOT</version>
     </parent>
 
+    <groupId>tools.vitruv.dsls</groupId> 
     <artifactId>vitruvOCL</artifactId>
+    <version>0.1.0-SNAPSHOT</version> <!-- WICHTIG -->
     <packaging>pom</packaging>
 
     <modules>

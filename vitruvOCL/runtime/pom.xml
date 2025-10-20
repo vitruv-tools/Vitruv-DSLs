@@ -5,9 +5,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>tools.vitruv.dsls.vitruvOCL</groupId>
+        <groupId>tools.vitruv.dsls</groupId>
         <artifactId>vitruvOCL</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>0.1.0-SNAPSHOT</version> 
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>vitruvOCL-runtime</artifactId>
@@ -15,9 +16,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>tools.vitruv.dsls.vitruvOCL</groupId>
+            <groupId>tools.vitruv.dsls</groupId>
             <artifactId>vitruvOCL-language</artifactId>
-            <version>0.1.0-SNAPSHOT</version>
+            <version>0.1.0-SNAPSHOT</version> 
         </dependency>
         <!-- Weitere Runtime-Libs wie EMF/Xtext später hier -->
     </dependencies>
