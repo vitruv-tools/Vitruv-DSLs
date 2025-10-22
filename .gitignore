@@ -13,6 +13,7 @@ dependency-reduced-pom.xml
 META-INF
 build.properties
 plugin.properties
+.metadata
 
 # Xtext
 .antlr-generator-*-patch.jar
