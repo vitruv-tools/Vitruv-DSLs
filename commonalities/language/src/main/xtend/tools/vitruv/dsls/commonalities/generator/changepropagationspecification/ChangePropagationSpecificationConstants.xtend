@@ -5,7 +5,7 @@ import org.eclipse.emf.ecore.EPackage
 
 @Utility
 class ChangePropagationSpecificationConstants {
-	static val CHANGE_PROPAGATION_PACKAGE_NAME = 'tools.vitruv.commonalities'
+	static val CHANGE_PROPAGATION_PACKAGE_NAME = 'tools.vitruv.dsls.commonalities'
 	static val CHANGE_PROPAGATION_PROVIDER_NAME = "CommonalitiesChangePropagationSpecificationProvider"
 
 	@Pure
