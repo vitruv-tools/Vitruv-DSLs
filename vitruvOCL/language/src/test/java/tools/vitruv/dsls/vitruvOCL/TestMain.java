@@ -3,7 +3,7 @@ package tools.vitruv.dsls.vitruvOCL; // <-- matcht das Verzeichnis unter target/
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
 
-public class QuickTestRunner {
+public class TestMain {
     public static void main(String[] args) throws Exception {
         String input = "context Person inv: self.age > 0";
         CharStream cs = CharStreams.fromString(input);
