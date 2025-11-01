@@ -15,9 +15,41 @@
 
  contextDeclCS
  :
-     classifierContextCS+
+     (
+         propertyContextDeclCS
+         | classifierContextCS
+         | operationContextCS
+     )+
  ;
 
+ operationContextCS
+ :
+     CONTEXT levelSpecificationCS?
+     (
+         ID ':'
+     )?
+     (
+         ID '::'
+         (
+             ID '::'
+         )* ID
+         | ID
+     ) '('
+     (
+         parameterCS
+         (
+             ',' parameterCS
+         )*
+     )? ')'
+     (
+         ':' typeExpCS
+     )?
+     (
+         preCS
+         | postCS
+         | bodyCS
+     )*
+ ;
 
  levelSpecificationCS
  :
@@ -36,6 +68,39 @@
      'context'
  ;
 
+ bodyCS
+ :
+     'body' ID? ':' specificationCS
+ ;
+
+ postCS
+ :
+     'post' ID? ':' specificationCS
+ ;
+
+ preCS
+ :
+     'pre' ID? ':' specificationCS
+ ;
+ 
+  filterCS
+ :
+     'filter' ID? ':' specificationCS
+ ;
+ 
+
+ defCS
+ :
+     'def' ID? ':' ID
+     (
+         (
+             '(' parameterCS?
+             (
+                 ',' parameterCS
+             )* ')'
+         )? ':' typeExpCS? '=' specificationCS
+     )
+ ;
 
  typeExpCS
  :
@@ -47,8 +112,28 @@
  :
      primitiveTypeCS
      | collectionTypeCS
+     | tupleTypeCS
  ;
 
+ tupleTypeCS
+ :
+     'Tuple'
+     (
+         '(' tuplePartCS
+         (
+             ',' tuplePartCS
+         )* ')'
+         | '<' tuplePartCS
+         (
+             ',' tuplePartCS
+         )* '>'
+     )?
+ ;
+
+ tuplePartCS
+ :
+     ID ':' typeExpCS
+ ;
 
  collectionTypeCS
  :
@@ -77,6 +162,8 @@
      | 'ID'
      | 'UnlimitedNatural'
      | 'OclAny'
+     | 'OclInvalID'
+     | 'OclVoID'
  ;
 
  typeNameExpCS
@@ -121,7 +208,6 @@
          | '>'
          | '='
      ) right = infixedExpCS # equalOperations
-     | left = infixedExpCS op = '~' right = infixedExpCS # coextension
      | left = infixedExpCS op = '^' right = infixedExpCS # Message
      | left = infixedExpCS op =
      (
@@ -161,10 +247,12 @@
 
  primaryExpCS
  :
-     ifExpCS
+     letExpCS
+     | ifExpCS
      | primitiveLiteralExpCS
      | navigatingExpCS
      | selfExpCS
+     | tupleLiteralExpCS
      | collectionLiteralExpCS
      | typeLiteralExpCS
      | nestedExpCS
@@ -183,6 +271,18 @@
      'endif'
  ;
 
+ letExpCS
+ :
+     'let' letVariableCS
+     (
+         ',' letVariableCS
+     )* 'in' in = expCS+
+ ;
+
+ letVariableCS
+ :
+     name = ID ':' type = typeExpCS '=' exp = expCS+
+ ;
 
  typeLiteralExpCS
  :
@@ -213,6 +313,21 @@
      )?
  ;
 
+ tupleLiteralExpCS
+ :
+     'Tuple' '{' tupleLiteralPartCS
+     (
+         ',' tupleLiteralPartCS
+     )* '}'
+ ;
+
+ tupleLiteralPartCS
+ :
+     ID
+     (
+         ':' typeExpCS
+     )? '=' expCS
+ ;
 
  selfExpCS
  :
@@ -224,8 +339,14 @@
      NumberLiteralExpCS # number
      | STRING # string
      | BooleanLiteralExpCS # boolean
+     | InvalIDLiteralExpCS # invalid
+     | NullLiteralExpCS # null
  ;
 
+ InvalIDLiteralExpCS
+ :
+     'invalid'
+ ;
 
  NumberLiteralExpCS
  :
@@ -262,6 +383,10 @@
      | 'false'
  ;
 
+ NullLiteralExpCS
+ :
+     'null'
+ ;
 
  navigatingExpCS
  :
@@ -345,12 +470,6 @@
  :
      (
          (
-             metamodelQualifiedName = ID '::' 
-             (
-                 ID '::'
-             )* ID
-         )
-         | (
              ID '::'
              (
                  ID '::'
@@ -377,6 +496,12 @@
      )? '#' # linguisticalName
  ;
 
+ parameterCS
+ :
+     (
+         ID ':'
+     )? typeExpCS
+ ;
 
  invCS
  :
@@ -397,12 +522,6 @@
      )?
      (
          (
-             metamodelName = ID '::'
-             (
-                 ID '::'
-             )* ID
-         )
-         | (
              ID '::'
              (
                  ID '::'
@@ -410,9 +529,42 @@
          )
          | ID
      )
-     invCS*
+     (
+         invCS
+         | defCS
+         | filterCS
+     )*
  ;
 
+ propertyContextDeclCS
+ :
+     CONTEXT levelSpecificationCS?
+     (
+         (
+             ID '::'
+             (
+                 ID '::'
+             )* ID
+         )
+         | ID
+     ) ':' typeExpCS
+     (
+         (
+             initCS derCS?
+         )?
+         | derCS initCS?
+     )
+ ;
+
+ derCS
+ :
+     'derive' ':' specificationCS
+ ;
+
+ initCS
+ :
+     'init' ':' specificationCS
+ ;
 
  ID
  :
