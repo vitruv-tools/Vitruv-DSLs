@@ -11,7 +11,7 @@
 	},
 	"publisher": "vitruv-tools",
 	"engines": {
-		"vscode": "^1.105.0"
+		"vscode": "^1.106.1"
 	},
 	"activationEvents": [
 		"onLanguage:reaction"
