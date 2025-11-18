@@ -23,7 +23,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@v5.0.1
 
     - name: Setup Java and Maven cache
       uses: actions/setup-java@v5.0.0
@@ -49,7 +49,7 @@ jobs:
       run: mkdir staging-${{ matrix.os }} && gci -Path . -Recurse -Include *.jar |? { $_.FullName -like '*\target\*.jar' } |% { cp $_.FullName staging-${{ matrix.os }} }
 
     - name: Upload build results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: build-results-${{ matrix.os }}
         path: staging-${{ matrix.os }}
@@ -65,10 +65,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@v5.0.1
 
     - name: Download Maven build results
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v6
       with:
         name: build-results-${{ matrix.os }}
         path: build-results
@@ -77,9 +77,9 @@ jobs:
       run: cp build-results/tools.vitruv.dsls.reactions.ide.jar reactions/vscode-plugin/
 
     - name: Setup node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
-        node-version: 18
+        node-version: 20
         check-latest: true
         cache: npm
         cache-dependency-path: reactions/vscode-plugin/package-lock.json
@@ -96,7 +96,7 @@ jobs:
       run: mkdir staging-${{ matrix.os }} && cp reactions/vscode-plugin/*.vsix staging-${{ matrix.os }}/;
 
     - name: Upload build results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: build-results-vscode-${{ matrix.os }}
         path: staging-${{ matrix.os }}
@@ -110,7 +110,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@v5.0.1
 
     - name: Setup Java and Maven cache
       uses: actions/setup-java@v5.0.0
@@ -138,7 +138,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@v5.0.1
 
     - name: Setup Java and Maven cache
       uses: actions/setup-java@v5.0.0
@@ -185,7 +185,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@v5.0.1
 
     - name: Setup Java and Maven cache
       uses: actions/setup-java@v5.0.0
