@@ -20,6 +20,7 @@ import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 import java.util.function.Function
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
 import tools.vitruv.change.atomic.EChange
+import tools.vitruv.change.propagation.ChangePropagationSpecification
 
 class ReactionClassGenerator extends ClassGenerator {
 	static val EXECUTION_STATE_VARIABLE = "executionState"
@@ -90,20 +91,25 @@ class ReactionClassGenerator extends ClassGenerator {
 			val changeParameter = generateParameter(new AccessibleElement("change", EChange))
 			val reactionExecutionStateParameter = generateParameter(new AccessibleElement(EXECUTION_STATE_VARIABLE, ReactionExecutionState))
 			val routinesFacadeParameter = generateParameter(new AccessibleElement(ROUTINES_FACADE_VARIABLE + "Untyped", RoutinesFacade))
+			val specificationLocal = new AccessibleElement("specification", ChangePropagationSpecification)
 			parameters += changeParameter
 			parameters += reactionExecutionStateParameter
 			parameters += routinesFacadeParameter
+
 			val facadeClassName = reaction.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
 			body = '''
 				«facadeClassName» «ROUTINES_FACADE_VARIABLE» = («facadeClassName»)«ROUTINES_FACADE_VARIABLE»Untyped;
 				«generateMatchChangeMethodCallCode(matchChangeMethod, changeParameter.name)»
 				«changeType.generatePropertiesAssignmentCode»
 				«generateUserDefinedPreconditionMethodCall(userDefinedPreconditionMethod)»
+			  «ChangePropagationSpecification» «specificationLocal.name» = («specificationLocal») «reactionExecutionStateParameter.name».getChangePropagationObservable();
+				«specificationLocal.name».notifyChangePropagationStarted(«specificationLocal.name», «changeParameter.name»);
 				if (getLogger().isTraceEnabled()) {
 					getLogger().trace("Passed complete precondition check of Reaction " + this.getClass().getName());
 				}
 				
 				«generateCallRoutineCode»
+				«specificationLocal.name».notifyChangePropagationStopped(«specificationLocal.name», «changeParameter.name»);
 			'''
 		]
 		return #[matchChangeMethod, userDefinedPreconditionMethod, executeReactionMethod].filterNull
