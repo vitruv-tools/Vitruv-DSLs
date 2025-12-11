@@ -76,8 +76,6 @@ public final class ValidationMessageAcceptorExtensions {
    * @param message the message
    * @param source the source
    * @param feature the feature
-   * @param code the code
-   * @param issueData the issue data
    */
   public static void warning(
       ValidationMessageAcceptor acceptor,

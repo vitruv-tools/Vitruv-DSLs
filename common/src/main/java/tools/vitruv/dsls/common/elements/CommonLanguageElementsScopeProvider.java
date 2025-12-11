@@ -109,16 +109,6 @@ public class CommonLanguageElementsScopeProvider {
         eClass != null ? eClass.getEAllStructuralFeatures().iterator() : null);
   }
 
-  private IScope createEAttributeScope(EClass eClass) {
-    return createEStructuralFeatureScope(
-        eClass != null ? eClass.getEAllAttributes().iterator() : null);
-  }
-
-  private IScope createEReferenceScope(EClass eClass) {
-    return createEStructuralFeatureScope(
-        eClass != null ? eClass.getEAllReferences().iterator() : null);
-  }
-
   private IScope createEStructuralFeatureScope(
       Iterator<? extends EStructuralFeature> featuresIterator) {
     if (featuresIterator != null) {
@@ -127,6 +117,16 @@ public class CommonLanguageElementsScopeProvider {
     } else {
       return IScope.NULLSCOPE;
     }
+  }
+
+  private IScope createEAttributeScope(EClass eClass) {
+    return createEStructuralFeatureScope(
+        eClass != null ? eClass.getEAllAttributes().iterator() : null);
+  }
+
+  private IScope createEReferenceScope(EClass eClass) {
+    return createEStructuralFeatureScope(
+        eClass != null ? eClass.getEAllReferences().iterator() : null);
   }
 
   /**
@@ -172,20 +172,6 @@ public class CommonLanguageElementsScopeProvider {
         metamodelImport, true, null, EcorePackage.Literals.EOBJECT);
   }
 
-  /**
-   * Creates a scope for qualified EClasses (excluding abstract ones) from the given metamodel
-   *
-   * @param metamodelImport the metamodel import
-   * @return the created scope
-   */
-  public IScope createQualifiedEClassScopeWithoutAbstract(MetamodelImport metamodelImport) {
-    return createQualifiedEClassifierScope(
-        metamodelImport,
-        false,
-        c -> (c instanceof EClass) && !((EClass) c).isAbstract(),
-        EcorePackage.Literals.EOBJECT);
-  }
-
   private IScope createQualifiedEClassifierScope(
       MetamodelImport metamodelImport,
       boolean includeEObject,
@@ -209,6 +195,20 @@ public class CommonLanguageElementsScopeProvider {
       }
     }
     return new SimpleScope(IScope.NULLSCOPE, classifierDescriptions);
+  }
+
+  /**
+   * Creates a scope for qualified EClasses (excluding abstract ones) from the given metamodel.
+   *
+   * @param metamodelImport the metamodel import
+   * @return the created scope
+   */
+  public IScope createQualifiedEClassScopeWithoutAbstract(MetamodelImport metamodelImport) {
+    return createQualifiedEClassifierScope(
+        metamodelImport,
+        false,
+        c -> (c instanceof EClass) && !((EClass) c).isAbstract(),
+        EcorePackage.Literals.EOBJECT);
   }
 
   private IEObjectDescription createEObjectDescription(
