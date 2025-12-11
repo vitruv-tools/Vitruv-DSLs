@@ -23,10 +23,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@v6
 
     - name: Setup Java and Maven cache
-      uses: actions/setup-java@v5.0.0
+      uses: actions/setup-java@v5.1.0
       with:
         distribution: 'temurin'
         java-version: '17'
@@ -49,7 +49,7 @@ jobs:
       run: mkdir staging-${{ matrix.os }} && gci -Path . -Recurse -Include *.jar |? { $_.FullName -like '*\target\*.jar' } |% { cp $_.FullName staging-${{ matrix.os }} }
 
     - name: Upload build results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: build-results-${{ matrix.os }}
         path: staging-${{ matrix.os }}
@@ -65,10 +65,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@v6
 
     - name: Download Maven build results
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v6
       with:
         name: build-results-${{ matrix.os }}
         path: build-results
@@ -96,7 +96,7 @@ jobs:
       run: mkdir staging-${{ matrix.os }} && cp reactions/vscode-plugin/*.vsix staging-${{ matrix.os }}/;
 
     - name: Upload build results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: build-results-vscode-${{ matrix.os }}
         path: staging-${{ matrix.os }}
@@ -110,10 +110,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@v6
 
     - name: Setup Java and Maven cache
-      uses: actions/setup-java@v5.0.0
+      uses: actions/setup-java@v5.1.0
       with:
         distribution: 'temurin'
         java-version: '17'
@@ -138,10 +138,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@v6
 
     - name: Setup Java and Maven cache
-      uses: actions/setup-java@v5.0.0
+      uses: actions/setup-java@v5.1.0
       with:
         distribution: 'temurin'
         java-version: '17'
@@ -156,7 +156,25 @@ jobs:
         --no-transfer-progress
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
+  
+  run-checkstyle:
+    name: checkstyle check
+    runs-on: ubuntu-latest
+    needs: [verify]
+    if: (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')
+    strategy:
+      fail-fast: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Run checkstyle
+        uses: dbelyaev/action-checkstyle@v3.2.0
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          checkstyle_config: checkstyle.xml
+          checkstyle_version: "10.21.4"
+          
   deploy-snapshot:
     name: Deploy snapshot
     runs-on: ubuntu-latest
@@ -167,10 +185,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@v6
 
     - name: Setup Java and Maven cache
-      uses: actions/setup-java@v5.0.0
+      uses: actions/setup-java@v5.1.0
       with:
         distribution: 'temurin'
         java-version: '17'

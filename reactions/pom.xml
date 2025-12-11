@@ -8,7 +8,7 @@
   <parent>
     <groupId>tools.vitruv</groupId>
     <artifactId>tools.vitruv.dsls</artifactId>
-    <version>3.2.3-SNAPSHOT</version>
+    <version>3.2.4-SNAPSHOT</version>
   </parent>
 
   <artifactId>tools.vitruv.dsls.reactions</artifactId>
@@ -18,7 +18,7 @@
   <description>Language for developing transformations with an imperative, change-driven paradigm</description>
 
   <properties>
-    <xtextVersion>2.40.0</xtextVersion>
+    <xtextVersion>2.41.0</xtextVersion>
   </properties>
 
   <modules>
