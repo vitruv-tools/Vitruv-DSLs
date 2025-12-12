@@ -1,9 +1,10 @@
 package tools.vitruv.dsls.common;
 
-import edu.kit.ipd.sdq.activextendannotations.Utility;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.xtext.validation.ValidationMessageAcceptor;
+
+import edu.kit.ipd.sdq.activextendannotations.Utility;
 
 /** Extensions for {@link ValidationMessageAcceptor}. */
 @Utility
@@ -16,9 +17,9 @@ public final class ValidationMessageAcceptorExtensions {
    * Sends an info message to the acceptor.
    *
    * @param acceptor the acceptor
-   * @param message the message
-   * @param source the source
-   * @param feature the feature
+   * @param message  the message
+   * @param source   the source
+   * @param feature  the feature
    */
   public static void info(
       ValidationMessageAcceptor acceptor,
@@ -33,10 +34,10 @@ public final class ValidationMessageAcceptorExtensions {
    * Sends an info message to the acceptor.
    *
    * @param acceptor the acceptor
-   * @param message the message
-   * @param source the source
-   * @param feature the feature
-   * @param index the index
+   * @param message  the message
+   * @param source   the source
+   * @param feature  the feature
+   * @param index    the index
    */
   public static void info(
       ValidationMessageAcceptor acceptor,
@@ -50,12 +51,12 @@ public final class ValidationMessageAcceptorExtensions {
   /**
    * Sends an info message to the acceptor.
    *
-   * @param acceptor the acceptor
-   * @param message the message
-   * @param source the source
-   * @param feature the feature
-   * @param index the index
-   * @param code the code
+   * @param acceptor  the acceptor
+   * @param message   the message
+   * @param source    the source
+   * @param feature   the feature
+   * @param index     the index
+   * @param code      the code
    * @param issueData the issue data
    */
   public static void info(
@@ -70,12 +71,12 @@ public final class ValidationMessageAcceptorExtensions {
   }
 
   /**
-   * Sends an info message to the acceptor.
+   * Sends an warning message to the acceptor.
    *
    * @param acceptor the acceptor
-   * @param message the message
-   * @param source the source
-   * @param feature the feature
+   * @param message  the message
+   * @param source   the source
+   * @param feature  the feature
    */
   public static void warning(
       ValidationMessageAcceptor acceptor,
@@ -90,10 +91,10 @@ public final class ValidationMessageAcceptorExtensions {
    * Sends a warning message to the acceptor.
    *
    * @param acceptor the acceptor
-   * @param message the message
-   * @param source the source
-   * @param feature the feature
-   * @param index the index
+   * @param message  the message
+   * @param source   the source
+   * @param feature  the feature
+   * @param index    the index
    */
   public static void warning(
       ValidationMessageAcceptor acceptor,
@@ -107,12 +108,12 @@ public final class ValidationMessageAcceptorExtensions {
   /**
    * Sends a warning message to the acceptor.
    *
-   * @param acceptor the acceptor
-   * @param message the message
-   * @param source the source
-   * @param feature the feature
-   * @param index the index
-   * @param code the code
+   * @param acceptor  the acceptor
+   * @param message   the message
+   * @param source    the source
+   * @param feature   the feature
+   * @param index     the index
+   * @param code      the code
    * @param issueData the issue data
    */
   public static void warning(
@@ -129,11 +130,11 @@ public final class ValidationMessageAcceptorExtensions {
   /**
    * Sends a warning message to the acceptor.
    *
-   * @param acceptor the acceptor
-   * @param message the message
-   * @param source the source
-   * @param feature the feature
-   * @param code the code
+   * @param acceptor  the acceptor
+   * @param message   the message
+   * @param source    the source
+   * @param feature   the feature
+   * @param code      the code
    * @param issueData the issue data
    */
   public static void warning(
@@ -151,9 +152,9 @@ public final class ValidationMessageAcceptorExtensions {
    * Sends an error message to the acceptor.
    *
    * @param acceptor the acceptor
-   * @param message the message
-   * @param source the source
-   * @param feature the feature
+   * @param message  the message
+   * @param source   the source
+   * @param feature  the feature
    */
   public static void error(
       ValidationMessageAcceptor acceptor,
@@ -168,10 +169,10 @@ public final class ValidationMessageAcceptorExtensions {
    * Sends an error message to the acceptor.
    *
    * @param acceptor the acceptor
-   * @param message the message
-   * @param source the source
-   * @param feature the feature
-   * @param index the index
+   * @param message  the message
+   * @param source   the source
+   * @param feature  the feature
+   * @param index    the index
    */
   public static void error(
       ValidationMessageAcceptor acceptor,
@@ -185,12 +186,12 @@ public final class ValidationMessageAcceptorExtensions {
   /**
    * Sends an error message to the acceptor.
    *
-   * @param acceptor the acceptor
-   * @param message the message
-   * @param source the source
-   * @param feature the feature
-   * @param index the index
-   * @param code the code
+   * @param acceptor  the acceptor
+   * @param message   the message
+   * @param source    the source
+   * @param feature   the feature
+   * @param index     the index
+   * @param code      the code
    * @param issueData the issue data
    */
   public static void error(
@@ -201,17 +202,17 @@ public final class ValidationMessageAcceptorExtensions {
       int index,
       String code,
       String... issueData) {
-    acceptor.acceptWarning(message, source, feature, index, code, issueData);
+    acceptor.acceptError(message, source, feature, index, code, issueData);
   }
 
   /**
    * Sends an error message to the acceptor.
    *
-   * @param acceptor the acceptor
-   * @param message the message
-   * @param source the source
-   * @param feature the feature
-   * @param code the code
+   * @param acceptor  the acceptor
+   * @param message   the message
+   * @param source    the source
+   * @param feature   the feature
+   * @param code      the code
    * @param issueData the issue data
    */
   public static void error(

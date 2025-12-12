@@ -17,8 +17,8 @@ public final class JavaFileGenerator {
    * Generates a Java class file content.
    *
    * @param classImplementation the implementation of the class
-   * @param packageName the package name
-   * @param importHelper the import helper
+   * @param packageName         the package name
+   * @param importHelper        the import helper
    * @return the Java class file content
    */
   public static String generateClass(
@@ -27,7 +27,7 @@ public final class JavaFileGenerator {
     sb.append("package ").append(packageName).append(";\n\n");
     if (importHelper != null) {
       CharSequence imports = importHelper.generateImportCode();
-      if (imports != null) {
+      if (imports != null && imports.length() > 0) {
         sb.append(imports.toString());
         sb.append("\n\n");
       }
