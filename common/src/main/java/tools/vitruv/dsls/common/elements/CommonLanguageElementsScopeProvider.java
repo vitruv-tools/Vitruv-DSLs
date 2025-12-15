@@ -1,14 +1,11 @@
 package tools.vitruv.dsls.common.elements;
 
-import static tools.vitruv.dsls.common.elements.ElementsPackage.Literals.*;
-
-import com.google.inject.Inject;
-import com.google.inject.Provider;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EClassifier;
 import org.eclipse.emf.ecore.EEnum;
@@ -25,17 +22,33 @@ import org.eclipse.xtext.resource.IEObjectDescription;
 import org.eclipse.xtext.scoping.IScope;
 import org.eclipse.xtext.scoping.impl.SimpleScope;
 
-/** Provides scopes for common language elements like metamodel imports and metaclasses. */
+import com.google.inject.Inject;
+import com.google.inject.Provider;
+
+import static tools.vitruv.dsls.common.elements.ElementsPackage.Literals.METACLASS_EATTRIBUTE_REFERENCE__FEATURE;
+import static tools.vitruv.dsls.common.elements.ElementsPackage.Literals.METACLASS_EREFERENCE_REFERENCE__FEATURE;
+import static tools.vitruv.dsls.common.elements.ElementsPackage.Literals.METACLASS_FEATURE_REFERENCE__FEATURE;
+import static tools.vitruv.dsls.common.elements.ElementsPackage.Literals.METACLASS_REFERENCE__METACLASS;
+import static tools.vitruv.dsls.common.elements.ElementsPackage.Literals.METACLASS_REFERENCE__METAMODEL;
+import static tools.vitruv.dsls.common.elements.ElementsPackage.Literals.METAMODEL_IMPORT__PACKAGE;
+
+/**
+ * Provides scopes for common language elements like metamodel imports and
+ * metaclasses.
+ */
 public class CommonLanguageElementsScopeProvider {
-  @Inject IQualifiedNameProvider qualifiedNameProvider;
-  @Inject Provider<EPackageRegistryScope> packagesScope;
+  @Inject
+  IQualifiedNameProvider qualifiedNameProvider;
+  @Inject
+  Provider<EPackageRegistryScope> packagesScope;
 
   /**
-   * Creates a scope from the given elements using the provided description creation function.
+   * Creates a scope from the given elements using the provided description
+   * creation function.
    *
-   * @param <T> the element type
-   * @param parentScope the parent scope
-   * @param elements the elements
+   * @param <T>                 the element type
+   * @param parentScope         the parent scope
+   * @param elements            the elements
    * @param descriptionCreation the description creation function
    * @return the created scope
    */
@@ -57,7 +70,7 @@ public class CommonLanguageElementsScopeProvider {
   /**
    * Gets the scope for the given context and reference.
    *
-   * @param context the context
+   * @param context   the context
    * @param reference the reference
    * @return the scope
    */
@@ -76,8 +89,9 @@ public class CommonLanguageElementsScopeProvider {
     } else if (reference.equals(METACLASS_REFERENCE__METAMODEL)) {
       return createImportsScope(context.eResource());
     } else if (reference.equals(METACLASS_REFERENCE__METACLASS)) {
-      MetaclassReference potentialMetaclassReference =
-          (context instanceof MetaclassReference) ? (MetaclassReference) context : null;
+      MetaclassReference potentialMetaclassReference = (context instanceof MetaclassReference)
+          ? (MetaclassReference) context
+          : null;
       return createQualifiedEClassifierScope(
           potentialMetaclassReference != null ? potentialMetaclassReference.getMetamodel() : null);
     }
@@ -94,8 +108,7 @@ public class CommonLanguageElementsScopeProvider {
   }
 
   private List<MetamodelImport> getMetamodelImports(Resource res) {
-    List<EObject> contents =
-        getAllContentsOfEClass(res, ElementsPackage.eINSTANCE.getMetamodelImport(), true);
+    List<EObject> contents = getAllContentsOfEClass(res, ElementsPackage.eINSTANCE.getMetamodelImport(), true);
     return contents.stream()
         .filter(MetamodelImport.class::isInstance)
         .map(MetamodelImport.class::cast)
@@ -132,7 +145,7 @@ public class CommonLanguageElementsScopeProvider {
   /**
    * Gets all contents of the given EClass from the resource.
    *
-   * @param res the resource
+   * @param res         the resource
    * @param namedParent the named parent EClass
    * @param allContents whether to get all contents or only direct contents
    * @return the list of EObjects
@@ -162,7 +175,8 @@ public class CommonLanguageElementsScopeProvider {
   }
 
   /**
-   * Creates a scope for qualified EClassifiers including EObject from the given metamodel import.
+   * Creates a scope for qualified EClassifiers including EObject from the given
+   * metamodel import.
    *
    * @param metamodelImport the metamodel import
    * @return the created scope
@@ -198,7 +212,8 @@ public class CommonLanguageElementsScopeProvider {
   }
 
   /**
-   * Creates a scope for qualified EClasses (excluding abstract ones) from the given metamodel.
+   * Creates a scope for qualified EClasses (excluding abstract ones) from the
+   * given metamodel.
    *
    * @param metamodelImport the metamodel import
    * @return the created scope
@@ -229,10 +244,9 @@ public class CommonLanguageElementsScopeProvider {
         recursiveResult.addAll(collectEClasses(sub, includeSubpackages));
       }
     }
-    List<EClassifier> result =
-        pckg.getEClassifiers().stream()
-            .filter(c -> c instanceof EClass || c instanceof EEnum)
-            .collect(Collectors.toList());
+    List<EClassifier> result = pckg.getEClassifiers().stream()
+        .filter(c -> c instanceof EClass || c instanceof EEnum)
+        .collect(Collectors.toList());
     recursiveResult.addAll(result);
     return recursiveResult;
   }

@@ -10,7 +10,6 @@ public final class JavaFileGenerator {
 
   /** Private constructor for utility class. */
   private JavaFileGenerator() {
-    // utility
   }
 
   /**

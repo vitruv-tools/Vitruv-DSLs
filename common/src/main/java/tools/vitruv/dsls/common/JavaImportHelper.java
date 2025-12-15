@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
 import org.eclipse.emf.ecore.EClassifier;
 
 /** Helper class to manage Java imports when generating Java code. */
@@ -33,7 +34,7 @@ public class JavaImportHelper {
   /**
    * Generates a static reference.
    *
-   * @param javaClass the Java class
+   * @param javaClass  the Java class
    * @param methodName the method name
    * @return the static reference
    */
@@ -90,8 +91,7 @@ public class JavaImportHelper {
       return fullyQualifiedJVMNameString;
     }
 
-    ClassNameGenerator className =
-        ClassNameGenerator.fromQualifiedName(fullyQualifiedJVMNameString);
+    ClassNameGenerator className = ClassNameGenerator.fromQualifiedName(fullyQualifiedJVMNameString);
 
     if (NO_IMPORT_NEEDED.contains(className.getPackageName())) {
       return className.getSimpleName();

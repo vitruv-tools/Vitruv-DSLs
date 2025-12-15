@@ -5,7 +5,7 @@ import org.eclipse.xtext.xbase.XbaseQualifiedNameConverter;
 
 /**
  * A qualified name converter that handles qualified names starting with
- * "http://" as a single segment
+ * "http://" as a single segment.
  */
 public class CommonLanguageElementsQualifiedNameConverter extends XbaseQualifiedNameConverter {
 

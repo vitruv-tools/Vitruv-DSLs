@@ -1,11 +1,10 @@
 package tools.vitruv.dsls.common.elements;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
@@ -15,10 +14,17 @@ import org.eclipse.xtext.resource.EObjectDescription;
 import org.eclipse.xtext.resource.IEObjectDescription;
 import org.eclipse.xtext.scoping.IScope;
 
-/** An {@link IScope} that provides all registered EPackages in the global EPackage registry. */
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+
+/**
+ * An {@link IScope} that provides all registered EPackages in the global
+ * EPackage registry.
+ */
 @Singleton
 public class EPackageRegistryScope implements IScope {
-  @Inject private IQualifiedNameConverter qualifiedNameConverter;
+  @Inject
+  private IQualifiedNameConverter qualifiedNameConverter;
 
   @Override
   public Iterable<IEObjectDescription> getAllElements() {
