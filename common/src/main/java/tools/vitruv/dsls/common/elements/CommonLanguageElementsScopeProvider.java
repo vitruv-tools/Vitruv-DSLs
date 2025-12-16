@@ -156,17 +156,6 @@ public class CommonLanguageElementsScopeProvider {
   }
 
   /**
-   * Creates a scope for qualified EClassifiers from the given metamodel import.
-   *
-   * @param metamodelImport the metamodel import
-   * @return the created scope
-   */
-  public IScope createQualifiedEClassifierScope(MetamodelImport metamodelImport) {
-    return createQualifiedEClassifierScope(
-        metamodelImport, false, null, EcorePackage.Literals.EOBJECT);
-  }
-
-  /**
    * Creates a scope for qualified EClassifiers including EObject from the given metamodel import.
    *
    * @param metamodelImport the metamodel import
@@ -175,6 +164,17 @@ public class CommonLanguageElementsScopeProvider {
   public IScope createQualifiedEClassScopeWithEObject(MetamodelImport metamodelImport) {
     return createQualifiedEClassifierScope(
         metamodelImport, true, null, EcorePackage.Literals.EOBJECT);
+  }
+
+  /**
+   * Creates a scope for qualified EClassifiers from the given metamodel import.
+   *
+   * @param metamodelImport the metamodel import
+   * @return the created scope
+   */
+  public IScope createQualifiedEClassifierScope(MetamodelImport metamodelImport) {
+    return createQualifiedEClassifierScope(
+        metamodelImport, false, null, EcorePackage.Literals.EOBJECT);
   }
 
   private IScope createQualifiedEClassifierScope(
