@@ -2,10 +2,7 @@ package tools.vitruv.dsls.common.elements;
 
 import org.eclipse.emf.ecore.EPackage;
 
-/**
- * Remaps an Ecore model from one URI to another in the global EPackage
- * registry.
- */
+/** Remaps an Ecore model from one URI to another in the global EPackage registry. */
 public class RemapEcoreModel {
   private String from;
 

@@ -9,15 +9,14 @@ public final class JavaFileGenerator {
   public static final String FSA_SEPARATOR = "/";
 
   /** Private constructor for utility class. */
-  private JavaFileGenerator() {
-  }
+  private JavaFileGenerator() {}
 
   /**
    * Generates a Java class file content.
    *
    * @param classImplementation the implementation of the class
-   * @param packageName         the package name
-   * @param importHelper        the import helper
+   * @param packageName the package name
+   * @param importHelper the import helper
    * @return the Java class file content
    */
   public static String generateClass(
