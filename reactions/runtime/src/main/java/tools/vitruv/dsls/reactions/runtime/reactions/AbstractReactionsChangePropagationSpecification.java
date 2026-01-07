@@ -43,6 +43,15 @@ public abstract class AbstractReactionsChangePropagationSpecification
   }
 
   /**
+   * Returns the number of reactions.
+   *
+   * @return int
+   */
+  public int getNumberOfReactions() {
+    return reactions.size();
+  }
+
+  /**
    * Adds reaction to this specification.
    *
    * @param reaction - {@link Reaction}
