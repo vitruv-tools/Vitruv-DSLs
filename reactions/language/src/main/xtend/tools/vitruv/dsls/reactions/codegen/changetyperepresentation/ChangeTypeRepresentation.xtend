@@ -32,7 +32,8 @@ class ChangeTypeRepresentation {
 	private static def mapToNonPrimitiveType(String potentiallyPrimitiveTypeCName) {
 		return primitveToWrapperTypesMap.getOrDefault(potentiallyPrimitiveTypeCName, potentiallyPrimitiveTypeCName)
 	}	
-	
+
+	@Accessors(PUBLIC_GETTER)
 	final Class<?> changeType
 	final String affectedElementClassCanonicalName
 	final String affectedValueClassCanonicalName

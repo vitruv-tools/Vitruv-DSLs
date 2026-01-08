@@ -25,6 +25,7 @@ class ReactionClassGenerator extends ClassGenerator {
 	static val EXECUTION_STATE_VARIABLE = "executionState"
 	static val ROUTINES_FACADE_VARIABLE = "routinesFacade"
 
+	static val MATCH_CHANGE_TYPE_METHOD_NAME = "getMatchingChangeType"
 	static val EXECUTE_REACTION_METHOD_NAME = "executeReaction"
 	static val MATCH_CHANGE_METHOD_NAME = "isCurrentChangeMatchingTrigger"
 	static val USER_DEFINED_PRECONDITION_METHOD_NAME = "isUserDefinedPreconditionFulfilled"
@@ -65,12 +66,24 @@ class ReactionClassGenerator extends ClassGenerator {
 			superTypes += typeRef(AbstractReaction)
 			members +=
 				reaction.toField(changeType.name, changeType.accessibleElement.generateTypeRef(_typeReferenceBuilder))
+			members += reaction.generateMatchingChangeTypeMethod()
 			members += reaction.generateConstructor()
 			members += routineCallClassGenerator.generateBody()
 			members += generateMethodExecuteReactionAndDependentMethods()
 		]
 	}
 
+	private def JvmOperation generateMatchingChangeTypeMethod(Reaction reaction) {
+		reaction.toMethod(
+			MATCH_CHANGE_TYPE_METHOD_NAME,
+			typeRef("Class")) [
+				visibility = JvmVisibility.PUBLIC
+				body = '''
+					return «changeType.changeType».class;
+				'''	
+			]
+	}
+	
 	private def JvmConstructor generateConstructor(Reaction reaction) {
 		return reaction.toConstructor [
 			visibility = JvmVisibility.PUBLIC
