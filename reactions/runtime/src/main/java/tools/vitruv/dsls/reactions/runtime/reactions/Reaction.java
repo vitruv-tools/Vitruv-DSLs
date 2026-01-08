@@ -31,11 +31,11 @@ public interface Reaction {
   Class<?> getMatchingChangeType();
 
   /**
-   * Returns the type of metamodel element 
+   * Returns the name of the metamodel element 
    * ({@link EStructuralFeature} for feature changes, otherwise {@link EClass})
    * that would trigger this reaction.
    *
-   * @return {@link ENamedElement}
+   * @return {@link String}
    */
-  // ENamedElement getMatchingMetamodelElement();
+   String getMatchingMetamodelElement();
 }

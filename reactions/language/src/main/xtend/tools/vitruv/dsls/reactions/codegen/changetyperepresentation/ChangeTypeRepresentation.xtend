@@ -35,11 +35,13 @@ class ChangeTypeRepresentation {
 
 	@Accessors(PUBLIC_GETTER)
 	final Class<?> changeType
+	@Accessors(PUBLIC_GETTER)
 	final String affectedElementClassCanonicalName
 	final String affectedValueClassCanonicalName
 	final boolean hasOldValue
 	final boolean hasNewValue
 	final boolean hasIndex
+	@Accessors(PUBLIC_GETTER)
 	final EStructuralFeature affectedFeature
 	@Accessors(PUBLIC_GETTER)
 	final String name

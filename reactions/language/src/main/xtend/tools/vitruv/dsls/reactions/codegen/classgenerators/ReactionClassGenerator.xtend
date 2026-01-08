@@ -1,31 +1,45 @@
 package tools.vitruv.dsls.reactions.codegen.classgenerators
 
+import java.util.function.Function
+import org.eclipse.emf.ecore.ENamedElement
+import org.eclipse.emf.ecore.EcoreFactory
+import org.eclipse.xtend2.lib.StringConcatenationClient
 import org.eclipse.xtext.common.types.JvmConstructor
 import org.eclipse.xtext.common.types.JvmGenericType
-import org.eclipse.xtext.common.types.JvmVisibility
 import org.eclipse.xtext.common.types.JvmOperation
-import tools.vitruv.dsls.reactions.language.toplevelelements.Reaction
-import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators.*
-import static extension tools.vitruv.dsls.reactions.codegen.changetyperepresentation.ChangeTypeRepresentationExtractor.*
-import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
+import org.eclipse.xtext.common.types.JvmVisibility
+import tools.vitruv.change.atomic.EChange
+import tools.vitruv.dsls.common.elements.MetaclassEAttributeReference
+import tools.vitruv.dsls.common.elements.MetaclassEReferenceReference
+import tools.vitruv.dsls.common.elements.MetaclassFeatureReference
+import tools.vitruv.dsls.common.elements.NamedMetaclassReference
 import tools.vitruv.dsls.reactions.codegen.changetyperepresentation.ChangeTypeRepresentation
+import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.EmptyStepExecutionClassGenerator
 import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.StepExecutionClassGenerator
 import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.UpdateBlockClassGenerator
-import tools.vitruv.dsls.reactions.codegen.classgenerators.steps.EmptyStepExecutionClassGenerator
-import org.eclipse.xtend2.lib.StringConcatenationClient
-import static com.google.common.base.Preconditions.checkArgument
+import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
+import tools.vitruv.dsls.reactions.codegen.typesbuilder.TypesBuilderExtensionProvider
+import tools.vitruv.dsls.reactions.language.ArbitraryModelChange
+import tools.vitruv.dsls.reactions.language.ModelAttributeChange
+import tools.vitruv.dsls.reactions.language.ModelElementChange
+import tools.vitruv.dsls.reactions.language.toplevelelements.Reaction
 import tools.vitruv.dsls.reactions.runtime.reactions.AbstractReaction
 import tools.vitruv.dsls.reactions.runtime.routines.RoutinesFacade
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
-import java.util.function.Function
-import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
-import tools.vitruv.change.atomic.EChange
+
+import static com.google.common.base.Preconditions.checkArgument
+
+import static extension tools.vitruv.dsls.reactions.codegen.changetyperepresentation.ChangeTypeRepresentationExtractor.*
+import static extension tools.vitruv.dsls.reactions.codegen.helper.ClassNamesGenerators.*
+import tools.vitruv.dsls.reactions.language.toplevelelements.Trigger
+import tools.vitruv.dsls.common.elements.MetaclassReference
 
 class ReactionClassGenerator extends ClassGenerator {
 	static val EXECUTION_STATE_VARIABLE = "executionState"
 	static val ROUTINES_FACADE_VARIABLE = "routinesFacade"
 
 	static val MATCH_CHANGE_TYPE_METHOD_NAME = "getMatchingChangeType"
+	static val MATCH_ELEMENT_TYPE_METHOD_NAME = "getMatchingMetamodelElement"
 	static val EXECUTE_REACTION_METHOD_NAME = "executeReaction"
 	static val MATCH_CHANGE_METHOD_NAME = "isCurrentChangeMatchingTrigger"
 	static val USER_DEFINED_PRECONDITION_METHOD_NAME = "isUserDefinedPreconditionFulfilled"
@@ -67,6 +81,7 @@ class ReactionClassGenerator extends ClassGenerator {
 			members +=
 				reaction.toField(changeType.name, changeType.accessibleElement.generateTypeRef(_typeReferenceBuilder))
 			members += reaction.generateMatchingChangeTypeMethod()
+			members += reaction.generateMatchingElementTypeMethod()
 			members += reaction.generateConstructor()
 			members += routineCallClassGenerator.generateBody()
 			members += generateMethodExecuteReactionAndDependentMethods()
@@ -81,6 +96,21 @@ class ReactionClassGenerator extends ClassGenerator {
 				body = '''
 					return «changeType.changeType».class;
 				'''	
+			]
+	}
+
+	private def generateMatchingElementTypeMethod(Reaction reaction) {
+		val featureName = changeType.hasAffectedFeature ?
+			"." + changeType.affectedFeature.name :
+			""
+		val matchingElementName = changeType.affectedElementClass + featureName
+		reaction.toMethod(
+			MATCH_ELEMENT_TYPE_METHOD_NAME,
+			typeRef(String)) [
+				visibility = JvmVisibility.PUBLIC
+				body = '''
+					return "«matchingElementName»";
+				'''
 			]
 	}
 	
