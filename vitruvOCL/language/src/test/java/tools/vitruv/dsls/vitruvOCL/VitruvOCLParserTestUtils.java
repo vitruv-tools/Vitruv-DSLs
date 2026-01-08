@@ -3,7 +3,6 @@ package tools.vitruv.dsls.vitruvOCL;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class VitruvOCLParserTestUtils {

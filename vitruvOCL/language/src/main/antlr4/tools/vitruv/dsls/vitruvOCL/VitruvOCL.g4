@@ -116,10 +116,10 @@
      (
          '<='
          | '>='
-         | '<>'
+         | '!='
          | '<'
          | '>'
-         | '='
+         | '=='
      ) right = infixedExpCS # equalOperations
      | left = infixedExpCS op = '~' right = infixedExpCS # coextension
      | left = infixedExpCS op = '^' right = infixedExpCS # Message
@@ -140,7 +140,6 @@
  navigationOperatorCS
  :
      '.' # dot
-     | '->' # arrow
  ;
 
  prefixedExpCS
@@ -342,40 +341,53 @@
  ;
 
  nameExpCS
- :
-     (
-         (
-             metamodelQualifiedName = ID '::' 
-             (
-                 ID '::'
-             )* ID
-         )
-         | (
-             ID '::'
-             (
-                 ID '::'
-             )* ID
-         )
-         | variableName = ID
-         | STRING
-     ) # name
-     | '$' clab = ID '$' # ontologicalName
-     | '#' aspect = ID
-     (
-         '('
-         (
-             NumberLiteralExpCS
-             | ID
-         )?
-         (
-             ','
-             (
-                 NumberLiteralExpCS
-                 | ID
-             )
-         )* ')'
-     )? '#' # linguisticalName
- ;
+:
+    (
+        (
+            metamodelQualifiedName = ID '::' 
+            (
+                ID '::'
+            )* ID
+        )
+        | (
+            ID '::'
+            (
+                ID '::'
+            )* ID
+        )
+        | variableName = ID
+        | collectionOperationName
+        | STRING
+    ) # name
+    | '$' clab = ID '$' # ontologicalName
+    | '#' aspect = ID
+    (
+        '('
+        (
+            NumberLiteralExpCS
+            | ID
+        )?
+        (
+            ','
+            (
+                NumberLiteralExpCS
+                | ID
+            )
+        )* ')'
+    )? '#' # linguisticalName
+;
+
+
+collectionOperationName
+:
+    'including'
+    | 'excluding'
+    | 'includes'
+    | 'excludes'
+    | 'flatten'
+    | 'union'
+    | 'append'
+;
 
 
  invCS

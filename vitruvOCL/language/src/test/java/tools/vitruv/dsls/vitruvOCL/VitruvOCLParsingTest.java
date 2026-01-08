@@ -46,7 +46,7 @@ public class VitruvOCLParsingTest {
     @ParameterizedTest(name = "Should parse: {0}")
     @ValueSource(strings = {
         "context Person inv: self.age > 0",
-        "context Student inv: self.name <> null",
+        "context Student inv: self.name != null",
         "context Course inv: self.students->size() > 0",
         "context Person::allInstances()->select(p | p.age > 18)"
     })
