@@ -49,6 +49,24 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     // ==================== Visitor Methods ====================
     
     @Override
+public Value visitNestedExpCS(VitruvOCLParser.NestedExpCSContext ctx) {
+    // Evaluate the expression inside the parentheses
+    List<VitruvOCLParser.ExpCSContext> exps = ctx.expCS();
+    
+    if (exps.isEmpty()) {
+        return error("Empty nested expression", ctx);
+    }
+    
+    // Evaluate all expressions, return value of last one
+    Value result = null;
+    for (VitruvOCLParser.ExpCSContext exp : exps) {
+        result = visit(exp);
+    }
+    
+    return result;
+}
+
+    @Override
 public Value visitNumber(VitruvOCLParser.NumberContext ctx) {
     String text = ctx.NumberLiteralExpCS().getText();
     int intValue = Integer.parseInt(text);
@@ -207,52 +225,56 @@ public Value visitCollectionLiteralPartCS(VitruvOCLParser.CollectionLiteralPartC
  */
 @Override
 public Value visitPrefixedExpCS(VitruvOCLParser.PrefixedExpCSContext ctx) {
-    // Handle unary operators: -x, not x
-    if (!ctx.UnaryOperatorCS().isEmpty()) {
-        Value expValue = visit(ctx.exp);
-        
-        for (var op : ctx.UnaryOperatorCS()) {
-            String operator = op.getText();
-            
-            if (operator.equals("-")) {
-                if (expValue.size() != 1) {
-                    return error("Unary minus requires singleton operand", ctx);
-                }
-                OCLElement elem = expValue.getElements().get(0);
-                if (!(elem instanceof OCLElement.IntValue)) {
-                    return error("Unary minus requires integer operand", ctx);
-                }
-                int value = ((OCLElement.IntValue) elem).value();
-                expValue = Value.intValue(-value);
-            } else if (operator.equals("not")) {
-                if (expValue.size() != 1) {
-                    return error("Unary not requires singleton operand", ctx);
-                }
-                OCLElement elem = expValue.getElements().get(0);
-                if (!(elem instanceof OCLElement.BoolValue)) {
-                    return error("Unary not requires boolean operand", ctx);
-                }
-                boolean value = ((OCLElement.BoolValue) elem).value();
-                expValue = Value.boolValue(!value);
-            }
+    // Count how many unary operators we have at the start
+    int unaryOpCount = 0;
+    for (int i = 0; i < ctx.getChildCount(); i++) {
+        String text = ctx.getChild(i).getText();
+        if (text.equals("-") || text.equals("not")) {
+            unaryOpCount++;
+        } else {
+            break; // Stop at first non-operator
         }
-        
-        return expValue;
     }
     
+    // Get all primaries
     List<VitruvOCLParser.PrimaryExpCSContext> primaries = ctx.primaryExpCS();
     
     if (primaries.isEmpty()) {
         return error("Empty expression", ctx);
     }
     
-    if (primaries.size() == 1) {
-        return visit(primaries.get(0));
-    }
-    
-    // Navigation chain
+    // Start with first primary
     Value currentValue = visit(primaries.get(0));
     
+    // Apply unary operators in reverse order (right-to-left)
+    // Example: "not not true" → apply second "not", then first "not"
+    for (int i = unaryOpCount - 1; i >= 0; i--) {
+        String op = ctx.getChild(i).getText();
+        
+        if (op.equals("-")) {
+            if (currentValue.size() != 1) {
+                return error("Unary minus requires singleton operand", ctx);
+            }
+            OCLElement elem = currentValue.getElements().get(0);
+            if (!(elem instanceof OCLElement.IntValue)) {
+                return error("Unary minus requires integer operand", ctx);
+            }
+            int value = ((OCLElement.IntValue) elem).value();
+            currentValue = Value.intValue(-value);
+        } else if (op.equals("not")) {
+            if (currentValue.size() != 1) {
+                return error("Unary not requires singleton operand", ctx);
+            }
+            OCLElement elem = currentValue.getElements().get(0);
+            if (!(elem instanceof OCLElement.BoolValue)) {
+                return error("Unary not requires boolean operand", ctx);
+            }
+            boolean value = ((OCLElement.BoolValue) elem).value();
+            currentValue = Value.boolValue(!value);
+        }
+    }
+    
+    // Handle navigation chain (if there are more primaries)
     for (int i = 1; i < primaries.size(); i++) {
         VitruvOCLParser.PrimaryExpCSContext operationCtx = primaries.get(i);
         
@@ -261,31 +283,34 @@ public Value visitPrefixedExpCS(VitruvOCLParser.PrefixedExpCSContext ctx) {
             
             boolean handledAsCollectionOp = false;
             
-            // Check for collectionOperationName (including, excluding, etc.)
+            // Check if operation name is a collectionOperationName OR stringOperationName
             if (navCtx.opName != null && navCtx.opName.nameExpCS() != null) {
                 VitruvOCLParser.NameExpCSContext nameExpCtx = navCtx.opName.nameExpCS();
                 
                 if (nameExpCtx instanceof VitruvOCLParser.NameContext nameContext) {
+                    // Collection operations
                     if (nameContext.collectionOperationName() != null) {
                         String opName = nameContext.collectionOperationName().getText();
                         currentValue = evaluateCollectionOperation(navCtx, opName, currentValue);
                         handledAsCollectionOp = true;
                     }
+                    // String operations (NEW!)
+                    else if (nameContext.stringOperationName() != null) {
+                        String opName = nameContext.stringOperationName().getText();
+                        currentValue = evaluateStringOperation(navCtx, opName, currentValue);
+                        handledAsCollectionOp = true; // Reuse flag
+                    }
                 }
             }
             
             if (!handledAsCollectionOp) {
-                // Check if there are navigatingArgs (operations with arguments)
                 if (!navCtx.navigatingArgCS().isEmpty()) {
-                    // Has arguments - delegate to handleNavigationStep
                     for (VitruvOCLParser.NavigatingArgCSContext arg : navCtx.navigatingArgCS()) {
                         currentValue = handleNavigationStep(arg, currentValue);
                     }
                 } else {
-                    // No arguments - operation is in opName (like size(), isEmpty())
                     String opName = navCtx.opName.nameExpCS().getText();
                     
-                    // Handle no-arg operations directly
                     switch (opName) {
                         case "size":
                             currentValue = Value.intValue(currentValue.size());
@@ -430,6 +455,136 @@ private Value evaluateCollectionOperation(
             return error("Unknown collection operation: " + opName, ctx);
     }
 }
+
+/**
+ * Evaluates String operations: concat, substring, toUpper, toLower, etc.
+ * 
+ * @param ctx Navigation context containing the operation
+ * @param opName Operation name (concat, substring, etc.)
+ * @param receiver Receiver value (should be a String singleton)
+ * @return Result value of the operation
+ */
+private Value evaluateStringOperation(
+    VitruvOCLParser.NavigatingExpCSContext ctx,
+    String opName,
+    Value receiver
+) {
+    // Extract string from singleton
+    if (receiver.size() != 1) {
+        return error("String operations require singleton receiver, got collection of size " + 
+                    receiver.size(), ctx);
+    }
+    
+    OCLElement elem = receiver.getElements().get(0);
+    if (!(elem instanceof OCLElement.StringValue)) {
+        return error("String operation requires String receiver", ctx);
+    }
+    
+    String str = ((OCLElement.StringValue) elem).value();
+    
+    // Collect ALL arguments (regular + comma args)
+    List<Value> args = new ArrayList<>();
+    
+    for (VitruvOCLParser.NavigatingArgCSContext arg : ctx.navigatingArgCS()) {
+        args.add(visit(arg.navigatingArgExpCS()));
+    }
+    
+    for (VitruvOCLParser.NavigatingCommaArgCSContext commaArg : ctx.navigatingCommaArgCS()) {
+        args.add(visit(commaArg.navigatingArgExpCS()));
+    }
+    
+    return switch (opName) {
+        case "concat" -> {
+            if (args.size() != 1 || args.get(0).size() != 1) {
+                yield error("concat() requires exactly 1 singleton String argument", ctx);
+            }
+            
+            OCLElement argElem = args.get(0).getElements().get(0);
+            if (!(argElem instanceof OCLElement.StringValue)) {
+                yield error("concat() requires String argument", ctx);
+            }
+            
+            String arg = ((OCLElement.StringValue) argElem).value();
+            yield Value.stringValue(str + arg);
+        }
+        
+        case "substring" -> {
+            // OCL uses 1-based indexing: substring(1, 3) means chars at positions 1,2,3
+            if (args.size() != 2) {
+                yield error("substring() requires 2 arguments (start, end), got " + args.size(), ctx);
+            }
+            
+            if (args.get(0).size() != 1 || args.get(1).size() != 1) {
+                yield error("substring() requires singleton Integer arguments", ctx);
+            }
+            
+            OCLElement startElem = args.get(0).getElements().get(0);
+            OCLElement endElem = args.get(1).getElements().get(0);
+            
+            if (!(startElem instanceof OCLElement.IntValue) || 
+                !(endElem instanceof OCLElement.IntValue)) {
+                yield error("substring() requires Integer arguments", ctx);
+            }
+            
+            int start = ((OCLElement.IntValue) startElem).value();
+            int end = ((OCLElement.IntValue) endElem).value();
+            
+            // OCL: 1-indexed → Java: 0-indexed
+            // OCL: substring(1, 3) → Java: substring(0, 3)
+            try {
+                if (start < 1 || end < start || end > str.length()) {
+                    // OCL# null-safe: invalid indices → empty collection
+                    yield Value.empty(Type.STRING);
+                }
+                String result = str.substring(start - 1, end);
+                yield Value.stringValue(result);
+            } catch (IndexOutOfBoundsException e) {
+                // OCL# null-safe: errors → empty collection
+                yield Value.empty(Type.STRING);
+            }
+        }
+        
+        case "toUpper" -> Value.stringValue(str.toUpperCase());
+        
+        case "toLower" -> Value.stringValue(str.toLowerCase());
+        
+        case "indexOf" -> {
+            // Returns 1-based index, or 0 if not found (OCL convention)
+            if (args.size() != 1 || args.get(0).size() != 1) {
+                yield error("indexOf() requires exactly 1 singleton String argument", ctx);
+            }
+            
+            OCLElement searchElem = args.get(0).getElements().get(0);
+            if (!(searchElem instanceof OCLElement.StringValue)) {
+                yield error("indexOf() requires String argument", ctx);
+            }
+            
+            String searchStr = ((OCLElement.StringValue) searchElem).value();
+            int javaIndex = str.indexOf(searchStr);
+            
+            // Java: 0-based, -1 if not found → OCL: 1-based, 0 if not found
+            int oclIndex = (javaIndex == -1) ? 0 : javaIndex + 1;
+            yield Value.intValue(oclIndex);
+        }
+        
+        case "equalsIgnoreCase" -> {
+            if (args.size() != 1 || args.get(0).size() != 1) {
+                yield error("equalsIgnoreCase() requires exactly 1 singleton String argument", ctx);
+            }
+            
+            OCLElement compareElem = args.get(0).getElements().get(0);
+            if (!(compareElem instanceof OCLElement.StringValue)) {
+                yield error("equalsIgnoreCase() requires String argument", ctx);
+            }
+            
+            String compareStr = ((OCLElement.StringValue) compareElem).value();
+            yield Value.boolValue(str.equalsIgnoreCase(compareStr));
+        }
+        
+        default -> error("Unknown string operation: " + opName, ctx);
+    };
+}
+
 
 // ==================== Navigation ====================
 
@@ -592,6 +747,127 @@ private Value handleNavigationStep(VitruvOCLParser.NavigatingArgCSContext ctx, V
     return error("Unknown operation: " + operationName, ctx);
 }
 
+
+// ==================== Comparison & Boolean Operators ====================
+
+@Override
+public Value visitEqualOperations(VitruvOCLParser.EqualOperationsContext ctx) {
+    Value leftValue = visit(ctx.left);
+    Value rightValue = visit(ctx.right);
+    String operator = ctx.op.getText();
+    
+    // Expect singletons for comparison
+    if (leftValue.size() != 1 || rightValue.size() != 1) {
+        return error("Comparison requires singleton operands", ctx);
+    }
+    
+    OCLElement leftElem = leftValue.getElements().get(0);
+    OCLElement rightElem = rightValue.getElements().get(0);
+    
+    boolean result = switch (operator) {
+        case "==" -> OCLElement.semanticEquals(leftElem, rightElem);
+        case "!=" -> !OCLElement.semanticEquals(leftElem, rightElem);
+        case "<" -> OCLElement.compare(leftElem, rightElem) < 0;
+        case "<=" -> OCLElement.compare(leftElem, rightElem) <= 0;
+        case ">" -> OCLElement.compare(leftElem, rightElem) > 0;
+        case ">=" -> OCLElement.compare(leftElem, rightElem) >= 0;
+        default -> {
+            errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+                      "Unknown comparison operator: " + operator,
+                      tools.vitruv.dsls.vitruvOCL.common.ErrorSeverity.ERROR, "evaluator");
+            yield false;
+        }
+    };
+    
+    return Value.boolValue(result);
+}
+
+@Override
+public Value visitAndOrXor(VitruvOCLParser.AndOrXorContext ctx) {
+    Value leftValue = visit(ctx.left);
+    Value rightValue = visit(ctx.right);
+    String operator = ctx.op.getText();
+    
+    // Expect singleton booleans
+    if (leftValue.size() != 1 || rightValue.size() != 1) {
+        return error("Boolean operators require singleton operands", ctx);
+    }
+    
+    OCLElement leftElem = leftValue.getElements().get(0);
+    OCLElement rightElem = rightValue.getElements().get(0);
+    
+    if (!(leftElem instanceof OCLElement.BoolValue) || 
+        !(rightElem instanceof OCLElement.BoolValue)) {
+        return error("Boolean operators require boolean operands", ctx);
+    }
+    
+    boolean left = ((OCLElement.BoolValue) leftElem).value();
+    boolean right = ((OCLElement.BoolValue) rightElem).value();
+    
+    boolean result = switch (operator) {
+        case "and" -> left && right;
+        case "or" -> left || right;
+        case "xor" -> left ^ right;
+        default -> {
+            errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+                      "Unknown boolean operator: " + operator,
+                      tools.vitruv.dsls.vitruvOCL.common.ErrorSeverity.ERROR, "evaluator");
+            yield false;
+        }
+    };
+    
+    return Value.boolValue(result);
+}
+
+@Override
+public Value visitImplies(VitruvOCLParser.ImpliesContext ctx) {
+    Value leftValue = visit(ctx.left);
+    Value rightValue = visit(ctx.right);
+    
+    // Expect singleton booleans
+    if (leftValue.size() != 1 || rightValue.size() != 1) {
+        return error("'implies' requires singleton operands", ctx);
+    }
+    
+    OCLElement leftElem = leftValue.getElements().get(0);
+    OCLElement rightElem = rightValue.getElements().get(0);
+    
+    if (!(leftElem instanceof OCLElement.BoolValue) || 
+        !(rightElem instanceof OCLElement.BoolValue)) {
+        return error("'implies' requires boolean operands", ctx);
+    }
+    
+    boolean left = ((OCLElement.BoolValue) leftElem).value();
+    boolean right = ((OCLElement.BoolValue) rightElem).value();
+    
+    // A implies B === !A or B
+    boolean result = !left || right;
+    
+    return Value.boolValue(result);
+}
+
+// ==================== Literals ====================
+
+@Override
+public Value visitBoolean(VitruvOCLParser.BooleanContext ctx) {
+    String text = ctx.BooleanLiteralExpCS().getText();
+    boolean value = text.equals("true");
+    return Value.boolValue(value);
+}
+
+@Override
+public Value visitString(VitruvOCLParser.StringContext ctx) {
+    String text = ctx.STRING().getText();
+    // Remove surrounding quotes
+    String value = text.substring(1, text.length() - 1);
+    return Value.stringValue(value);
+}
+
+@Override
+public Value visitPrefixedExp(VitruvOCLParser.PrefixedExpContext ctx) {
+    return visit(ctx.prefixedExpCS());
+}
+
 // ==================== Helper Methods ====================
 
 private String extractOperationName(VitruvOCLParser.NavigatingArgExpCSContext ctx) {
@@ -607,7 +883,122 @@ private Value error(String message, org.antlr.v4.runtime.ParserRuleContext ctx) 
     return Value.empty(Type.ERROR);
 }
 
+// ==================== If-Then-Else ====================
+private org.antlr.v4.runtime.TokenStream tokens;
 
+public void setTokenStream(org.antlr.v4.runtime.TokenStream tokens) {
+    this.tokens = tokens;
+}
 
+@Override
+public Value visitIfExpCS(VitruvOCLParser.IfExpCSContext ctx) {
+    // Partition expressions by keywords: if...then...else...endif
+    List<VitruvOCLParser.ExpCSContext> allExps = ctx.expCS();
+    
+    if (allExps.isEmpty()) {
+        return error("If expression requires expressions", ctx);
+    }
+    
+    // Find 'then', 'else' token positions
+    int thenTokenIndex = findKeywordToken(ctx, "then");
+    int elseTokenIndex = findKeywordToken(ctx, "else");
+    
+    // Partition expressions
+    List<VitruvOCLParser.ExpCSContext> condExps = new ArrayList<>();
+    List<VitruvOCLParser.ExpCSContext> thenExps = new ArrayList<>();
+    List<VitruvOCLParser.ExpCSContext> elseExps = new ArrayList<>();
+    
+    for (VitruvOCLParser.ExpCSContext exp : allExps) {
+        int expStartIndex = exp.getStart().getTokenIndex();
+        
+        if (expStartIndex < thenTokenIndex) {
+            condExps.add(exp);
+        } else if (expStartIndex < elseTokenIndex) {
+            thenExps.add(exp);
+        } else {
+            elseExps.add(exp);
+        }
+    }
+    
+    if (condExps.isEmpty() || thenExps.isEmpty() || elseExps.isEmpty()) {
+        return error("If expression missing condition, then, or else branch", ctx);
+    }
+    
+    // Evaluate all condition expressions, use last value
+    Value condVal = null;
+    for (VitruvOCLParser.ExpCSContext exp : condExps) {
+        condVal = visit(exp);
+    }
+    
+    if (condVal == null) {
+        return error("If condition evaluation failed", ctx);
+    }
+    
+    // Expect singleton Boolean
+    if (condVal.size() != 1) {
+        return error("If condition must be singleton, got collection of size " + condVal.size(), ctx);
+    }
+    
+    OCLElement condElem = condVal.getElements().get(0);
+    if (!(condElem instanceof OCLElement.BoolValue)) {
+        return error("If condition must be Boolean", ctx);
+    }
+    
+    boolean condition = ((OCLElement.BoolValue) condElem).value();
+    
+    // Evaluate appropriate branch (all expressions, return last value)
+    Value result = null;
+    if (condition) {
+        for (VitruvOCLParser.ExpCSContext exp : thenExps) {
+            result = visit(exp);
+        }
+    } else {
+        for (VitruvOCLParser.ExpCSContext exp : elseExps) {
+            result = visit(exp);
+        }
+    }
+    
+    return result != null ? result : Value.empty(Type.ERROR);
+}
+
+/**
+ * Helper: Find token index of keyword in context, respecting nesting levels.
+ */
+private int findKeywordToken(VitruvOCLParser.IfExpCSContext ctx, String keyword) {
+    if (tokens == null) {
+        return Integer.MAX_VALUE;
+    }
+    
+    int startIdx = ctx.getStart().getTokenIndex();
+    int stopIdx = ctx.getStop().getTokenIndex();
+    
+    // Track nesting level: we want keywords at nesting level 0
+    // (relative to this if-then-else context)
+    int nestingLevel = 0;
+    
+    for (int i = startIdx; i <= stopIdx; i++) {
+        org.antlr.v4.runtime.Token token = tokens.get(i);
+        String text = token.getText();
+        
+        // Skip the first 'if' (that's the start of our context)
+        if (i == startIdx && text.equals("if")) {
+            continue;
+        }
+        
+        // Track nesting
+        if (text.equals("if")) {
+            nestingLevel++;
+        } else if (text.equals("endif")) {
+            nestingLevel--;
+        }
+        
+        // Only match keywords at nesting level 0 (our level)
+        if (nestingLevel == 0 && text.equals(keyword)) {
+            return i;
+        }
+    }
+    
+    return Integer.MAX_VALUE; // Not found
+}
 
 }

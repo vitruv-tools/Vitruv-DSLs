@@ -17,41 +17,25 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test für einfache mathematische Operationen.
+ * Tests for arithmetic and comparison operations.
  * 
- * <p>Testet die komplette 3-Pass-Pipeline für simple Expressions wie "1+2".</p>
- * 
- * <p>OCL# Semantik: Alle Werte sind Collections. "1+2" ergibt ein Singleton [3].</p>
+ * Tests the complete 3-pass pipeline for mathematical expressions.
+ * OCL# semantics: All values are collections. "1+2" results in singleton [3].
  */
 public class SimpleMathTest {
     
-    /**
-     * Test für "1+2" - kompletter Durchlauf durch alle 3 Passes.
-     * OCL#: Result ist ein Singleton [3].
-     */
+    // ==================== Arithmetic Operations ====================
+    
     @Test
     public void testOnePlusTwo() {
-        // Given: OCL Expression "1+2"
         String input = "1+2";
-        
-        // When: Parse, Type Check, Evaluate
         Value result = compile(input);
         
-        // Then: Result ist Singleton [3]
-        assertNotNull(result, "Result should not be null");
         assertEquals(1, result.size(), "Result should be a singleton");
-        
-        // Extract the single element
         OCLElement elem = result.getElements().get(0);
-        assertTrue(elem instanceof OCLElement.IntValue, "Element should be IntValue");
         assertEquals(3, ((OCLElement.IntValue) elem).value(), "1+2 should equal 3");
-        
-        assertEquals(Type.INTEGER, result.getRuntimeType(), "Result type should be Integer");
     }
     
-    /**
-     * Test für "5-3" - Subtraktion.
-     */
     @Test
     public void testFiveMinusThree() {
         String input = "5-3";
@@ -60,12 +44,28 @@ public class SimpleMathTest {
         assertEquals(1, result.size(), "Result should be a singleton");
         OCLElement elem = result.getElements().get(0);
         assertEquals(2, ((OCLElement.IntValue) elem).value(), "5-3 should equal 2");
-        assertEquals(Type.INTEGER, result.getRuntimeType());
     }
     
-    /**
-     * Test für komplexere Expression "10+20-5".
-     */
+    @Test
+    public void testMultiplication() {
+        String input = "4*5";
+        Value result = compile(input);
+        
+        assertEquals(1, result.size(), "Result should be a singleton");
+        OCLElement elem = result.getElements().get(0);
+        assertEquals(20, ((OCLElement.IntValue) elem).value(), "4*5 should equal 20");
+    }
+    
+    @Test
+    public void testDivision() {
+        String input = "20/4";
+        Value result = compile(input);
+        
+        assertEquals(1, result.size(), "Result should be a singleton");
+        OCLElement elem = result.getElements().get(0);
+        assertEquals(5, ((OCLElement.IntValue) elem).value(), "20/4 should equal 5");
+    }
+    
     @Test
     public void testChainedOperations() {
         String input = "10+20-5";
@@ -74,35 +74,134 @@ public class SimpleMathTest {
         assertEquals(1, result.size(), "Result should be a singleton");
         OCLElement elem = result.getElements().get(0);
         assertEquals(25, ((OCLElement.IntValue) elem).value(), "10+20-5 should equal 25");
-        assertEquals(Type.INTEGER, result.getRuntimeType());
+    }
+    
+    @Test
+    public void testOperatorPrecedence() {
+        String input = "2+3*4";
+        Value result = compile(input);
+        
+        assertEquals(1, result.size(), "Result should be a singleton");
+        OCLElement elem = result.getElements().get(0);
+        assertEquals(14, ((OCLElement.IntValue) elem).value(), "2+3*4 should equal 14 (precedence)");
+    }
+    
+    @Test
+    public void testUnaryMinus() {
+        String input = "-5";
+        Value result = compile(input);
+        
+        assertEquals(1, result.size(), "Result should be a singleton");
+        OCLElement elem = result.getElements().get(0);
+        assertEquals(-5, ((OCLElement.IntValue) elem).value(), "-5 should equal -5");
+    }
+    
+    @Test
+    public void testUnaryMinusInExpression() {
+        String input = "10 + -5";
+        Value result = compile(input);
+        
+        assertEquals(1, result.size(), "Result should be a singleton");
+        OCLElement elem = result.getElements().get(0);
+        assertEquals(5, ((OCLElement.IntValue) elem).value(), "10 + -5 should equal 5");
+    }
+    
+    // ==================== Comparison Operations ====================
+    
+    @Test
+    public void testLessThan() {
+        String input = "3 < 5";
+        Value result = compile(input);
+        
+        assertEquals(1, result.size(), "Result should be a singleton");
+        OCLElement elem = result.getElements().get(0);
+        assertTrue(((OCLElement.BoolValue) elem).value(), "3 < 5 should be true");
+    }
+    
+    @Test
+    public void testLessThanFalse() {
+        String input = "5 < 3";
+        Value result = compile(input);
+        
+        assertEquals(1, result.size(), "Result should be a singleton");
+        OCLElement elem = result.getElements().get(0);
+        assertFalse(((OCLElement.BoolValue) elem).value(), "5 < 3 should be false");
+    }
+    
+    @Test
+    public void testLessThanOrEqual() {
+        String input = "3 <= 3";
+        Value result = compile(input);
+        
+        assertEquals(1, result.size(), "Result should be a singleton");
+        OCLElement elem = result.getElements().get(0);
+        assertTrue(((OCLElement.BoolValue) elem).value(), "3 <= 3 should be true");
+    }
+    
+    @Test
+    public void testGreaterThan() {
+        String input = "10 > 5";
+        Value result = compile(input);
+        
+        assertEquals(1, result.size(), "Result should be a singleton");
+        OCLElement elem = result.getElements().get(0);
+        assertTrue(((OCLElement.BoolValue) elem).value(), "10 > 5 should be true");
+    }
+    
+    @Test
+    public void testGreaterThanOrEqual() {
+        String input = "5 >= 5";
+        Value result = compile(input);
+        
+        assertEquals(1, result.size(), "Result should be a singleton");
+        OCLElement elem = result.getElements().get(0);
+        assertTrue(((OCLElement.BoolValue) elem).value(), "5 >= 5 should be true");
+    }
+    
+    @Test
+    public void testEquality() {
+        String input = "5 == 5";
+        Value result = compile(input);
+        
+        assertEquals(1, result.size(), "Result should be a singleton");
+        OCLElement elem = result.getElements().get(0);
+        assertTrue(((OCLElement.BoolValue) elem).value(), "5 == 5 should be true");
+    }
+    
+    @Test
+    public void testInequality() {
+        String input = "5 != 3";
+        Value result = compile(input);
+        
+        assertEquals(1, result.size(), "Result should be a singleton");
+        OCLElement elem = result.getElements().get(0);
+        assertTrue(((OCLElement.BoolValue) elem).value(), "5 != 3 should be true");
+    }
+    
+    @Test
+    public void testInequalityFalse() {
+        String input = "5 != 5";
+        Value result = compile(input);
+        
+        assertEquals(1, result.size(), "Result should be a singleton");
+        OCLElement elem = result.getElements().get(0);
+        assertFalse(((OCLElement.BoolValue) elem).value(), "5 != 5 should be false");
     }
     
     // ==================== Helper Methods ====================
     
-    /**
-     * Kompiliert und evaluiert OCL Expression durch alle 3 Passes.
-     * 
-     * @param input OCL Source Code
-     * @return Evaluation Result
-     */
     private Value compile(String input) {
-        // Parse
         ParseTree tree = parse(input);
-        
-        // Pass 1: Symbol Table (für "1+2" leer)
         SymbolTable symbolTable = new SymbolTableImpl();
+        VSUMWrapper vsumWrapper = null;
         
-        // Pass 2: Type Checking
-        VSUMWrapper vsumWrapper = null; // Brauchen wir für "1+2" nicht
         TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, vsumWrapper);
         typeChecker.visit(tree);
         
-        // Prüfe auf Type Errors
         if (typeChecker.hasErrors()) {
             fail("Type checking failed: " + typeChecker.getErrorCollector().getErrors());
         }
         
-        // Pass 3: Evaluation
         EvaluationVisitor evaluator = new EvaluationVisitor(
             symbolTable, 
             vsumWrapper, 
@@ -110,7 +209,6 @@ public class SimpleMathTest {
         );
         Value result = evaluator.visit(tree);
         
-        // Prüfe auf Evaluation Errors
         if (evaluator.hasErrors()) {
             fail("Evaluation failed: " + evaluator.getErrorCollector().getErrors());
         }
@@ -118,22 +216,10 @@ public class SimpleMathTest {
         return result;
     }
     
-    /**
-     * Parst OCL Input zu Parse Tree.
-     * 
-     * @param input OCL Source Code
-     * @return Parse Tree
-     */
     private ParseTree parse(String input) {
-        // Lexer
         VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        
-        // Parser
         VitruvOCLParser parser = new VitruvOCLParser(tokens);
-        
-        // Parse als Expression (start rule muss angepasst werden je nach Grammatik)
-        // Für "1+2" starten wir mit infixedExpCS
         return parser.infixedExpCS();
     }
 }

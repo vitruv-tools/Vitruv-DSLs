@@ -142,21 +142,10 @@
      '.' # dot
  ;
 
- prefixedExpCS
- :
-     not = UnaryOperatorCS+ exp = primaryExpCS
-     | primaryExpCS
-     (
-         navigationOperatorCS primaryExpCS
-     )*
-     | primaryExpCS
- ;
-
- UnaryOperatorCS
- :
-     '-'
-     | 'not'
- ;
+prefixedExpCS
+:
+    ('-' | 'not')* primaryExpCS (navigationOperatorCS primaryExpCS)*
+;
 
  primaryExpCS
  :
@@ -357,6 +346,7 @@
         )
         | variableName = ID
         | collectionOperationName
+        | stringOperationName
         | STRING
     ) # name
     | '$' clab = ID '$' # ontologicalName
@@ -375,6 +365,18 @@
             )
         )* ')'
     )? '#' # linguisticalName
+;
+
+
+// String Operations
+stringOperationName
+:
+    'concat'
+    | 'substring'
+    | 'toUpper'
+    | 'toLower'
+    | 'indexOf'
+    | 'equalsIgnoreCase'
 ;
 
 

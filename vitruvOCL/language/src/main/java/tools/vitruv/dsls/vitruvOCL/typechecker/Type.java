@@ -472,4 +472,35 @@ public static int compare(tools.vitruv.dsls.vitruvOCL.evaluator.Value v1,
     
     return 0; // Equal
 }
+
+@Override
+public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null || !(obj instanceof Type)) return false;
+    
+    Type other = (Type) obj;
+    
+    // Compare by type name and structure
+    if (!this.getTypeName().equals(other.getTypeName())) {
+        return false;
+    }
+    
+    // For collections, also compare multiplicity and element type
+    if (this.isCollection() && other.isCollection()) {
+        return this.getMultiplicity() == other.getMultiplicity() &&
+               this.getElementType().equals(other.getElementType());
+    }
+    
+    return true;
+}
+
+@Override
+public int hashCode() {
+    int result = getTypeName().hashCode();
+    if (isCollection()) {
+        result = 31 * result + getMultiplicity().hashCode();
+        result = 31 * result + getElementType().hashCode();
+    }
+    return result;
+}
 }
