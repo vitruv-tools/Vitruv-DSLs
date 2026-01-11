@@ -389,6 +389,18 @@ collectionOperationName
     | 'flatten'
     | 'union'
     | 'append'
+    | 'sum'      
+    | 'max'      
+    | 'min'     
+    | 'avg'      
+    | 'abs'     
+    | 'floor'    
+    | 'ceil'     
+    | 'round'   
+    | 'lift' 
+    | 'oclIsKindOf'
+    | 'oclIsTypeOf'    
+    | 'oclAsType' 
 ;
 
 

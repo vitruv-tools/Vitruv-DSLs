@@ -28,97 +28,98 @@ public class TypeResolver {
      * @param rightType Type des rechten Operanden
      * @return Result Type oder Type.ERROR bei Type Mismatch
      */
-    public static Type resolveBinaryOp(String operator, Type leftType, Type rightType) {
-        // Wenn einer ERROR ist, gib ERROR zurück (verhindert Follow-up Errors)
-        if (leftType == Type.ERROR || rightType == Type.ERROR) {
-            return Type.ERROR;
+public static Type resolveBinaryOp(String operator, Type leftType, Type rightType) {
+    if (leftType == Type.ERROR || rightType == Type.ERROR) {
+        return Type.ERROR;
+    }
+    
+    // OCL#: Unwrap singleton collections for arithmetic
+    if (leftType.isCollection()) {
+        leftType = leftType.getElementType();
+    }
+    if (rightType.isCollection()) {
+        rightType = rightType.getElementType();
+    }
+    
+    // Arithmetic Operations
+    if (operator.equals("+") || operator.equals("-") || operator.equals("*") || operator.equals("/")) {
+        if (leftType == Type.INTEGER && rightType == Type.INTEGER) {
+            return Type.INTEGER;
         }
-        
-        // Arithmetic Operations
-        if (operator.equals("+") || operator.equals("-") || operator.equals("*") || operator.equals("/")) {
-            // Integer + Integer -> Integer
-            if (leftType == Type.INTEGER && rightType == Type.INTEGER) {
-                return Type.INTEGER;
-            }
-            if (leftType == Type.DOUBLE && rightType == Type.DOUBLE) {
-                return Type.DOUBLE;
-            }
-            if (leftType == Type.INTEGER && rightType == Type.DOUBLE) {
-                return Type.DOUBLE;
-            }
-            if (leftType == Type.DOUBLE && rightType == Type.INTEGER) {
-                return Type.DOUBLE;
-            }
-            return Type.ERROR; // Type mismatch
+        if (leftType == Type.DOUBLE && rightType == Type.DOUBLE) {
+            return Type.DOUBLE;
         }
-
-        // Logical Operations
-        if (operator.equals("and") || operator.equals("or") || operator.equals("xor")) {
-            if (leftType == Type.BOOLEAN && rightType == Type.BOOLEAN) {
-                return Type.BOOLEAN;
-            }
-            return Type.ERROR; // Type mismatch
+        if (leftType == Type.INTEGER && rightType == Type.DOUBLE) {
+            return Type.DOUBLE;
         }
-
-        
-        
-        // Logical and Numerical Comparison Operations
-        if (operator.equals("==") || operator.equals("!=")) {
-            // Integer + Integer -> Integer
-            if (leftType == Type.INTEGER && rightType == Type.INTEGER) {
-                return Type.BOOLEAN;
-            }
-            if (leftType == Type.BOOLEAN && rightType == Type.BOOLEAN) {
-                return Type.BOOLEAN;
-            }
-            if (leftType == Type.INTEGER && rightType == Type.DOUBLE) {
-                return Type.BOOLEAN;
-            }
-            if (leftType == Type.DOUBLE && rightType == Type.INTEGER) {
-                return Type.BOOLEAN;
-            }
-            if (leftType == Type.STRING && rightType == Type.STRING) {
-                return Type.BOOLEAN;
-            }
-            if (leftType == Type.STRING && rightType == Type.DOUBLE) {
-                return Type.BOOLEAN;
-            }
-            if (leftType == Type.STRING && rightType == Type.INTEGER) {
-                return Type.BOOLEAN;
-            }
-            if (leftType == Type.STRING && rightType == Type.BOOLEAN) {
-                return Type.BOOLEAN;
-            }
-             if (leftType == Type.DOUBLE && rightType == Type.STRING) {
-                return Type.BOOLEAN;
-            }
-            if (leftType == Type.INTEGER && rightType == Type.STRING) {
-                return Type.BOOLEAN;
-            }
-            if (leftType == Type.BOOLEAN && rightType == Type.STRING) {
-                return Type.BOOLEAN;
-            }
-            return Type.ERROR; // Type mismatch
+        if (leftType == Type.DOUBLE && rightType == Type.INTEGER) {
+            return Type.DOUBLE;
         }
-
-        // Numerical Comparison Operations
-        if (operator.equals("<") || operator.equals(">") || operator.equals(">=") || operator.equals("<=")) {
-            // Integer + Integer -> Integer
-            if (leftType == Type.INTEGER && rightType == Type.INTEGER) {
-                return Type.BOOLEAN;
-            }
-            if (leftType == Type.INTEGER && rightType == Type.DOUBLE) {
-                return Type.BOOLEAN;
-            }
-            if (leftType == Type.DOUBLE && rightType == Type.INTEGER) {
-                return Type.BOOLEAN;
-            }
-            return Type.ERROR; // Type mismatch
-        }
-        
-        return Type.ERROR; // Unknown operator
+        return Type.ERROR;
     }
 
+    // Logical Operations
+    if (operator.equals("and") || operator.equals("or") || operator.equals("xor")) {
+        if (leftType == Type.BOOLEAN && rightType == Type.BOOLEAN) {
+            return Type.BOOLEAN;
+        }
+        return Type.ERROR;
+    }
+    
+    // Equality Comparison
+    if (operator.equals("==") || operator.equals("!=")) {
+        if (leftType == Type.INTEGER && rightType == Type.INTEGER) {
+            return Type.BOOLEAN;
+        }
+        if (leftType == Type.BOOLEAN && rightType == Type.BOOLEAN) {
+            return Type.BOOLEAN;
+        }
+        if (leftType == Type.INTEGER && rightType == Type.DOUBLE) {
+            return Type.BOOLEAN;
+        }
+        if (leftType == Type.DOUBLE && rightType == Type.INTEGER) {
+            return Type.BOOLEAN;
+        }
+        if (leftType == Type.STRING && rightType == Type.STRING) {
+            return Type.BOOLEAN;
+        }
+        if (leftType == Type.STRING && rightType == Type.DOUBLE) {
+            return Type.BOOLEAN;
+        }
+        if (leftType == Type.STRING && rightType == Type.INTEGER) {
+            return Type.BOOLEAN;
+        }
+        if (leftType == Type.STRING && rightType == Type.BOOLEAN) {
+            return Type.BOOLEAN;
+        }
+        if (leftType == Type.DOUBLE && rightType == Type.STRING) {
+            return Type.BOOLEAN;
+        }
+        if (leftType == Type.INTEGER && rightType == Type.STRING) {
+            return Type.BOOLEAN;
+        }
+        if (leftType == Type.BOOLEAN && rightType == Type.STRING) {
+            return Type.BOOLEAN;
+        }
+        return Type.ERROR;
+    }
+
+    // Numerical Comparison
+    if (operator.equals("<") || operator.equals(">") || operator.equals(">=") || operator.equals("<=")) {
+        if (leftType == Type.INTEGER && rightType == Type.INTEGER) {
+            return Type.BOOLEAN;
+        }
+        if (leftType == Type.INTEGER && rightType == Type.DOUBLE) {
+            return Type.BOOLEAN;
+        }
+        if (leftType == Type.DOUBLE && rightType == Type.INTEGER) {
+            return Type.BOOLEAN;
+        }
+        return Type.ERROR;
+    }
+    
+    return Type.ERROR;
+}
     
 
 

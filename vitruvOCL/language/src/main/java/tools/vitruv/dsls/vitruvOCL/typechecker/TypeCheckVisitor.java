@@ -369,35 +369,34 @@ public Type visitCollectionLiteralExpCS(CollectionLiteralExpCSContext ctx) {
      * Validates that all elements have compatible types.
      */
     @Override
-    public Type visitCollectionArguments(CollectionArgumentsContext ctx) {
-        Type commonType = null;
-        
-        for (CollectionLiteralPartCSContext partCtx : ctx.collectionLiteralPartCS()) {
-            Type partType = visit(partCtx);
+        public Type visitCollectionArguments(CollectionArgumentsContext ctx) {
+            Type commonType = null;
             
-            if (partType == Type.ERROR) {
-                continue; // Skip error types
-            }
-            
-            if (commonType == null) {
-                commonType = partType;
-            } else if (!partType.isConformantTo(commonType)) {
-                // Try the other way around
-                if (!commonType.isConformantTo(partType)) {
-                    errors.add(ctx.getStart().getLine(), 
-                            ctx.getStart().getCharPositionInLine(),
-                            "Incompatible types in collection: " + commonType + " and " + partType, 
-                            ErrorSeverity.ERROR, 
-                            "type-checker");
-                    return Type.ERROR;
-                } else {
-                    // partType is more general
+            for (CollectionLiteralPartCSContext partCtx : ctx.collectionLiteralPartCS()) {
+                Type partType = visit(partCtx);
+                
+                if (partType == Type.ERROR) {
+                    continue;
+                }
+                
+                if (commonType == null) {
                     commonType = partType;
+                } else if (!partType.equals(commonType)) {
+                    // Types differ - find common supertype
+                    Type superType = Type.commonSuperType(commonType, partType);
+                    
+                    if (superType != null) {
+                        commonType = superType;
+                    } else {
+                        // No common type - fall back to ANY
+                        commonType = Type.ANY;
+                    }
                 }
             }
+            
+            return commonType != null ? commonType : Type.ANY;
         }
-        return commonType != null ? commonType : Type.ANY;
-    }
+
 
     /**
      * Extracts the operation/property name from a navigatingArgExpCS.
@@ -729,6 +728,122 @@ private Type typeCheckCollectionOperation(
                 resultType = Type.bag(commonElemType);
             }
             break;
+        case "sum":
+case "max":
+case "min":
+case "avg":
+    if (!receiverType.isCollection()) {
+        errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+                  "Operation '" + opName + "' requires collection receiver",
+                  ErrorSeverity.ERROR, "type-checker");
+        resultType = Type.ERROR;
+        break;
+    }
+    
+    Type elemTypes = receiverType.getElementType();
+    
+    // Allow ANY for empty collections
+    if (elemTypes != Type.ANY && !elemTypes.isConformantTo(Type.INTEGER)) {
+        errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+                  "Operation '" + opName + "' requires numeric collection, got " + receiverType,
+                  ErrorSeverity.ERROR, "type-checker");
+        resultType = Type.ERROR;
+        break;
+    }
+    
+    resultType = Type.set(Type.INTEGER);
+    break;
+
+case "abs":
+case "floor":
+case "ceil":
+case "round":
+    // Per-element numeric operations: Collection(Number) → Collection(Number)
+    if (!receiverType.isCollection()) {
+        errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+                  "Operation '" + opName + "' requires collection receiver",
+                  ErrorSeverity.ERROR, "type-checker");
+        resultType = Type.ERROR;
+        break;
+    }
+    
+    Type elem = receiverType.getElementType();
+    if (!elem.isConformantTo(Type.INTEGER)) {
+        errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+                  "Operation '" + opName + "' requires numeric collection, got " + receiverType,
+                  ErrorSeverity.ERROR, "type-checker");
+        resultType = Type.ERROR;
+        break;
+    }
+    
+    // Preserve collection type
+    resultType = receiverType;
+    break;
+
+case "oclIsKindOf":
+    // oclIsKindOf(TypeName) : Collection(T) → Collection(Boolean)
+    
+    if (!receiverType.isCollection()) {
+        errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+                  "Operation 'oclIsKindOf' requires collection receiver",
+                  ErrorSeverity.ERROR, "type-checker");
+        resultType = Type.ERROR;
+        break;
+    }
+    
+    List<VitruvOCLParser.NavigatingArgCSContext> argsKindOF = ctx.navigatingArgCS();
+    if (argsKindOF.isEmpty()) {
+        errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+                  "Operation 'oclIsKindOf' requires 1 type argument",
+                  ErrorSeverity.ERROR, "type-checker");
+        resultType = Type.ERROR;
+        break;
+    }
+    
+    if (argsKindOF.size() > 1) {
+        errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+                  "Operation 'oclIsKindOf' expects exactly 1 argument, got " + argsKindOF.size(),
+                  ErrorSeverity.ERROR, "type-checker");
+        resultType = Type.ERROR;
+        break;
+    }
+    
+    // Argument ist ein Type Name (Integer, String, Boolean, etc.)
+    // Validation dass Type existiert kommt später mit Symbol Table
+    
+    // Result: Collection(Boolean) - preserve collection kind
+    if (receiverType.isUnique() && receiverType.isOrdered()) {
+        resultType = Type.orderedSet(Type.BOOLEAN);
+    } else if (receiverType.isUnique()) {
+        resultType = Type.set(Type.BOOLEAN);
+    } else if (receiverType.isOrdered()) {
+        resultType = Type.sequence(Type.BOOLEAN);
+    } else {
+        resultType = Type.bag(Type.BOOLEAN);
+    }
+    break;
+
+case "lift":
+    // lift(): Collection(T) → Collection(Collection(T))
+    if (!receiverType.isCollection()) {
+        errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+                  "Operation 'lift' requires collection receiver",
+                  ErrorSeverity.ERROR, "type-checker");
+        resultType = Type.ERROR;
+        break;
+    }
+    
+    // Wrap collection in another collection of same kind
+    if (receiverType.isUnique() && receiverType.isOrdered()) {
+        resultType = Type.orderedSet(receiverType);
+    } else if (receiverType.isUnique()) {
+        resultType = Type.set(receiverType);
+    } else if (receiverType.isOrdered()) {
+        resultType = Type.sequence(receiverType);
+    } else {
+        resultType = Type.bag(receiverType);
+    }
+    break;
             
         default:
             errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),

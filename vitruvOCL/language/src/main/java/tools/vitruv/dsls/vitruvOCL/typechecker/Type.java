@@ -435,10 +435,38 @@ public CollectionKind getCollectionKind() {
  * @return The common supertype of t1 and t2
  */
 public static Type commonSuperType(Type t1, Type t2) {
-    if (t1.isConformantTo(t2)) return t2;
-    if (t2.isConformantTo(t1)) return t1;
-    return Type.ANY; 
+    if (t1.equals(t2)) return t1;
+    if (t1 == ERROR || t2 == ERROR) return ERROR;
+    
+    // Both are primitives but different → ANY
+    boolean t1Primitive = (t1 == INTEGER || t1 == STRING || t1 == BOOLEAN);
+    boolean t2Primitive = (t2 == INTEGER || t2 == STRING || t2 == BOOLEAN);
+    
+    if (t1Primitive && t2Primitive && !t1.equals(t2)) {
+        return ANY;
+    }
+    
+    // Collection types
+    if (t1.isCollection() && t2.isCollection()) {
+        Type elemSuper = commonSuperType(t1.getElementType(), t2.getElementType());
+        
+        boolean unique = t1.isUnique() && t2.isUnique();
+        boolean ordered = t1.isOrdered() && t2.isOrdered();
+        
+        if (unique && ordered) return orderedSet(elemSuper);
+        if (unique) return set(elemSuper);
+        if (ordered) return sequence(elemSuper);
+        return bag(elemSuper);
+    }
+    
+    // Mixed collection/primitive → Collection(ANY)
+    if (t1.isCollection() || t2.isCollection()) {
+        return bag(ANY);
+    }
+    
+    return ANY;
 }
+
 
 /**
  * Compares two Values for ordering (used in Value.compare).

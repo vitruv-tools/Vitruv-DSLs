@@ -450,6 +450,166 @@ private Value evaluateCollectionOperation(
             Value arg = visit(args.get(0).navigatingArgExpCS());
             return receiver.union(arg); // In OCL#, append is essentially union for sequences
         }
+        case "sum": {
+    int sum = 0;
+    for (OCLElement elem : receiver.getElements()) {
+        if (!(elem instanceof OCLElement.IntValue)) {
+            return error("sum() requires integer elements", ctx);
+        }
+        sum += ((OCLElement.IntValue) elem).value();
+    }
+    return Value.intValue(sum); // 0 if empty
+}
+        case "max": {
+            // max(): Collection(Collection(Integer)) → Collection(Integer)
+            if (receiver.isEmpty()) {
+                return Value.empty(Type.INTEGER); // Empty collection
+            }
+            
+            int max = Integer.MIN_VALUE;
+            for (OCLElement elem : receiver.getElements()) {
+                if (!(elem instanceof OCLElement.IntValue)) {
+                    return error("max() requires integer elements", ctx);
+                }
+                int val = ((OCLElement.IntValue) elem).value();
+                if (val > max) {
+                    max = val;
+                }
+            }
+            return Value.intValue(max); // Returns [max]
+        }
+
+    case "min": {
+        // min(): Collection(Collection(Integer)) → Collection(Integer)
+        if (receiver.isEmpty()) {
+            return Value.empty(Type.INTEGER); // Empty collection
+        }
+        
+        int min = Integer.MAX_VALUE;
+        for (OCLElement elem : receiver.getElements()) {
+            if (!(elem instanceof OCLElement.IntValue)) {
+                return error("min() requires integer elements", ctx);
+            }
+            int val = ((OCLElement.IntValue) elem).value();
+            if (val < min) {
+                min = val;
+            }
+        }
+        return Value.intValue(min); // Returns [min]
+    }
+
+    case "avg": {
+        // avg(): Collection(Collection(Integer)) → Collection(Integer)
+        if (receiver.isEmpty()) {
+            return Value.empty(Type.INTEGER); // Empty collection
+        }
+        
+        int sum = 0;
+        for (OCLElement elem : receiver.getElements()) {
+            if (!(elem instanceof OCLElement.IntValue)) {
+                return error("avg() requires integer elements", ctx);
+            }
+            sum += ((OCLElement.IntValue) elem).value();
+        }
+        
+        int avg = sum / receiver.size();
+        return Value.intValue(avg); // Returns [avg]
+    }
+
+    case "abs": {
+    // abs(): Collection(Integer) → Collection(Integer)
+    List<OCLElement> result = new ArrayList<>();
+    
+    for (OCLElement elem : receiver.getElements()) {
+        if (!(elem instanceof OCLElement.IntValue)) {
+            return error("abs() requires integer elements", ctx);
+        }
+        int val = ((OCLElement.IntValue) elem).value();
+        result.add(new OCLElement.IntValue(Math.abs(val)));
+    }
+    
+    Type receiverType = nodeTypes.get(ctx);
+    return Value.of(result, receiverType != null ? receiverType : Type.set(Type.INTEGER));
+}
+
+case "floor":
+case "ceil":
+case "round": {
+    // For integers: no-op, validate and return
+    for (OCLElement elem : receiver.getElements()) {
+        if (!(elem instanceof OCLElement.IntValue)) {
+            return error(opName + "() requires integer elements", ctx);
+        }
+    }
+    return receiver;
+}
+
+case "lift": {
+    // lift(): {a,b,c} → {{a,b,c}}
+    
+    // Create NestedCollection element wrapping receiver
+    OCLElement.NestedCollection wrappedCollection = 
+        new OCLElement.NestedCollection(receiver);
+    
+    List<OCLElement> wrappedList = List.of(wrappedCollection);
+    
+    // Get receiver type from nodeTypes
+    Type receiverType = nodeTypes.get(ctx);
+    if (receiverType == null) {
+        receiverType = Type.set(Type.INTEGER); // Fallback
+    }
+    
+    // Create outer collection type (preserve kind)
+    Type outerType;
+    if (receiverType.isUnique() && receiverType.isOrdered()) {
+        outerType = Type.orderedSet(receiverType);
+    } else if (receiverType.isUnique()) {
+        outerType = Type.set(receiverType);
+    } else if (receiverType.isOrdered()) {
+        outerType = Type.sequence(receiverType);
+    } else {
+        outerType = Type.bag(receiverType);
+    }
+    
+    return Value.of(wrappedList, outerType);
+}
+case "oclIsKindOf": {
+    // oclIsKindOf(TypeName): Collection(T) → Collection(Boolean)
+    
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+        return error("oclIsKindOf() requires 1 type argument", ctx);
+    }
+    
+    // Extract type name from argument
+    String typeName = args.get(0).navigatingArgExpCS().getText();
+    
+    // Apply to each element
+    List<OCLElement> results = new ArrayList<>();
+    for (OCLElement elem : receiver.getElements()) {
+        boolean isKind = checkIsKindOf(elem, typeName);
+        results.add(new OCLElement.BoolValue(isKind));
+    }
+    
+    // Preserve collection kind, but with Boolean elements
+    Type receiverType = nodeTypes.get(ctx);
+    Type resultType;
+    if (receiverType != null) {
+        if (receiverType.isUnique() && receiverType.isOrdered()) {
+            resultType = Type.orderedSet(Type.BOOLEAN);
+        } else if (receiverType.isUnique()) {
+            resultType = Type.set(Type.BOOLEAN);
+        } else if (receiverType.isOrdered()) {
+            resultType = Type.sequence(Type.BOOLEAN);
+        } else {
+            resultType = Type.bag(Type.BOOLEAN);
+        }
+    } else {
+        resultType = Type.set(Type.BOOLEAN);
+    }
+    
+    return Value.of(results, resultType);
+}
         
         default:
             return error("Unknown collection operation: " + opName, ctx);
@@ -481,25 +641,20 @@ private Value evaluateStringOperation(
     }
     
     String str = ((OCLElement.StringValue) elem).value();
-    
-    // Collect ALL arguments (regular + comma args)
-    List<Value> args = new ArrayList<>();
-    
-    for (VitruvOCLParser.NavigatingArgCSContext arg : ctx.navigatingArgCS()) {
-        args.add(visit(arg.navigatingArgExpCS()));
-    }
-    
-    for (VitruvOCLParser.NavigatingCommaArgCSContext commaArg : ctx.navigatingCommaArgCS()) {
-        args.add(visit(commaArg.navigatingArgExpCS()));
-    }
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
     
     return switch (opName) {
         case "concat" -> {
-            if (args.size() != 1 || args.get(0).size() != 1) {
-                yield error("concat() requires exactly 1 singleton String argument", ctx);
+            if (args.isEmpty()) {
+                yield error("concat() requires 1 argument", ctx);
             }
             
-            OCLElement argElem = args.get(0).getElements().get(0);
+            Value argValue = visit(args.get(0).navigatingArgExpCS());
+            if (argValue.size() != 1) {
+                yield error("concat() requires singleton String argument", ctx);
+            }
+            
+            OCLElement argElem = argValue.getElements().get(0);
             if (!(argElem instanceof OCLElement.StringValue)) {
                 yield error("concat() requires String argument", ctx);
             }
@@ -510,16 +665,19 @@ private Value evaluateStringOperation(
         
         case "substring" -> {
             // OCL uses 1-based indexing: substring(1, 3) means chars at positions 1,2,3
-            if (args.size() != 2) {
-                yield error("substring() requires 2 arguments (start, end), got " + args.size(), ctx);
+            if (args.size() < 2) {
+                yield error("substring() requires 2 arguments (start, end)", ctx);
             }
             
-            if (args.get(0).size() != 1 || args.get(1).size() != 1) {
+            Value startValue = visit(args.get(0).navigatingArgExpCS());
+            Value endValue = visit(args.get(1).navigatingArgExpCS());
+            
+            if (startValue.size() != 1 || endValue.size() != 1) {
                 yield error("substring() requires singleton Integer arguments", ctx);
             }
             
-            OCLElement startElem = args.get(0).getElements().get(0);
-            OCLElement endElem = args.get(1).getElements().get(0);
+            OCLElement startElem = startValue.getElements().get(0);
+            OCLElement endElem = endValue.getElements().get(0);
             
             if (!(startElem instanceof OCLElement.IntValue) || 
                 !(endElem instanceof OCLElement.IntValue)) {
@@ -550,11 +708,16 @@ private Value evaluateStringOperation(
         
         case "indexOf" -> {
             // Returns 1-based index, or 0 if not found (OCL convention)
-            if (args.size() != 1 || args.get(0).size() != 1) {
-                yield error("indexOf() requires exactly 1 singleton String argument", ctx);
+            if (args.isEmpty()) {
+                yield error("indexOf() requires 1 argument", ctx);
             }
             
-            OCLElement searchElem = args.get(0).getElements().get(0);
+            Value searchValue = visit(args.get(0).navigatingArgExpCS());
+            if (searchValue.size() != 1) {
+                yield error("indexOf() requires singleton String argument", ctx);
+            }
+            
+            OCLElement searchElem = searchValue.getElements().get(0);
             if (!(searchElem instanceof OCLElement.StringValue)) {
                 yield error("indexOf() requires String argument", ctx);
             }
@@ -568,11 +731,16 @@ private Value evaluateStringOperation(
         }
         
         case "equalsIgnoreCase" -> {
-            if (args.size() != 1 || args.get(0).size() != 1) {
-                yield error("equalsIgnoreCase() requires exactly 1 singleton String argument", ctx);
+            if (args.isEmpty()) {
+                yield error("equalsIgnoreCase() requires 1 argument", ctx);
             }
             
-            OCLElement compareElem = args.get(0).getElements().get(0);
+            Value compareValue = visit(args.get(0).navigatingArgExpCS());
+            if (compareValue.size() != 1) {
+                yield error("equalsIgnoreCase() requires singleton String argument", ctx);
+            }
+            
+            OCLElement compareElem = compareValue.getElements().get(0);
             if (!(compareElem instanceof OCLElement.StringValue)) {
                 yield error("equalsIgnoreCase() requires String argument", ctx);
             }
@@ -584,6 +752,7 @@ private Value evaluateStringOperation(
         default -> error("Unknown string operation: " + opName, ctx);
     };
 }
+
 
 
 // ==================== Navigation ====================
@@ -999,6 +1168,23 @@ private int findKeywordToken(VitruvOCLParser.IfExpCSContext ctx, String keyword)
     }
     
     return Integer.MAX_VALUE; // Not found
+}
+
+
+/**
+ * Checks if an element is of a given type.
+ * Currently supports primitive types only (Integer, String, Boolean).
+ * TODO: Add metamodel type checking with Symbol Table.
+ */
+private boolean checkIsKindOf(OCLElement elem, String typeName) {
+    return switch (typeName) {
+        case "Integer" -> elem instanceof OCLElement.IntValue;
+        case "String" -> elem instanceof OCLElement.StringValue;
+        case "Boolean" -> elem instanceof OCLElement.BoolValue;
+        // TODO: Metamodel types
+        // case "MyClass" -> elem.getEClass().getName().equals(typeName)
+        default -> false;
+    };
 }
 
 }
