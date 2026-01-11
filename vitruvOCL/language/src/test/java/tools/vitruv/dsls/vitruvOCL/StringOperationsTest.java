@@ -194,34 +194,54 @@ public class StringOperationsTest {
 
     // ==================== Compile / Parse ====================
 private Value compile(String input) {
+    // Create lexer and token stream
     VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
     CommonTokenStream tokens = new CommonTokenStream(lexer);
+    
+    // Parse
     VitruvOCLParser parser = new VitruvOCLParser(tokens);
     ParseTree tree = parser.infixedExpCS();
+    
+    // After parsing, reset to start
+    tokens.seek(0);
     
     SymbolTable symbolTable = new SymbolTableImpl();
     VSUMWrapper vsumWrapper = null;
     
+    // Pass 2: Type Checking
     TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, vsumWrapper);
-    typeChecker.setTokenStream(tokens);  // <--- WICHTIG!
+    typeChecker.setTokenStream(tokens);
     typeChecker.visit(tree);
     
+    if (!typeChecker.getErrorCollector().getErrors().isEmpty()) {
+        System.out.println("TYPE ERRORS:");
+        typeChecker.getErrorCollector().getErrors().forEach(System.out::println);
+        fail("Type checking failed: " + typeChecker.getErrorCollector().getErrors());
+    }
     
+    // Pass 3: Evaluation  
     EvaluationVisitor evaluator = new EvaluationVisitor(
         symbolTable, 
         vsumWrapper, 
         typeChecker.getNodeTypes()
     );
-    evaluator.setTokenStream(tokens);  // <--- AUCH WICHTIG!
+    evaluator.setTokenStream(tokens);
+    
     Value result = evaluator.visit(tree);
     
-    if (evaluator.hasErrors()) {
+    if (!evaluator.getErrorCollector().getErrors().isEmpty()) {
+        System.out.println("EVALUATION ERRORS:");
+        evaluator.getErrorCollector().getErrors().forEach(System.out::println);
         fail("Evaluation failed: " + evaluator.getErrorCollector().getErrors());
     }
     
     return result;
 }
-    private ParseTree parse(String input) {
+
+
+
+
+private ParseTree parse(String input) {
         VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         VitruvOCLParser parser = new VitruvOCLParser(tokens);

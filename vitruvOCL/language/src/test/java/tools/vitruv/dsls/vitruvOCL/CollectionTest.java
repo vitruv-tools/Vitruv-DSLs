@@ -297,41 +297,32 @@ public class CollectionTest {
      */
     private Value compile(String input) {
         // Parse
-        
-        System.out.println("                                                                    Input "  + input);
         ParseTree tree = parse(input);
         // Pass 1: Symbol Table (für Collections leer)
         SymbolTable symbolTable = new SymbolTableImpl();
         // Pass 2: Type Checking
-        System.out.println("                                                                    before TypeChecking");
         VSUMWrapper vsumWrapper = null;
         TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, vsumWrapper);
         typeChecker.visit(tree);
-        System.out.println("                                                                    after TypeChecker");
-
 
         // Prüfe auf Type Errors
         if (typeChecker.hasErrors()) {
-            fail("                                                                    Type checking failed: " + typeChecker.getErrorCollector().getErrors());
+            fail("Type checking failed: " + typeChecker.getErrorCollector().getErrors());
         }
         
-        System.out.println("                                                                    Start evaluating");
         // Pass 3: Evaluation
         EvaluationVisitor evaluator = new EvaluationVisitor(
             symbolTable, 
             vsumWrapper, 
             typeChecker.getNodeTypes()
         );
-        System.out.println(input + " TREE :" + tree.getText());
         Value result = evaluator.visit(tree);
-        System.out.println("                                                                    result " + result);
+        
         // Prüfe auf Evaluation Errors
         if (evaluator.hasErrors()) {
             fail("Evaluation failed: " + evaluator.getErrorCollector().getErrors());
         }
-        System.out.println("");
-        System.out.println("");
-        System.out.println("");
+        
         return result;
     }
     

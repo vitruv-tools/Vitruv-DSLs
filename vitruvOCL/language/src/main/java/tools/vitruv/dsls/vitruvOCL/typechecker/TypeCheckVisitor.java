@@ -16,7 +16,11 @@ import tools.vitruv.dsls.vitruvOCL.common.ErrorSeverity;
 import tools.vitruv.dsls.vitruvOCL.common.VSUMWrapper;
 import tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement;
 import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
+import tools.vitruv.dsls.vitruvOCL.symboltable.LocalScope;
+import tools.vitruv.dsls.vitruvOCL.symboltable.Symbol;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTable;
+import tools.vitruv.dsls.vitruvOCL.symboltable.TypeSymbol;
+import tools.vitruv.dsls.vitruvOCL.symboltable.VariableSymbol;
 
 /**
  * Visitor for type checking
@@ -1009,6 +1013,253 @@ private Type typeCheckStringOperation(
 }
 
 
+// ==================== Variables ====================
+/**
+ * Type-checks variable references: x, myVar, etc.
+ */
+@Override
+public Type visitName(VitruvOCLParser.NameContext ctx) {
+    // Check if it's a variable reference
+    if (ctx.variableName != null) {
+        String varName = ctx.variableName.getText();
+        
+        // Lookup in symbol table
+        Symbol symbol = symbolTable.resolve(varName);
+        
+        if (symbol == null) {
+            handleUndefinedSymbol(varName, ctx);
+            nodeTypes.put(ctx, Type.ERROR);
+            return Type.ERROR;
+        }
+        
+        // Must be a variable, not a type or operation
+        if (!(symbol instanceof VariableSymbol)) {
+            errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+                      "'" + varName + "' is not a variable",
+                      ErrorSeverity.ERROR, "type-checker");
+            nodeTypes.put(ctx, Type.ERROR);
+            return Type.ERROR;
+        }
+        
+        Type varType = symbol.getType();
+        nodeTypes.put(ctx, varType);
+        return varType;
+    }
+    
+    // Check for collection operation names
+    if (ctx.collectionOperationName() != null) {
+        // These are handled in prefixedExpCS navigation chains
+        // Return placeholder type
+        return Type.ANY;
+    }
+    
+    // Check for string operation names
+    if (ctx.stringOperationName() != null) {
+        // These are handled in prefixedExpCS navigation chains
+        return Type.ANY;
+    }
+    
+    // Other cases (metamodel qualified names, etc.)
+    return visitChildren(ctx);
+}
+
+/**
+ * Type-checks let expressions.
+ * Creates new local scope and binds variables.
+ * 
+ * Example: let x = 5, y = x * 2 in y + 3
+ */
+@Override
+public Type visitLetExpCS(VitruvOCLParser.LetExpCSContext ctx) {
+    // Create new local scope for let variables
+    LocalScope letScope = new LocalScope(symbolTable.getCurrentScope());
+    symbolTable.enterScope(letScope);
+    
+    try {
+        // Type-check and define all variables
+        VitruvOCLParser.VariableDeclarationsContext varDecls = ctx.variableDeclarations();
+        
+        for (VitruvOCLParser.VariableDeclarationContext varDecl : varDecls.variableDeclaration()) {
+            String varName = varDecl.varName.getText();
+            
+            // Check for duplicate in current scope
+            Symbol existing = letScope.resolve(varName);
+            if (existing != null && existing.getDefiningScope() == letScope) {
+                errors.add(varDecl.getStart().getLine(), varDecl.getStart().getCharPositionInLine(),
+                          "Variable '" + varName + "' already defined in current scope",
+                          ErrorSeverity.ERROR, "type-checker");
+                continue;
+            }
+            
+            // Type-check initializer expression
+            Type initType = visit(varDecl.varInit);
+            
+            if (initType == Type.ERROR) {
+                continue;
+            }
+            
+            // Check explicit type annotation if present
+            Type declaredType = initType;
+            if (varDecl.varType != null) {
+                declaredType = visit(varDecl.varType);
+                
+                if (!initType.isConformantTo(declaredType)) {
+                    errors.add(varDecl.getStart().getLine(), varDecl.getStart().getCharPositionInLine(),
+                              "Type mismatch: initializer has type " + initType + 
+                              " but variable declared as " + declaredType,
+                              ErrorSeverity.ERROR, "type-checker");
+                    continue;
+                }
+            }
+            
+            // Create variable symbol and define
+            VariableSymbol varSymbol = new VariableSymbol(
+                varName, 
+                declaredType, 
+                letScope,
+                false
+            );
+            
+            symbolTable.define(varSymbol);
+            nodeTypes.put(varDecl, declaredType);
+        }
+        
+        // Type-check body expression (singular!)
+        Type bodyType = visit(ctx.body);  // <-- FIX: ctx.body ist ein einzelnes expCS
+        
+        if (bodyType == null) {
+            errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+                      "Let expression body is empty",
+                      ErrorSeverity.ERROR, "type-checker");
+            bodyType = Type.ERROR;
+        }
+        
+        nodeTypes.put(ctx, bodyType);
+        return bodyType;
+        
+    } finally {
+        symbolTable.exitScope();
+    }
+}
+/**
+ * Type-checks 'self' references.
+ */
+@Override
+public Type visitSelfExpCS(VitruvOCLParser.SelfExpCSContext ctx) {
+    // Lookup 'self' in symbol table
+    Symbol selfSymbol = symbolTable.resolve("self");
+    
+    if (selfSymbol == null) {
+        errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+                  "'self' is not defined in current context",
+                  ErrorSeverity.ERROR, "type-checker");
+        nodeTypes.put(ctx, Type.ERROR);
+        return Type.ERROR;
+    }
+    
+    Type selfType = selfSymbol.getType();
+    nodeTypes.put(ctx, selfType);
+    return selfType;
+}
+
+/**
+ * Type-checks type expressions: Integer, String, Set(Integer), etc.
+ */
+@Override
+public Type visitTypeExpCS(VitruvOCLParser.TypeExpCSContext ctx) {
+    // typeExpCS can be either typeNameExpCS or typeLiteralCS
+    if (ctx.typeNameExpCS() != null) {
+        return visitTypeNameExpCS(ctx.typeNameExpCS());
+    }
+    if (ctx.typeLiteralCS() != null) {
+        return visitTypeLiteralCS(ctx.typeLiteralCS());
+    }
+    
+    errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+              "Invalid type expression",
+              ErrorSeverity.ERROR, "type-checker");
+    return Type.ERROR;
+}
+
+/**
+ * Type-checks type names: Integer, String, Boolean, MyClass, etc.
+ */
+@Override
+public Type visitTypeNameExpCS(VitruvOCLParser.TypeNameExpCSContext ctx) {
+    String typeName = ctx.getText();
+    
+    // Handle primitive types
+    return switch (typeName) {
+        case "Integer" -> Type.INTEGER;
+        case "String" -> Type.STRING;
+        case "Boolean" -> Type.BOOLEAN;
+        case "Double" -> Type.DOUBLE;
+        case "OclAny" -> Type.ANY;
+        default -> {
+            // Try to resolve from symbol table (metamodel types)
+            Symbol symbol = symbolTable.resolve(typeName);
+            
+            if (symbol == null) {
+                errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+                          "Unknown type: " + typeName,
+                          ErrorSeverity.ERROR, "type-checker");
+                yield Type.ERROR;
+            }
+            
+            if (!(symbol instanceof TypeSymbol)) {
+                errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+                          "'" + typeName + "' is not a type",
+                          ErrorSeverity.ERROR, "type-checker");
+                yield Type.ERROR;
+            }
+            
+            yield symbol.getType();
+        }
+    };
+}
+
+/**
+ * Type-checks type literals: primitive types and collection types.
+ */
+@Override
+public Type visitTypeLiteralCS(VitruvOCLParser.TypeLiteralCSContext ctx) {
+    if (ctx.primitiveTypeCS() != null) {
+        return visitPrimitiveTypeCS(ctx.primitiveTypeCS());
+    }
+    if (ctx.collectionTypeCS() != null) {
+        return visit(ctx.collectionTypeCS());
+    }
+    
+    errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+              "Invalid type literal",
+              ErrorSeverity.ERROR, "type-checker");
+    return Type.ERROR;
+}
+
+/**
+ * Type-checks primitive types: Integer, String, Boolean, etc.
+ */
+@Override
+public Type visitPrimitiveTypeCS(VitruvOCLParser.PrimitiveTypeCSContext ctx) {
+    String typeName = ctx.getText();
+    
+    return switch (typeName) {
+        case "Integer" -> Type.INTEGER;
+        case "String" -> Type.STRING;
+        case "Boolean" -> Type.BOOLEAN;
+        case "Double" -> Type.DOUBLE;
+        case "OclAny" -> Type.ANY;
+        case "UnlimitedNatural" -> Type.INTEGER; // Map to Integer for now
+        case "ID" -> Type.STRING; // Map to String for now
+        default -> {
+            errors.add(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(),
+                      "Unknown primitive type: " + typeName,
+                      ErrorSeverity.ERROR, "type-checker");
+            yield Type.ERROR;
+        }
+    };
+}
+
 
 // ==================== Navigation ====================
     
@@ -1144,7 +1395,7 @@ private Type typeCheckStringOperation(
 
 @Override
 public Type visitIfExpCS(VitruvOCLParser.IfExpCSContext ctx) {
-    // Partition expressions by keywords: if...then...else...endif
+    // Get ALL expressions
     List<VitruvOCLParser.ExpCSContext> allExps = ctx.expCS();
     
     if (allExps.isEmpty()) {
@@ -1273,6 +1524,8 @@ public Type visitIfExpCS(VitruvOCLParser.IfExpCSContext ctx) {
     return resultType;
 }
 
+
+
 /**
  * Helper: Find token index of keyword in context, respecting nesting levels.
  */
@@ -1284,15 +1537,14 @@ private int findKeywordToken(VitruvOCLParser.IfExpCSContext ctx, String keyword)
     int startIdx = ctx.getStart().getTokenIndex();
     int stopIdx = ctx.getStop().getTokenIndex();
     
-    // Track nesting level: we want keywords at nesting level 0
-    // (relative to this if-then-else context)
+    // Track nesting level
     int nestingLevel = 0;
     
     for (int i = startIdx; i <= stopIdx; i++) {
         org.antlr.v4.runtime.Token token = tokens.get(i);
         String text = token.getText();
         
-        // Skip the first 'if' (that's the start of our context)
+        // Skip the first 'if'
         if (i == startIdx && text.equals("if")) {
             continue;
         }
@@ -1304,13 +1556,13 @@ private int findKeywordToken(VitruvOCLParser.IfExpCSContext ctx, String keyword)
             nestingLevel--;
         }
         
-        // Only match keywords at nesting level 0 (our level)
+        // Only match keywords at nesting level 0
         if (nestingLevel == 0 && text.equals(keyword)) {
             return i;
         }
     }
     
-    return Integer.MAX_VALUE; // Not found
+    return Integer.MAX_VALUE;
 }
 
 }

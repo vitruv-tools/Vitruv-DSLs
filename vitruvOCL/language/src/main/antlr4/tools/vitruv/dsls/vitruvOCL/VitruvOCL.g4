@@ -150,6 +150,7 @@ prefixedExpCS
  primaryExpCS
  :
      ifExpCS
+     | letExpCS   
      | primitiveLiteralExpCS
      | navigatingExpCS
      | selfExpCS
@@ -157,6 +158,22 @@ prefixedExpCS
      | typeLiteralExpCS
      | nestedExpCS
  ;
+
+
+letExpCS
+:
+    'let' variableDeclarations 'in' body = expCS+
+;
+
+variableDeclarations
+:
+    variableDeclaration (',' variableDeclaration)*
+;
+
+variableDeclaration
+:
+    varName = ID (':' varType = typeExpCS)? '=' varInit = expCS
+;
 
  nestedExpCS
  :

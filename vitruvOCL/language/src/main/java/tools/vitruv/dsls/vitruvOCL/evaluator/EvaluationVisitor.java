@@ -636,20 +636,40 @@ private Value evaluateStringOperation(
     }
     
     OCLElement elem = receiver.getElements().get(0);
+    
     if (!(elem instanceof OCLElement.StringValue)) {
         return error("String operation requires String receiver", ctx);
     }
     
     String str = ((OCLElement.StringValue) elem).value();
-    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    
+    // Collect ALL arguments
+    List<VitruvOCLParser.NavigatingArgCSContext> regularArgs = ctx.navigatingArgCS();
+    List<VitruvOCLParser.NavigatingCommaArgCSContext> commaArgs = ctx.navigatingCommaArgCS();
+    
+    List<Value> argValues = new ArrayList<>();
+    
+    // First argument (if exists)
+    if (!regularArgs.isEmpty()) {
+        VitruvOCLParser.NavigatingArgCSContext firstArg = regularArgs.get(0);
+        Value argVal = visit(firstArg.navigatingArgExpCS());
+        argValues.add(argVal);
+    }
+    
+    // Additional comma arguments
+    for (int i = 0; i < commaArgs.size(); i++) {
+        VitruvOCLParser.NavigatingCommaArgCSContext commaArg = commaArgs.get(i);
+        Value argVal = visit(commaArg.navigatingArgExpCS());
+        argValues.add(argVal);
+    }
     
     return switch (opName) {
         case "concat" -> {
-            if (args.isEmpty()) {
-                yield error("concat() requires 1 argument", ctx);
+            if (argValues.size() != 1) {
+                yield error("Operation 'concat' requires 1 argument, got " + argValues.size(), ctx);
             }
             
-            Value argValue = visit(args.get(0).navigatingArgExpCS());
+            Value argValue = argValues.get(0);
             if (argValue.size() != 1) {
                 yield error("concat() requires singleton String argument", ctx);
             }
@@ -660,17 +680,17 @@ private Value evaluateStringOperation(
             }
             
             String arg = ((OCLElement.StringValue) argElem).value();
-            yield Value.stringValue(str + arg);
+            String result = str + arg;
+            yield Value.stringValue(result);
         }
         
         case "substring" -> {
-            // OCL uses 1-based indexing: substring(1, 3) means chars at positions 1,2,3
-            if (args.size() < 2) {
-                yield error("substring() requires 2 arguments (start, end)", ctx);
+            if (argValues.size() != 2) {
+                yield error("Operation 'substring' requires 2 arguments (start, end), got " + argValues.size(), ctx);
             }
             
-            Value startValue = visit(args.get(0).navigatingArgExpCS());
-            Value endValue = visit(args.get(1).navigatingArgExpCS());
+            Value startValue = argValues.get(0);
+            Value endValue = argValues.get(1);
             
             if (startValue.size() != 1 || endValue.size() != 1) {
                 yield error("substring() requires singleton Integer arguments", ctx);
@@ -691,28 +711,43 @@ private Value evaluateStringOperation(
             // OCL: substring(1, 3) → Java: substring(0, 3)
             try {
                 if (start < 1 || end < start || end > str.length()) {
-                    // OCL# null-safe: invalid indices → empty collection
                     yield Value.empty(Type.STRING);
                 }
-                String result = str.substring(start - 1, end);
+                
+                int javaStart = start - 1;
+                int javaEnd = end;
+                
+                String result = str.substring(javaStart, javaEnd);
                 yield Value.stringValue(result);
             } catch (IndexOutOfBoundsException e) {
-                // OCL# null-safe: errors → empty collection
                 yield Value.empty(Type.STRING);
             }
         }
         
-        case "toUpper" -> Value.stringValue(str.toUpperCase());
-        
-        case "toLower" -> Value.stringValue(str.toLowerCase());
-        
-        case "indexOf" -> {
-            // Returns 1-based index, or 0 if not found (OCL convention)
-            if (args.isEmpty()) {
-                yield error("indexOf() requires 1 argument", ctx);
+        case "toUpper" -> {
+            if (argValues.size() != 0) {
+                yield error("Operation 'toUpper' takes no arguments, got " + argValues.size(), ctx);
             }
             
-            Value searchValue = visit(args.get(0).navigatingArgExpCS());
+            String result = str.toUpperCase();
+            yield Value.stringValue(result);
+        }
+        
+        case "toLower" -> {
+            if (argValues.size() != 0) {
+                yield error("Operation 'toLower' takes no arguments, got " + argValues.size(), ctx);
+            }
+            
+            String result = str.toLowerCase();
+            yield Value.stringValue(result);
+        }
+        
+        case "indexOf" -> {
+            if (argValues.size() != 1) {
+                yield error("Operation 'indexOf' requires 1 argument, got " + argValues.size(), ctx);
+            }
+            
+            Value searchValue = argValues.get(0);
             if (searchValue.size() != 1) {
                 yield error("indexOf() requires singleton String argument", ctx);
             }
@@ -731,11 +766,11 @@ private Value evaluateStringOperation(
         }
         
         case "equalsIgnoreCase" -> {
-            if (args.isEmpty()) {
-                yield error("equalsIgnoreCase() requires 1 argument", ctx);
+            if (argValues.size() != 1) {
+                yield error("Operation 'equalsIgnoreCase' requires 1 argument, got " + argValues.size(), ctx);
             }
             
-            Value compareValue = visit(args.get(0).navigatingArgExpCS());
+            Value compareValue = argValues.get(0);
             if (compareValue.size() != 1) {
                 yield error("equalsIgnoreCase() requires singleton String argument", ctx);
             }
@@ -746,11 +781,136 @@ private Value evaluateStringOperation(
             }
             
             String compareStr = ((OCLElement.StringValue) compareElem).value();
-            yield Value.boolValue(str.equalsIgnoreCase(compareStr));
+            boolean result = str.equalsIgnoreCase(compareStr);
+            yield Value.boolValue(result);
         }
         
-        default -> error("Unknown string operation: " + opName, ctx);
+        default -> {
+            yield error("Unknown string operation: " + opName, ctx);
+        }
     };
+}
+
+
+
+// ==================== Variables ====================
+/**
+ * Evaluates variable references.
+ */
+@Override
+public Value visitName(VitruvOCLParser.NameContext ctx) {
+    // Check if it's a variable reference
+    if (ctx.variableName != null) {
+        String varName = ctx.variableName.getText();
+        
+        // Lookup in symbol table
+        Symbol symbol = symbolTable.resolve(varName);
+        
+        if (symbol == null) {
+            handleUndefinedSymbol(varName, ctx);
+            return Value.empty(Type.ERROR);
+        }
+        
+        if (!(symbol instanceof VariableSymbol)) {
+            return error("'" + varName + "' is not a variable", ctx);
+        }
+        
+        VariableSymbol varSymbol = (VariableSymbol) symbol;
+        
+        // Get stored runtime value
+        Value value = varSymbol.getValue();
+        
+        if (value == null) {
+            return error("Variable '" + varName + "' has no value (internal error)", ctx);
+        }
+        
+        return value;
+    }
+    
+    // Not a variable - delegate to other handlers
+    Value result = visitChildren(ctx);
+    return result != null ? result : Value.empty(Type.ANY);  // <-- NULL-SAFE
+}
+
+/**
+ * Evaluates let expressions.
+ * Creates new scope and binds variables with runtime values.
+ * 
+ * Example: let x = 5, y = x * 2 in y + 3
+ */
+@Override
+public Value visitLetExpCS(VitruvOCLParser.LetExpCSContext ctx) {
+    LocalScope letScope = new LocalScope(symbolTable.getCurrentScope());
+    symbolTable.enterScope(letScope);
+    
+    try {
+        VitruvOCLParser.VariableDeclarationsContext varDecls = ctx.variableDeclarations();
+        
+        for (VitruvOCLParser.VariableDeclarationContext varDecl : varDecls.variableDeclaration()) {
+            String varName = varDecl.varName.getText();
+            
+            // Evaluate initializer expression
+            Value initValue = visit(varDecl.varInit);
+            
+            if (initValue == null) {
+                return error("Failed to evaluate initializer for variable '" + varName + "'", varDecl);
+            }
+            
+            // Get type from Pass 2
+            Type varType = nodeTypes.get(varDecl);
+            if (varType == null) {
+                varType = nodeTypes.get(varDecl.varInit);
+                if (varType == null) {
+                    varType = Type.ANY;
+                }
+            }
+            
+            // Create variable symbol with runtime value
+            VariableSymbol varSymbol = new VariableSymbol(varName, varType, letScope, false);
+            varSymbol.setValue(initValue);
+            symbolTable.define(varSymbol);
+        }
+        
+        // Evaluate body expression
+        Value result = visit(ctx.body);
+        
+        if (result == null) {
+            return error("Let expression body produced no value", ctx);
+        }
+        
+        return result;
+        
+    } finally {
+        symbolTable.exitScope();
+    }
+}
+
+
+
+/**
+ * Evaluates 'self' references.
+ */
+@Override
+public Value visitSelfExpCS(VitruvOCLParser.SelfExpCSContext ctx) {
+    // Lookup 'self' in symbol table
+    Symbol selfSymbol = symbolTable.resolve("self");
+    
+    if (selfSymbol == null) {
+        return error("'self' is not defined in current context", ctx);
+    }
+    
+    if (!(selfSymbol instanceof VariableSymbol)) {
+        return error("'self' is not a variable (internal error)", ctx);
+    }
+    
+    VariableSymbol selfVar = (VariableSymbol) selfSymbol;
+    Value selfValue = selfVar.getValue();
+    
+    if (selfValue == null) {
+        return error("'self' has no value (internal error)", ctx);
+    }
+    
+    return selfValue;
 }
 
 
@@ -1061,33 +1221,14 @@ public void setTokenStream(org.antlr.v4.runtime.TokenStream tokens) {
 
 @Override
 public Value visitIfExpCS(VitruvOCLParser.IfExpCSContext ctx) {
-    // Partition expressions by keywords: if...then...else...endif
-    List<VitruvOCLParser.ExpCSContext> allExps = ctx.expCS();
-    
-    if (allExps.isEmpty()) {
-        return error("If expression requires expressions", ctx);
-    }
-    
-    // Find 'then', 'else' token positions
-    int thenTokenIndex = findKeywordToken(ctx, "then");
-    int elseTokenIndex = findKeywordToken(ctx, "else");
-    
-    // Partition expressions
-    List<VitruvOCLParser.ExpCSContext> condExps = new ArrayList<>();
-    List<VitruvOCLParser.ExpCSContext> thenExps = new ArrayList<>();
-    List<VitruvOCLParser.ExpCSContext> elseExps = new ArrayList<>();
-    
-    for (VitruvOCLParser.ExpCSContext exp : allExps) {
-        int expStartIndex = exp.getStart().getTokenIndex();
-        
-        if (expStartIndex < thenTokenIndex) {
-            condExps.add(exp);
-        } else if (expStartIndex < elseTokenIndex) {
-            thenExps.add(exp);
-        } else {
-            elseExps.add(exp);
-        }
-    }
+    // Grammar labels are single ExpCSContext, not lists!
+    // Wrap them in lists for consistency
+    List<VitruvOCLParser.ExpCSContext> condExps = ctx.ifexp != null ? 
+        List.of(ctx.ifexp) : List.of();
+    List<VitruvOCLParser.ExpCSContext> thenExps = ctx.thenexp != null ? 
+        List.of(ctx.thenexp) : List.of();
+    List<VitruvOCLParser.ExpCSContext> elseExps = ctx.elseexp != null ? 
+        List.of(ctx.elseexp) : List.of();
     
     if (condExps.isEmpty() || thenExps.isEmpty() || elseExps.isEmpty()) {
         return error("If expression missing condition, then, or else branch", ctx);
@@ -1103,7 +1244,6 @@ public Value visitIfExpCS(VitruvOCLParser.IfExpCSContext ctx) {
         return error("If condition evaluation failed", ctx);
     }
     
-    // Expect singleton Boolean
     if (condVal.size() != 1) {
         return error("If condition must be singleton, got collection of size " + condVal.size(), ctx);
     }
@@ -1115,7 +1255,7 @@ public Value visitIfExpCS(VitruvOCLParser.IfExpCSContext ctx) {
     
     boolean condition = ((OCLElement.BoolValue) condElem).value();
     
-    // Evaluate appropriate branch (all expressions, return last value)
+    // Evaluate appropriate branch
     Value result = null;
     if (condition) {
         for (VitruvOCLParser.ExpCSContext exp : thenExps) {
@@ -1141,15 +1281,14 @@ private int findKeywordToken(VitruvOCLParser.IfExpCSContext ctx, String keyword)
     int startIdx = ctx.getStart().getTokenIndex();
     int stopIdx = ctx.getStop().getTokenIndex();
     
-    // Track nesting level: we want keywords at nesting level 0
-    // (relative to this if-then-else context)
+    // Track nesting level
     int nestingLevel = 0;
     
     for (int i = startIdx; i <= stopIdx; i++) {
         org.antlr.v4.runtime.Token token = tokens.get(i);
         String text = token.getText();
         
-        // Skip the first 'if' (that's the start of our context)
+        // Skip the first 'if'
         if (i == startIdx && text.equals("if")) {
             continue;
         }
@@ -1161,15 +1300,14 @@ private int findKeywordToken(VitruvOCLParser.IfExpCSContext ctx, String keyword)
             nestingLevel--;
         }
         
-        // Only match keywords at nesting level 0 (our level)
+        // Only match keywords at nesting level 0
         if (nestingLevel == 0 && text.equals(keyword)) {
             return i;
         }
     }
     
-    return Integer.MAX_VALUE; // Not found
+    return Integer.MAX_VALUE;
 }
-
 
 /**
  * Checks if an element is of a given type.
