@@ -25,7 +25,7 @@ public final class JavaFileGenerator {
     sb.append("package ").append(packageName).append(";\n\n");
     if (importHelper != null) {
       CharSequence imports = importHelper.generateImportCode();
-      if (imports != null && imports.length() > 0) {
+      if (imports != null && !imports.isEmpty()) {
         sb.append(imports.toString());
         sb.append("\n\n");
       }

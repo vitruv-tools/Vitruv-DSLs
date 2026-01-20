@@ -38,8 +38,8 @@ public class JavaImportHelper {
    * @return the static reference
    */
   public String staticRef(Class<?> javaClass, String methodName) {
-    if (!staticImports.containsKey(methodName)) {
-      staticImports.put(methodName, javaClass.getName());
+    String result = staticImports.putIfAbsent(methodName, javaClass.getName());
+    if (result == null) {
       return methodName;
     }
     return javaClass.getName() + FQN_SEPARATOR + methodName;
@@ -68,39 +68,38 @@ public class JavaImportHelper {
   /**
    * Generates a type reference.
    *
-   * @param eClassifier the EClassifier
+   * @param classifier the EClassifier
    * @return the type reference
    */
-  public String typeRef(EClassifier eClassifier) {
-    return typeRef(eClassifier.getInstanceTypeName());
+  public String typeRef(EClassifier classifier) {
+    return typeRef(classifier.getInstanceTypeName());
   }
 
   /**
    * Generates a type reference.
    *
-   * @param fullyQualifiedJVMName the fully qualified JVM name
+   * @param fullyQualifiedJvmName the fully qualified JVM name
    * @return the type reference
    */
-  public String typeRef(CharSequence fullyQualifiedJVMName) {
-    if (fullyQualifiedJVMName == null) {
+  public String typeRef(CharSequence fullyQualifiedJvmName) {
+    if (fullyQualifiedJvmName == null) {
       return null;
     }
-    String fullyQualifiedJVMNameString = fullyQualifiedJVMName.toString();
-    if (isSimpleName(fullyQualifiedJVMNameString)) {
-      return fullyQualifiedJVMNameString;
+    String fullyQualifiedJvmNameString = fullyQualifiedJvmName.toString();
+    if (isSimpleName(fullyQualifiedJvmNameString)) {
+      return fullyQualifiedJvmNameString;
     }
 
     ClassNameGenerator className =
-        ClassNameGenerator.fromQualifiedName(fullyQualifiedJVMNameString);
+        ClassNameGenerator.fromQualifiedName(fullyQualifiedJvmNameString);
 
     if (NO_IMPORT_NEEDED.contains(className.getPackageName())) {
       return className.getSimpleName();
     }
 
     String simple = className.getSimpleName();
-    if (!imports.containsKey(simple)) {
-      imports.put(simple, className.getQualifiedName());
-    } else if (!imports.get(simple).equals(fullyQualifiedJVMNameString)) {
+    imports.putIfAbsent(simple, className.getQualifiedName());
+    if (!imports.get(simple).equals(fullyQualifiedJvmNameString)) {
       return className.getQualifiedName();
     }
 
