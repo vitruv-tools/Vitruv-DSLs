@@ -105,7 +105,13 @@ public class CommonLanguageElementsScopeProvider {
         .filter(MetamodelImport.class::isInstance)
         .map(MetamodelImport.class::cast)
         .filter(mi -> mi.getPackage() != null)
-        .peek(mi -> mi.setName(mi.getName() != null ? mi.getName() : mi.getPackage().getName()))
+        .map(
+            mi -> {
+              if (mi.getName() == null) {
+                mi.setName(mi.getPackage().getName());
+              }
+              return mi;
+            })
         .collect(Collectors.toList());
   }
 
