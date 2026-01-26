@@ -17,6 +17,5 @@
 
     <modules>
         <module>language</module>
-        <module>runtime</module>
     </modules>
 </project>

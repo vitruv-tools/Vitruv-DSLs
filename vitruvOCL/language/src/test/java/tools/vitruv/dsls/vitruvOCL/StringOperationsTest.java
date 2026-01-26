@@ -1,250 +1,255 @@
 package tools.vitruv.dsls.vitruvOCL;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.List;
+import java.util.Set;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EObject;
 import org.junit.jupiter.api.Test;
-
+import tools.vitruv.dsls.vitruvOCL.common.ErrorCollector;
 import tools.vitruv.dsls.vitruvOCL.common.VSUMWrapper;
 import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement;
 import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
+import tools.vitruv.dsls.vitruvOCL.pipeline.ConstraintSpecification;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTable;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
  * Tests for String operations in OCL#.
  *
- * Covered operations:
- * concat, substring, toUpper, toLower, indexOf, equalsIgnoreCase
+ * <p>Covered operations: concat, substring, toUpper, toLower, indexOf, equalsIgnoreCase
  *
- * OCL# semantics:
- * - All values are collections
- * - A String literal evaluates to a singleton collection
- * - Invalid string operations yield an empty collection
+ * <p>OCL# semantics: - All values are collections - A String literal evaluates to a singleton
+ * collection - Invalid string operations yield an empty collection
  */
 public class StringOperationsTest {
 
-    // ==================== String Literals ====================
+  // ==================== String Literals ====================
 
-    @Test
-    public void testStringLiteral() {
-        Value result = compile("\"Hello\"");
+  @Test
+  public void testStringLiteral() {
+    Value result = compile("\"Hello\"");
 
-        assertEquals(1, result.size());
-        OCLElement elem = result.getElements().get(0);
-        assertEquals("Hello", ((OCLElement.StringValue) elem).value());
-    }
+    assertEquals(1, result.size());
+    OCLElement elem = result.getElements().get(0);
+    assertEquals("Hello", ((OCLElement.StringValue) elem).value());
+  }
 
-    // ==================== CONCAT ====================
+  // ==================== CONCAT ====================
 
-    @Test
-    public void testConcat() {
-        assertString("\"Hello\".concat(\" World\")", "Hello World");
-        assertString("\"OCL\".concat(\"#\")", "OCL#");
-        assertString("\"\".concat(\"empty\")", "empty");
-        assertString("\"Test\".concat(\"\")", "Test");
-    }
+  @Test
+  public void testConcat() {
+    assertString("\"Hello\".concat(\" World\")", "Hello World");
+    assertString("\"OCL\".concat(\"#\")", "OCL#");
+    assertString("\"\".concat(\"empty\")", "empty");
+    assertString("\"Test\".concat(\"\")", "Test");
+  }
 
-    // ==================== SUBSTRING ====================
+  // ==================== SUBSTRING ====================
 
-    @Test
-    public void testSubstring() {
-     
-            assertString("\"Hello\".substring(1, 3)", "Hel");
-       
-    }
+  @Test
+  public void testSubstring() {
 
-    @Test
-    public void testComplexStringExpressions() {
-        // Fix 1: substring(1, 2) gibt "He" zurück, nicht "H"
-        assertString(
-            "\"Hello\".substring(1, 2).concat(\"i\").toUpper()",
-            "HEI"  // ← Korrigiert von "HI" zu "HEI"
+    assertString("\"Hello\".substring(1, 3)", "Hel");
+  }
+
+  @Test
+  public void testComplexStringExpressions() {
+    // Fix 1: substring(1, 2) gibt "He" zurück, nicht "H"
+    assertString(
+        "\"Hello\".substring(1, 2).concat(\"i\").toUpper()", "HEI" // ← Korrigiert von "HI" zu "HEI"
         );
-        
-        // Fix 2: Wenn du wirklich "HI" willst, nimm nur Position 1:
-        assertString(
-            "\"Hello\".substring(1, 1).concat(\"i\").toUpper()",
-            "HI"
-        );
-        
-        // Andere Tests...
-        assertString(
-            "if \"test\".toUpper() == \"TEST\" then \"OK\" else \"FAIL\" endif",
-            "OK"
-        );
-        
-        assertBool(
-            "if \"Hello World\".indexOf(\"World\") > 0 then true else false endif",
-            true
-        );
-    }
 
+    // Fix 2: Wenn du wirklich "HI" willst, nimm nur Position 1:
+    assertString("\"Hello\".substring(1, 1).concat(\"i\").toUpper()", "HI");
 
-    @Test
-    public void testSubstringInvalidIndices() {
-        assertEmpty("\"Hi\".substring(5, 10)");
-        assertEmpty("\"Test\".substring(0, 2)");
-        assertEmpty("\"Test\".substring(3, 2)");
-        assertEmpty("\"Hi\".substring(1, 10)");
-    }
+    // Andere Tests...
+    assertString("if \"test\".toUpper() == \"TEST\" then \"OK\" else \"FAIL\" endif", "OK");
 
-    // ==================== TO UPPER ====================
+    assertBool("if \"Hello World\".indexOf(\"World\") > 0 then true else false endif", true);
+  }
 
-    @Test
-    public void testToUpper() {
-        assertString("\"hello\".toUpper()", "HELLO");
-        assertString("\"OCL\".toUpper()", "OCL");
-        assertString("\"MiXeD\".toUpper()", "MIXED");
-        assertString("\"\"", "");
-        assertString("\"123abc\".toUpper()", "123ABC");
-    }
+  @Test
+  public void testSubstringInvalidIndices() {
+    assertEmpty("\"Hi\".substring(5, 10)");
+    assertEmpty("\"Test\".substring(0, 2)");
+    assertEmpty("\"Test\".substring(3, 2)");
+    assertEmpty("\"Hi\".substring(1, 10)");
+  }
 
-    // ==================== TO LOWER ====================
+  // ==================== TO UPPER ====================
 
-    @Test
-    public void testToLower() {
-        assertString("\"HELLO\".toLower()", "hello");
-        assertString("\"ocl\".toLower()", "ocl");
-        assertString("\"MiXeD\".toLower()", "mixed");
-        assertString("\"\"", "");
-        assertString("\"ABC123\".toLower()", "abc123");
-    }
+  @Test
+  public void testToUpper() {
+    assertString("\"hello\".toUpper()", "HELLO");
+    assertString("\"OCL\".toUpper()", "OCL");
+    assertString("\"MiXeD\".toUpper()", "MIXED");
+    assertString("\"\"", "");
+    assertString("\"123abc\".toUpper()", "123ABC");
+  }
 
-    // ==================== INDEX OF ====================
+  // ==================== TO LOWER ====================
 
-    @Test
-    public void testIndexOf() {
-        // OCL: 1-based index, 0 if not found
-        assertInt("\"Hello World\".indexOf(\"World\")", 7);
-        assertInt("\"Hello\".indexOf(\"H\")", 1);
-        assertInt("\"Hello\".indexOf(\"e\")", 2);
-        assertInt("\"Hello\".indexOf(\"o\")", 5);
-        assertInt("\"Hello\".indexOf(\"x\")", 0);
-        assertInt("\"Test Test\".indexOf(\"Test\")", 1);
-        assertInt("\"\".indexOf(\"x\")", 0);
-    }
+  @Test
+  public void testToLower() {
+    assertString("\"HELLO\".toLower()", "hello");
+    assertString("\"ocl\".toLower()", "ocl");
+    assertString("\"MiXeD\".toLower()", "mixed");
+    assertString("\"\"", "");
+    assertString("\"ABC123\".toLower()", "abc123");
+  }
 
-    // ==================== EQUALS IGNORE CASE ====================
+  // ==================== INDEX OF ====================
 
-    @Test
-    public void testEqualsIgnoreCase() {
-        assertBool("\"hello\".equalsIgnoreCase(\"HELLO\")", true);
-        assertBool("\"OCL\".equalsIgnoreCase(\"ocl\")", true);
-        assertBool("\"test\".equalsIgnoreCase(\"different\")", false);
-        assertBool("\"Test123\".equalsIgnoreCase(\"test123\")", true);
-        assertBool("\"\".equalsIgnoreCase(\"\")", true);
-    }
+  @Test
+  public void testIndexOf() {
+    // OCL: 1-based index, 0 if not found
+    assertInt("\"Hello World\".indexOf(\"World\")", 7);
+    assertInt("\"Hello\".indexOf(\"H\")", 1);
+    assertInt("\"Hello\".indexOf(\"e\")", 2);
+    assertInt("\"Hello\".indexOf(\"o\")", 5);
+    assertInt("\"Hello\".indexOf(\"x\")", 0);
+    assertInt("\"Test Test\".indexOf(\"Test\")", 1);
+    assertInt("\"\".indexOf(\"x\")", 0);
+  }
 
-    // ==================== STRING CHAINING ====================
+  // ==================== EQUALS IGNORE CASE ====================
 
-    @Test
-    public void testStringChaining() {
-        assertString("\"hello\".toUpper().concat(\" WORLD\")", "HELLO WORLD");
-        assertString("\"  TEST  \".toUpper().substring(3, 6)", "TEST");
-        assertString("\"OCL\".concat(\"#\").toLower()", "ocl#");
-        assertString("\"Hello\".concat(\" \").concat(\"World\")", "Hello World");
-    }
+  @Test
+  public void testEqualsIgnoreCase() {
+    assertBool("\"hello\".equalsIgnoreCase(\"HELLO\")", true);
+    assertBool("\"OCL\".equalsIgnoreCase(\"ocl\")", true);
+    assertBool("\"test\".equalsIgnoreCase(\"different\")", false);
+    assertBool("\"Test123\".equalsIgnoreCase(\"test123\")", true);
+    assertBool("\"\".equalsIgnoreCase(\"\")", true);
+  }
 
-    // ==================== STRING COMPARISON ====================
+  // ==================== STRING CHAINING ====================
 
-    @Test
-    public void testStringComparison() {
-        assertBool("\"abc\" == \"abc\"", true);
-        assertBool("\"abc\" != \"xyz\"", true);
-        assertBool("\"abc\" < \"xyz\"", true);
-    }
+  @Test
+  public void testStringChaining() {
+    assertString("\"hello\".toUpper().concat(\" WORLD\")", "HELLO WORLD");
+    assertString("\"  TEST  \".toUpper().substring(3, 6)", "TEST");
+    assertString("\"OCL\".concat(\"#\").toLower()", "ocl#");
+    assertString("\"Hello\".concat(\" \").concat(\"World\")", "Hello World");
+  }
 
-    // ==================== COMPLEX EXPRESSIONS ====================
+  // ==================== STRING COMPARISON ====================
 
-    // ==================== Helper Assertions ====================
+  @Test
+  public void testStringComparison() {
+    assertBool("\"abc\" == \"abc\"", true);
+    assertBool("\"abc\" != \"xyz\"", true);
+    assertBool("\"abc\" < \"xyz\"", true);
+  }
 
-    private void assertString(String input, String expected) {
-        Value result = compile(input);
+  // ==================== COMPLEX EXPRESSIONS ====================
 
-        assertEquals(1, result.size());
-        OCLElement elem = result.getElements().get(0);
-        assertEquals(expected, ((OCLElement.StringValue) elem).value());
-    }
+  // ==================== Helper Assertions ====================
 
-    private void assertBool(String input, boolean expected) {
-        Value result = compile(input);
+  private void assertString(String input, String expected) {
+    Value result = compile(input);
 
-        assertEquals(1, result.size());
-        OCLElement elem = result.getElements().get(0);
-        assertEquals(expected, ((OCLElement.BoolValue) elem).value());
-    }
+    assertEquals(1, result.size());
+    OCLElement elem = result.getElements().get(0);
+    assertEquals(expected, ((OCLElement.StringValue) elem).value());
+  }
 
-    private void assertInt(String input, int expected) {
-        Value result = compile(input);
+  private void assertBool(String input, boolean expected) {
+    Value result = compile(input);
 
-        assertEquals(1, result.size());
-        OCLElement elem = result.getElements().get(0);
-        assertEquals(expected, ((OCLElement.IntValue) elem).value());
-    }
+    assertEquals(1, result.size());
+    OCLElement elem = result.getElements().get(0);
+    assertEquals(expected, ((OCLElement.BoolValue) elem).value());
+  }
 
-    private void assertEmpty(String input) {
-        Value result = compile(input);
-        assertEquals(0, result.size());
-    }
+  private void assertInt(String input, int expected) {
+    Value result = compile(input);
 
-    // ==================== Compile / Parse ====================
-private Value compile(String input) {
+    assertEquals(1, result.size());
+    OCLElement elem = result.getElements().get(0);
+    assertEquals(expected, ((OCLElement.IntValue) elem).value());
+  }
+
+  private void assertEmpty(String input) {
+    Value result = compile(input);
+    assertEquals(0, result.size());
+  }
+
+  // ==================== Compile / Parse ====================
+  private Value compile(String input) {
     // Create lexer and token stream
     VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
     CommonTokenStream tokens = new CommonTokenStream(lexer);
-    
+
     // Parse
     VitruvOCLParser parser = new VitruvOCLParser(tokens);
     ParseTree tree = parser.infixedExpCS();
-    
+
     // After parsing, reset to start
     tokens.seek(0);
-    
-    SymbolTable symbolTable = new SymbolTableImpl();
+
+    ConstraintSpecification dummySpec =
+        new ConstraintSpecification() {
+          @Override
+          public EClass resolveEClass(String metamodel, String className) {
+            return null;
+          }
+
+          @Override
+          public List<EObject> getAllInstances(EClass eClass) {
+            return List.of();
+          }
+
+          @Override
+          public Set<String> getAvailableMetamodels() {
+            return Set.of();
+          }
+        };
+
+    // Pass 1: Symbol Table
+    SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
     VSUMWrapper vsumWrapper = null;
-    
+
     // Pass 2: Type Checking
-    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, vsumWrapper);
+    ErrorCollector errors = new ErrorCollector();
+
+    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, dummySpec, errors);
     typeChecker.setTokenStream(tokens);
     typeChecker.visit(tree);
-    
+
     if (!typeChecker.getErrorCollector().getErrors().isEmpty()) {
-        System.out.println("TYPE ERRORS:");
-        typeChecker.getErrorCollector().getErrors().forEach(System.out::println);
-        fail("Type checking failed: " + typeChecker.getErrorCollector().getErrors());
+      System.out.println("TYPE ERRORS:");
+      typeChecker.getErrorCollector().getErrors().forEach(System.out::println);
+      fail("Type checking failed: " + typeChecker.getErrorCollector().getErrors());
     }
-    
-    // Pass 3: Evaluation  
-    EvaluationVisitor evaluator = new EvaluationVisitor(
-        symbolTable, 
-        vsumWrapper, 
-        typeChecker.getNodeTypes()
-    );
+
+    // Pass 3: Evaluation
+    EvaluationVisitor evaluator =
+        new EvaluationVisitor(symbolTable, dummySpec, errors, typeChecker.getNodeTypes());
     evaluator.setTokenStream(tokens);
-    
+
     Value result = evaluator.visit(tree);
-    
+
     if (!evaluator.getErrorCollector().getErrors().isEmpty()) {
-        System.out.println("EVALUATION ERRORS:");
-        evaluator.getErrorCollector().getErrors().forEach(System.out::println);
-        fail("Evaluation failed: " + evaluator.getErrorCollector().getErrors());
+      System.out.println("EVALUATION ERRORS:");
+      evaluator.getErrorCollector().getErrors().forEach(System.out::println);
+      fail("Evaluation failed: " + evaluator.getErrorCollector().getErrors());
     }
-    
+
     return result;
-}
+  }
 
-
-
-
-private ParseTree parse(String input) {
-        VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        VitruvOCLParser parser = new VitruvOCLParser(tokens);
-        return parser.infixedExpCS();
-    }
+  private ParseTree parse(String input) {
+    VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
+    CommonTokenStream tokens = new CommonTokenStream(lexer);
+    VitruvOCLParser parser = new VitruvOCLParser(tokens);
+    return parser.infixedExpCS();
+  }
 }
