@@ -7,12 +7,12 @@ import tools.vitruv.framework.views.ViewSource;
 import tools.vitruv.framework.vsum.VirtualModel;
 
 /** Vitruvius VSUM-based constraint specification. Accesses models via ViewSource interface. */
-public class VitruviusConstraintSpecification implements ConstraintSpecification {
+public class VSUMWrapper implements MetamodelWrapperInterface {
 
   private final VirtualModel vsum;
   private final Map<String, EPackage> metamodelRegistry = new HashMap<>();
 
-  public VitruviusConstraintSpecification(VirtualModel vsum) {
+  public VSUMWrapper(VirtualModel vsum) {
     this.vsum = vsum;
     loadMetamodelsFromVSUM();
   }

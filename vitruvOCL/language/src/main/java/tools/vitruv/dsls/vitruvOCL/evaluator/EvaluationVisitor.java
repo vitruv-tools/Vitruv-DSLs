@@ -4,11 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EObject;
 import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser.NameContext;
 import tools.vitruv.dsls.vitruvOCL.common.AbstractPhaseVisitor;
 import tools.vitruv.dsls.vitruvOCL.common.ErrorCollector;
-import tools.vitruv.dsls.vitruvOCL.pipeline.ConstraintSpecification;
+import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
 import tools.vitruv.dsls.vitruvOCL.symboltable.*;
 import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
 import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
@@ -30,7 +31,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
   public EvaluationVisitor(
       SymbolTable symbolTable,
-      ConstraintSpecification specification,
+      MetamodelWrapperInterface specification,
       ErrorCollector errors,
       ParseTreeProperty<Type> nodeTypes) {
     super(symbolTable, specification, errors);
@@ -223,7 +224,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   @Override
   public Value visitPrefixedExpCS(VitruvOCLParser.PrefixedExpCSContext ctx) {
+    // ========================================
     // Handle Metamodel::Class.operation() pattern
+    // ========================================
     if (ctx.metamodel != null && ctx.className != null) {
       Type metaclassType = nodeTypes.get(ctx);
 
@@ -231,10 +234,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         throw new RuntimeException("Invalid metamodel type at " + ctx.getText());
       }
 
-      // Start with metaclass placeholder
       Value currentValue = Value.of(List.of(), Type.singleton(metaclassType));
 
-      // Evaluate navigation operations
       for (VitruvOCLParser.PrimaryExpCSContext primary : ctx.primaryExpCS()) {
         currentValue = visitPrimaryExpCSWithReceiver(primary, currentValue);
       }
@@ -242,7 +243,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return currentValue;
     }
 
-    // Count how many unary operators we have at the start
+    // ========================================
+    // Handle unary operators: -5, not true
+    // ========================================
     int unaryOpCount = 0;
     for (int i = 0; i < ctx.getChildCount(); i++) {
       String text = ctx.getChild(i).getText();
@@ -259,9 +262,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return error("Empty expression", ctx);
     }
 
+    // ========================================
+    // Start with first primary
+    // ========================================
     Value currentValue = visit(primaries.get(0));
 
+    // ========================================
     // Apply unary operators
+    // ========================================
     for (int i = unaryOpCount - 1; i >= 0; i--) {
       String op = ctx.getChild(i).getText();
 
@@ -288,72 +296,72 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       }
     }
 
-    // Handle navigation chain
+    // ========================================
+    // Handle navigation chain: .operation1().operation2()
+    // ✅ HIER: Saubere Delegation statt Switch-Case!
+    // ========================================
     for (int i = 1; i < primaries.size(); i++) {
-      VitruvOCLParser.PrimaryExpCSContext operationCtx = primaries.get(i);
-
-      if (operationCtx.navigatingExpCS() != null) {
-        VitruvOCLParser.NavigatingExpCSContext navCtx = operationCtx.navigatingExpCS();
-
-        boolean handledAsCollectionOp = false;
-
-        if (navCtx.opName != null && navCtx.opName.nameExpCS() != null) {
-          VitruvOCLParser.NameExpCSContext nameExpCtx = navCtx.opName.nameExpCS();
-
-          if (nameExpCtx instanceof VitruvOCLParser.NameContext nameContext) {
-            if (nameContext.collectionOperationName() != null) {
-              String opName = nameContext.collectionOperationName().getText();
-              currentValue = evaluateCollectionOperation(navCtx, opName, currentValue);
-              handledAsCollectionOp = true;
-            } else if (nameContext.stringOperationName() != null) {
-              String opName = nameContext.stringOperationName().getText();
-              currentValue = evaluateStringOperation(navCtx, opName, currentValue);
-              handledAsCollectionOp = true;
-            }
-          }
-        }
-
-        if (!handledAsCollectionOp) {
-          if (!navCtx.navigatingArgCS().isEmpty()) {
-            for (VitruvOCLParser.NavigatingArgCSContext arg : navCtx.navigatingArgCS()) {
-              currentValue = handleNavigationStep(arg, currentValue);
-            }
-          } else {
-            String opName = navCtx.opName.nameExpCS().getText();
-
-            switch (opName) {
-              case "size":
-                currentValue = Value.intValue(currentValue.size());
-                break;
-              case "isEmpty":
-                currentValue = Value.boolValue(currentValue.isEmpty());
-                break;
-              case "notEmpty":
-                currentValue = Value.boolValue(currentValue.notEmpty());
-                break;
-              case "first":
-                currentValue = currentValue.first();
-                break;
-              case "last":
-                currentValue = currentValue.last();
-                break;
-              case "reverse":
-                currentValue = currentValue.reverse();
-                break;
-              case "flatten":
-                currentValue = currentValue.flatten();
-                break;
-              default:
-                return error("Unknown operation: " + opName, navCtx);
-            }
-          }
-        }
-      } else {
-        currentValue = visit(operationCtx);
-      }
+      currentValue = visitPrimaryExpCSWithReceiver(primaries.get(i), currentValue);
     }
 
     return currentValue;
+  }
+
+  @Override
+  public Value visitClassifierContextCS(VitruvOCLParser.ClassifierContextCSContext ctx) {
+    Type contextType = nodeTypes.get(ctx);
+
+    if (contextType == null || contextType == Type.ERROR) {
+      return error("Invalid context type", ctx);
+    }
+
+    // Get all instances of this context type
+    EClass eClass = contextType.getEClass();
+    if (eClass == null) {
+      return error("Context type must be a metaclass type", ctx);
+    }
+
+    List<EObject> instances = specification.getAllInstances(eClass);
+
+    // Evaluate all invariants on each instance
+    List<OCLElement> allResults = new ArrayList<>();
+
+    for (EObject instance : instances) {
+      // Create new scope with 'self' bound to current instance
+      Scope instanceScope = new LocalScope(symbolTable.getCurrentScope());
+      symbolTable.enterScope(instanceScope);
+
+      // Bind 'self' to current instance
+      Value selfValue =
+          Value.of(List.of(new OCLElement.MetaclassValue(instance)), Type.singleton(contextType));
+      // Bind 'self' via existing VariableSymbol
+      Symbol selfSymbol = symbolTable.resolve("self");
+      if (selfSymbol instanceof VariableSymbol varSym) {
+        varSym.setValue(selfValue);
+      } else {
+        // Create new if not exists
+        VariableSymbol newSelf =
+            new VariableSymbol("self", contextType, symbolTable.getCurrentScope(), false);
+        newSelf.setValue(selfValue);
+        symbolTable.define(newSelf);
+      }
+
+      // Evaluate all invariants for this instance
+      for (VitruvOCLParser.InvCSContext inv : ctx.invCS()) {
+        Value invResult = visit(inv);
+
+        // Store result (true/false for each constraint on each instance)
+        if (invResult != null && !invResult.isEmpty()) {
+          allResults.add(invResult.getElements().get(0));
+        }
+      }
+
+      // Exit instance scope
+      symbolTable.exitScope();
+    }
+
+    // Return collection of all results
+    return Value.of(allResults, Type.bag(Type.BOOLEAN));
   }
 
   @Override
@@ -366,32 +374,140 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       result = visit(spec);
     }
 
-    // TODO: Evaluate on all context instances from VSUM
     return result;
   }
 
+  /**
+   * Visit a primaryExpCS with receiver value context. Used for navigation chains where the receiver
+   * value must be passed down.
+   *
+   * @param ctx Primary expression context
+   * @param receiver Value of the receiver (left side of navigation)
+   * @return Result value of the operation
+   */
   private Value visitPrimaryExpCSWithReceiver(
       VitruvOCLParser.PrimaryExpCSContext ctx, Value receiver) {
+    // navigatingExpCS needs receiver context
     if (ctx.navigatingExpCS() != null) {
       return visitNavigatingExpCSWithReceiver(ctx.navigatingExpCS(), receiver);
     }
 
+    // All other primaryExpCS don't need receiver context
     return visit(ctx);
   }
 
+  /**
+   * Visit a nameExpCS as an operation call with receiver context. Dispatches based on the type of
+   * name (variable, collection op, string op).
+   *
+   * @param nameCtx Name expression context
+   * @param navCtx Navigation context (contains arguments)
+   * @param receiver Value of the receiver
+   * @return Result value of the operation
+   */
+  private Value visitNameExpCSAsOperation(
+      VitruvOCLParser.NameExpCSContext nameCtx,
+      VitruvOCLParser.NavigatingExpCSContext navCtx,
+      Value receiver) {
+    // nameExpCS can be: name | ontologicalName | linguisticalName
+
+    if (nameCtx instanceof VitruvOCLParser.NameContext nameContext) {
+      return visitNameContextAsOperation(nameContext, navCtx, receiver);
+    }
+
+    return error("Invalid operation name", navCtx);
+  }
+
+  /**
+   * Visit a name context as an operation call. Dispatches to collection operations, string
+   * operations, or property/no-arg operations.
+   *
+   * @param nameCtx Name context
+   * @param navCtx Navigation context
+   * @param receiver Value of the receiver
+   * @return Result value of the operation
+   */
+  private Value visitNameContextAsOperation(
+      VitruvOCLParser.NameContext nameCtx,
+      VitruvOCLParser.NavigatingExpCSContext navCtx,
+      Value receiver) {
+    // Collection Operations
+    if (nameCtx.collectionOperationName() != null) {
+      String opName = nameCtx.collectionOperationName().getText();
+      return evaluateCollectionOperation(navCtx, opName, receiver);
+    }
+
+    // String Operations
+    if (nameCtx.stringOperationName() != null) {
+      String opName = nameCtx.stringOperationName().getText();
+      return evaluateStringOperation(navCtx, opName, receiver);
+    }
+
+    // Variable/Property/No-Arg Operation
+    if (nameCtx.variableName != null) {
+      String name = nameCtx.variableName.getText();
+
+      // Check if it's a no-arg operation
+      if (navCtx.navigatingArgCS().isEmpty() && navCtx.navigatingCommaArgCS().isEmpty()) {
+        Value result = tryEvaluateNoArgOperation(name, receiver, navCtx);
+        if (result != null) {
+          return result;
+        }
+      }
+
+      // ✅ FIX: Fallback zu normaler Navigation
+      // Wir haben bereits den receiver, aber die Operation ist nicht bekannt
+      // → Behandle als unbekannte Operation
+      return error("Unknown operation or property access: " + name, navCtx);
+    }
+
+    return error("Invalid operation or property name", navCtx);
+  }
+
+  /**
+   * Attempts to evaluate a no-argument operation (size, isEmpty, first, last, etc.). Returns null
+   * if the name is not a recognized no-arg operation.
+   *
+   * @param opName Operation name
+   * @param receiver Value of the receiver
+   * @param ctx Context for error reporting
+   * @return Result value if successful, null otherwise
+   */
+  private Value tryEvaluateNoArgOperation(
+      String opName, Value receiver, org.antlr.v4.runtime.ParserRuleContext ctx) {
+    return switch (opName) {
+      case "size" -> Value.intValue(receiver.size());
+      case "isEmpty" -> Value.boolValue(receiver.isEmpty());
+      case "notEmpty" -> Value.boolValue(receiver.notEmpty());
+      case "first" -> receiver.first();
+      case "last" -> receiver.last();
+      case "reverse" -> receiver.reverse();
+      case "flatten" -> receiver.flatten();
+      default -> null; // Not a no-arg operation
+    };
+  }
+
+  /**
+   * Visit a navigatingExpCS with receiver value context. Extracts the operation name and delegates
+   * to name-based dispatch.
+   *
+   * @param ctx Navigating expression context
+   * @param receiver Value of the receiver
+   * @return Result value of the operation
+   */
   private Value visitNavigatingExpCSWithReceiver(
       VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // Handle metaclass operations (e.g., UML::Class.allInstances())
     String opName = ctx.indexExpCS().nameExpCS().getText();
 
-    // Handle metaclass operations
     if (opName.equals("allInstances")) {
       // TODO: Query VSUM for all instances of this metaclass
-      // For now, return empty set
       Type resultType = nodeTypes.get(ctx);
       return Value.of(List.of(), resultType);
     }
 
-    throw new RuntimeException("Unknown metaclass operation: " + opName);
+    // ✅ Delegate to nameExpCS with receiver context
+    return visitNameExpCSAsOperation(ctx.indexExpCS().nameExpCS(), ctx, receiver);
   }
 
   /**
@@ -404,359 +520,361 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private Value evaluateCollectionOperation(
       VitruvOCLParser.NavigatingExpCSContext ctx, String opName, Value receiver) {
-    switch (opName) {
-      case "including":
-        {
-          // including(x): adds element to collection
-          List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
-          if (args.isEmpty()) {
-            return error("Operation 'including' requires 1 argument", ctx);
-          }
+    return switch (opName) {
+      case "including" -> evaluateIncluding(ctx, receiver);
+      case "excluding" -> evaluateExcluding(ctx, receiver);
+      case "includes" -> evaluateIncludes(ctx, receiver);
+      case "excludes" -> evaluateExcludes(ctx, receiver);
+      case "flatten" -> evaluateFlatten(receiver);
+      case "union" -> evaluateUnion(ctx, receiver);
+      case "append" -> evaluateAppend(ctx, receiver);
+      case "sum" -> evaluateSum(ctx, receiver);
+      case "max" -> evaluateMax(ctx, receiver);
+      case "min" -> evaluateMin(ctx, receiver);
+      case "avg" -> evaluateAvg(ctx, receiver);
+      case "abs" -> evaluateAbs(ctx, receiver);
+      case "floor", "ceil", "round" -> evaluateFloorCeilRound(ctx, opName, receiver);
+      case "lift" -> evaluateLift(ctx, receiver);
+      case "oclIsKindOf" -> evaluateOclIsKindOf(ctx, receiver);
+      case "select" -> evaluateSelect(ctx, receiver);
+      case "reject" -> evaluateReject(ctx, receiver);
+      case "collect" -> evaluateCollect(ctx, receiver);
+      case "forAll" -> evaluateForAll(ctx, receiver);
+      case "exists" -> evaluateExists(ctx, receiver);
+      default -> error("Unknown collection operation: " + opName, ctx);
+    };
+  }
 
-          Value arg = visit(args.get(0).navigatingArgExpCS());
-          if (arg.size() != 1) {
-            return error("including() requires exactly 1 singleton argument", ctx);
-          }
-
-          OCLElement elem = arg.getElements().get(0);
-          return receiver.including(elem);
-        }
-
-      case "excluding":
-        {
-          // excluding(x): removes element from collection
-          List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
-          if (args.isEmpty()) {
-            return error("Operation 'excluding' requires 1 argument", ctx);
-          }
-
-          Value arg = visit(args.get(0).navigatingArgExpCS());
-          if (arg.size() != 1) {
-            return error("excluding() requires exactly 1 singleton argument", ctx);
-          }
-
-          OCLElement elem = arg.getElements().get(0);
-          return receiver.excluding(elem);
-        }
-
-      case "includes":
-        {
-          // includes(x): checks if element is in collection
-          List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
-          if (args.isEmpty()) {
-            return error("Operation 'includes' requires 1 argument", ctx);
-          }
-
-          Value arg = visit(args.get(0).navigatingArgExpCS());
-          if (arg.size() != 1) {
-            return error("includes() requires exactly 1 singleton argument", ctx);
-          }
-
-          OCLElement elem = arg.getElements().get(0);
-          return Value.boolValue(receiver.includes(elem));
-        }
-
-      case "excludes":
-        {
-          // excludes(x): checks if element is NOT in collection
-          List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
-          if (args.isEmpty()) {
-            return error("Operation 'excludes' requires 1 argument", ctx);
-          }
-
-          Value arg = visit(args.get(0).navigatingArgExpCS());
-          if (arg.size() != 1) {
-            return error("excludes() requires exactly 1 singleton argument", ctx);
-          }
-
-          OCLElement elem = arg.getElements().get(0);
-          return Value.boolValue(receiver.excludes(elem));
-        }
-
-      case "flatten":
-        {
-          // flatten(): flattens nested collections
-          return receiver.flatten();
-        }
-
-      case "union":
-        {
-          // union(collection): set union
-          List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
-          if (args.isEmpty()) {
-            return error("Operation 'union' requires 1 argument", ctx);
-          }
-
-          Value arg = visit(args.get(0).navigatingArgExpCS());
-          return receiver.union(arg);
-        }
-
-      case "append":
-        {
-          // append(collection): sequence append (alias for union in our implementation)
-          List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
-          if (args.isEmpty()) {
-            return error("Operation 'append' requires 1 argument", ctx);
-          }
-
-          Value arg = visit(args.get(0).navigatingArgExpCS());
-          return receiver.union(arg); // In OCL#, append is essentially union for sequences
-        }
-      case "sum":
-        {
-          int sum = 0;
-          for (OCLElement elem : receiver.getElements()) {
-            if (!(elem instanceof OCLElement.IntValue)) {
-              return error("sum() requires integer elements", ctx);
-            }
-            sum += ((OCLElement.IntValue) elem).value();
-          }
-          return Value.intValue(sum); // 0 if empty
-        }
-      case "max":
-        {
-          // max(): Collection(Collection(Integer)) → Collection(Integer)
-          if (receiver.isEmpty()) {
-            return Value.empty(Type.INTEGER); // Empty collection
-          }
-
-          int max = Integer.MIN_VALUE;
-          for (OCLElement elem : receiver.getElements()) {
-            if (!(elem instanceof OCLElement.IntValue)) {
-              return error("max() requires integer elements", ctx);
-            }
-            int val = ((OCLElement.IntValue) elem).value();
-            if (val > max) {
-              max = val;
-            }
-          }
-          return Value.intValue(max); // Returns [max]
-        }
-
-      case "min":
-        {
-          // min(): Collection(Collection(Integer)) → Collection(Integer)
-          if (receiver.isEmpty()) {
-            return Value.empty(Type.INTEGER); // Empty collection
-          }
-
-          int min = Integer.MAX_VALUE;
-          for (OCLElement elem : receiver.getElements()) {
-            if (!(elem instanceof OCLElement.IntValue)) {
-              return error("min() requires integer elements", ctx);
-            }
-            int val = ((OCLElement.IntValue) elem).value();
-            if (val < min) {
-              min = val;
-            }
-          }
-          return Value.intValue(min); // Returns [min]
-        }
-
-      case "avg":
-        {
-          // avg(): Collection(Collection(Integer)) → Collection(Integer)
-          if (receiver.isEmpty()) {
-            return Value.empty(Type.INTEGER); // Empty collection
-          }
-
-          int sum = 0;
-          for (OCLElement elem : receiver.getElements()) {
-            if (!(elem instanceof OCLElement.IntValue)) {
-              return error("avg() requires integer elements", ctx);
-            }
-            sum += ((OCLElement.IntValue) elem).value();
-          }
-
-          int avg = sum / receiver.size();
-          return Value.intValue(avg); // Returns [avg]
-        }
-
-      case "abs":
-        {
-          // abs(): Collection(Integer) → Collection(Integer)
-          List<OCLElement> result = new ArrayList<>();
-
-          for (OCLElement elem : receiver.getElements()) {
-            if (!(elem instanceof OCLElement.IntValue)) {
-              return error("abs() requires integer elements", ctx);
-            }
-            int val = ((OCLElement.IntValue) elem).value();
-            result.add(new OCLElement.IntValue(Math.abs(val)));
-          }
-
-          Type receiverType = nodeTypes.get(ctx);
-          return Value.of(result, receiverType != null ? receiverType : Type.set(Type.INTEGER));
-        }
-
-      case "floor":
-      case "ceil":
-      case "round":
-        {
-          // For integers: no-op, validate and return
-          for (OCLElement elem : receiver.getElements()) {
-            if (!(elem instanceof OCLElement.IntValue)) {
-              return error(opName + "() requires integer elements", ctx);
-            }
-          }
-          return receiver;
-        }
-
-      case "lift":
-        {
-          // lift(): {a,b,c} → {{a,b,c}}
-
-          // Create NestedCollection element wrapping receiver
-          OCLElement.NestedCollection wrappedCollection = new OCLElement.NestedCollection(receiver);
-
-          List<OCLElement> wrappedList = List.of(wrappedCollection);
-
-          // Get receiver type from nodeTypes
-          Type receiverType = nodeTypes.get(ctx);
-          if (receiverType == null) {
-            receiverType = Type.set(Type.INTEGER); // Fallback
-          }
-
-          // Create outer collection type (preserve kind)
-          Type outerType;
-          if (receiverType.isUnique() && receiverType.isOrdered()) {
-            outerType = Type.orderedSet(receiverType);
-          } else if (receiverType.isUnique()) {
-            outerType = Type.set(receiverType);
-          } else if (receiverType.isOrdered()) {
-            outerType = Type.sequence(receiverType);
-          } else {
-            outerType = Type.bag(receiverType);
-          }
-
-          return Value.of(wrappedList, outerType);
-        }
-      case "oclIsKindOf":
-        {
-          // oclIsKindOf(TypeName): Collection(T) → Collection(Boolean)
-
-          List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
-          if (args.isEmpty()) {
-            return error("oclIsKindOf() requires 1 type argument", ctx);
-          }
-
-          // Get the target type from type checker
-          VitruvOCLParser.NavigatingArgCSContext argCtx = args.get(0);
-          Type targetType = nodeTypes.get(argCtx);
-
-          if (targetType == null || targetType == Type.ERROR) {
-            return error("Invalid type argument for oclIsKindOf", ctx);
-          }
-
-          // Apply to each element
-          List<OCLElement> results = new ArrayList<>();
-          for (OCLElement elem : receiver.getElements()) {
-            boolean isKind = checkIsKindOf(elem, targetType);
-            results.add(new OCLElement.BoolValue(isKind));
-          }
-
-          // Preserve collection kind, but with Boolean elements
-          Type receiverType = nodeTypes.get(ctx);
-          Type resultType;
-          if (receiverType != null) {
-            if (receiverType.isUnique() && receiverType.isOrdered()) {
-              resultType = Type.orderedSet(Type.BOOLEAN);
-            } else if (receiverType.isUnique()) {
-              resultType = Type.set(Type.BOOLEAN);
-            } else if (receiverType.isOrdered()) {
-              resultType = Type.sequence(Type.BOOLEAN);
-            } else {
-              resultType = Type.bag(Type.BOOLEAN);
-            }
-          } else {
-            resultType = Type.set(Type.BOOLEAN);
-          }
-
-          return Value.of(results, resultType);
-        }
-      case "select":
-        {
-          // select(x | predicate): filters elements that satisfy predicate
-          List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
-          if (args.isEmpty()) {
-            return error("Operation 'select' requires iterator argument (var | predicate)", ctx);
-          }
-
-          if (args.size() > 1) {
-            return error(
-                "Operation 'select' expects exactly 1 iterator argument, got " + args.size(), ctx);
-          }
-
-          return evaluateIteratorOperation(ctx, args.get(0), "select", receiver);
-        }
-
-      case "reject":
-        {
-          // reject(x | predicate): filters elements that DON'T satisfy predicate
-          List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
-          if (args.isEmpty()) {
-            return error("Operation 'reject' requires iterator argument (var | predicate)", ctx);
-          }
-
-          if (args.size() > 1) {
-            return error(
-                "Operation 'reject' expects exactly 1 iterator argument, got " + args.size(), ctx);
-          }
-
-          return evaluateIteratorOperation(ctx, args.get(0), "reject", receiver);
-        }
-
-      case "collect":
-        {
-          // collect(x | expression): transforms each element with auto-flatten
-          List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
-          if (args.isEmpty()) {
-            return error("Operation 'collect' requires iterator argument (var | expression)", ctx);
-          }
-
-          if (args.size() > 1) {
-            return error(
-                "Operation 'collect' expects exactly 1 iterator argument, got " + args.size(), ctx);
-          }
-
-          return evaluateIteratorOperation(ctx, args.get(0), "collect", receiver);
-        }
-
-      case "forAll":
-        {
-          // forAll(x | predicate): returns true if all elements satisfy predicate
-          List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
-          if (args.isEmpty()) {
-            return error("Operation 'forAll' requires iterator argument (var | predicate)", ctx);
-          }
-
-          if (args.size() > 1) {
-            return error(
-                "Operation 'forAll' expects exactly 1 iterator argument, got " + args.size(), ctx);
-          }
-
-          return evaluateIteratorOperation(ctx, args.get(0), "forAll", receiver);
-        }
-
-      case "exists":
-        {
-          // exists(x | predicate): returns true if any element satisfies predicate
-          List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
-          if (args.isEmpty()) {
-            return error("Operation 'exists' requires iterator argument (var | predicate)", ctx);
-          }
-
-          if (args.size() > 1) {
-            return error(
-                "Operation 'exists' expects exactly 1 iterator argument, got " + args.size(), ctx);
-          }
-
-          return evaluateIteratorOperation(ctx, args.get(0), "exists", receiver);
-        }
-
-      default:
-        return error("Unknown collection operation: " + opName, ctx);
+  private Value evaluateIncluding(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // including(x): adds element to collection
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      return error("Operation 'including' requires 1 argument", ctx);
     }
+
+    Value arg = visit(args.get(0).navigatingArgExpCS());
+    if (arg.size() != 1) {
+      return error("including() requires exactly 1 singleton argument", ctx);
+    }
+
+    OCLElement elem = arg.getElements().get(0);
+    return receiver.including(elem);
+  }
+
+  private Value evaluateExcluding(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // excluding(x): removes element from collection
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      return error("Operation 'excluding' requires 1 argument", ctx);
+    }
+
+    Value arg = visit(args.get(0).navigatingArgExpCS());
+    if (arg.size() != 1) {
+      return error("excluding() requires exactly 1 singleton argument", ctx);
+    }
+
+    OCLElement elem = arg.getElements().get(0);
+    return receiver.excluding(elem);
+  }
+
+  private Value evaluateIncludes(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // includes(x): checks if element is in collection
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      return error("Operation 'includes' requires 1 argument", ctx);
+    }
+
+    Value arg = visit(args.get(0).navigatingArgExpCS());
+    if (arg.size() != 1) {
+      return error("includes() requires exactly 1 singleton argument", ctx);
+    }
+
+    OCLElement elem = arg.getElements().get(0);
+    return Value.boolValue(receiver.includes(elem));
+  }
+
+  private Value evaluateExcludes(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // excludes(x): checks if element is NOT in collection
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      return error("Operation 'excludes' requires 1 argument", ctx);
+    }
+
+    Value arg = visit(args.get(0).navigatingArgExpCS());
+    if (arg.size() != 1) {
+      return error("excludes() requires exactly 1 singleton argument", ctx);
+    }
+
+    OCLElement elem = arg.getElements().get(0);
+    return Value.boolValue(receiver.excludes(elem));
+  }
+
+  private Value evaluateFlatten(Value receiver) {
+    // flatten(): flattens nested collections
+    return receiver.flatten();
+  }
+
+  private Value evaluateUnion(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // union(collection): set union
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      return error("Operation 'union' requires 1 argument", ctx);
+    }
+
+    Value arg = visit(args.get(0).navigatingArgExpCS());
+    return receiver.union(arg);
+  }
+
+  private Value evaluateAppend(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // append(collection): sequence append (alias for union in our implementation)
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      return error("Operation 'append' requires 1 argument", ctx);
+    }
+
+    Value arg = visit(args.get(0).navigatingArgExpCS());
+    return receiver.union(arg); // In OCL#, append is essentially union for sequences
+  }
+
+  private Value evaluateSum(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    int sum = 0;
+    for (OCLElement elem : receiver.getElements()) {
+      if (!(elem instanceof OCLElement.IntValue)) {
+        return error("sum() requires integer elements", ctx);
+      }
+      sum += ((OCLElement.IntValue) elem).value();
+    }
+    return Value.intValue(sum); // 0 if empty
+  }
+
+  private Value evaluateMax(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // max(): Collection(Collection(Integer)) → Collection(Integer)
+    if (receiver.isEmpty()) {
+      return Value.empty(Type.INTEGER); // Empty collection
+    }
+
+    int max = Integer.MIN_VALUE;
+    for (OCLElement elem : receiver.getElements()) {
+      if (!(elem instanceof OCLElement.IntValue)) {
+        return error("max() requires integer elements", ctx);
+      }
+      int val = ((OCLElement.IntValue) elem).value();
+      if (val > max) {
+        max = val;
+      }
+    }
+    return Value.intValue(max); // Returns [max]
+  }
+
+  private Value evaluateMin(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // min(): Collection(Collection(Integer)) → Collection(Integer)
+    if (receiver.isEmpty()) {
+      return Value.empty(Type.INTEGER); // Empty collection
+    }
+
+    int min = Integer.MAX_VALUE;
+    for (OCLElement elem : receiver.getElements()) {
+      if (!(elem instanceof OCLElement.IntValue)) {
+        return error("min() requires integer elements", ctx);
+      }
+      int val = ((OCLElement.IntValue) elem).value();
+      if (val < min) {
+        min = val;
+      }
+    }
+    return Value.intValue(min); // Returns [min]
+  }
+
+  private Value evaluateAvg(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // avg(): Collection(Collection(Integer)) → Collection(Integer)
+    if (receiver.isEmpty()) {
+      return Value.empty(Type.INTEGER); // Empty collection
+    }
+
+    int sum = 0;
+    for (OCLElement elem : receiver.getElements()) {
+      if (!(elem instanceof OCLElement.IntValue)) {
+        return error("avg() requires integer elements", ctx);
+      }
+      sum += ((OCLElement.IntValue) elem).value();
+    }
+
+    int avg = sum / receiver.size();
+    return Value.intValue(avg); // Returns [avg]
+  }
+
+  private Value evaluateAbs(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // abs(): Collection(Integer) → Collection(Integer)
+    List<OCLElement> result = new ArrayList<>();
+
+    for (OCLElement elem : receiver.getElements()) {
+      if (!(elem instanceof OCLElement.IntValue)) {
+        return error("abs() requires integer elements", ctx);
+      }
+      int val = ((OCLElement.IntValue) elem).value();
+      result.add(new OCLElement.IntValue(Math.abs(val)));
+    }
+
+    Type receiverType = nodeTypes.get(ctx);
+    return Value.of(result, receiverType != null ? receiverType : Type.set(Type.INTEGER));
+  }
+
+  private Value evaluateFloorCeilRound(
+      VitruvOCLParser.NavigatingExpCSContext ctx, String opName, Value receiver) {
+    // For integers: no-op, validate and return
+    for (OCLElement elem : receiver.getElements()) {
+      if (!(elem instanceof OCLElement.IntValue)) {
+        return error(opName + "() requires integer elements", ctx);
+      }
+    }
+    return receiver;
+  }
+
+  private Value evaluateLift(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // lift(): {a,b,c} → {{a,b,c}}
+
+    // Create NestedCollection element wrapping receiver
+    OCLElement.NestedCollection wrappedCollection = new OCLElement.NestedCollection(receiver);
+
+    List<OCLElement> wrappedList = List.of(wrappedCollection);
+
+    // Get receiver type from nodeTypes
+    Type receiverType = nodeTypes.get(ctx);
+    if (receiverType == null) {
+      receiverType = Type.set(Type.INTEGER); // Fallback
+    }
+
+    // Create outer collection type (preserve kind)
+    Type outerType;
+    if (receiverType.isUnique() && receiverType.isOrdered()) {
+      outerType = Type.orderedSet(receiverType);
+    } else if (receiverType.isUnique()) {
+      outerType = Type.set(receiverType);
+    } else if (receiverType.isOrdered()) {
+      outerType = Type.sequence(receiverType);
+    } else {
+      outerType = Type.bag(receiverType);
+    }
+
+    return Value.of(wrappedList, outerType);
+  }
+
+  private Value evaluateOclIsKindOf(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // oclIsKindOf(TypeName): Collection(T) → Collection(Boolean)
+
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      return error("oclIsKindOf() requires 1 type argument", ctx);
+    }
+
+    // Get the target type from type checker
+    VitruvOCLParser.NavigatingArgCSContext argCtx = args.get(0);
+    Type targetType = nodeTypes.get(argCtx);
+
+    if (targetType == null || targetType == Type.ERROR) {
+      return error("Invalid type argument for oclIsKindOf", ctx);
+    }
+
+    // Apply to each element
+    List<OCLElement> results = new ArrayList<>();
+    for (OCLElement elem : receiver.getElements()) {
+      boolean isKind = checkIsKindOf(elem, targetType);
+      results.add(new OCLElement.BoolValue(isKind));
+    }
+
+    // Preserve collection kind, but with Boolean elements
+    Type receiverType = nodeTypes.get(ctx);
+    Type resultType;
+    if (receiverType != null) {
+      if (receiverType.isUnique() && receiverType.isOrdered()) {
+        resultType = Type.orderedSet(Type.BOOLEAN);
+      } else if (receiverType.isUnique()) {
+        resultType = Type.set(Type.BOOLEAN);
+      } else if (receiverType.isOrdered()) {
+        resultType = Type.sequence(Type.BOOLEAN);
+      } else {
+        resultType = Type.bag(Type.BOOLEAN);
+      }
+    } else {
+      resultType = Type.set(Type.BOOLEAN);
+    }
+
+    return Value.of(results, resultType);
+  }
+
+  private Value evaluateSelect(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // select(x | predicate): filters elements that satisfy predicate
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      return error("Operation 'select' requires iterator argument (var | predicate)", ctx);
+    }
+
+    if (args.size() > 1) {
+      return error(
+          "Operation 'select' expects exactly 1 iterator argument, got " + args.size(), ctx);
+    }
+
+    return evaluateIteratorOperation(ctx, args.get(0), "select", receiver);
+  }
+
+  private Value evaluateReject(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // reject(x | predicate): filters elements that DON'T satisfy predicate
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      return error("Operation 'reject' requires iterator argument (var | predicate)", ctx);
+    }
+
+    if (args.size() > 1) {
+      return error(
+          "Operation 'reject' expects exactly 1 iterator argument, got " + args.size(), ctx);
+    }
+
+    return evaluateIteratorOperation(ctx, args.get(0), "reject", receiver);
+  }
+
+  private Value evaluateCollect(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // collect(x | expression): transforms each element with auto-flatten
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      return error("Operation 'collect' requires iterator argument (var | expression)", ctx);
+    }
+
+    if (args.size() > 1) {
+      return error(
+          "Operation 'collect' expects exactly 1 iterator argument, got " + args.size(), ctx);
+    }
+
+    return evaluateIteratorOperation(ctx, args.get(0), "collect", receiver);
+  }
+
+  private Value evaluateForAll(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // forAll(x | predicate): returns true if all elements satisfy predicate
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      return error("Operation 'forAll' requires iterator argument (var | predicate)", ctx);
+    }
+
+    if (args.size() > 1) {
+      return error(
+          "Operation 'forAll' expects exactly 1 iterator argument, got " + args.size(), ctx);
+    }
+
+    return evaluateIteratorOperation(ctx, args.get(0), "forAll", receiver);
+  }
+
+  private Value evaluateExists(VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
+    // exists(x | predicate): returns true if any element satisfies predicate
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      return error("Operation 'exists' requires iterator argument (var | predicate)", ctx);
+    }
+
+    if (args.size() > 1) {
+      return error(
+          "Operation 'exists' expects exactly 1 iterator argument, got " + args.size(), ctx);
+    }
+
+    return evaluateIteratorOperation(ctx, args.get(0), "exists", receiver);
   }
 
   /**
@@ -1253,25 +1371,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   /** Evaluates 'self' references. */
   @Override
   public Value visitSelfExpCS(VitruvOCLParser.SelfExpCSContext ctx) {
-    // Lookup 'self' in symbol table
-    Symbol selfSymbol = symbolTable.resolve("self");
-
-    if (selfSymbol == null) {
-      return error("'self' is not defined in current context", ctx);
+    Symbol symbol = symbolTable.resolve("self");
+    if (symbol instanceof VariableSymbol varSym) {
+      Value selfValue = varSym.getValue();
+      if (selfValue != null) {
+        return selfValue;
+      }
     }
-
-    if (!(selfSymbol instanceof VariableSymbol)) {
-      return error("'self' is not a variable (internal error)", ctx);
-    }
-
-    VariableSymbol selfVar = (VariableSymbol) selfSymbol;
-    Value selfValue = selfVar.getValue();
-
-    if (selfValue == null) {
-      return error("'self' has no value (internal error)", ctx);
-    }
-
-    return selfValue;
+    return error("'self' not defined in current context", ctx);
   }
 
   // ==================== Navigation ====================
@@ -1298,59 +1405,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       args.add(visit(expCtx));
     }
 
-    // ===== Query Operations =====
-
-    if (operationName.equals("size")) {
-      return Value.intValue(source.size());
-    }
-    if (operationName.equals("isEmpty")) {
-      return Value.boolValue(source.isEmpty());
-    }
-    if (operationName.equals("notEmpty")) {
-      return Value.boolValue(source.notEmpty());
-    }
-    if (operationName.equals("includes")) {
-      if (args.size() != 1 || args.get(0).size() != 1) {
-        return error("includes() requires exactly 1 singleton argument", ctx);
-      }
-      OCLElement elem = args.get(0).getElements().get(0);
-      return Value.boolValue(source.includes(elem));
-    }
-
-    if (operationName.equals("excludes")) {
-      if (args.size() != 1 || args.get(0).size() != 1) {
-        return error("excludes() requires exactly 1 singleton argument", ctx);
-      }
-      OCLElement elem = args.get(0).getElements().get(0);
-      return Value.boolValue(source.excludes(elem));
-    }
-
-    // ===== Modification Operations =====
-
-    if (operationName.equals("including")) {
-      if (args.size() != 1 || args.get(0).size() != 1) {
-        return error("including() requires exactly 1 singleton argument", ctx);
-      }
-      OCLElement elem = args.get(0).getElements().get(0);
-      return source.including(elem);
-    }
-
-    if (operationName.equals("excluding")) {
-      if (args.size() != 1 || args.get(0).size() != 1) {
-        return error("excluding() requires exactly 1 singleton argument", ctx);
-      }
-      OCLElement elem = args.get(0).getElements().get(0);
-      return source.excluding(elem);
-    }
-
-    // ===== Set Operations =====
-
-    if (operationName.equals("union")) {
-      if (args.size() != 1) {
-        return error("union() requires exactly 1 argument", ctx);
-      }
-      return source.union(args.get(0));
-    }
+    // ===== Query Operations (die noch nicht woanders behandelt werden) =====
 
     if (operationName.equals("intersection")) {
       if (args.size() != 1) {
@@ -1389,14 +1444,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
     // ===== Ordered Operations =====
 
-    if (operationName.equals("first")) {
-      return source.first();
-    }
-
-    if (operationName.equals("last")) {
-      return source.last();
-    }
-
     if (operationName.equals("at")) {
       if (args.size() != 1 || args.get(0).size() != 1) {
         return error("at() requires exactly 1 singleton integer argument", ctx);
@@ -1416,10 +1463,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       OCLElement elem = args.get(0).getElements().get(0);
       int index = source.indexOf(elem);
       return Value.intValue(index);
-    }
-
-    if (operationName.equals("reverse")) {
-      return source.reverse();
     }
 
     if (operationName.equals("count")) {

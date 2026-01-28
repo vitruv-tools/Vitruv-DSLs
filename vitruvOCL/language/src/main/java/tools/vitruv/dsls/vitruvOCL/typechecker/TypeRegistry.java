@@ -2,7 +2,7 @@ package tools.vitruv.dsls.vitruvOCL.typechecker;
 
 import java.util.HashMap;
 import java.util.Map;
-import tools.vitruv.dsls.vitruvOCL.pipeline.ConstraintSpecification;
+import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
 
 /**
  * registry for metamodels in the vsum - access on metaclasses via fully qualified names - chaching
@@ -13,10 +13,10 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.ConstraintSpecification;
  */
 public class TypeRegistry {
 
-  private final ConstraintSpecification specificationsumWrapper;
+  private final MetamodelWrapperInterface specificationsumWrapper;
   private final Map<String, Type> typeCache = new HashMap<>();
 
-  public TypeRegistry(ConstraintSpecification specificationsumWrapper) {
+  public TypeRegistry(MetamodelWrapperInterface specificationsumWrapper) {
     this.specificationsumWrapper = specificationsumWrapper;
   }
 

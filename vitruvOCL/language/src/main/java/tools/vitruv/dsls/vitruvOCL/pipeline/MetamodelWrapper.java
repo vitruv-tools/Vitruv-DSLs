@@ -15,7 +15,7 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
  * Test constraint specification - loads .ecore and .xmi files from disk. Configure model instance
  * paths via static TEST_MODELS_PATH.
  */
-public class TestConstraintSpecification implements ConstraintSpecification {
+public class MetamodelWrapper implements MetamodelWrapperInterface {
 
   /** Base path for test model instances (configure before use). */
   public static Path TEST_MODELS_PATH = Path.of("test-models");
@@ -24,7 +24,7 @@ public class TestConstraintSpecification implements ConstraintSpecification {
   private final Map<EClass, List<EObject>> instances = new HashMap<>();
   private final ResourceSet resourceSet;
 
-  public TestConstraintSpecification() {
+  public MetamodelWrapper() {
     this.resourceSet = new ResourceSetImpl();
     resourceSet
         .getResourceFactoryRegistry()

@@ -14,7 +14,7 @@ public class VitruvOCL {
    * @return ValidationResult
    */
   public static ValidationResult validate(Path oclFile, Path... ecoreFiles) throws IOException {
-    TestConstraintSpecification spec = new TestConstraintSpecification();
+    MetamodelWrapper spec = new MetamodelWrapper();
     for (Path ecoreFile : ecoreFiles) {
       spec.loadMetamodel(ecoreFile);
     }
@@ -31,7 +31,7 @@ public class VitruvOCL {
    * @param oclFile Path to .ocl file
    * @return ValidationResult
    */
-  public static ValidationResult validate(ConstraintSpecification specification, Path oclFile)
+  public static ValidationResult validate(MetamodelWrapperInterface specification, Path oclFile)
       throws IOException {
     tools.vitruv.dsls.vitruvOCL.pipeline.VitruvOCLCompiler compiler =
         new VitruvOCLCompiler(specification, oclFile);

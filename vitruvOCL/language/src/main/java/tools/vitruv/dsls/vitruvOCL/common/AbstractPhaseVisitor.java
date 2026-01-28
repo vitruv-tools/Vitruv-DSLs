@@ -3,7 +3,7 @@ package tools.vitruv.dsls.vitruvOCL.common;
 import org.antlr.v4.runtime.ParserRuleContext;
 import tools.vitruv.dsls.vitruvOCL.VitruvOCLBaseVisitor;
 import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
-import tools.vitruv.dsls.vitruvOCL.pipeline.ConstraintSpecification;
+import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
 import tools.vitruv.dsls.vitruvOCL.symboltable.Symbol;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTable;
 import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
@@ -21,10 +21,10 @@ public abstract class AbstractPhaseVisitor<T> extends VitruvOCLBaseVisitor<T> {
 
   protected final SymbolTable symbolTable;
   protected final ErrorCollector errors;
-  protected final ConstraintSpecification specification;
+  protected final MetamodelWrapperInterface specification;
 
   protected AbstractPhaseVisitor(
-      SymbolTable symbolTable, ConstraintSpecification specification, ErrorCollector errors) {
+      SymbolTable symbolTable, MetamodelWrapperInterface specification, ErrorCollector errors) {
     this.symbolTable = symbolTable;
     this.specification = specification;
     this.errors = errors;

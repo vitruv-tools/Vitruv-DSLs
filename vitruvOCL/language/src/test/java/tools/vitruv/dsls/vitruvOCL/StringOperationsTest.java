@@ -11,11 +11,10 @@ import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.junit.jupiter.api.Test;
 import tools.vitruv.dsls.vitruvOCL.common.ErrorCollector;
-import tools.vitruv.dsls.vitruvOCL.common.VSUMWrapper;
 import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement;
 import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
-import tools.vitruv.dsls.vitruvOCL.pipeline.ConstraintSpecification;
+import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTable;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
@@ -195,8 +194,8 @@ public class StringOperationsTest {
     // After parsing, reset to start
     tokens.seek(0);
 
-    ConstraintSpecification dummySpec =
-        new ConstraintSpecification() {
+    MetamodelWrapperInterface dummySpec =
+        new MetamodelWrapperInterface() {
           @Override
           public EClass resolveEClass(String metamodel, String className) {
             return null;
@@ -215,7 +214,6 @@ public class StringOperationsTest {
 
     // Pass 1: Symbol Table
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
-    VSUMWrapper vsumWrapper = null;
 
     // Pass 2: Type Checking
     ErrorCollector errors = new ErrorCollector();

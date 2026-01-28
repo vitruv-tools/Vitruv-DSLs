@@ -14,7 +14,7 @@ import tools.vitruv.dsls.vitruvOCL.common.ErrorCollector;
 import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement;
 import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
-import tools.vitruv.dsls.vitruvOCL.pipeline.ConstraintSpecification;
+import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTable;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
@@ -167,8 +167,8 @@ public class IfThenElseTest {
     ParseTree tree = parser.infixedExpCS();
 
     // Dummy specification
-    ConstraintSpecification dummySpec =
-        new ConstraintSpecification() {
+    MetamodelWrapperInterface dummySpec =
+        new MetamodelWrapperInterface() {
           @Override
           public EClass resolveEClass(String metamodel, String className) {
             return null;
@@ -593,8 +593,8 @@ public class IfThenElseTest {
     ParseTree tree = parser.infixedExpCS();
 
     // Dummy specification
-    ConstraintSpecification dummySpec =
-        new ConstraintSpecification() {
+    MetamodelWrapperInterface dummySpec =
+        new MetamodelWrapperInterface() {
           @Override
           public EClass resolveEClass(String metamodel, String className) {
             return null;
@@ -642,8 +642,8 @@ public class IfThenElseTest {
     ParseTree tree = parser.infixedExpCS();
 
     // Dummy specification
-    ConstraintSpecification dummySpec =
-        new ConstraintSpecification() {
+    MetamodelWrapperInterface dummySpec =
+        new MetamodelWrapperInterface() {
           @Override
           public EClass resolveEClass(String metamodel, String className) {
             return null;
@@ -693,8 +693,8 @@ public class IfThenElseTest {
     ParseTree tree = parser.infixedExpCS();
 
     // Dummy specification
-    ConstraintSpecification dummySpec =
-        new ConstraintSpecification() {
+    MetamodelWrapperInterface dummySpec =
+        new MetamodelWrapperInterface() {
           @Override
           public EClass resolveEClass(String metamodel, String className) {
             return null;

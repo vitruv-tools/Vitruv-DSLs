@@ -11,8 +11,9 @@ import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser.CollectionTypeCSContext;
 import tools.vitruv.dsls.vitruvOCL.common.AbstractPhaseVisitor;
 import tools.vitruv.dsls.vitruvOCL.common.ErrorCollector;
 import tools.vitruv.dsls.vitruvOCL.common.ErrorSeverity;
-import tools.vitruv.dsls.vitruvOCL.pipeline.ConstraintSpecification;
+import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
 import tools.vitruv.dsls.vitruvOCL.symboltable.LocalScope;
+import tools.vitruv.dsls.vitruvOCL.symboltable.Scope;
 import tools.vitruv.dsls.vitruvOCL.symboltable.Symbol;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTable;
 import tools.vitruv.dsls.vitruvOCL.symboltable.TypeSymbol;
@@ -35,17 +36,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
   private final ParseTreeProperty<Type> nodeTypes = new ParseTreeProperty<>();
   private final SymbolTable symbolTable;
-  private final ConstraintSpecification specification;
-  private final TypeRegistry typeRegistry;
 
   private org.antlr.v4.runtime.TokenStream tokens;
 
   public TypeCheckVisitor(
-      SymbolTable symbolTable, ConstraintSpecification specification, ErrorCollector errors) {
-    super(symbolTable, specification, errors);
-    this.typeRegistry = new TypeRegistry(specification);
+      SymbolTable symbolTable, MetamodelWrapperInterface wrapper, ErrorCollector errors) {
+    super(symbolTable, wrapper, errors);
     this.symbolTable = symbolTable;
-    this.specification = specification;
   }
 
   public ParseTreeProperty<Type> getNodeTypes() {
@@ -428,26 +425,39 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   }
 
   /**
-   * Type-checks a primary expression with an explicit receiver type. Used for metamodel navigation
-   * like UML::Class.allInstances()
+   * Visit a primaryExpCS with receiver type context. Used for navigation chains where the receiver
+   * type must be passed down.
+   *
+   * @param ctx Primary expression context
+   * @param receiverType Type of the receiver (left side of navigation)
+   * @return Result type of the operation
    */
   private Type visitPrimaryExpCSWithReceiver(
       VitruvOCLParser.PrimaryExpCSContext ctx, Type receiverType) {
+    // navigatingExpCS needs receiver context
     if (ctx.navigatingExpCS() != null) {
       return visitNavigatingExpCSWithReceiver(ctx.navigatingExpCS(), receiverType);
     }
 
-    // Other primary expressions don't use receiver
+    // All other primaryExpCS don't need receiver context
+    // (ifExpCS, letExpCS, collectionLiteralExpCS, etc.)
     return visit(ctx);
   }
 
-  /** Type-checks a navigating expression with an explicit receiver type. */
+  /**
+   * Visit a navigatingExpCS with receiver type context. Extracts the operation name and delegates
+   * to name-based dispatch.
+   *
+   * @param ctx Navigating expression context
+   * @param receiverType Type of the receiver
+   * @return Result type of the operation
+   */
   private Type visitNavigatingExpCSWithReceiver(
       VitruvOCLParser.NavigatingExpCSContext ctx, Type receiverType) {
-    String opName = ctx.indexExpCS().nameExpCS().getText();
-
-    // Handle metaclass operations
+    // Handle metaclass operations (e.g., UML::Class.allInstances())
     if (receiverType.isMetaclassType()) {
+      String opName = ctx.indexExpCS().nameExpCS().getText();
+
       switch (opName) {
         case "allInstances":
           // MetaClass.allInstances() : Set(MetaClass)
@@ -467,8 +477,195 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       }
     }
 
-    // Fall back to normal navigation
-    return visit(ctx);
+    // Extract operation name from indexExpCS
+    if (ctx.opName == null || ctx.opName.nameExpCS() == null) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Invalid navigation expression",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      nodeTypes.put(ctx, Type.ERROR);
+      return Type.ERROR;
+    }
+
+    // ✅ Delegate to nameExpCS with receiver context
+    return visitNameExpCSAsOperation(ctx.opName.nameExpCS(), ctx, receiverType);
+  }
+
+  /**
+   * Visit a nameExpCS as an operation call with receiver context. Dispatches based on the type of
+   * name (variable, collection op, string op).
+   *
+   * @param nameCtx Name expression context
+   * @param navCtx Navigation context (contains arguments)
+   * @param receiverType Type of the receiver
+   * @return Result type of the operation
+   */
+  private Type visitNameExpCSAsOperation(
+      VitruvOCLParser.NameExpCSContext nameCtx,
+      VitruvOCLParser.NavigatingExpCSContext navCtx,
+      Type receiverType) {
+    // nameExpCS can be: name | ontologicalName | linguisticalName
+
+    // Main case: name (variableName | collectionOperationName | stringOperationName | STRING)
+    if (nameCtx instanceof VitruvOCLParser.NameContext nameContext) {
+      return visitNameContextAsOperation(nameContext, navCtx, receiverType);
+    }
+
+    // Other cases (ontologicalName, linguisticalName) are not operations
+    errors.add(
+        nameCtx.getStart().getLine(),
+        nameCtx.getStart().getCharPositionInLine(),
+        "Invalid operation name",
+        ErrorSeverity.ERROR,
+        "type-checker");
+    return Type.ERROR;
+  }
+
+  /**
+   * Visit a name context as an operation call. Dispatches to collection operations, string
+   * operations, or property/no-arg operations.
+   *
+   * @param nameCtx Name context
+   * @param navCtx Navigation context
+   * @param receiverType Type of the receiver
+   * @return Result type of the operation
+   */
+  private Type visitNameContextAsOperation(
+      VitruvOCLParser.NameContext nameCtx,
+      VitruvOCLParser.NavigatingExpCSContext navCtx,
+      Type receiverType) {
+    // ========================================
+    // Collection Operations (select, reject, including, etc.)
+    // ========================================
+    if (nameCtx.collectionOperationName() != null) {
+      String opName = nameCtx.collectionOperationName().getText();
+      return typeCheckCollectionOperation(navCtx, opName, receiverType);
+    }
+
+    // ========================================
+    // String Operations (concat, substring, etc.)
+    // ========================================
+    if (nameCtx.stringOperationName() != null) {
+      String opName = nameCtx.stringOperationName().getText();
+      return typeCheckStringOperation(navCtx, opName, receiverType);
+    }
+
+    // ========================================
+    // Variable/Property/No-Arg Operation
+    // ========================================
+    if (nameCtx.variableName != null) {
+      String name = nameCtx.variableName.getText();
+
+      // Check if it's a no-arg operation (size, isEmpty, first, etc.)
+      if (navCtx.navigatingArgCS().isEmpty() && navCtx.navigatingCommaArgCS().isEmpty()) {
+        Type noArgResult = tryResolveNoArgOperation(name, receiverType, navCtx);
+        if (noArgResult != Type.ERROR) {
+          return noArgResult;
+        }
+      }
+
+      // Otherwise it's property access
+      return resolvePropertyAccess(receiverType, name, navCtx);
+    }
+
+    // Unknown name type
+    errors.add(
+        nameCtx.getStart().getLine(),
+        nameCtx.getStart().getCharPositionInLine(),
+        "Invalid operation or property name",
+        ErrorSeverity.ERROR,
+        "type-checker");
+    return Type.ERROR;
+  }
+
+  /**
+   * Attempts to resolve a no-argument operation (size, isEmpty, first, last, etc.). Returns
+   * Type.ERROR if the name is not a recognized no-arg operation.
+   *
+   * @param opName Operation name
+   * @param receiverType Type of the receiver
+   * @param ctx Context for error reporting
+   * @return Result type if successful, Type.ERROR otherwise
+   */
+  private Type tryResolveNoArgOperation(
+      String opName, Type receiverType, org.antlr.v4.runtime.ParserRuleContext ctx) {
+    switch (opName) {
+      case "size":
+        if (!receiverType.isCollection()) {
+          errors.add(
+              ctx.getStart().getLine(),
+              ctx.getStart().getCharPositionInLine(),
+              "Operation 'size' requires collection type, got " + receiverType,
+              ErrorSeverity.ERROR,
+              "type-checker");
+          return Type.ERROR;
+        }
+        return Type.INTEGER;
+
+      case "isEmpty":
+      case "notEmpty":
+        if (!receiverType.isCollection()) {
+          errors.add(
+              ctx.getStart().getLine(),
+              ctx.getStart().getCharPositionInLine(),
+              "Operation '" + opName + "' requires collection type, got " + receiverType,
+              ErrorSeverity.ERROR,
+              "type-checker");
+          return Type.ERROR;
+        }
+        return Type.BOOLEAN;
+
+      case "first":
+      case "last":
+        if (!receiverType.isCollection()) {
+          errors.add(
+              ctx.getStart().getLine(),
+              ctx.getStart().getCharPositionInLine(),
+              "Operation '" + opName + "' requires collection type, got " + receiverType,
+              ErrorSeverity.ERROR,
+              "type-checker");
+          return Type.ERROR;
+        }
+        return receiverType.getElementType();
+
+      case "reverse":
+        if (!receiverType.isCollection() || !receiverType.isOrdered()) {
+          errors.add(
+              ctx.getStart().getLine(),
+              ctx.getStart().getCharPositionInLine(),
+              "Operation 'reverse' requires ordered collection, got " + receiverType,
+              ErrorSeverity.ERROR,
+              "type-checker");
+          return Type.ERROR;
+        }
+        // Type stays the same
+        return receiverType;
+
+      case "flatten":
+        if (!receiverType.isCollection()) {
+          errors.add(
+              ctx.getStart().getLine(),
+              ctx.getStart().getCharPositionInLine(),
+              "Operation 'flatten' requires collection, got " + receiverType,
+              ErrorSeverity.ERROR,
+              "type-checker");
+          return Type.ERROR;
+        }
+
+        Type innerType = receiverType.getElementType();
+        if (innerType.isCollection()) {
+          return innerType; // Flatten one level
+        } else {
+          // Already flat - return as is
+          return receiverType;
+        }
+
+      default:
+        // Not a no-arg operation
+        return Type.ERROR;
+    }
   }
 
   /**
@@ -479,7 +676,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitPrefixedExpCS(VitruvOCLParser.PrefixedExpCSContext ctx) {
+    // ========================================
     // Handle Metamodel::Class.operation() pattern
+    // ========================================
     if (ctx.metamodel != null && ctx.className != null) {
       String qualifiedName = ctx.metamodel.getText() + "::" + ctx.className.getText();
       Type metaclassType = symbolTable.lookupType(qualifiedName);
@@ -495,10 +694,8 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         return Type.ERROR;
       }
 
-      // Store the metaclass type as receiver
+      // Type-check navigation operations on metaclass
       Type currentType = metaclassType;
-
-      // Type-check navigation operations
       for (VitruvOCLParser.PrimaryExpCSContext primary : ctx.primaryExpCS()) {
         currentType = visitPrimaryExpCSWithReceiver(primary, currentType);
       }
@@ -506,7 +703,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       nodeTypes.put(ctx, currentType);
       return currentType;
     }
-    // Count how many unary operators we have at the start
+
+    // ========================================
+    // Handle unary operators: -5, not true
+    // ========================================
     int unaryOpCount = 0;
     for (int i = 0; i < ctx.getChildCount(); i++) {
       String text = ctx.getChild(i).getText();
@@ -517,7 +717,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       }
     }
 
-    // Get all primaries
     List<VitruvOCLParser.PrimaryExpCSContext> primaries = ctx.primaryExpCS();
 
     if (primaries.isEmpty()) {
@@ -531,10 +730,14 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
+    // ========================================
     // Start with first primary
+    // ========================================
     Type currentType = visit(primaries.get(0));
 
-    // Type-check unary operators
+    // ========================================
+    // Apply unary operators
+    // ========================================
     for (int i = 0; i < unaryOpCount; i++) {
       String op = ctx.getChild(i).getText();
 
@@ -563,102 +766,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       }
     }
 
-    // Handle navigation chain (if there are more primaries)
+    // ========================================
+    // Handle navigation chain: .operation1().operation2()
+    // ✅ HIER: Saubere Delegation statt Switch-Case!
+    // ========================================
     for (int i = 1; i < primaries.size(); i++) {
-      VitruvOCLParser.PrimaryExpCSContext operationCtx = primaries.get(i);
-
-      // Check if this is a navigatingExpCS (method call)
-      if (operationCtx.navigatingExpCS() != null) {
-        VitruvOCLParser.NavigatingExpCSContext navCtx = operationCtx.navigatingExpCS();
-
-        // Check if operation name is a collectionOperationName OR stringOperationName
-        if (navCtx.opName != null && navCtx.opName.nameExpCS() != null) {
-          VitruvOCLParser.NameExpCSContext nameExpCtx = navCtx.opName.nameExpCS();
-
-          // CRITICAL: Cast to NameContext to access collectionOperationName()
-          if (nameExpCtx instanceof VitruvOCLParser.NameContext nameContext) {
-            // Collection operations
-            if (nameContext.collectionOperationName() != null) {
-              String opName = nameContext.collectionOperationName().getText();
-              currentType = typeCheckCollectionOperation(navCtx, opName, currentType);
-              continue;
-            }
-
-            // String operations
-            if (nameContext.stringOperationName() != null) {
-              String opName = nameContext.stringOperationName().getText();
-              currentType = typeCheckStringOperation(navCtx, opName, currentType);
-              continue;
-            }
-          }
-        }
-
-        // Check for no-arg operations (size, isEmpty, etc.)
-        if (navCtx.navigatingArgCS().isEmpty() && navCtx.opName != null) {
-          String opName = navCtx.opName.nameExpCS().getText();
-
-          switch (opName) {
-            case "size":
-              currentType = Type.INTEGER;
-              break;
-            case "isEmpty":
-            case "notEmpty":
-              currentType = Type.BOOLEAN;
-              break;
-            case "first":
-            case "last":
-              if (currentType.isCollection()) {
-                currentType = currentType.getElementType();
-              } else {
-                errors.add(
-                    navCtx.getStart().getLine(),
-                    navCtx.getStart().getCharPositionInLine(),
-                    "Operation '" + opName + "' requires collection type",
-                    ErrorSeverity.ERROR,
-                    "type-checker");
-                currentType = Type.ERROR;
-              }
-              break;
-            case "reverse":
-              if (!currentType.isCollection() || !currentType.isOrdered()) {
-                errors.add(
-                    navCtx.getStart().getLine(),
-                    navCtx.getStart().getCharPositionInLine(),
-                    "Operation 'reverse' requires ordered collection",
-                    ErrorSeverity.ERROR,
-                    "type-checker");
-                currentType = Type.ERROR;
-              }
-              // Type stays the same
-              break;
-            case "flatten":
-              if (!currentType.isCollection()) {
-                errors.add(
-                    navCtx.getStart().getLine(),
-                    navCtx.getStart().getCharPositionInLine(),
-                    "Operation 'flatten' requires collection",
-                    ErrorSeverity.ERROR,
-                    "type-checker");
-                currentType = Type.ERROR;
-              } else {
-                Type innerType = currentType.getElementType();
-                if (innerType.isCollection()) {
-                  currentType = innerType; // Flatten one level
-                }
-              }
-              break;
-            default:
-              // Normal navigation - delegate to existing logic
-              currentType = visit(operationCtx);
-          }
-        } else {
-          // Has arguments or not a special operation - delegate
-          currentType = visit(operationCtx);
-        }
-      } else {
-        // Other primary expression types
-        currentType = visit(operationCtx);
-      }
+      currentType = visitPrimaryExpCSWithReceiver(primaries.get(i), currentType);
     }
 
     nodeTypes.put(ctx, currentType);
@@ -697,19 +810,25 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     // Store context type for invariants
     nodeTypes.put(ctx, contextType);
 
+    // Define 'self' variable in a new scope for this context
+    Scope contextScope = new LocalScope(symbolTable.getCurrentScope());
+    symbolTable.enterScope(contextScope);
+    symbolTable.define(
+        new VariableSymbol("self", contextType, symbolTable.getCurrentScope(), false));
+
     // Type-check all invariants with this context
     for (VitruvOCLParser.InvCSContext inv : ctx.invCS()) {
       visit(inv);
     }
+
+    // Exit context scope
+    symbolTable.exitScope();
 
     return contextType;
   }
 
   @Override
   public Type visitInvCS(VitruvOCLParser.InvCSContext ctx) {
-    // Get context type from parent
-    Type contextType = nodeTypes.get(ctx.getParent());
-
     // Type-check the invariant expression (should be Boolean)
     List<VitruvOCLParser.SpecificationCSContext> specs = ctx.specificationCS();
     Type invType = Type.BOOLEAN;
@@ -741,517 +860,479 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   private Type typeCheckCollectionOperation(
       VitruvOCLParser.NavigatingExpCSContext ctx, String opName, Type receiverType) {
-    Type resultType;
-
-    switch (opName) {
-      case "including":
-      case "excluding":
-        // including(x) / excluding(x): Collection(T) → Collection(T)
-        // Argument must be compatible with element type
-
-        if (!receiverType.isCollection()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation '" + opName + "' requires collection receiver, got " + receiverType,
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
-        if (args.isEmpty()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation '" + opName + "' requires 1 argument",
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        // Type-check argument
-        Type argType = visit(args.get(0).navigatingArgExpCS());
-        Type elemType = receiverType.getElementType();
-
-        if (argType != null && argType != Type.ERROR && !argType.isConformantTo(elemType)) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Argument type "
-                  + argType
-                  + " not compatible with collection element type "
-                  + elemType,
-              ErrorSeverity.ERROR,
-              "type-checker");
-        }
-
-        // Result has same collection type as receiver
-        resultType = receiverType;
-        break;
-
-      case "includes":
-      case "excludes":
-        // includes(x) / excludes(x): Collection(T) → Boolean
-
-        if (!receiverType.isCollection()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation '" + opName + "' requires collection receiver",
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        args = ctx.navigatingArgCS();
-        if (args.isEmpty()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation '" + opName + "' requires 1 argument",
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        // Type-check argument
-        visit(args.get(0).navigatingArgExpCS());
-
-        resultType = Type.BOOLEAN;
-        break;
-
-      case "flatten":
-        // flatten(): Collection(Collection(T)) → Collection(T)
-
-        if (!receiverType.isCollection()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation 'flatten' requires collection receiver",
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        Type innerElemType = receiverType.getElementType();
-        if (!innerElemType.isCollection()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation 'flatten' requires Collection(Collection(T)), got " + receiverType,
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        // Preserve collection kind: Set{Set{1}} → Set{1}
-        Type flatElementType = innerElemType.getElementType();
-        if (receiverType.isUnique() && receiverType.isOrdered()) {
-          resultType = Type.orderedSet(flatElementType);
-        } else if (receiverType.isUnique()) {
-          resultType = Type.set(flatElementType);
-        } else if (receiverType.isOrdered()) {
-          resultType = Type.sequence(flatElementType);
-        } else {
-          resultType = Type.bag(flatElementType);
-        }
-        break;
-
-      case "union":
-      case "append":
-        // union(collection) / append(collection): Collection(T) × Collection(T) →
-        // Collection(T)
-
-        if (!receiverType.isCollection()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation '" + opName + "' requires collection receiver",
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        args = ctx.navigatingArgCS();
-        if (args.isEmpty()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation '" + opName + "' requires 1 argument",
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        // Type-check argument (must be collection)
-        Type argCollType = visit(args.get(0).navigatingArgExpCS());
-
-        if (argCollType != null && argCollType != Type.ERROR && !argCollType.isCollection()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Argument must be a collection, got " + argCollType,
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        // Compute common element type
-        Type commonElemType =
-            Type.commonSuperType(receiverType.getElementType(), argCollType.getElementType());
-
-        // Determine result collection type based on uniqueness/ordering
-        // union: Set ∪ Set = Set, Sequence ∪ Sequence = Sequence
-        boolean bothUnique = receiverType.isUnique() && argCollType.isUnique();
-        boolean anyOrdered = receiverType.isOrdered() || argCollType.isOrdered();
-
-        if (bothUnique && anyOrdered) {
-          resultType = Type.orderedSet(commonElemType);
-        } else if (bothUnique) {
-          resultType = Type.set(commonElemType);
-        } else if (anyOrdered) {
-          resultType = Type.sequence(commonElemType);
-        } else {
-          resultType = Type.bag(commonElemType);
-        }
-        break;
-
-      case "sum":
-      case "max":
-      case "min":
-      case "avg":
-        if (!receiverType.isCollection()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation '" + opName + "' requires collection receiver",
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        Type elemTypes = receiverType.getElementType();
-
-        // Allow ANY for empty collections
-        if (elemTypes != Type.ANY && !elemTypes.isConformantTo(Type.INTEGER)) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation '" + opName + "' requires numeric collection, got " + receiverType,
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        resultType = Type.set(Type.INTEGER);
-        break;
-
-      case "abs":
-      case "floor":
-      case "ceil":
-      case "round":
-        // Per-element numeric operations: Collection(Number) → Collection(Number)
-        if (!receiverType.isCollection()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation '" + opName + "' requires collection receiver",
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        Type elem = receiverType.getElementType();
-        if (!elem.isConformantTo(Type.INTEGER)) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation '" + opName + "' requires numeric collection, got " + receiverType,
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        // Preserve collection type
-        resultType = receiverType;
-        break;
-
-      case "oclIsKindOf":
-        // oclIsKindOf(TypeName) : Collection(T) → Collection(Boolean)
-
-        if (!receiverType.isCollection()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation 'oclIsKindOf' requires collection receiver",
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        List<VitruvOCLParser.NavigatingArgCSContext> argsKindOF = ctx.navigatingArgCS();
-        if (argsKindOF.isEmpty()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation 'oclIsKindOf' requires 1 type argument",
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        if (argsKindOF.size() > 1) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation 'oclIsKindOf' expects exactly 1 argument, got " + argsKindOF.size(),
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        // Resolve the type argument (Integer, String, Boolean, UML::Class, etc.)
-        VitruvOCLParser.NavigatingArgCSContext argCtx = argsKindOF.get(0);
-        Type argumentType = visit(argCtx.navigatingArgExpCS());
-
-        // For oclIsKindOf, we allow unknown types (they will resolve to false at runtime)
-        // So we DON'T throw an error if argumentType is ERROR or null
-        // We still store it for the evaluation phase to handle
-        if (argumentType != null && argumentType != Type.ERROR) {
-          nodeTypes.put(argCtx, argumentType);
-        }
-        // Note: If argumentType is ERROR, the evaluator will try to resolve it
-        // and return false if it can't be resolved
-
-        // Result: Collection(Boolean) - preserve collection kind
-        if (receiverType.isUnique() && receiverType.isOrdered()) {
-          resultType = Type.orderedSet(Type.BOOLEAN);
-        } else if (receiverType.isUnique()) {
-          resultType = Type.set(Type.BOOLEAN);
-        } else if (receiverType.isOrdered()) {
-          resultType = Type.sequence(Type.BOOLEAN);
-        } else {
-          resultType = Type.bag(Type.BOOLEAN);
-        }
-        break;
-      case "lift":
-        // lift(): Collection(T) → Collection(Collection(T))
-        if (!receiverType.isCollection()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation 'lift' requires collection receiver",
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        // Wrap collection in another collection of same kind
-        if (receiverType.isUnique() && receiverType.isOrdered()) {
-          resultType = Type.orderedSet(receiverType);
-        } else if (receiverType.isUnique()) {
-          resultType = Type.set(receiverType);
-        } else if (receiverType.isOrdered()) {
-          resultType = Type.sequence(receiverType);
-        } else {
-          resultType = Type.bag(receiverType);
-        }
-        break;
-
-      // ==================== ITERATOR OPERATIONS ====================
-
-      case "select":
-      case "reject":
-        // select/reject(x | predicate) : Collection(T) -> Collection(T)
-        // Filters elements, preserves collection type
-
-        if (!receiverType.isCollection()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation '" + opName + "' requires collection receiver, got " + receiverType,
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        // Check we have exactly 1 argument with iterator syntax
-        List<VitruvOCLParser.NavigatingArgCSContext> selectArgs = ctx.navigatingArgCS();
-        if (selectArgs.isEmpty()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation '" + opName + "' requires iterator argument (var | predicate)",
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        if (selectArgs.size() > 1) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation '"
-                  + opName
-                  + "' expects exactly 1 iterator argument, got "
-                  + selectArgs.size(),
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        // Type-check iterator with proper scoping
-        resultType =
-            typeCheckIteratorOperation(
-                ctx,
-                selectArgs.get(0),
-                opName,
-                receiverType,
-                Type.BOOLEAN // Predicate must return Boolean
-                );
-        break;
-
-      case "collect":
-        // collect(x | expression) : Collection(T) -> Collection(U)
-        // Transforms elements, result element type comes from body
-
-        if (!receiverType.isCollection()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation 'collect' requires collection receiver, got " + receiverType,
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        // Check we have exactly 1 argument with iterator syntax
-        List<VitruvOCLParser.NavigatingArgCSContext> collectArgs = ctx.navigatingArgCS();
-        if (collectArgs.isEmpty()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation 'collect' requires iterator argument (var | expression)",
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        if (collectArgs.size() > 1) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation 'collect' expects exactly 1 iterator argument, got " + collectArgs.size(),
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        // Type-check iterator with proper scoping
-        // For collect, we don't constrain the body type - it can be anything
-        resultType =
-            typeCheckIteratorOperation(
-                ctx, collectArgs.get(0), opName, receiverType, null // No constraint on body type
-                );
-        break;
-
-      case "forAll":
-      case "exists":
-        // forAll/exists(x | predicate) : Collection(T) -> Set(Boolean)
-        // Quantifiers always return Boolean
-
-        if (!receiverType.isCollection()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation '" + opName + "' requires collection receiver, got " + receiverType,
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        // Check we have exactly 1 argument with iterator syntax
-        List<VitruvOCLParser.NavigatingArgCSContext> quantifierArgs = ctx.navigatingArgCS();
-        if (quantifierArgs.isEmpty()) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation '" + opName + "' requires iterator argument (var | predicate)",
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        if (quantifierArgs.size() > 1) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Operation '"
-                  + opName
-                  + "' expects exactly 1 iterator argument, got "
-                  + quantifierArgs.size(),
-              ErrorSeverity.ERROR,
-              "type-checker");
-          resultType = Type.ERROR;
-          break;
-        }
-
-        // Type-check iterator with proper scoping
-        Type quantifierResultType =
-            typeCheckIteratorOperation(
-                ctx,
-                quantifierArgs.get(0),
-                opName,
-                receiverType,
-                Type.BOOLEAN // Predicate must return Boolean
-                );
-
-        // Quantifiers always return Set(Boolean) regardless of receiver type
-        if (quantifierResultType != Type.ERROR) {
-          resultType = Type.set(Type.BOOLEAN);
-        } else {
-          resultType = Type.ERROR;
-        }
-        break;
-
-      default:
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "Unknown collection operation: " + opName,
-            ErrorSeverity.ERROR,
-            "type-checker");
-        resultType = Type.ERROR;
-    }
+    Type resultType =
+        switch (opName) {
+          case "including", "excluding" -> typeCheckIncludingExcluding(ctx, opName, receiverType);
+          case "includes", "excludes" -> typeCheckIncludesExcludes(ctx, opName, receiverType);
+          case "flatten" -> typeCheckFlatten(ctx, receiverType);
+          case "union", "append" -> typeCheckUnionAppend(ctx, opName, receiverType);
+          case "sum", "max", "min", "avg" ->
+              typeCheckAggregateOperations(ctx, opName, receiverType);
+          case "abs", "floor", "ceil", "round" ->
+              typeCheckNumericOperations(ctx, opName, receiverType);
+          case "oclIsKindOf" -> typeCheckOclIsKindOf(ctx, receiverType);
+          case "lift" -> typeCheckLift(ctx, receiverType);
+          case "select", "reject" -> typeCheckSelectReject(ctx, opName, receiverType);
+          case "collect" -> typeCheckCollect(ctx, receiverType);
+          case "forAll", "exists" -> typeCheckForAllExists(ctx, opName, receiverType);
+          default -> {
+            errors.add(
+                ctx.getStart().getLine(),
+                ctx.getStart().getCharPositionInLine(),
+                "Unknown collection operation: " + opName,
+                ErrorSeverity.ERROR,
+                "type-checker");
+            yield Type.ERROR;
+          }
+        };
 
     nodeTypes.put(ctx, resultType);
     return resultType;
+  }
+
+  private Type typeCheckIncludingExcluding(
+      VitruvOCLParser.NavigatingExpCSContext ctx, String opName, Type receiverType) {
+    // including(x) / excluding(x): Collection(T) → Collection(T)
+    // Argument must be compatible with element type
+
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation '" + opName + "' requires collection receiver, got " + receiverType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation '" + opName + "' requires 1 argument",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Type-check argument
+    Type argType = visit(args.get(0).navigatingArgExpCS());
+    Type elemType = receiverType.getElementType();
+
+    if (argType != null && argType != Type.ERROR && !argType.isConformantTo(elemType)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Argument type " + argType + " not compatible with collection element type " + elemType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+
+    // Result has same collection type as receiver
+    return receiverType;
+  }
+
+  private Type typeCheckIncludesExcludes(
+      VitruvOCLParser.NavigatingExpCSContext ctx, String opName, Type receiverType) {
+    // includes(x) / excludes(x): Collection(T) → Boolean
+
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation '" + opName + "' requires collection receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation '" + opName + "' requires 1 argument",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Type-check argument
+    visit(args.get(0).navigatingArgExpCS());
+
+    return Type.BOOLEAN;
+  }
+
+  private Type typeCheckFlatten(VitruvOCLParser.NavigatingExpCSContext ctx, Type receiverType) {
+    // flatten(): Collection(Collection(T)) → Collection(T)
+
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation 'flatten' requires collection receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    Type innerElemType = receiverType.getElementType();
+    if (!innerElemType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation 'flatten' requires Collection(Collection(T)), got " + receiverType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Preserve collection kind: Set{Set{1}} → Set{1}
+    Type flatElementType = innerElemType.getElementType();
+    if (receiverType.isUnique() && receiverType.isOrdered()) {
+      return Type.orderedSet(flatElementType);
+    } else if (receiverType.isUnique()) {
+      return Type.set(flatElementType);
+    } else if (receiverType.isOrdered()) {
+      return Type.sequence(flatElementType);
+    } else {
+      return Type.bag(flatElementType);
+    }
+  }
+
+  private Type typeCheckUnionAppend(
+      VitruvOCLParser.NavigatingExpCSContext ctx, String opName, Type receiverType) {
+    // union(collection) / append(collection): Collection(T) × Collection(T) → Collection(T)
+
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation '" + opName + "' requires collection receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation '" + opName + "' requires 1 argument",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Type-check argument (must be collection)
+    Type argCollType = visit(args.get(0).navigatingArgExpCS());
+
+    if (argCollType != null && argCollType != Type.ERROR && !argCollType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Argument must be a collection, got " + argCollType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Compute common element type
+    Type commonElemType =
+        Type.commonSuperType(receiverType.getElementType(), argCollType.getElementType());
+
+    // Determine result collection type based on uniqueness/ordering
+    // union: Set ∪ Set = Set, Sequence ∪ Sequence = Sequence
+    boolean bothUnique = receiverType.isUnique() && argCollType.isUnique();
+    boolean anyOrdered = receiverType.isOrdered() || argCollType.isOrdered();
+
+    if (bothUnique && anyOrdered) {
+      return Type.orderedSet(commonElemType);
+    } else if (bothUnique) {
+      return Type.set(commonElemType);
+    } else if (anyOrdered) {
+      return Type.sequence(commonElemType);
+    } else {
+      return Type.bag(commonElemType);
+    }
+  }
+
+  private Type typeCheckAggregateOperations(
+      VitruvOCLParser.NavigatingExpCSContext ctx, String opName, Type receiverType) {
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation '" + opName + "' requires collection receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    Type elemType = receiverType.getElementType();
+
+    // Allow ANY for empty collections
+    if (elemType != Type.ANY && !elemType.isConformantTo(Type.INTEGER)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation '" + opName + "' requires numeric collection, got " + receiverType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    return Type.set(Type.INTEGER);
+  }
+
+  private Type typeCheckNumericOperations(
+      VitruvOCLParser.NavigatingExpCSContext ctx, String opName, Type receiverType) {
+    // Per-element numeric operations: Collection(Number) → Collection(Number)
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation '" + opName + "' requires collection receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    Type elem = receiverType.getElementType();
+    if (!elem.isConformantTo(Type.INTEGER)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation '" + opName + "' requires numeric collection, got " + receiverType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Preserve collection type
+    return receiverType;
+  }
+
+  private Type typeCheckOclIsKindOf(VitruvOCLParser.NavigatingExpCSContext ctx, Type receiverType) {
+    // oclIsKindOf(TypeName) : Collection(T) → Collection(Boolean)
+
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation 'oclIsKindOf' requires collection receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation 'oclIsKindOf' requires 1 type argument",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    if (args.size() > 1) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation 'oclIsKindOf' expects exactly 1 argument, got " + args.size(),
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Resolve the type argument (Integer, String, Boolean, UML::Class, etc.)
+    VitruvOCLParser.NavigatingArgCSContext argCtx = args.get(0);
+    Type argumentType = visit(argCtx.navigatingArgExpCS());
+
+    // For oclIsKindOf, we allow unknown types (they will resolve to false at runtime)
+    // So we DON'T throw an error if argumentType is ERROR or null
+    // We still store it for the evaluation phase to handle
+    if (argumentType != null && argumentType != Type.ERROR) {
+      nodeTypes.put(argCtx, argumentType);
+    }
+    // Note: If argumentType is ERROR, the evaluator will try to resolve it
+    // and return false if it can't be resolved
+
+    // Result: Collection(Boolean) - preserve collection kind
+    if (receiverType.isUnique() && receiverType.isOrdered()) {
+      return Type.orderedSet(Type.BOOLEAN);
+    } else if (receiverType.isUnique()) {
+      return Type.set(Type.BOOLEAN);
+    } else if (receiverType.isOrdered()) {
+      return Type.sequence(Type.BOOLEAN);
+    } else {
+      return Type.bag(Type.BOOLEAN);
+    }
+  }
+
+  private Type typeCheckLift(VitruvOCLParser.NavigatingExpCSContext ctx, Type receiverType) {
+    // lift(): Collection(T) → Collection(Collection(T))
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation 'lift' requires collection receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Wrap collection in another collection of same kind
+    if (receiverType.isUnique() && receiverType.isOrdered()) {
+      return Type.orderedSet(receiverType);
+    } else if (receiverType.isUnique()) {
+      return Type.set(receiverType);
+    } else if (receiverType.isOrdered()) {
+      return Type.sequence(receiverType);
+    } else {
+      return Type.bag(receiverType);
+    }
+  }
+
+  private Type typeCheckSelectReject(
+      VitruvOCLParser.NavigatingExpCSContext ctx, String opName, Type receiverType) {
+    // select/reject(x | predicate) : Collection(T) -> Collection(T)
+    // Filters elements, preserves collection type
+
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation '" + opName + "' requires collection receiver, got " + receiverType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Check we have exactly 1 argument with iterator syntax
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation '" + opName + "' requires iterator argument (var | predicate)",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    if (args.size() > 1) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation '" + opName + "' expects exactly 1 iterator argument, got " + args.size(),
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Type-check iterator with proper scoping
+    return typeCheckIteratorOperation(
+        ctx, args.get(0), opName, receiverType, Type.BOOLEAN // Predicate must return Boolean
+        );
+  }
+
+  private Type typeCheckCollect(VitruvOCLParser.NavigatingExpCSContext ctx, Type receiverType) {
+    // collect(x | expression) : Collection(T) -> Collection(U)
+    // Transforms elements, result element type comes from body
+
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation 'collect' requires collection receiver, got " + receiverType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Check we have exactly 1 argument with iterator syntax
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation 'collect' requires iterator argument (var | expression)",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    if (args.size() > 1) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation 'collect' expects exactly 1 iterator argument, got " + args.size(),
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Type-check iterator with proper scoping
+    // For collect, we don't constrain the body type - it can be anything
+    return typeCheckIteratorOperation(
+        ctx, args.get(0), "collect", receiverType, null // No constraint on body type
+        );
+  }
+
+  private Type typeCheckForAllExists(
+      VitruvOCLParser.NavigatingExpCSContext ctx, String opName, Type receiverType) {
+    // forAll/exists(x | predicate) : Collection(T) -> Set(Boolean)
+    // Quantifiers always return Boolean
+
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation '" + opName + "' requires collection receiver, got " + receiverType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Check we have exactly 1 argument with iterator syntax
+    List<VitruvOCLParser.NavigatingArgCSContext> args = ctx.navigatingArgCS();
+    if (args.isEmpty()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation '" + opName + "' requires iterator argument (var | predicate)",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    if (args.size() > 1) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Operation '" + opName + "' expects exactly 1 iterator argument, got " + args.size(),
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Type-check iterator with proper scoping
+    Type quantifierResultType =
+        typeCheckIteratorOperation(
+            ctx, args.get(0), opName, receiverType, Type.BOOLEAN // Predicate must return Boolean
+            );
+
+    // Quantifiers always return Set(Boolean) regardless of receiver type
+    if (quantifierResultType != Type.ERROR) {
+      return Type.set(Type.BOOLEAN);
+    } else {
+      return Type.ERROR;
+    }
   }
 
   /**
@@ -2232,5 +2313,70 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     return Integer.MAX_VALUE;
+  }
+
+  @Override
+  public Type visitContextDeclCS(VitruvOCLParser.ContextDeclCSContext ctx) {
+    // contextDeclCS is just a container for multiple classifier contexts
+    // We type-check each context declaration
+    Type lastType = Type.ERROR;
+
+    for (VitruvOCLParser.ClassifierContextCSContext classifierCtx : ctx.classifierContextCS()) {
+      lastType = visit(classifierCtx);
+    }
+
+    // The type of the whole contextDeclCS is the type of the last context
+    // (though this is rarely used - contextDeclCS is typically the root)
+    nodeTypes.put(ctx, lastType);
+    return lastType;
+  }
+
+  @Override
+  public Type visitCoextension(VitruvOCLParser.CoextensionContext ctx) {
+    // TODO Auto-generated method stub
+    return super.visitCoextension(ctx);
+  }
+
+  @Override
+  public Type visitIndexExpCS(VitruvOCLParser.IndexExpCSContext ctx) {
+    // indexExpCS: nameExpCS ( '[' expCS (',' expCS)* ']' )?
+
+    Type baseType = visit(ctx.nameExpCS());
+
+    // Handle array indexing if present
+    if (!ctx.expCS().isEmpty()) {
+      // Array access: base[index]
+
+      if (!baseType.isCollection()) {
+        errors.add(
+            ctx.getStart().getLine(),
+            ctx.getStart().getCharPositionInLine(),
+            "Array indexing requires collection type, got " + baseType,
+            ErrorSeverity.ERROR,
+            "type-checker");
+        nodeTypes.put(ctx, Type.ERROR);
+        return Type.ERROR;
+      }
+
+      // Type-check index expression (must be Integer)
+      Type indexType = visit(ctx.expCS(0));
+      if (!indexType.isConformantTo(Type.INTEGER)) {
+        errors.add(
+            ctx.getStart().getLine(),
+            ctx.getStart().getCharPositionInLine(),
+            "Array index must be Integer, got " + indexType,
+            ErrorSeverity.ERROR,
+            "type-checker");
+      }
+
+      // Result is element type
+      Type elementType = baseType.getElementType();
+      nodeTypes.put(ctx, elementType);
+      return elementType;
+    }
+
+    // No array indexing - return base type
+    nodeTypes.put(ctx, baseType);
+    return baseType;
   }
 }

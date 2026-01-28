@@ -9,7 +9,7 @@ import org.eclipse.emf.ecore.EObject;
  * Constraint specification providing metamodel and instance access. Similar to Reactions'
  * ChangePropagationSpecification pattern.
  */
-public interface ConstraintSpecification {
+public interface MetamodelWrapperInterface {
 
   /**
    * Resolves an EClass by qualified name.

@@ -13,12 +13,12 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
 
 public class VitruvOCLCompiler {
 
-  private final ConstraintSpecification specification;
+  private final MetamodelWrapperInterface wrapper;
   private final Path oclFile;
   private final ErrorCollector errors = new ErrorCollector();
 
-  public VitruvOCLCompiler(ConstraintSpecification specification, Path oclFile) {
-    this.specification = specification;
+  public VitruvOCLCompiler(MetamodelWrapperInterface wrapper, Path oclFile) {
+    this.wrapper = wrapper;
     this.oclFile = oclFile;
   }
 
@@ -31,14 +31,14 @@ public class VitruvOCLCompiler {
 
     if (parser.getNumberOfSyntaxErrors() > 0) return null;
 
-    SymbolTableImpl symbolTable = new SymbolTableImpl(specification);
-    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, specification, errors);
+    SymbolTableImpl symbolTable = new SymbolTableImpl(wrapper);
+    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, wrapper, errors);
     typeChecker.visit(tree);
 
     if (errors.hasErrors()) return null;
 
     EvaluationVisitor evaluator =
-        new EvaluationVisitor(symbolTable, specification, errors, typeChecker.getNodeTypes());
+        new EvaluationVisitor(symbolTable, wrapper, errors, typeChecker.getNodeTypes());
     return evaluator.visit(tree);
   }
 
@@ -53,8 +53,8 @@ public class VitruvOCLCompiler {
       return new ValidationResult(errors.getErrors(), java.util.List.of());
     }
 
-    SymbolTableImpl symbolTable = new SymbolTableImpl(specification);
-    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, specification, errors);
+    SymbolTableImpl symbolTable = new SymbolTableImpl(wrapper);
+    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, wrapper, errors);
     typeChecker.visit(tree);
 
     if (errors.hasErrors()) {
@@ -62,7 +62,7 @@ public class VitruvOCLCompiler {
     }
 
     EvaluationVisitor evaluator =
-        new EvaluationVisitor(symbolTable, specification, errors, typeChecker.getNodeTypes());
+        new EvaluationVisitor(symbolTable, wrapper, errors, typeChecker.getNodeTypes());
     evaluator.visit(tree);
 
     return new ValidationResult(errors.getErrors(), java.util.List.of());

@@ -1,6 +1,6 @@
 package tools.vitruv.dsls.vitruvOCL.symboltable;
 
-import tools.vitruv.dsls.vitruvOCL.pipeline.ConstraintSpecification;
+import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
 import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
 
 /**
@@ -14,10 +14,10 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
 public class SymbolTableImpl implements SymbolTable {
 
   private final GlobalScope globalScope;
-  private final ConstraintSpecification specification;
+  private final MetamodelWrapperInterface specification;
   private Scope currentScope;
 
-  public SymbolTableImpl(ConstraintSpecification specification) {
+  public SymbolTableImpl(MetamodelWrapperInterface specification) {
     this.globalScope = new GlobalScope();
     this.currentScope = globalScope;
     this.specification = specification;

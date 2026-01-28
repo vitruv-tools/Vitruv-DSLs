@@ -15,7 +15,7 @@ import tools.vitruv.dsls.vitruvOCL.common.ErrorCollector;
 import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement;
 import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
-import tools.vitruv.dsls.vitruvOCL.pipeline.ConstraintSpecification;
+import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTable;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
@@ -204,8 +204,8 @@ public class OCLIsKindOfTest {
     String input = "Set{5}.oclIsKindOf(Integer)";
     ParseTree tree = parse(input);
 
-    ConstraintSpecification dummySpec =
-        new ConstraintSpecification() {
+    MetamodelWrapperInterface dummySpec =
+        new MetamodelWrapperInterface() {
           @Override
           public EClass resolveEClass(String metamodel, String className) {
             return null;
@@ -237,8 +237,8 @@ public class OCLIsKindOfTest {
     ParseTree tree = parse(input);
 
     // Dummy specification
-    ConstraintSpecification dummySpec =
-        new ConstraintSpecification() {
+    MetamodelWrapperInterface dummySpec =
+        new MetamodelWrapperInterface() {
           @Override
           public EClass resolveEClass(String metamodel, String className) {
             return null;
@@ -387,8 +387,8 @@ public class OCLIsKindOfTest {
     System.out.println("Input: " + input);
 
     // Dummy specification
-    ConstraintSpecification dummySpec =
-        new ConstraintSpecification() {
+    MetamodelWrapperInterface dummySpec =
+        new MetamodelWrapperInterface() {
           @Override
           public EClass resolveEClass(String metamodel, String className) {
             System.out.println(
