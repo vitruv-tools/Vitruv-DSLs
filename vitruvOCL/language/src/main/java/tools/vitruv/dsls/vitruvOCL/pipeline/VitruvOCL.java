@@ -2,39 +2,41 @@ package tools.vitruv.dsls.vitruvOCL.pipeline;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
 
-/** Public API for VitruvOCL constraint validation. */
 public class VitruvOCL {
 
-  /**
-   * Validates OCL constraints in standalone mode.
-   *
-   * @param oclFile Path to .ocl file
-   * @param ecoreFiles Paths to .ecore metamodel files
-   * @return ValidationResult
-   */
-  public static ValidationResult validate(Path oclFile, Path... ecoreFiles) throws IOException {
-    MetamodelWrapper spec = new MetamodelWrapper();
-    for (Path ecoreFile : ecoreFiles) {
-      spec.loadMetamodel(ecoreFile);
+  /** Validates OCL constraints from file. */
+  public static ValidationResult validate(Path oclFile, Path[] ecoreFiles, Path... xmiFiles)
+      throws IOException {
+    MetamodelWrapper wrapper = new MetamodelWrapper();
+
+    for (Path ecore : ecoreFiles) {
+      wrapper.loadMetamodel(ecore);
     }
 
-    tools.vitruv.dsls.vitruvOCL.pipeline.VitruvOCLCompiler compiler =
-        new VitruvOCLCompiler(spec, oclFile);
+    for (Path xmi : xmiFiles) {
+      wrapper.loadModelInstance(xmi.getFileName().toString());
+    }
+
+    VitruvOCLCompiler compiler = new VitruvOCLCompiler(wrapper, oclFile);
     return compiler.compile();
   }
 
-  /**
-   * Validates with custom constraint specification (e.g., Vitruvius VSUM).
-   *
-   * @param specification Custom constraint specification
-   * @param oclFile Path to .ocl file
-   * @return ValidationResult
-   */
-  public static ValidationResult validate(MetamodelWrapperInterface specification, Path oclFile)
+  /** Evaluates OCL constraint string with files. */
+  public static Value evaluate(String oclSource, Path[] ecoreFiles, Path... xmiFiles)
       throws IOException {
-    tools.vitruv.dsls.vitruvOCL.pipeline.VitruvOCLCompiler compiler =
-        new VitruvOCLCompiler(specification, oclFile);
-    return compiler.compile();
+    MetamodelWrapper wrapper = new MetamodelWrapper();
+
+    for (Path ecore : ecoreFiles) {
+      wrapper.loadMetamodel(ecore);
+    }
+
+    for (Path xmi : xmiFiles) {
+      wrapper.loadModelInstance(xmi.getFileName().toString());
+    }
+
+    VitruvOCLCompiler compiler = new VitruvOCLCompiler(wrapper, null);
+    return compiler.compile(oclSource);
   }
 }

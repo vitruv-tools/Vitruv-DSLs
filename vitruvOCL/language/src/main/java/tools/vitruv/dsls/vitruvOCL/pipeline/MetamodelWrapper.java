@@ -60,12 +60,28 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    * @param xmiFileName File name (e.g., "MyModel.xmi")
    */
   public void loadModelInstance(String xmiFileName) throws IOException {
-    Path xmiFile = TEST_MODELS_PATH.resolve(xmiFileName);
-    Resource resource =
-        resourceSet.getResource(URI.createFileURI(xmiFile.toAbsolutePath().toString()), true);
+    Path xmiPath = TEST_MODELS_PATH.resolve(xmiFileName);
 
-    for (EObject obj : resource.getContents()) {
-      addInstanceRecursive(obj);
+    ResourceSet resourceSet = new ResourceSetImpl();
+
+    // Get file extension
+    String extension = xmiPath.getFileName().toString();
+    int dotIndex = extension.lastIndexOf('.');
+    if (dotIndex > 0) {
+      extension = extension.substring(dotIndex + 1);
+    }
+
+    // Register factory for this extension
+    resourceSet
+        .getResourceFactoryRegistry()
+        .getExtensionToFactoryMap()
+        .put(extension, new XMIResourceFactoryImpl());
+
+    Resource resource =
+        resourceSet.getResource(URI.createFileURI(xmiPath.toAbsolutePath().toString()), true);
+
+    for (EObject root : resource.getContents()) {
+      addInstanceRecursive(root);
     }
   }
 
@@ -80,8 +96,12 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
 
   @Override
   public EClass resolveEClass(String metamodelName, String className) {
+    System.err.println("Available metamodels: " + getAvailableMetamodels());
+    System.err.println("Looking for: " + metamodelName);
     EPackage ePackage = metamodelRegistry.get(metamodelName);
+    System.err.println("EPackage ePackage: " + ePackage);
     if (ePackage == null) {
+      System.err.println("MetaModelRegistry: " + metamodelRegistry);
       return null;
     }
 
@@ -109,5 +129,10 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   @Override
   public Set<String> getAvailableMetamodels() {
     return Collections.unmodifiableSet(metamodelRegistry.keySet());
+  }
+
+  /** Adds a model instance for constraint validation. */
+  public void addInstance(EObject instance) {
+    instances.computeIfAbsent(instance.eClass(), k -> new ArrayList<>()).add(instance);
   }
 }

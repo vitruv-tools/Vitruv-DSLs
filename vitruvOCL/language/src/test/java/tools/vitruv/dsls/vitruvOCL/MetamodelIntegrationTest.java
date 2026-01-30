@@ -6,16 +6,17 @@ import java.nio.file.Path;
 import org.eclipse.emf.ecore.EClass;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapper;
 
 public class MetamodelIntegrationTest {
 
-  private TestConstraintSpecification specification;
+  private MetamodelWrapper specification;
 
   @BeforeEach
   public void setup() throws Exception {
-    TestConstraintSpecification.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
+    MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
 
-    specification = new TestConstraintSpecification();
+    specification = new MetamodelWrapper();
     specification.loadMetamodel(Path.of("src/test/resources/test-metamodels/spaceMission.ecore"));
     specification.loadMetamodel(
         Path.of("src/test/resources/test-metamodels/satelliteSystem.ecore"));

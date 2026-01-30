@@ -141,7 +141,7 @@ navigationOperatorCS
 
 prefixedExpCS
 : ('-' | 'not')* primaryExpCS (navigationOperatorCS primaryExpCS)*
-| ('-' | 'not')* metamodel=ID '::' className=ID navigationOperatorCS primaryExpCS
+| ('-' | 'not')* metamodel=ID '::' className=ID (navigationOperatorCS primaryExpCS)+
 ;
 
 primaryExpCS

@@ -2,9 +2,11 @@ package tools.vitruv.dsls.vitruvOCL.evaluator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EStructuralFeature;
 import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser.NameContext;
 import tools.vitruv.dsls.vitruvOCL.common.AbstractPhaseVisitor;
@@ -224,20 +226,28 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   @Override
   public Value visitPrefixedExpCS(VitruvOCLParser.PrefixedExpCSContext ctx) {
-    // ========================================
     // Handle Metamodel::Class.operation() pattern
-    // ========================================
     if (ctx.metamodel != null && ctx.className != null) {
-      Type metaclassType = nodeTypes.get(ctx);
+      String qualifiedName = ctx.metamodel.getText() + "::" + ctx.className.getText();
+
+      // ✅ FIX: Lookup the metaclass type directly, don't use nodeTypes!
+      Type metaclassType = symbolTable.lookupType(qualifiedName);
 
       if (metaclassType == null || metaclassType == Type.ERROR) {
-        throw new RuntimeException("Invalid metamodel type at " + ctx.getText());
+        throw new RuntimeException("Invalid metamodel type: " + qualifiedName);
       }
 
-      Value currentValue = Value.of(List.of(), Type.singleton(metaclassType));
+      System.out.println("CREATED currentValue:");
+      System.out.println("  metaclassType: " + metaclassType);
+
+      Value currentValue = Value.of(List.of(), metaclassType);
+
+      System.out.println("  currentValue.getRuntimeType(): " + currentValue.getRuntimeType());
 
       for (VitruvOCLParser.PrimaryExpCSContext primary : ctx.primaryExpCS()) {
         currentValue = visitPrimaryExpCSWithReceiver(primary, currentValue);
+        System.out.println("AFTER visitPrimaryExpCS:");
+        System.out.println("  currentValue.getRuntimeType(): " + currentValue.getRuntimeType());
       }
 
       return currentValue;
@@ -497,17 +507,92 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private Value visitNavigatingExpCSWithReceiver(
       VitruvOCLParser.NavigatingExpCSContext ctx, Value receiver) {
-    // Handle metaclass operations (e.g., UML::Class.allInstances())
-    String opName = ctx.indexExpCS().nameExpCS().getText();
 
-    if (opName.equals("allInstances")) {
-      // TODO: Query VSUM for all instances of this metaclass
-      Type resultType = nodeTypes.get(ctx);
-      return Value.of(List.of(), resultType);
+    String name = ctx.indexExpCS().nameExpCS().getText();
+
+    // Handle property/reference access on metaclass instances
+    if (!receiver.isEmpty() && receiver.getElements().get(0) instanceof OCLElement.MetaclassValue) {
+      if (!isCollectionOperation(name)) {
+        List<OCLElement> results = new ArrayList<>();
+        for (OCLElement elem : receiver.getElements()) {
+          if (elem instanceof OCLElement.MetaclassValue metaclass) {
+            EObject instance = metaclass.instance();
+            EStructuralFeature feature = instance.eClass().getEStructuralFeature(name);
+
+            if (feature != null) {
+              Object value = instance.eGet(feature);
+
+              // Multi-valued reference/attribute (OCL#: everything is collection)
+              if (value instanceof List<?> list) {
+                for (Object item : list) {
+                  if (item instanceof EObject) {
+                    results.add(new OCLElement.MetaclassValue((EObject) item));
+                  } else {
+                    results.add(wrapValue(item));
+                  }
+                }
+              } else {
+                // Single-valued becomes singleton collection
+                results.add(wrapValue(value));
+              }
+            }
+          }
+        }
+        Type resultType = nodeTypes.get(ctx);
+        return Value.of(results, resultType);
+      }
     }
 
-    // ✅ Delegate to nameExpCS with receiver context
+    // Handle operations
+    // Handle operations
+    if (name.equals("allInstances")) {
+      // The receiver should be empty with a metaclass type
+      // We need to get all instances of that metaclass
+      System.out.println("EVALUATING allInstances:");
+      System.out.println("  receiver: " + receiver);
+      System.out.println("  receiver.isEmpty(): " + receiver.isEmpty());
+      System.out.println("  receiver.getRuntimeType(): " + receiver.getRuntimeType());
+      System.out.println(
+          "  receiver.getRuntimeType().isMetaclassType(): "
+              + receiver.getRuntimeType().isMetaclassType());
+
+      // Get the receiver's type (should be a metaclass type)
+      Type receiverType = receiver.getRuntimeType();
+
+      if (receiverType == null || !receiverType.isMetaclassType()) {
+        return error("allInstances() requires metaclass receiver", ctx);
+      }
+
+      // Extract the EClass from the receiver type
+      EClass eClass = receiverType.getEClass();
+
+      if (eClass == null) {
+        return error("Cannot extract EClass from receiver type", ctx);
+      }
+
+      // Get all instances from the specification/wrapper
+      List<EObject> instances = specification.getAllInstances(eClass);
+
+      // Wrap as MetaclassValue elements
+      List<OCLElement> elements = new ArrayList<>();
+      for (EObject instance : instances) {
+        elements.add(new OCLElement.MetaclassValue(instance));
+      }
+
+      // Return with result type from type checker
+      Type resultType = nodeTypes.get(ctx);
+      return Value.of(elements, resultType);
+    }
+
     return visitNameExpCSAsOperation(ctx.indexExpCS().nameExpCS(), ctx, receiver);
+  }
+
+  private OCLElement wrapValue(Object value) {
+    if (value instanceof String s) return new OCLElement.StringValue(s);
+    if (value instanceof Integer i) return new OCLElement.IntValue(i);
+    if (value instanceof Boolean b) return new OCLElement.BoolValue(b);
+    if (value instanceof EObject e) return new OCLElement.MetaclassValue(e);
+    throw new RuntimeException("Cannot wrap: " + value);
   }
 
   /**
@@ -1745,5 +1830,34 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
 
     return false;
+  }
+
+  private boolean isCollectionOperation(String name) {
+    return Set.of(
+            "including",
+            "excluding",
+            "includes",
+            "excludes",
+            "flatten",
+            "union",
+            "append",
+            "sum",
+            "max",
+            "min",
+            "avg",
+            "abs",
+            "floor",
+            "ceil",
+            "round",
+            "oclIsKindOf",
+            "lift",
+            "select",
+            "reject",
+            "collect",
+            "forAll",
+            "exists",
+            "size",
+            "allInstances")
+        .contains(name);
   }
 }

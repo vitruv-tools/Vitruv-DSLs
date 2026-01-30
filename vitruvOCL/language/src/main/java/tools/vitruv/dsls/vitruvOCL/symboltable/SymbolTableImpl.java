@@ -1,5 +1,6 @@
 package tools.vitruv.dsls.vitruvOCL.symboltable;
 
+import org.eclipse.emf.ecore.EClass;
 import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
 import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
 
@@ -14,13 +15,13 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
 public class SymbolTableImpl implements SymbolTable {
 
   private final GlobalScope globalScope;
-  private final MetamodelWrapperInterface specification;
+  private final MetamodelWrapperInterface wrapper;
   private Scope currentScope;
 
-  public SymbolTableImpl(MetamodelWrapperInterface specification) {
+  public SymbolTableImpl(MetamodelWrapperInterface wrapper) {
     this.globalScope = new GlobalScope();
     this.currentScope = globalScope;
-    this.specification = specification;
+    this.wrapper = wrapper;
   }
 
   @Override
@@ -70,14 +71,16 @@ public class SymbolTableImpl implements SymbolTable {
       default:
         // Check if it's a qualified metamodel type (Metamodel::Class)
         if (typeName.contains("::")) {
+          System.out.println("resolving metaclass: " + typeName);
           String[] parts = typeName.split("::");
           if (parts.length == 2) {
             String metamodel = parts[0];
             String className = parts[1];
-            // TODO: Lookup from TypeRegistry or VSUM
-            // For now, create a placeholder MetaclassType
-            // This will be replaced with real VSUM integration
-            return null; // Will be implemented with metamodel integration
+            EClass eClass = wrapper.resolveEClass(metamodel, className);
+            if (eClass != null) {
+              return Type.metaclassType(eClass);
+            }
+            System.err.println("eClass == " + eClass + ": " + metamodel + " with " + className);
           }
         }
 

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<spaceMission:Spacecraft xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:spaceMission="http://www.example.org/spaceMission" name="Endeavour" serialNumber="SC-006" mass="1100" operational="true">
+  <payloads name="Sensor" type="science" powerConsumption="100"/>
+  <payloads name="Transmitter" type="communication" powerConsumption="150"/>
+</spaceMission:Spacecraft>

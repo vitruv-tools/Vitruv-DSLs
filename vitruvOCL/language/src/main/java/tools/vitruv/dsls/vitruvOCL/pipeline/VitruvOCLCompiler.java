@@ -3,6 +3,7 @@ package tools.vitruv.dsls.vitruvOCL.pipeline;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.tree.ParseTree;
 import tools.vitruv.dsls.vitruvOCL.VitruvOCLLexer;
 import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvOCL.common.ErrorCollector;
@@ -22,7 +23,8 @@ public class VitruvOCLCompiler {
     this.oclFile = oclFile;
   }
 
-  public Value compile(String source) {
+  public Value compile(Path sourcePath) {
+    String source = sourcePath.toString();
     CharStream input = CharStreams.fromString(source);
     VitruvOCLLexer lexer = new VitruvOCLLexer(input);
     CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -66,6 +68,50 @@ public class VitruvOCLCompiler {
     evaluator.visit(tree);
 
     return new ValidationResult(errors.getErrors(), java.util.List.of());
+  }
+
+  public Value compile(String oclSource) {
+    CharStream input = CharStreams.fromString(oclSource);
+    VitruvOCLLexer lexer = new VitruvOCLLexer(input);
+    CommonTokenStream tokens = new CommonTokenStream(lexer);
+    VitruvOCLParser parser = new VitruvOCLParser(tokens);
+    ParseTree tree = parser.contextDeclCS();
+
+    if (parser.getNumberOfSyntaxErrors() > 0) {
+      return null;
+    }
+
+    System.out.println("Parsing complete with: " + tree.toStringTree(parser));
+
+    SymbolTableImpl symbolTable = new SymbolTableImpl(wrapper);
+    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, wrapper, errors);
+    System.out.println("Start TeypeChecking");
+    typeChecker.visit(tree);
+
+    if (errors.hasErrors()) {
+      System.out.println("Errors After Type Checking: " + errors.getErrorCount());
+      errors
+          .getErrors()
+          .forEach(
+              err -> System.err.println("  " + err.getMessage() + " at line " + err.getLine()));
+      return null;
+    }
+    System.out.println("typechecking complete with: " + typeChecker.getNodeTypes());
+    System.out.println("Starts Evaluating");
+    EvaluationVisitor evaluator =
+        new EvaluationVisitor(symbolTable, wrapper, errors, typeChecker.getNodeTypes());
+    Value result = evaluator.visit(tree);
+    if (errors.hasErrors()) {
+      System.out.println("Errors After Type Checking: " + errors.getErrorCount());
+      errors
+          .getErrors()
+          .forEach(
+              err -> System.err.println("  " + err.getMessage() + " at line " + err.getLine()));
+      return null;
+    }
+
+    System.out.println("evaluation complete with: " + result);
+    return result;
   }
 
   public boolean hasErrors() {

@@ -2,7 +2,11 @@ package tools.vitruv.dsls.vitruvOCL.typechecker;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EClassifier;
+import org.eclipse.emf.ecore.EStructuralFeature;
 import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser.CollectionArgumentsContext;
 import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser.CollectionLiteralExpCSContext;
@@ -434,14 +438,124 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   private Type visitPrimaryExpCSWithReceiver(
       VitruvOCLParser.PrimaryExpCSContext ctx, Type receiverType) {
-    // navigatingExpCS needs receiver context
+
     if (ctx.navigatingExpCS() != null) {
+      String propertyName = ctx.navigatingExpCS().indexExpCS().nameExpCS().getText();
+
+      System.out.println("DEBUG visitPrimaryExpCSWithReceiver:");
+      System.out.println("  receiverType: " + receiverType);
+      System.out.println("  receiverType.isMetaclassType(): " + receiverType.isMetaclassType());
+      System.out.println("  propertyName: " + propertyName);
+      System.out.println("  propertyName.getClass(): " + propertyName.getClass());
+
+      if (propertyName.equals("allInstances") && receiverType.isMetaclassType()) {
+        Type resultType = Type.set(receiverType);
+        nodeTypes.put(ctx, resultType);
+        return resultType;
+      }
+
+      // Check if it's an OCL collection operation
+      if (isCollectionOperation(propertyName)) {
+
+        // Special case: allInstances on metaclass type
+        if (propertyName.equals("allInstances") && receiverType.isMetaclassType()) {
+          Type resultType = Type.set(receiverType);
+          nodeTypes.put(ctx, resultType);
+          return resultType;
+        }
+
+        Type collectionType = receiverType.isCollection() ? receiverType : Type.bag(receiverType);
+        return visitNavigatingExpCSWithReceiver(ctx.navigatingExpCS(), collectionType);
+      }
+
+      // IMPLICIT COLLECT: Navigate on collection elements
+      if (receiverType.isCollection()) {
+        Type elementType = receiverType.getElementType();
+
+        if (!elementType.isMetaclassType()) {
+          errors.add(
+              ctx.getStart().getLine(),
+              ctx.getStart().getCharPositionInLine(),
+              "Cannot navigate property '" + propertyName + "' on non-object type " + elementType,
+              ErrorSeverity.ERROR,
+              "type-checker");
+          return Type.ERROR;
+        }
+
+        EClass eClass = elementType.getEClass();
+        EStructuralFeature feature = eClass.getEStructuralFeature(propertyName);
+
+        if (feature == null) {
+          errors.add(
+              ctx.getStart().getLine(),
+              ctx.getStart().getCharPositionInLine(),
+              "Unknown property '" + propertyName + "' on " + eClass.getName(),
+              ErrorSeverity.ERROR,
+              "type-checker");
+          return Type.ERROR;
+        }
+
+        // Map feature and flatten (implicit collect)
+        Type featureType = mapFeatureToType(feature);
+        Type resultType = Type.set(featureType.getElementType());
+        nodeTypes.put(ctx, resultType);
+        return resultType;
+      }
+
+      // Handle property navigation on metaclass types (singleton case)
+      if (receiverType.isMetaclassType()) {
+        EClass eClass = receiverType.getEClass();
+        EStructuralFeature feature = eClass.getEStructuralFeature(propertyName);
+
+        if (feature == null) {
+          errors.add(
+              ctx.getStart().getLine(),
+              ctx.getStart().getCharPositionInLine(),
+              "Unknown property '" + propertyName + "' on " + eClass.getName(),
+              ErrorSeverity.ERROR,
+              "type-checker");
+          return Type.ERROR;
+        }
+
+        Type resultType = mapFeatureToType(feature);
+        nodeTypes.put(ctx, resultType);
+        return resultType;
+      }
+
       return visitNavigatingExpCSWithReceiver(ctx.navigatingExpCS(), receiverType);
     }
 
-    // All other primaryExpCS don't need receiver context
-    // (ifExpCS, letExpCS, collectionLiteralExpCS, etc.)
     return visit(ctx);
+  }
+
+  private Type mapFeatureToType(EStructuralFeature feature) {
+    Type baseType = mapEClassifierToType(feature.getEType());
+
+    // In OCL#: Everything is a Collection!
+    // upperBound > 1 oder -1 (unbounded) → Collection
+    // upperBound == 1 → Singleton (aber immer noch eine Collection mit einem Element)
+
+    if (feature.getUpperBound() > 1 || feature.getUpperBound() == -1) {
+      // Many-valued: return as Set
+      return Type.set(baseType);
+    } else {
+      // Single-valued: return as Singleton
+      return Type.singleton(baseType);
+    }
+  }
+
+  private Type mapEClassifierToType(EClassifier classifier) {
+    switch (classifier.getName()) {
+      case "EString":
+        return Type.STRING;
+      case "EInt":
+        return Type.INTEGER;
+      case "EBoolean":
+        return Type.BOOLEAN;
+      default:
+        if (classifier instanceof EClass) return Type.metaclassType((EClass) classifier);
+        return Type.ERROR;
+    }
   }
 
   /**
@@ -454,6 +568,14 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   private Type visitNavigatingExpCSWithReceiver(
       VitruvOCLParser.NavigatingExpCSContext ctx, Type receiverType) {
+
+    System.out.println("visitNavigatingExpCSWithReceiver called!");
+    System.out.println("  receiverType: " + receiverType);
+    System.out.println("  receiverType.isMetaclassType(): " + receiverType.isMetaclassType());
+
+    String propertyName = ctx.navigatingArgCS().toString();
+    System.out.println("  propertyName: " + propertyName);
+
     // Handle metaclass operations (e.g., UML::Class.allInstances())
     if (receiverType.isMetaclassType()) {
       String opName = ctx.indexExpCS().nameExpCS().getText();
@@ -681,6 +803,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     // ========================================
     if (ctx.metamodel != null && ctx.className != null) {
       String qualifiedName = ctx.metamodel.getText() + "::" + ctx.className.getText();
+
       Type metaclassType = symbolTable.lookupType(qualifiedName);
 
       if (metaclassType == null) {
@@ -829,21 +952,18 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
   @Override
   public Type visitInvCS(VitruvOCLParser.InvCSContext ctx) {
-    // Type-check the invariant expression (should be Boolean)
-    List<VitruvOCLParser.SpecificationCSContext> specs = ctx.specificationCS();
-    Type invType = Type.BOOLEAN;
+    for (VitruvOCLParser.SpecificationCSContext spec : ctx.specificationCS()) {
+      Type invType = visit(spec);
 
-    for (VitruvOCLParser.SpecificationCSContext spec : specs) {
-      invType = visit(spec);
-    }
-
-    if (!invType.isConformantTo(Type.BOOLEAN) && invType != Type.ERROR) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Invariant must be Boolean expression, got " + invType,
-          ErrorSeverity.ERROR,
-          "type-checker");
+      // OCL#: accept {Boolean} since everything is a collection
+      if (!invType.getElementType().equals(Type.BOOLEAN) && invType != Type.ERROR) {
+        errors.add(
+            ctx.getStart().getLine(),
+            ctx.getStart().getCharPositionInLine(),
+            "Invariant must be Boolean expression, got " + invType,
+            ErrorSeverity.ERROR,
+            "type-checker");
+      }
     }
 
     nodeTypes.put(ctx, Type.BOOLEAN);
@@ -1084,7 +1204,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    return Type.set(Type.INTEGER);
+    return Type.singleton(Type.INTEGER);
   }
 
   private Type typeCheckNumericOperations(
@@ -2378,5 +2498,34 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     // No array indexing - return base type
     nodeTypes.put(ctx, baseType);
     return baseType;
+  }
+
+  private boolean isCollectionOperation(String name) {
+    return Set.of(
+            "including",
+            "excluding",
+            "includes",
+            "excludes",
+            "flatten",
+            "union",
+            "append",
+            "sum",
+            "max",
+            "min",
+            "avg",
+            "abs",
+            "floor",
+            "ceil",
+            "round",
+            "oclIsKindOf",
+            "lift",
+            "select",
+            "reject",
+            "collect",
+            "forAll",
+            "exists",
+            "size",
+            "allInstances")
+        .contains(name);
   }
 }
