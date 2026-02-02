@@ -7,7 +7,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
 /**
  * Implementation for SymbolTable
  *
- * <p>starts with GLobalScope as currentScope
+ * <p>starts with GlobalScope as currentScope
  *
  * @see SymbolTable interface with all operations
  * @see Scope single scope
@@ -37,13 +37,35 @@ public class SymbolTableImpl implements SymbolTable {
   }
 
   @Override
-  public void define(Symbol symbol) {
-    currentScope.define(symbol);
+  public void defineVariable(VariableSymbol symbol) {
+    currentScope.defineVariable(symbol);
   }
 
   @Override
-  public Symbol resolve(String name) {
-    return currentScope.resolve(name);
+  public void defineType(TypeSymbol symbol) {
+    // Types werden nur im GlobalScope definiert
+    globalScope.defineType(symbol);
+  }
+
+  @Override
+  public void defineOperation(OperationSymbol symbol) {
+    // Operations werden nur im GlobalScope definiert
+    globalScope.defineOperation(symbol);
+  }
+
+  @Override
+  public VariableSymbol resolveVariable(String name) {
+    return currentScope.resolveVariable(name);
+  }
+
+  @Override
+  public TypeSymbol resolveType(String name) {
+    return currentScope.resolveType(name);
+  }
+
+  @Override
+  public OperationSymbol resolveOperation(String name) {
+    return currentScope.resolveOperation(name);
   }
 
   @Override
@@ -85,7 +107,7 @@ public class SymbolTableImpl implements SymbolTable {
         }
 
         // Try to resolve as unqualified metamodel type from global scope
-        Symbol symbol = globalScope.resolve(typeName);
+        TypeSymbol symbol = globalScope.resolveType(typeName);
         if (symbol != null && symbol.getType() != null) {
           return symbol.getType();
         }

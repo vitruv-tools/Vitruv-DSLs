@@ -24,7 +24,7 @@ public class VitruvOCL {
   }
 
   /** Evaluates OCL constraint string with files. */
-  public static Value evaluate(String oclSource, Path[] ecoreFiles, Path... xmiFiles)
+  public static Value evaluate(String constraint, Path[] ecoreFiles, Path... xmiFiles)
       throws IOException {
     MetamodelWrapper wrapper = new MetamodelWrapper();
 
@@ -37,6 +37,6 @@ public class VitruvOCL {
     }
 
     VitruvOCLCompiler compiler = new VitruvOCLCompiler(wrapper, null);
-    return compiler.compile(oclSource);
+    return compiler.compile(constraint);
   }
 }

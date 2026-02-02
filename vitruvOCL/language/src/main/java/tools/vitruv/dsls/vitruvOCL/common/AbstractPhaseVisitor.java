@@ -31,7 +31,7 @@ public abstract class AbstractPhaseVisitor<T> extends VitruvOCLBaseVisitor<T> {
   }
 
   protected Symbol resolveSymbol(String name, ParserRuleContext ctx) {
-    Symbol symbol = symbolTable.resolve(name);
+    Symbol symbol = symbolTable.resolveVariable(name);
     if (symbol == null) {
       handleUndefinedSymbol(name, ctx);
     }

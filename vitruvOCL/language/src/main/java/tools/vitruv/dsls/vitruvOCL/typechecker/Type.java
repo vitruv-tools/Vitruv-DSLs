@@ -60,7 +60,7 @@ public abstract class Type {
    * @return A collection type with SET multiplicity
    */
   public static Type bag(Type elementType) {
-    return new CollectionType(elementType, Multiplicity.SET);
+    return new CollectionType(elementType, Multiplicity.BAG);
   }
 
   /**
@@ -70,7 +70,7 @@ public abstract class Type {
    * @return A collection type with SET multiplicity
    */
   public static Type orderedSet(Type elementType) {
-    return new CollectionType(elementType, Multiplicity.SET);
+    return new CollectionType(elementType, Multiplicity.ORDERED_SET);
   }
 
   /**
@@ -228,7 +228,7 @@ public abstract class Type {
   private static class ErrorType extends Type {
     @Override
     public boolean isConformantTo(Type other) {
-      return true; // ERROR is conformant to everything (prevent follow-up errors)
+      return true;
     }
 
     @Override
@@ -245,9 +245,12 @@ public abstract class Type {
       if (other == ERROR) return true;
       if (other == ANY) return true;
 
-      // OCL# Subtyping: !int! <: ?int? <: {int}
+      // ✅ Singleton !int! conforms to base int
+      if (other.isSingleton() && other.getElementType() == INTEGER) {
+        return true;
+      }
+
       if (other.getElementType() == INTEGER) {
-        // Integer conforms to any multiplicity of Integer
         return true;
       }
 
@@ -268,7 +271,11 @@ public abstract class Type {
       if (other == ERROR) return true;
       if (other == ANY) return true;
 
-      // OCL# Subtyping: !bool! <: ?bool? <: {bool}
+      // ✅ Singleton !bool! conforms to base bool
+      if (other.isSingleton() && other.getElementType() == BOOLEAN) {
+        return true;
+      }
+
       if (other.getElementType() == BOOLEAN) {
         return true;
       }
@@ -290,7 +297,11 @@ public abstract class Type {
       if (other == ERROR) return true;
       if (other == ANY) return true;
 
-      // OCL# Subtyping: !double! <: ?double? <: {double}
+      // ✅ Singleton !double! conforms to base double
+      if (other.isSingleton() && other.getElementType() == DOUBLE) {
+        return true;
+      }
+
       if (other.getElementType() == DOUBLE) {
         return true;
       }
@@ -312,7 +323,11 @@ public abstract class Type {
       if (other == ERROR) return true;
       if (other == ANY) return true;
 
-      // OCL# Subtyping: !String! <: ?String? <: {String}
+      // ✅ Singleton !String! conforms to base String
+      if (other.isSingleton() && other.getElementType() == STRING) {
+        return true;
+      }
+
       if (other.getElementType() == STRING) {
         return true;
       }
@@ -330,10 +345,7 @@ public abstract class Type {
   private static class AnyType extends Type {
     @Override
     public boolean isConformantTo(Type other) {
-      // Error recovery: Any conforms to Error to propagate existing type errors
       if (other == ERROR) return true;
-
-      // Any is only conformant to itself
       return other == ANY;
     }
 
@@ -361,8 +373,12 @@ public abstract class Type {
     public boolean isConformantTo(Type other) {
       if (other == ERROR || other == ANY) return true;
 
+      // ✅ Singleton metaclass conforms to base metaclass
+      if (other.isSingleton() && other.getElementType() instanceof MetaclassType otherMeta) {
+        return otherMeta.eClass.isSuperTypeOf(this.eClass) || this.eClass.equals(otherMeta.eClass);
+      }
+
       if (other instanceof MetaclassType otherMeta) {
-        // EClass inheritance: this <: other if other is supertype
         return otherMeta.eClass.isSuperTypeOf(this.eClass) || this.eClass.equals(otherMeta.eClass);
       }
 
@@ -407,15 +423,16 @@ public abstract class Type {
       if (other == ERROR) return true;
       if (other == ANY) return true;
 
+      // ✅ Singleton conforms to its element type
+      if (this.isSingleton() && this.elementType.equals(other)) {
+        return true;
+      }
+
       // Collection conformance: element type must conform
       if (other instanceof CollectionType otherColl) {
-        // Element types must be conformant
         if (!this.elementType.isConformantTo(otherColl.elementType)) {
           return false;
         }
-
-        // Multiplicity conformance (OCL# subtyping rules)
-        // Singleton <: Optional <: Collection
         return this.multiplicity.isConformantTo(otherColl.multiplicity);
       }
 
@@ -473,7 +490,6 @@ public abstract class Type {
     if (t1.equals(t2)) return t1;
     if (t1 == ERROR || t2 == ERROR) return ERROR;
 
-    // Both are primitives but different → ANY
     boolean t1Primitive = (t1 == INTEGER || t1 == STRING || t1 == BOOLEAN);
     boolean t2Primitive = (t2 == INTEGER || t2 == STRING || t2 == BOOLEAN);
 
@@ -481,7 +497,6 @@ public abstract class Type {
       return ANY;
     }
 
-    // Collection types
     if (t1.isCollection() && t2.isCollection()) {
       Type elemSuper = commonSuperType(t1.getElementType(), t2.getElementType());
 
@@ -494,7 +509,6 @@ public abstract class Type {
       return bag(elemSuper);
     }
 
-    // Mixed collection/primitive → Collection(ANY)
     if (t1.isCollection() || t2.isCollection()) {
       return bag(ANY);
     }
@@ -502,10 +516,6 @@ public abstract class Type {
     return ANY;
   }
 
-  /**
-   * Compares two Values for ordering (used in Value.compare). This is a helper for OCL# semantic
-   * comparison.
-   */
   public static int compare(
       tools.vitruv.dsls.vitruvOCL.evaluator.Value v1,
       tools.vitruv.dsls.vitruvOCL.evaluator.Value v2) {
@@ -513,13 +523,11 @@ public abstract class Type {
     if (v1 == null) return -1;
     if (v2 == null) return 1;
 
-    // First compare by size
     int sizeCompare = Integer.compare(v1.size(), v2.size());
     if (sizeCompare != 0) {
       return sizeCompare;
     }
 
-    // Same size - compare elements pairwise
     List<tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement> elems1 = v1.getElements();
     List<tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement> elems2 = v2.getElements();
 
@@ -531,7 +539,7 @@ public abstract class Type {
       }
     }
 
-    return 0; // Equal
+    return 0;
   }
 
   @Override
@@ -541,12 +549,10 @@ public abstract class Type {
 
     Type other = (Type) obj;
 
-    // Compare by type name and structure
     if (!this.getTypeName().equals(other.getTypeName())) {
       return false;
     }
 
-    // For collections, also compare multiplicity and element type
     if (this.isCollection() && other.isCollection()) {
       return this.getMultiplicity() == other.getMultiplicity()
           && this.getElementType().equals(other.getElementType());

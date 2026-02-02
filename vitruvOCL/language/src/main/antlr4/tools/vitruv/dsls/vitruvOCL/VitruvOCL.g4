@@ -1,41 +1,37 @@
-/*******************************************************************************
- * Copyright (c) 2012, 2016 University of Mannheim: Chair for Software Engineering
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- *
- * Contributors:
- *    Ralph Gerbig - initial API and implementation and initial documentation
- *    Arne Lange - ocl2 implementation
- *******************************************************************************/
 grammar VitruvOCL;
 
-
+// ============================================================================
+// CONTEXT & CONSTRAINTS
+// ============================================================================
 
 contextDeclCS
 :
     classifierContextCS+
 ;
 
+classifierContextCS
+:
+    CONTEXT levelSpecificationCS?
+    (ID ':')?
+    (metamodel=ID '::' className=ID | contextName=ID)
+    invCS*
+;
+
+invCS
+:
+    'inv' (ID ('(' specificationCS ')')?)? ':' specificationCS
+;
 
 levelSpecificationCS
 :
-    '(' NumberLiteralExpCS
-    (
-        ','
-        (
-            '_'
-            | NumberLiteralExpCS
-        )
-    )? ')'
+    '(' NumberLiteralExpCS (',' ('_' | NumberLiteralExpCS))? ')'
 ;
 
-CONTEXT
-:
-    'context'
-;
+CONTEXT: 'context';
 
+// ============================================================================
+// TYPE SYSTEM
+// ============================================================================
 
 typeExpCS
 :
@@ -49,45 +45,34 @@ typeLiteralCS
     | collectionTypeCS
 ;
 
-
 collectionTypeCS
 :
-    collectionType = collectionTypeIDentifier
-    (
-        '(' typeExpCS ')'
-        | '<' typeExpCS '>'
-    )?
+    collectionKind=collectionTypeIdentifier ('(' typeExpCS ')' | '<' typeExpCS '>')?
 ;
 
-collectionTypeIDentifier
+collectionTypeIdentifier
 :
-    'Collection'
-    | 'Bag'
-    | 'OrderedSet'
-    | 'Sequence'
-    | 'Set'
+    'Collection' | 'Bag' | 'OrderedSet' | 'Sequence' | 'Set'
 ;
 
 primitiveTypeCS
 :
-    'Boolean'
-    | 'Integer'
-    | 'Real'
-    | 'String'
-    | 'ID'
-    | 'UnlimitedNatural'
-    | 'OclAny'
+    'Boolean' | 'Integer' | 'Real' | 'String' | 'ID' | 'UnlimitedNatural' | 'OclAny'
 ;
 
 typeNameExpCS
 :
-    metamodel = ID '::' className = ID
-    | unqualified = ID
+    metamodel=ID '::' className=ID
+    | unqualified=ID
 ;
+
+// ============================================================================
+// EXPRESSIONS (all evaluate to collections internally)
+// ============================================================================
 
 specificationCS
 :
-    infixedExpCS*
+    expCS*
 ;
 
 expCS
@@ -95,71 +80,88 @@ expCS
     infixedExpCS
 ;
 
+// Infix operations with precedence
 infixedExpCS
 :
-    prefixedExpCS # prefixedExp
-    | iteratorBarExpCS # iteratorBar
-    | left = infixedExpCS op =
-    (
-        '/'
-        | '*'
-    ) right = infixedExpCS # timesDivide
-    | left = infixedExpCS op =
-    (
-        '+'
-        | '-'
-    ) right = infixedExpCS # plusMinus
-    | left = infixedExpCS op =
-    (
-        '<='
-        | '>='
-        | '!='
-        | '<'
-        | '>'
-        | '=='
-    ) right = infixedExpCS # equalOperations
-    | left = infixedExpCS op = '~' right = infixedExpCS # coextension
-    | left = infixedExpCS op = '^' right = infixedExpCS # Message
-    | left = infixedExpCS op =
-    (
-        'and'
-        | 'or'
-        | 'xor'
-    ) right = infixedExpCS # andOrXor
-    | left = infixedExpCS op = 'implies' right = infixedExpCS # implies
+    prefixedExpCS                                                           # prefixedExpr
+    | left=infixedExpCS op=('*'|'/') right=infixedExpCS                    # multiplicative
+    | left=infixedExpCS op=('+'|'-') right=infixedExpCS                    # additive
+    | left=infixedExpCS op=('<='|'>='|'!='|'<'|'>'|'==') right=infixedExpCS # comparison
+    | left=infixedExpCS op='~' right=infixedExpCS                          # correspondence
+    | left=infixedExpCS op='^' right=infixedExpCS                          # message
+    | left=infixedExpCS op=('and'|'or'|'xor') right=infixedExpCS           # logical
+    | left=infixedExpCS op='implies' right=infixedExpCS                    # implication
 ;
 
-iteratorBarExpCS
-:
-    '|'
-;
-
-navigationOperatorCS
-:
-    '.' # dot
-;
-
+// Prefix operations and navigation
 prefixedExpCS
-: ('-' | 'not')* primaryExpCS (navigationOperatorCS primaryExpCS)*
-| ('-' | 'not')* metamodel=ID '::' className=ID (navigationOperatorCS primaryExpCS)+
+:
+    op=('-'|'not')* base=primaryExpCS navigation=navigationChainCS*        # prefixedPrimary
+    | op=('-'|'not')* metamodel=ID '::' className=ID navigation=navigationChainCS+ # prefixedQualified
 ;
+
+navigationChainCS
+:
+    '.' navigationTargetCS
+;
+
+navigationTargetCS
+:
+    propertyAccess             # propertyNav
+    | operationCall            # operationNav
+;
+
+// ============================================================================
+// PRIMARY EXPRESSIONS (atomic expressions)
+// ============================================================================
 
 primaryExpCS
 :
-    ifExpCS
-    | letExpCS   
-    | primitiveLiteralExpCS
-    | navigatingExpCS
-    | selfExpCS
-    | collectionLiteralExpCS
-    | typeLiteralExpCS
-    | nestedExpCS
+    literalExpCS               # literal
+    | ifExpCS                  # conditional
+    | letExpCS                 # letBinding
+    | collectionLiteralExpCS   # collectionLiteral
+    | typeLiteralExpCS         # typeLiteral
+    | nestedExpCS              # nested
+    | selfExpCS                # self
+    | variableExpCS            # variable
 ;
 
+// Literals: User writes "1", internally becomes ¡int! = [1]
+literalExpCS
+:
+    NumberLiteralExpCS         # numberLit
+    | STRING                   # stringLit
+    | BooleanLiteralExpCS      # booleanLit
+;
+
+variableExpCS
+:
+    varName=ID
+;
+
+selfExpCS
+:
+    'self'
+;
+
+nestedExpCS
+:
+    '(' expCS+ ')'
+;
+
+// ============================================================================
+// CONTROL FLOW
+// ============================================================================
+
+ifExpCS
+:
+    'if' condition=expCS+ 'then' thenBranch=expCS+ 'else' elseBranch=expCS+ 'endif'
+;
 
 letExpCS
 :
-    'let' variableDeclarations 'in' body = expCS+
+    'let' variableDeclarations 'in' body=expCS+
 ;
 
 variableDeclarations
@@ -169,294 +171,136 @@ variableDeclarations
 
 variableDeclaration
 :
-    varName = ID (':' varType = typeExpCS)? '=' varInit = expCS
+    varName=ID (':' varType=typeExpCS)? '=' varInit=expCS
 ;
 
-nestedExpCS
+// ============================================================================
+// COLLECTION LITERALS
+// ============================================================================
+
+collectionLiteralExpCS
 :
-    (
-        '(' exp = expCS+ ')'
-    )+
+    collectionKind=collectionTypeCS '{' (arguments=collectionArguments)? '}'
 ;
 
-ifExpCS
+collectionArguments
 :
-    'if' ifexp = expCS+ 'then' thenexp = expCS+ 'else' elseexp = expCS+
-    'endif'
+    collectionLiteralPartCS (',' collectionLiteralPartCS)*
 ;
 
+collectionLiteralPartCS
+:
+    expCS ('..' expCS)?
+;
 
 typeLiteralExpCS
 :
     typeLiteralCS
 ;
 
-collectionLiteralExpCS
+// ============================================================================
+// PROPERTY ACCESS & OPERATIONS
+// ============================================================================
+
+propertyAccess
 :
-    type = collectionTypeCS '{'
-    (
-        argument = collectionArguments
-    )? '}'
+    propertyName=ID
 ;
 
-collectionArguments
+operationCall
 :
-    collectionLiteralPartCS
-    (
-        ',' collectionLiteralPartCS
-    )*
+    collectionOpCS
+    | stringOpCS
+    | iteratorOpCS
+    | typeOpCS
 ;
 
-collectionLiteralPartCS
+// ============================================================================
+// COLLECTION OPERATIONS (each is a labeled alternative)
+// ============================================================================
+
+collectionOpCS
 :
-    expCS
-    (
-        '..' expCS
-    )?
+    'including' '(' arg=expCS ')'      # includingOp
+    | 'excluding' '(' arg=expCS ')'    # excludingOp
+    | 'includes' '(' arg=expCS ')'     # includesOp
+    | 'excludes' '(' arg=expCS ')'     # excludesOp
+    | 'flatten' '(' ')'                # flattenOp
+    | 'union' '(' arg=expCS ')'        # unionOp
+    | 'append' '(' arg=expCS ')'       # appendOp
+    | 'sum' '(' ')'                    # sumOp
+    | 'max' '(' ')'                    # maxOp
+    | 'min' '(' ')'                    # minOp
+    | 'avg' '(' ')'                    # avgOp
+    | 'abs' '(' ')'                    # absOp
+    | 'floor' '(' ')'                  # floorOp
+    | 'ceil' '(' ')'                   # ceilOp
+    | 'round' '(' ')'                  # roundOp
+    | 'lift' '(' ')'                   # liftOp
+    | 'size' '(' ')'                   # sizeOp
+    | 'isEmpty' '(' ')'                # isEmptyOp
+    | 'notEmpty' '(' ')'               # notEmptyOp
+    | 'first' '(' ')'                  # firstOp
+    | 'last' '(' ')'                   # lastOp
+    | 'reverse' '(' ')'                # reverseOp
+    | 'allInstances' '(' ')'           # allInstancesOp
 ;
 
+// ============================================================================
+// ITERATOR OPERATIONS (with implicit lowering)
+// ============================================================================
 
-selfExpCS
+iteratorOpCS
 :
-    'self'
+    'select' '(' iteratorVar=ID '|' body=expCS ')'    # selectOp
+    | 'reject' '(' iteratorVar=ID '|' body=expCS ')'  # rejectOp
+    | 'collect' '(' iteratorVar=ID '|' body=expCS ')' # collectOp
+    | 'forAll' '(' iteratorVar=ID '|' body=expCS ')'  # forAllOp
+    | 'exists' '(' iteratorVar=ID '|' body=expCS ')'  # existsOp
 ;
 
-primitiveLiteralExpCS
+// ============================================================================
+// STRING OPERATIONS
+// ============================================================================
+
+stringOpCS
 :
-    NumberLiteralExpCS # number
-    | STRING # string
-    | BooleanLiteralExpCS # boolean
+    'concat' '(' arg=expCS ')'                              # concatOp
+    | 'substring' '(' start=expCS ',' end=expCS ')'        # substringOp
+    | 'toUpper' '(' ')'                                     # toUpperOp
+    | 'toLower' '(' ')'                                     # toLowerOp
+    | 'indexOf' '(' arg=expCS ')'                          # indexOfOp
+    | 'equalsIgnoreCase' '(' arg=expCS ')'                 # equalsIgnoreCaseOp
 ;
 
+// ============================================================================
+// TYPE OPERATIONS
+// ============================================================================
+
+typeOpCS
+:
+    'oclIsKindOf' '(' type=typeExpCS ')'    # oclIsKindOfOp
+    | 'oclIsTypeOf' '(' type=typeExpCS ')'  # oclIsTypeOfOp
+    | 'oclAsType' '(' type=typeExpCS ')'    # oclAsTypeOp
+;
+
+// ============================================================================
+// LEXER
+// ============================================================================
 
 NumberLiteralExpCS
 :
-    INT
-    (
-        '.' INT
-    )?
-    (
-        (
-            'e'
-            | 'E'
-        )
-        (
-            '+'
-            | '-'
-        )? INT
-    )?
-;
-
-fragment
-DIGIT
-:
-    [0-9]
-;
-
-INT
-:
-    DIGIT+
+    INT ('.' INT)? (('e'|'E') ('+'|'-')? INT)?
 ;
 
 BooleanLiteralExpCS
 :
-    'true'
-    | 'false'
+    'true' | 'false'
 ;
-
-
-navigatingExpCS
-:
-    opName = indexExpCS
-    (
-        '@' 'pre'
-    )?
-    (
-        '(' '"'? onespace? barArg = navigatingBarAgrsCS* arg =
-        navigatingArgCS* commaArg = navigatingCommaArgCS* semiArg =
-        navigatingSemiAgrsCS* '"'? ')'
-    )*
-;
-
-navigatingSemiAgrsCS
-:
-    ';' var = navigatingArgExpCS
-    (
-        ':' typeName = typeExpCS
-    )?
-    (
-        '=' exp = infixedExpCS
-    )?
-    (
-        '|' expCS
-    )?
-;
-
-navigatingCommaArgCS
-:
-    ',' navigatingArgExpCS
-    (
-        ':' typeExpCS
-    )?
-    (
-        '=' expCS+
-    )?
-;
-
-
-navigatingArgExpCS
-:
-    iteratorVar = ID '|' body = expCS
-    
-    | iteratorVariable = infixedExpCS iteratorBarExpCS name = nameExpCS
-      navigationOperatorCS iteratorBody  = infixedExpCS*
-    
-    | infixedExpCS+
-;
-
-navigatingBarAgrsCS
-:
-    '|' var = navigatingArgExpCS
-    (
-        ':' type = typeExpCS
-    )?
-    (
-        '=' expCS+
-    )?
-;
-
-navigatingArgCS
-:
-    navigatingArgExpCS
-    (
-        ':' typeExpCS
-    )?
-    (
-        '=' expCS+
-    )?
-;
-
-indexExpCS
-:
-    nameExpCS
-    (
-        '[' expCS
-        (
-            ',' expCS
-        )* ']'
-    )?
-;
-
-nameExpCS
-:
-    (
-        variableName = ID
-        | collectionOperationName
-        | stringOperationName
-        | STRING
-    ) # name
-    | '$' clab = ID '$' # ontologicalName
-    | '#' aspect = ID
-    (
-        '('
-        (
-            NumberLiteralExpCS
-            | ID
-        )?
-        (
-            ','
-            (
-                NumberLiteralExpCS
-                | ID
-            )
-        )* ')'
-    )? '#' # linguisticalName
-;
-
-// String Operations
-stringOperationName
-:
-    'concat'
-    | 'substring'
-    | 'toUpper'
-    | 'toLower'
-    | 'indexOf'
-    | 'equalsIgnoreCase'
-;
-
-
-collectionOperationName
-:
-    'including'
-    | 'excluding'
-    | 'includes'
-    | 'excludes'
-    | 'flatten'
-    | 'union'
-    | 'append'
-    | 'sum'      
-    | 'max'      
-    | 'min'     
-    | 'avg'      
-    | 'abs'     
-    | 'floor'    
-    | 'ceil'     
-    | 'round'   
-    | 'lift' 
-    | 'oclIsKindOf'
-    | 'oclIsTypeOf'    
-    | 'oclAsType'
-    | 'select'       
-    | 'reject'        
-    | 'collect'       
-    | 'forAll'        
-    | 'exists'        
-;
-
-
-invCS
-:
-    'inv'
-    (
-        ID
-        (
-            '(' specificationCS ')'
-        )?
-    )? ':' specificationCS
-;
-
-classifierContextCS
-:
-    CONTEXT levelSpecificationCS?
-    (
-        ID ':'
-    )?
-    (
-        metamodel = ID '::' className = ID
-        | contextName = ID
-    )
-    invCS*
-;
-
 
 ID
 :
-    [a-zA-Z] [a-zA-Z0-9]*
-;
-
-WS
-:
-    [ \t\n\r]+ -> skip
-;
-
-onespace
-:
-    ONESPACE
-;
-
-ONESPACE
-:
-    ' '
+    [a-zA-Z][a-zA-Z0-9]*
 ;
 
 STRING
@@ -466,18 +310,14 @@ STRING
 
 UnterminatedStringLiteral
 :
-    '"'
-    (
-        ~["\\\r\n]
-        | '\\'
-        (
-            .
-            | EOF
-        )
-    )*
+    '"' (~["\\\r\n] | '\\' (. | EOF))*
 ;
 
-COMMENT
-:
-    '--' .*? '\n' -> skip
-;
+fragment DIGIT: [0-9];
+INT: DIGIT+;
+
+WS: [ \t\n\r]+ -> skip;
+COMMENT: '--' .*? '\n' -> skip;
+
+onespace: ONESPACE;
+ONESPACE: ' ';

@@ -1,6 +1,7 @@
 package tools.vitruv.dsls.vitruvOCL.evaluator;
 
 import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EObject;
 
 /**
  * OCL# Element - represents a single element in an OCL collection.
@@ -25,11 +26,56 @@ public sealed interface OCLElement
     return null;
   }
 
+  /**
+   * Try to get boolean value, returns null if not a BoolValue. Avoids instanceof checks in calling
+   * code.
+   */
+  default Boolean tryGetBool() {
+    return null;
+  }
+
+  /**
+   * Try to get int value, returns null if not an IntValue. Avoids instanceof checks in calling
+   * code.
+   */
+  default Integer tryGetInt() {
+    return null;
+  }
+
+  /**
+   * Try to get string value, returns null if not a StringValue. Avoids instanceof checks in calling
+   * code.
+   */
+  default String tryGetString() {
+    return null;
+  }
+
+  /**
+   * Try to get double value, returns null if not a DoubleValue. Avoids instanceof checks in calling
+   * code.
+   */
+  default Double tryGetDouble() {
+    return null;
+  }
+
+  /**
+   * Try to get EObject instance, returns null if not a MetaclassValue. Avoids instanceof checks in
+   * calling code.
+   */
+  default EObject tryGetInstance() {
+    return null;
+  }
+
   /** Integer value element. Example: In Set{1, 2, 3}, each number is an IntValue */
   record IntValue(int value) implements OCLElement {
     @Override
     public String toString() {
       return String.valueOf(value);
+    }
+
+    @Override
+    public Integer tryGetInt() {
+      return value;
     }
   }
 
@@ -39,6 +85,11 @@ public sealed interface OCLElement
     public String toString() {
       return String.valueOf(value);
     }
+
+    @Override
+    public Double tryGetDouble() {
+      return (double) value;
+    }
   }
 
   /** Boolean value element. Example: In Set{true, false}, each boolean is a BoolValue */
@@ -47,6 +98,11 @@ public sealed interface OCLElement
     public String toString() {
       return String.valueOf(value);
     }
+
+    @Override
+    public Boolean tryGetBool() {
+      return value;
+    }
   }
 
   /** String value element. Example: In Set{"hello", "world"}, each string is a StringValue */
@@ -54,6 +110,11 @@ public sealed interface OCLElement
     @Override
     public String toString() {
       return "\"" + value + "\"";
+    }
+
+    @Override
+    public String tryGetString() {
+      return value;
     }
   }
 
@@ -95,6 +156,11 @@ public sealed interface OCLElement
     @Override
     public String toString() {
       return instance.eClass().getName() + "@" + System.identityHashCode(instance);
+    }
+
+    @Override
+    public EObject tryGetInstance() {
+      return instance;
     }
   }
 
