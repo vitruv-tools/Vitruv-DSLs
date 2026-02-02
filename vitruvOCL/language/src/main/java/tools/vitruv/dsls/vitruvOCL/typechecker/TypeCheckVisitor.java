@@ -936,8 +936,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     String metamodel = ctx.metamodel.getText();
     String className = ctx.className.getText();
 
-    System.err.println("DEBUG TC PrefixedQualified: " + metamodel + "::" + className);
-
     EClass eClass = specification.resolveEClass(metamodel, className);
     if (eClass == null) {
       errors.add(
@@ -950,7 +948,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     Type metaclassType = Type.metaclassType(eClass);
-    System.err.println("DEBUG TC: metaclassType = " + metaclassType);
 
     // Store the base type BEFORE navigation
     nodeTypes.put(ctx, metaclassType);

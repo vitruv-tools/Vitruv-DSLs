@@ -81,11 +81,8 @@ public class VitruvOCLCompiler {
       return null;
     }
 
-    System.out.println("Parsing complete with: " + tree.toStringTree(parser));
-
     SymbolTableImpl symbolTable = new SymbolTableImpl(wrapper);
     TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, wrapper, errors);
-    System.out.println("Start TeypeChecking");
     typeChecker.visit(tree);
 
     if (errors.hasErrors()) {
@@ -96,8 +93,6 @@ public class VitruvOCLCompiler {
               err -> System.err.println("  " + err.getMessage() + " at line " + err.getLine()));
       return null;
     }
-    System.out.println("typechecking complete with: " + typeChecker.getNodeTypes());
-    System.out.println("Starts Evaluating");
     EvaluationVisitor evaluator =
         new EvaluationVisitor(symbolTable, wrapper, errors, typeChecker.getNodeTypes());
     Value result = evaluator.visit(tree);
@@ -109,8 +104,6 @@ public class VitruvOCLCompiler {
               err -> System.err.println("  " + err.getMessage() + " at line " + err.getLine()));
       return null;
     }
-
-    System.out.println("evaluation complete with: " + result);
     return result;
   }
 

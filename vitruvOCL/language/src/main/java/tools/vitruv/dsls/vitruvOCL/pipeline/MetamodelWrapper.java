@@ -96,10 +96,7 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
 
   @Override
   public EClass resolveEClass(String metamodelName, String className) {
-    System.err.println("Available metamodels: " + getAvailableMetamodels());
-    System.err.println("Looking for: " + metamodelName);
     EPackage ePackage = metamodelRegistry.get(metamodelName);
-    System.err.println("EPackage ePackage: " + ePackage);
     if (ePackage == null) {
       System.err.println("MetaModelRegistry: " + metamodelRegistry);
       return null;

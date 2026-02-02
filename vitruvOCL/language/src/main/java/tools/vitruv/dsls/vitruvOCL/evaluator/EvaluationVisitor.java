@@ -346,10 +346,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitIsEmptyOp(VitruvOCLParser.IsEmptyOpContext ctx) {
     Value receiver = receiverStack.peek();
-    System.err.println("DEBUG isEmpty: receiver = " + receiver);
-    System.err.println("DEBUG isEmpty: receiver.isEmpty() = " + receiver.isEmpty());
     Value result = Value.boolValue(receiver.isEmpty());
-    System.err.println("DEBUG isEmpty: result = " + result);
     return result;
   }
 
@@ -458,19 +455,11 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitIncludesOp(VitruvOCLParser.IncludesOpContext ctx) {
     Value receiver = receiverStack.peek();
-    System.err.println("DEBUG includes: receiver = " + receiver);
-    System.err.println("DEBUG includes: receiver.getElements() = " + receiver.getElements());
-
     Value arg = visit(ctx.arg);
-    System.err.println("DEBUG includes: arg = " + arg);
-
     if (arg.size() != 1) return error("includes() requires singleton", ctx);
 
     OCLElement searchElem = arg.getElements().get(0);
-    System.err.println("DEBUG includes: searchElem = " + searchElem);
-
     boolean result = receiver.includes(searchElem);
-    System.err.println("DEBUG includes: result = " + result);
 
     return Value.boolValue(result);
   }
@@ -779,6 +768,49 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
 
     return Value.stringValue(str + argStr);
+  }
+
+  /**
+   * Evaluates the substring operation on string values.
+   *
+   * <p>Extracts a substring from each string in the receiver collection using 1-based OCL indexing.
+   * The operation takes two integer arguments: start position (inclusive) and end position
+   * (exclusive in Java terms).
+   *
+   * <p>Example: "Hello".substring(2, 4) returns "el" (positions 2-3 in OCL's 1-based indexing)
+   *
+   * @param ctx The substring operation context containing start and end expressions
+   * @return A collection of substring values, empty if arguments are invalid or out of bounds
+   */
+  @Override
+  public Value visitSubstringOp(VitruvOCLParser.SubstringOpContext ctx) {
+    // Get receiver from parent context
+    Value receiver = receiverStack.peek();
+
+    Value startVal = visit(ctx.start);
+    Value endVal = visit(ctx.end);
+
+    if (startVal.isEmpty() || endVal.isEmpty()) {
+      return Value.of(List.of(), Type.STRING);
+    }
+
+    int start = ((OCLElement.IntValue) startVal.getElements().get(0)).value();
+    int end = ((OCLElement.IntValue) endVal.getElements().get(0)).value();
+
+    List<OCLElement> results = new ArrayList<>();
+    for (OCLElement elem : receiver.getElements()) {
+      if (elem instanceof OCLElement.StringValue strVal) {
+        String str = strVal.value();
+        int javaStart = start - 1;
+        int javaEnd = end;
+
+        if (javaStart >= 0 && javaEnd <= str.length() && javaStart < javaEnd) {
+          results.add(new OCLElement.StringValue(str.substring(javaStart, javaEnd)));
+        }
+      }
+    }
+
+    return Value.of(results, Type.STRING);
   }
 
   /**
@@ -1431,12 +1463,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
     // Process navigation chain (method calls on the result)
     List<VitruvOCLParser.NavigationChainCSContext> navChain = ctx.navigationChainCS();
-    System.err.println("DEBUG: navChain.size() = " + navChain.size());
-
     for (VitruvOCLParser.NavigationChainCSContext nav : navChain) {
-      System.err.println("DEBUG: Processing nav: " + nav.getText());
       currentValue = visitNavigationWithReceiver(nav, currentValue);
-      System.err.println("DEBUG: After nav, currentValue = " + currentValue);
     }
 
     return currentValue;
@@ -1453,12 +1481,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private Value visitNavigationWithReceiver(
       VitruvOCLParser.NavigationChainCSContext ctx, Value receiver) {
-    System.err.println("DEBUG visitNavWithReceiver: ctx = " + ctx.getText());
 
     VitruvOCLParser.NavigationTargetCSContext target = ctx.navigationTargetCS();
-    System.err.println(
-        "DEBUG visitNavWithReceiver: target class = " + target.getClass().getSimpleName());
-
     // Use visitor pattern to dispatch based on navigation target type
     return target.accept(
         new VitruvOCLBaseVisitor<Value>() {
@@ -1469,10 +1493,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
           @Override
           public Value visitOperationNav(VitruvOCLParser.OperationNavContext ctx) {
-            System.err.println("DEBUG: About to call visitOperationCallWithReceiver");
             VitruvOCLParser.OperationCallContext opCtx = ctx.operationCall();
-            System.err.println("DEBUG: opCtx = " + opCtx);
-            System.err.println("DEBUG: opCtx class = " + opCtx.getClass().getName());
             return visitOperationCallWithReceiver(opCtx, receiver);
           }
 
@@ -1496,19 +1517,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private Value visitOperationCallWithReceiver(
       VitruvOCLParser.OperationCallContext ctx, Value receiver) {
-    System.err.println("DEBUG: ENTRY visitOperationCallWithReceiver");
-    System.err.println("DEBUG: ctx = " + ctx);
-    System.err.println("DEBUG: ctx.getChildCount() = " + ctx.getChildCount());
-
-    for (int i = 0; i < ctx.getChildCount(); i++) {
-      System.err.println(
-          "  ["
-              + i
-              + "] "
-              + ctx.getChild(i).getClass().getSimpleName()
-              + ": "
-              + ctx.getChild(i).getText());
-    }
 
     // Push receiver onto stack for operation to access
     receiverStack.push(receiver);
@@ -1675,29 +1683,22 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   @Override
   public Value visitOclIsKindOfOp(VitruvOCLParser.OclIsKindOfOpContext ctx) {
-    System.err.println("DEBUG: visitOclIsKindOfOp CALLED");
     Value receiver = receiverStack.peek();
-    System.err.println("DEBUG: receiver = " + receiver);
 
     Type targetType = nodeTypes.get(ctx.type);
-    System.err.println("DEBUG: targetType = " + targetType);
 
     if (targetType == null) {
-      System.err.println("DEBUG: targetType is null!");
       return error("Cannot resolve type in oclIsKindOf", ctx);
     }
 
     List<OCLElement> results = new ArrayList<>();
     for (OCLElement elem : receiver.getElements()) {
       boolean isKind = checkIsKindOf(elem, targetType);
-      System.err.println("DEBUG: elem=" + elem + ", isKind=" + isKind);
       results.add(new OCLElement.BoolValue(isKind));
     }
 
     Type resultType = nodeTypes.get(ctx);
-    System.err.println("DEBUG: results.size()=" + results.size());
     Value result = Value.of(results, resultType != null ? resultType : Type.set(Type.BOOLEAN));
-    System.err.println("DEBUG: returning = " + result);
     return result;
   }
 
@@ -1835,8 +1836,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitCollectionLiteralExpCS(VitruvOCLParser.CollectionLiteralExpCSContext ctx) {
     Type collectionType = nodeTypes.get(ctx);
 
-    System.err.println("DEBUG: collectionType = " + collectionType);
-
     if (ctx.arguments == null) {
       return Value.empty(collectionType);
     }
@@ -1844,17 +1843,12 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value argumentsValue = visit(ctx.arguments);
     List<OCLElement> elements = argumentsValue.getElements();
 
-    System.err.println("DEBUG: elements before = " + elements.size());
-
     Value collection = Value.of(elements, collectionType);
 
     // Remove duplicates for Set types
     if (collectionType.isUnique()) {
       collection = collection.removeDuplicates();
     }
-
-    System.err.println("DEBUG: collection after = " + collection.size());
-
     return collection;
   }
 

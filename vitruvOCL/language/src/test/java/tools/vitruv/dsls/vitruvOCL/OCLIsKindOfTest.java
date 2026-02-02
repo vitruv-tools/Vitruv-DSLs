@@ -502,9 +502,6 @@ public class OCLIsKindOfTest {
    * @Test public void testUnknownTypeReturnsFalse() { String input =
    * "Set{5}.oclIsKindOf(MyCustomClass)";
    *
-   * <p>System.out.println("=== DEBUG: testUnknownTypeReturnsFalse ==="); System.out.println("Input:
-   * " + input);
-   *
    * <p>// Vor dem compile() Value result = compile(input);
    *
    * <p>assertEquals(1, result.size()); OCLElement elem = result.getElements().get(0);
@@ -720,17 +717,11 @@ public class OCLIsKindOfTest {
    */
   private Value compile(String input) {
     ParseTree tree = parse(input);
-
-    System.out.println("=== DEBUG compile() ===");
-    System.out.println("Input: " + input);
-
     // Dummy specification (no metamodels needed for primitive type checking)
     MetamodelWrapperInterface dummySpec =
         new MetamodelWrapperInterface() {
           @Override
           public EClass resolveEClass(String metamodel, String className) {
-            System.out.println(
-                "  resolveEClass called: metamodel=" + metamodel + ", className=" + className);
             return null;
           }
 
@@ -749,12 +740,10 @@ public class OCLIsKindOfTest {
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
     ErrorCollector errors = new ErrorCollector();
 
-    System.out.println("=== Pass 2: Type Checking ===");
     // Pass 2: Type Checking
     TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, dummySpec, errors);
     typeChecker.visit(tree);
 
-    System.out.println("Type checking errors: " + errors.getErrors().size());
     for (CompileError error : errors.getErrors()) {
       System.out.println("  ERROR: " + error.getMessage() + " at line " + error.getLine());
     }
@@ -763,7 +752,6 @@ public class OCLIsKindOfTest {
       fail("Type checking failed: " + typeChecker.getErrorCollector().getErrors());
     }
 
-    System.out.println("=== Pass 3: Evaluation ===");
     EvaluationVisitor evaluator =
         new EvaluationVisitor(symbolTable, dummySpec, errors, typeChecker.getNodeTypes());
     Value result = evaluator.visit(tree);
@@ -771,8 +759,6 @@ public class OCLIsKindOfTest {
     if (evaluator.hasErrors()) {
       fail("Evaluation failed: " + evaluator.getErrorCollector().getErrors());
     }
-
-    System.out.println("Result: " + result);
     return result;
   }
 

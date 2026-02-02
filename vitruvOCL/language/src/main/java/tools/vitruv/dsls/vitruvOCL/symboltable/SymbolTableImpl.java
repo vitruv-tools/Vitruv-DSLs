@@ -93,7 +93,6 @@ public class SymbolTableImpl implements SymbolTable {
       default:
         // Check if it's a qualified metamodel type (Metamodel::Class)
         if (typeName.contains("::")) {
-          System.out.println("resolving metaclass: " + typeName);
           String[] parts = typeName.split("::");
           if (parts.length == 2) {
             String metamodel = parts[0];

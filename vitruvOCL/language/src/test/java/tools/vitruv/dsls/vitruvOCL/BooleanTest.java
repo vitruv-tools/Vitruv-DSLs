@@ -533,7 +533,6 @@ public class BooleanTest {
   private Value compile(String input) {
     // Phase 1: Parse
     ParseTree tree = parse(input);
-    System.out.println("DEBUG: Parsed tree: " + tree.toStringTree());
 
     // Create dummy metamodel wrapper (no metamodels needed for boolean tests)
     MetamodelWrapperInterface dummySpec =
@@ -559,13 +558,10 @@ public class BooleanTest {
 
     // Phase 2: Type Check
     TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, dummySpec, errors);
-    System.out.println("DEBUG: Starting type checking...");
     typeChecker.visit(tree);
-    System.out.println("DEBUG: Type checking done, hasErrors: " + errors.hasErrors());
 
     // Check for type checking errors
     if (errors.hasErrors()) {
-      System.err.println("DEBUG: Errors found in ErrorCollector:");
       errors
           .getErrors()
           .forEach(
@@ -575,7 +571,6 @@ public class BooleanTest {
     }
 
     if (typeChecker.hasErrors()) {
-      System.err.println("DEBUG: Errors found in TypeChecker:");
       typeChecker
           .getErrorCollector()
           .getErrors()
@@ -588,13 +583,10 @@ public class BooleanTest {
     // Phase 3: Evaluate
     EvaluationVisitor evaluator =
         new EvaluationVisitor(symbolTable, dummySpec, errors, typeChecker.getNodeTypes());
-    System.err.println("DEBUG: Starting evaluation...");
     Value result = evaluator.visit(tree);
-    System.err.println("DEBUG: Evaluation done, hasErrors: " + errors.hasErrors());
 
     // Check for evaluation errors
     if (errors.hasErrors()) {
-      System.err.println("DEBUG: Evaluation errors:");
       errors
           .getErrors()
           .forEach(err -> System.err.println("  Line " + err.getLine() + ": " + err.getMessage()));
