@@ -2316,16 +2316,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return error("PropertyAccess needs receiver context", ctx);
   }
 
-  /**
-   * Error: operation call visited without receiver.
-   *
-   * <p>Should be visited via {@link #visitOperationCallWithReceiver}.
-   */
-  @Override
-  public Value visitOperationCall(VitruvOCLParser.OperationCallContext ctx) {
-    return error("OperationCall needs receiver context", ctx);
-  }
-
   // ==================== Miscellaneous ====================
 
   /**

@@ -2761,26 +2761,23 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   }
 
   @Override
-  public Type visitOperationCall(VitruvOCLParser.OperationCallContext ctx) {
-    if (ctx.collectionOpCS() != null) {
-      return visit(ctx.collectionOpCS());
-    }
-    if (ctx.stringOpCS() != null) {
-      return visit(ctx.stringOpCS());
-    }
-    if (ctx.iteratorOpCS() != null) {
-      return visit(ctx.iteratorOpCS());
-    }
-    if (ctx.typeOpCS() != null) {
-      return visit(ctx.typeOpCS());
-    }
-    errors.add(
-        ctx.getStart().getLine(),
-        ctx.getStart().getCharPositionInLine(),
-        "Invalid operation call",
-        ErrorSeverity.ERROR,
-        "type-checker");
-    return Type.ERROR;
+  public Type visitCollectionOperation(VitruvOCLParser.CollectionOperationContext ctx) {
+    return visit(ctx.collectionOpCS());
+  }
+
+  @Override
+  public Type visitStringOperation(VitruvOCLParser.StringOperationContext ctx) {
+    return visit(ctx.stringOpCS());
+  }
+
+  @Override
+  public Type visitIteratorOperation(VitruvOCLParser.IteratorOperationContext ctx) {
+    return visit(ctx.iteratorOpCS());
+  }
+
+  @Override
+  public Type visitTypeOperation(VitruvOCLParser.TypeOperationContext ctx) {
+    return visit(ctx.typeOpCS());
   }
 
   @Override

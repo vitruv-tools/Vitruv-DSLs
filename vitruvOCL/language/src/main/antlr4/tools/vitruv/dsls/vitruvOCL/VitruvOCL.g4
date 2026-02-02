@@ -208,10 +208,10 @@ propertyAccess
 
 operationCall
 :
-    collectionOpCS
-    | stringOpCS
-    | iteratorOpCS
-    | typeOpCS
+    collectionOpCS   # collectionOperation
+    | stringOpCS     # stringOperation
+    | iteratorOpCS   # iteratorOperation
+    | typeOpCS       # typeOperation
 ;
 
 // ============================================================================
