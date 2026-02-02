@@ -67,7 +67,7 @@ typeNameExpCS
 ;
 
 // ============================================================================
-// EXPRESSIONS (all evaluate to collections internally)
+// EXPRESSIONS
 // ============================================================================
 
 specificationCS
@@ -127,7 +127,6 @@ primaryExpCS
     | variableExpCS            # variable
 ;
 
-// Literals: User writes "1", internally becomes ¡int! = [1]
 literalExpCS
 :
     NumberLiteralExpCS         # numberLit
@@ -216,7 +215,7 @@ operationCall
 ;
 
 // ============================================================================
-// COLLECTION OPERATIONS (each is a labeled alternative)
+// COLLECTION OPERATIONS
 // ============================================================================
 
 collectionOpCS
@@ -247,7 +246,7 @@ collectionOpCS
 ;
 
 // ============================================================================
-// ITERATOR OPERATIONS (with implicit lowering)
+// ITERATOR OPERATIONS
 // ============================================================================
 
 iteratorOpCS
