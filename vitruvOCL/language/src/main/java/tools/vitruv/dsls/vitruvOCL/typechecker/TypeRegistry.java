@@ -1,8 +1,5 @@
 package tools.vitruv.dsls.vitruvOCL.typechecker;
 
-import java.util.HashMap;
-import java.util.Map;
-import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
 
 /**
  * registry for metamodels in the vsum - access on metaclasses via fully qualified names - chaching
@@ -12,13 +9,6 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
  * @see specificationsumWrapper for access to metamodels
  */
 public class TypeRegistry {
-
-  private final MetamodelWrapperInterface specificationsumWrapper;
-  private final Map<String, Type> typeCache = new HashMap<>();
-
-  public TypeRegistry(MetamodelWrapperInterface specificationsumWrapper) {
-    this.specificationsumWrapper = specificationsumWrapper;
-  }
 
   /**
    * resolves a fully qualified type name to a type.

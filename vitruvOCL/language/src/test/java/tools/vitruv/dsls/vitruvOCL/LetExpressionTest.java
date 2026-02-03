@@ -639,22 +639,6 @@ public class LetExpressionTest {
   }
 
   /**
-   * Parses an OCL let-expression string into an ANTLR parse tree.
-   *
-   * <p>Uses {@code infixedExpCS} as the entry point to handle let-expressions and other infix
-   * operations.
-   *
-   * @param input The OCL let-expression string to parse
-   * @return The ANTLR parse tree representing the expression
-   */
-  private ParseTree parse(String input) {
-    VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
-    CommonTokenStream tokens = new CommonTokenStream(lexer);
-    VitruvOCLParser parser = new VitruvOCLParser(tokens);
-    return parser.infixedExpCS();
-  }
-
-  /**
    * Assertion helper for Integer results.
    *
    * <p>Compiles the input expression, validates it produces a singleton Integer value, and asserts

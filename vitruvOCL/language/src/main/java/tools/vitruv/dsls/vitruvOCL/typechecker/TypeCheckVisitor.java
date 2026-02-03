@@ -6,6 +6,7 @@ import java.util.Deque;
 import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EClassifier;
 import org.eclipse.emf.ecore.EStructuralFeature;
@@ -14,6 +15,7 @@ import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvOCL.common.AbstractPhaseVisitor;
 import tools.vitruv.dsls.vitruvOCL.common.ErrorCollector;
 import tools.vitruv.dsls.vitruvOCL.common.ErrorSeverity;
+import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
 import tools.vitruv.dsls.vitruvOCL.symboltable.LocalScope;
 import tools.vitruv.dsls.vitruvOCL.symboltable.Scope;
@@ -184,8 +186,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   protected void handleUndefinedSymbol(String name, ParserRuleContext ctx) {
-    // TODO: Implement proper error reporting
-    throw new UnsupportedOperationException("Unimplemented method 'handleUndefinedSymbol'");
+    errors.add(
+        ctx.getStart().getLine(),
+        ctx.getStart().getCharPositionInLine(),
+        "Undefined variable: " + name,
+        ErrorSeverity.ERROR,
+        "type-checker");
   }
 
   // ==================== Context Declaration ====================
@@ -629,9 +635,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitComparison(VitruvOCLParser.ComparisonContext ctx) {
     Type leftType = visit(ctx.left);
     Type rightType = visit(ctx.right);
-
-    String operator = ctx.op.getText();
-
     Type resultType = Type.BOOLEAN;
 
     // Check if types are comparable
@@ -824,44 +827,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
   // ==================== Unary Operations & Navigation ====================
 
-  /**
-   * Type checks prefixed expressions with unary operators and navigation chains.
-   *
-   * <p>Handles:
-   *
-   * <ol>
-   *   <li><b>Unary operators:</b> {@code -} (numeric negation), {@code not} (boolean negation)
-   *   <li><b>Navigation chains:</b> {@code receiver.property.operation()}
-   * </ol>
-   *
-   * <p>The receiverStack is used to propagate types through navigation chains.
-   *
-   * <p><b>Examples:</b>
-   *
-   * <ul>
-   *   <li>{@code -5} → Integer
-   *   <li>{@code not true} → Boolean
-   *   <li>{@code person.company.name} → String (navigation chain)
-   * </ul>
-   *
-   * @param ctx The prefixed expression node
-   * @return The result type after applying operators and navigation
-   */
   @Override
-  public Type visitPrefixedPrimary(VitruvOCLParser.PrefixedPrimaryContext ctx) {
-    // Count unary operators (- and not)
-    int unaryOpCount = 0;
-    for (int i = 0; i < ctx.getChildCount(); i++) {
-      String text = ctx.getChild(i).getText();
-      if (text.equals("-") || text.equals("not")) {
-        unaryOpCount++;
-      } else {
-        break;
-      }
-    }
-
-    // Get base type
-    Type currentType = visit(ctx.primaryExpCS());
+  public Type visitPrimaryWithNav(VitruvOCLParser.PrimaryWithNavContext ctx) {
+    // Get base type from primary expression
+    Type currentType = visit(ctx.base);
 
     if (currentType == null) {
       errors.add(
@@ -871,34 +840,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
-    }
-
-    // Apply unary operators
-    for (int i = 0; i < unaryOpCount; i++) {
-      String op = ctx.getChild(i).getText();
-      if (op.equals("-")) {
-        Type elemType = currentType.isCollection() ? currentType.getElementType() : currentType;
-        if (!elemType.equals(Type.INTEGER) && !elemType.equals(Type.ERROR)) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Unary minus requires numeric type, got " + currentType,
-              ErrorSeverity.ERROR,
-              "type-checker");
-          currentType = Type.ERROR;
-        }
-      } else if (op.equals("not")) {
-        Type elemType = currentType.isCollection() ? currentType.getElementType() : currentType;
-        if (!elemType.equals(Type.BOOLEAN) && !elemType.equals(Type.ERROR)) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Unary not requires boolean type, got " + currentType,
-              ErrorSeverity.ERROR,
-              "type-checker");
-          currentType = Type.ERROR;
-        }
-      }
     }
 
     // Process navigation chain using receiverStack
@@ -916,6 +857,54 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
     nodeTypes.put(ctx, currentType);
     return currentType;
+  }
+
+  @Override
+  public Type visitUnaryMinus(VitruvOCLParser.UnaryMinusContext ctx) {
+    Type operandType = visit(ctx.operand);
+
+    // Unwrap one level
+    Type baseType = operandType;
+    if (baseType.isSingleton() || baseType.isCollection()) {
+      baseType = baseType.getElementType();
+    }
+
+    if (baseType != Type.INTEGER && baseType != Type.DOUBLE && baseType != Type.ERROR) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Unary minus requires numeric type, got " + operandType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    nodeTypes.put(ctx, operandType);
+    return operandType;
+  }
+
+  @Override
+  public Type visitLogicalNot(VitruvOCLParser.LogicalNotContext ctx) {
+    Type operandType = visit(ctx.operand);
+
+    // Unwrap one level only
+    Type baseType = operandType;
+    if (baseType.isSingleton() || baseType.isCollection()) {
+      baseType = baseType.getElementType();
+    }
+
+    if (baseType != Type.BOOLEAN && baseType != Type.ERROR) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Logical not requires Boolean type, got " + operandType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    nodeTypes.put(ctx, operandType);
+    return operandType;
   }
 
   // ==================== Cross-Metamodel Support ====================
@@ -992,6 +981,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitPropertyNav(VitruvOCLParser.PropertyNavContext ctx) {
     Type receiverType = receiverStack.peek();
+
+    // Unwrap singleton for property access (OCL# compatibility)
+    if (receiverType.getMultiplicity() == Multiplicity.SINGLETON) {
+      receiverType = receiverType.getElementType();
+    }
+
     String propertyName = ctx.propertyAccess().propertyName.getText();
 
     Type resultType = typeCheckPropertyAccess(receiverType, propertyName, ctx);
@@ -1663,7 +1658,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
           "type-checker");
       return Type.ERROR;
     }
-    Type resultType = Type.optional(receiverType.getElementType());
+    Type resultType = Type.singleton(receiverType.getElementType());
     nodeTypes.put(ctx, resultType);
     return resultType;
   }
@@ -1686,7 +1681,8 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
           "type-checker");
       return Type.ERROR;
     }
-    Type resultType = Type.optional(receiverType.getElementType());
+    // Return singleton collection instead of optional
+    Type resultType = Type.singleton(receiverType.getElementType());
     nodeTypes.put(ctx, resultType);
     return resultType;
   }
@@ -1722,7 +1718,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitIsEmptyOp(VitruvOCLParser.IsEmptyOpContext ctx) {
     Type receiverType = receiverStack.peek();
-
     if (!receiverType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
@@ -1732,8 +1727,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
           "type-checker");
       return Type.ERROR;
     }
-
-    Type resultType = Type.BOOLEAN;
+    Type resultType = Type.singleton(Type.BOOLEAN);
     nodeTypes.put(ctx, resultType);
     return resultType;
   }
@@ -1801,7 +1795,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitExcludingOp(VitruvOCLParser.ExcludingOpContext ctx) {
     Type receiverType = receiverStack.peek();
-    Type argType = visit(ctx.arg);
 
     if (!receiverType.isCollection()) {
       errors.add(
@@ -1820,7 +1813,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitIncludesOp(VitruvOCLParser.IncludesOpContext ctx) {
     Type receiverType = receiverStack.peek();
-    Type argType = visit(ctx.arg);
 
     if (!receiverType.isCollection()) {
       errors.add(
@@ -1839,7 +1831,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitExcludesOp(VitruvOCLParser.ExcludesOpContext ctx) {
     Type receiverType = receiverStack.peek();
-    Type argType = visit(ctx.arg);
 
     if (!receiverType.isCollection()) {
       errors.add(
@@ -2163,15 +2154,34 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    String iterVar = ctx.iteratorVar.getText();
-    Type elemType = receiverType.getElementType();
+    // Get iterator variables
+    List<String> iterVars = new ArrayList<>();
+    if (ctx.iteratorVars != null) {
+      for (TerminalNode id : ctx.iteratorVarList().ID()) {
+        iterVars.add(id.getText());
+      }
+    }
 
-    // Create iterator scope
+    if (iterVars.isEmpty()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "select requires at least one iterator variable",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    Type elemType = receiverType.getElementType();
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
-    symbolTable.defineVariable(new VariableSymbol(iterVar, elemType, iterScope, true));
 
     try {
+      // Define all iterator variables
+      for (String iterVar : iterVars) {
+        symbolTable.defineVariable(new VariableSymbol(iterVar, elemType, iterScope, true));
+      }
+
       Type bodyType = visit(ctx.body);
 
       if (!bodyType.isConformantTo(Type.BOOLEAN)) {
@@ -2193,15 +2203,32 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitRejectOp(VitruvOCLParser.RejectOpContext ctx) {
     Type receiverType = receiverStack.peek();
-    String iterVar = ctx.iteratorVar.getText();
     Type elemType = receiverType.isCollection() ? receiverType.getElementType() : receiverType;
+
+    List<String> iterVars = new ArrayList<>();
+    if (ctx.iteratorVars != null) {
+      for (TerminalNode id : ctx.iteratorVarList().ID()) {
+        iterVars.add(id.getText());
+      }
+    }
+
+    if (iterVars.isEmpty()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "reject requires at least one iterator variable",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
 
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
 
     try {
-      VariableSymbol iterSymbol = new VariableSymbol(iterVar, elemType, iterScope, true);
-      symbolTable.defineVariable(iterSymbol);
+      for (String iterVar : iterVars) {
+        symbolTable.defineVariable(new VariableSymbol(iterVar, elemType, iterScope, true));
+      }
 
       Type bodyType = visit(ctx.body);
 
@@ -2222,14 +2249,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
   }
 
-  /**
-   * Type checks the {@code collect()} iterator.
-   *
-   * <p>Transforms collection elements, result type is collection with body expression type.
-   *
-   * @param ctx The collect operation node
-   * @return Collection with transformed element type
-   */
   @Override
   public Type visitCollectOp(VitruvOCLParser.CollectOpContext ctx) {
     Type receiverType = receiverStack.peek();
@@ -2244,14 +2263,32 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    String iterVar = ctx.iteratorVar.getText();
-    Type elemType = receiverType.getElementType();
+    List<String> iterVars = new ArrayList<>();
+    if (ctx.iteratorVars != null) {
+      for (TerminalNode id : ctx.iteratorVarList().ID()) {
+        iterVars.add(id.getText());
+      }
+    }
 
+    if (iterVars.isEmpty()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "collect requires at least one iterator variable",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    Type elemType = receiverType.getElementType();
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
-    symbolTable.defineVariable(new VariableSymbol(iterVar, elemType, iterScope, true));
 
     try {
+      for (String iterVar : iterVars) {
+        symbolTable.defineVariable(new VariableSymbol(iterVar, elemType, iterScope, true));
+      }
+
       Type bodyType = visit(ctx.body);
 
       if (bodyType == Type.ERROR) {
@@ -2269,15 +2306,32 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitForAllOp(VitruvOCLParser.ForAllOpContext ctx) {
     Type receiverType = receiverStack.peek();
-    String iterVar = ctx.iteratorVar.getText();
     Type elemType = receiverType.isCollection() ? receiverType.getElementType() : receiverType;
+
+    List<String> iterVars = new ArrayList<>();
+    if (ctx.iteratorVars != null) {
+      for (TerminalNode id : ctx.iteratorVarList().ID()) {
+        iterVars.add(id.getText());
+      }
+    }
+
+    if (iterVars.isEmpty()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "forAll requires at least one iterator variable",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
 
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
 
     try {
-      VariableSymbol iterSymbol = new VariableSymbol(iterVar, elemType, iterScope, true);
-      symbolTable.defineVariable(iterSymbol);
+      for (String iterVar : iterVars) {
+        symbolTable.defineVariable(new VariableSymbol(iterVar, elemType, iterScope, true));
+      }
 
       Type bodyType = visit(ctx.body);
 
@@ -2302,15 +2356,32 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitExistsOp(VitruvOCLParser.ExistsOpContext ctx) {
     Type receiverType = receiverStack.peek();
-    String iterVar = ctx.iteratorVar.getText();
     Type elemType = receiverType.isCollection() ? receiverType.getElementType() : receiverType;
+
+    List<String> iterVars = new ArrayList<>();
+    if (ctx.iteratorVars != null) {
+      for (TerminalNode id : ctx.iteratorVarList().ID()) {
+        iterVars.add(id.getText());
+      }
+    }
+
+    if (iterVars.isEmpty()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "exists requires at least one iterator variable",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
 
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
 
     try {
-      VariableSymbol iterSymbol = new VariableSymbol(iterVar, elemType, iterScope, true);
-      symbolTable.defineVariable(iterSymbol);
+      for (String iterVar : iterVars) {
+        symbolTable.defineVariable(new VariableSymbol(iterVar, elemType, iterScope, true));
+      }
 
       Type bodyType = visit(ctx.body);
 
@@ -2472,35 +2543,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return Type.BOOLEAN;
   }
 
-  /** Helper for string operations with one String argument. */
-  private Type visitStringUnaryOp(ParserRuleContext ctx, String opName) {
-    Type receiverType = receiverStack.peek();
-
-    if (!receiverType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'" + opName + "' requires String",
-          ErrorSeverity.ERROR,
-          "type-checker");
-      return Type.ERROR;
-    }
-
-    VitruvOCLParser.ConcatOpContext concatCtx = (VitruvOCLParser.ConcatOpContext) ctx;
-    Type argType = visit(concatCtx.arg);
-    if (!argType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Argument must be String",
-          ErrorSeverity.ERROR,
-          "type-checker");
-    }
-
-    nodeTypes.put(ctx, Type.STRING);
-    return Type.STRING;
-  }
-
   /** Helper for string operations with no arguments. */
   private Type visitStringNoArgOp(ParserRuleContext ctx, String opName) {
     Type receiverType = receiverStack.peek();
@@ -2580,8 +2622,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    Type targetType = visit(ctx.type);
-
     Type resultType = preserveCollectionKind(receiverType, Type.BOOLEAN);
     nodeTypes.put(ctx, resultType);
     return resultType;
@@ -2642,7 +2682,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   /** Placeholder for correspondence operator (~). */
   @Override
   public Type visitCorrespondence(VitruvOCLParser.CorrespondenceContext ctx) {
-    Type leftType = visit(ctx.left);
     Type rightType = visit(ctx.right);
 
     errors.add(
@@ -2661,7 +2700,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitMessage(VitruvOCLParser.MessageContext ctx) {
     Type leftType = visit(ctx.left);
-    Type rightType = visit(ctx.right);
 
     errors.add(
         ctx.getStart().getLine(),

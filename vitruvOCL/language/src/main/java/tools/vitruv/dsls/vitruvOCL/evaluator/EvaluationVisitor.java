@@ -7,6 +7,7 @@ import java.util.Deque;
 import java.util.List;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
@@ -951,22 +952,43 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitSelectOp(VitruvOCLParser.SelectOpContext ctx) {
     Value receiver = receiverStack.peek();
-    String iterVar = ctx.iteratorVar.getText();
-    Type elemType = receiver.getRuntimeType().getElementType();
 
-    // Create new scope for iterator variable
+    // Get iterator variables
+    List<String> iterVars = new ArrayList<>();
+    if (ctx.iteratorVars != null) {
+      for (TerminalNode id : ctx.iteratorVarList().ID()) {
+        iterVars.add(id.getText());
+      }
+    }
+
+    if (iterVars.isEmpty()) {
+      return error("select requires at least one iterator variable", ctx);
+    }
+
+    if (iterVars.size() == 1) {
+      return evaluateSelectSingleVar(ctx, receiver, iterVars.get(0));
+    }
+
+    if (iterVars.size() == 2) {
+      return evaluateSelectTwoVars(ctx, receiver, iterVars.get(0), iterVars.get(1));
+    }
+
+    return error("select supports at most 2 iterator variables", ctx);
+  }
+
+  private Value evaluateSelectSingleVar(
+      VitruvOCLParser.SelectOpContext ctx, Value receiver, String iterVar) {
+    Type elemType = receiver.getRuntimeType().getElementType();
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
 
     try {
       List<OCLElement> results = new ArrayList<>();
       for (OCLElement elem : receiver.getElements()) {
-        // Bind iterator variable to current element
         VariableSymbol iterSymbol = new VariableSymbol(iterVar, elemType, iterScope, true);
         iterSymbol.setValue(new Value(List.of(elem), elemType));
         symbolTable.defineVariable(iterSymbol);
 
-        // Evaluate predicate
         Value bodyResult = visit(ctx.body);
         if (bodyResult.size() != 1) {
           return error("select predicate must return singleton Boolean", ctx);
@@ -977,9 +999,55 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           return error("select predicate must return Boolean", ctx);
         }
 
-        // Include element if predicate is true
         if (condition) {
           results.add(elem);
+        }
+      }
+      return Value.of(results, receiver.getRuntimeType());
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
+  private Value evaluateSelectTwoVars(
+      VitruvOCLParser.SelectOpContext ctx, Value receiver, String var1, String var2) {
+    Type elemType = receiver.getRuntimeType().getElementType();
+    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    symbolTable.enterScope(iterScope);
+
+    try {
+      List<OCLElement> results = new ArrayList<>();
+      List<OCLElement> elements = receiver.getElements();
+
+      // Nested iteration: for each pair (e1, e2)
+      for (OCLElement elem1 : elements) {
+        for (OCLElement elem2 : elements) {
+          // Bind both iterator variables
+          VariableSymbol var1Symbol = new VariableSymbol(var1, elemType, iterScope, true);
+          var1Symbol.setValue(new Value(List.of(elem1), elemType));
+          symbolTable.defineVariable(var1Symbol);
+
+          VariableSymbol var2Symbol = new VariableSymbol(var2, elemType, iterScope, true);
+          var2Symbol.setValue(new Value(List.of(elem2), elemType));
+          symbolTable.defineVariable(var2Symbol);
+
+          // Evaluate predicate
+          Value bodyResult = visit(ctx.body);
+          if (bodyResult.size() != 1) {
+            return error("select predicate must return singleton Boolean", ctx);
+          }
+
+          Boolean condition = bodyResult.getElements().get(0).tryGetBool();
+          if (condition == null) {
+            return error("select predicate must return Boolean", ctx);
+          }
+
+          // Add pair if predicate is true
+          if (condition) {
+            // Return both elements (could create tuple, or just first element)
+            results.add(elem1);
+            results.add(elem2);
+          }
         }
       }
       return Value.of(results, receiver.getRuntimeType());
@@ -1001,9 +1069,33 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitRejectOp(VitruvOCLParser.RejectOpContext ctx) {
     Value receiver = receiverStack.peek();
-    String iterVar = ctx.iteratorVar.getText();
-    Type elemType = receiver.getRuntimeType().getElementType();
 
+    // Get iterator variables
+    List<String> iterVars = new ArrayList<>();
+    if (ctx.iteratorVars != null) {
+      for (TerminalNode id : ctx.iteratorVarList().ID()) {
+        iterVars.add(id.getText());
+      }
+    }
+
+    if (iterVars.isEmpty()) {
+      return error("reject requires at least one iterator variable", ctx);
+    }
+
+    if (iterVars.size() == 1) {
+      return evaluateRejectSingleVar(ctx, receiver, iterVars.get(0));
+    }
+
+    if (iterVars.size() == 2) {
+      return evaluateRejectTwoVars(ctx, receiver, iterVars.get(0), iterVars.get(1));
+    }
+
+    return error("reject supports at most 2 iterator variables", ctx);
+  }
+
+  private Value evaluateRejectSingleVar(
+      VitruvOCLParser.RejectOpContext ctx, Value receiver, String iterVar) {
+    Type elemType = receiver.getRuntimeType().getElementType();
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
 
@@ -1024,9 +1116,51 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           return error("reject predicate must return Boolean", ctx);
         }
 
-        // Include element if predicate is FALSE (opposite of select)
         if (!condition) {
           results.add(elem);
+        }
+      }
+      return Value.of(results, receiver.getRuntimeType());
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
+  private Value evaluateRejectTwoVars(
+      VitruvOCLParser.RejectOpContext ctx, Value receiver, String var1, String var2) {
+    Type elemType = receiver.getRuntimeType().getElementType();
+    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    symbolTable.enterScope(iterScope);
+
+    try {
+      List<OCLElement> results = new ArrayList<>();
+      List<OCLElement> elements = receiver.getElements();
+
+      for (OCLElement elem1 : elements) {
+        for (OCLElement elem2 : elements) {
+          VariableSymbol var1Symbol = new VariableSymbol(var1, elemType, iterScope, true);
+          var1Symbol.setValue(new Value(List.of(elem1), elemType));
+          symbolTable.defineVariable(var1Symbol);
+
+          VariableSymbol var2Symbol = new VariableSymbol(var2, elemType, iterScope, true);
+          var2Symbol.setValue(new Value(List.of(elem2), elemType));
+          symbolTable.defineVariable(var2Symbol);
+
+          Value bodyResult = visit(ctx.body);
+          if (bodyResult.size() != 1) {
+            return error("reject predicate must return singleton Boolean", ctx);
+          }
+
+          Boolean condition = bodyResult.getElements().get(0).tryGetBool();
+          if (condition == null) {
+            return error("reject predicate must return Boolean", ctx);
+          }
+
+          // Add pair if predicate is FALSE
+          if (!condition) {
+            results.add(elem1);
+            results.add(elem2);
+          }
         }
       }
       return Value.of(results, receiver.getRuntimeType());
@@ -1048,9 +1182,33 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitCollectOp(VitruvOCLParser.CollectOpContext ctx) {
     Value receiver = receiverStack.peek();
-    String iterVar = ctx.iteratorVar.getText();
-    Type elemType = receiver.getRuntimeType().getElementType();
 
+    // Get iterator variables
+    List<String> iterVars = new ArrayList<>();
+    if (ctx.iteratorVars != null) {
+      for (TerminalNode id : ctx.iteratorVarList().ID()) {
+        iterVars.add(id.getText());
+      }
+    }
+
+    if (iterVars.isEmpty()) {
+      return error("collect requires at least one iterator variable", ctx);
+    }
+
+    if (iterVars.size() == 1) {
+      return evaluateCollectSingleVar(ctx, receiver, iterVars.get(0));
+    }
+
+    if (iterVars.size() == 2) {
+      return evaluateCollectTwoVars(ctx, receiver, iterVars.get(0), iterVars.get(1));
+    }
+
+    return error("collect supports at most 2 iterator variables", ctx);
+  }
+
+  private Value evaluateCollectSingleVar(
+      VitruvOCLParser.CollectOpContext ctx, Value receiver, String iterVar) {
+    Type elemType = receiver.getRuntimeType().getElementType();
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
 
@@ -1061,9 +1219,39 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         iterSymbol.setValue(new Value(List.of(elem), elemType));
         symbolTable.defineVariable(iterSymbol);
 
-        // Evaluate transformation expression and add all resulting elements
         Value bodyResult = visit(ctx.body);
         results.addAll(bodyResult.getElements());
+      }
+      Type resultType = nodeTypes.get(ctx);
+      return Value.of(results, resultType != null ? resultType : Type.set(Type.ANY));
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
+  private Value evaluateCollectTwoVars(
+      VitruvOCLParser.CollectOpContext ctx, Value receiver, String var1, String var2) {
+    Type elemType = receiver.getRuntimeType().getElementType();
+    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    symbolTable.enterScope(iterScope);
+
+    try {
+      List<OCLElement> results = new ArrayList<>();
+      List<OCLElement> elements = receiver.getElements();
+
+      for (OCLElement elem1 : elements) {
+        for (OCLElement elem2 : elements) {
+          VariableSymbol var1Symbol = new VariableSymbol(var1, elemType, iterScope, true);
+          var1Symbol.setValue(new Value(List.of(elem1), elemType));
+          symbolTable.defineVariable(var1Symbol);
+
+          VariableSymbol var2Symbol = new VariableSymbol(var2, elemType, iterScope, true);
+          var2Symbol.setValue(new Value(List.of(elem2), elemType));
+          symbolTable.defineVariable(var2Symbol);
+
+          Value bodyResult = visit(ctx.body);
+          results.addAll(bodyResult.getElements());
+        }
       }
       Type resultType = nodeTypes.get(ctx);
       return Value.of(results, resultType != null ? resultType : Type.set(Type.ANY));
@@ -1086,9 +1274,33 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitForAllOp(VitruvOCLParser.ForAllOpContext ctx) {
     Value receiver = receiverStack.peek();
-    String iterVar = ctx.iteratorVar.getText();
-    Type elemType = receiver.getRuntimeType().getElementType();
 
+    // Get iterator variables
+    List<String> iterVars = new ArrayList<>();
+    if (ctx.iteratorVars != null) {
+      for (TerminalNode id : ctx.iteratorVarList().ID()) {
+        iterVars.add(id.getText());
+      }
+    }
+
+    if (iterVars.isEmpty()) {
+      return error("forAll requires at least one iterator variable", ctx);
+    }
+
+    if (iterVars.size() == 1) {
+      return evaluateForAllSingleVar(ctx, receiver, iterVars.get(0));
+    }
+
+    if (iterVars.size() == 2) {
+      return evaluateForAllTwoVars(ctx, receiver, iterVars.get(0), iterVars.get(1));
+    }
+
+    return error("forAll supports at most 2 iterator variables", ctx);
+  }
+
+  private Value evaluateForAllSingleVar(
+      VitruvOCLParser.ForAllOpContext ctx, Value receiver, String iterVar) {
+    Type elemType = receiver.getRuntimeType().getElementType();
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
 
@@ -1108,9 +1320,48 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           return error("forAll predicate must return Boolean", ctx);
         }
 
-        // Short-circuit: return false immediately if any element fails
         if (!condition) {
           return Value.boolValue(false);
+        }
+      }
+      return Value.boolValue(true);
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
+  private Value evaluateForAllTwoVars(
+      VitruvOCLParser.ForAllOpContext ctx, Value receiver, String var1, String var2) {
+    Type elemType = receiver.getRuntimeType().getElementType();
+    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    symbolTable.enterScope(iterScope);
+
+    try {
+      List<OCLElement> elements = receiver.getElements();
+
+      for (OCLElement elem1 : elements) {
+        for (OCLElement elem2 : elements) {
+          VariableSymbol var1Symbol = new VariableSymbol(var1, elemType, iterScope, true);
+          var1Symbol.setValue(new Value(List.of(elem1), elemType));
+          symbolTable.defineVariable(var1Symbol);
+
+          VariableSymbol var2Symbol = new VariableSymbol(var2, elemType, iterScope, true);
+          var2Symbol.setValue(new Value(List.of(elem2), elemType));
+          symbolTable.defineVariable(var2Symbol);
+
+          Value bodyResult = visit(ctx.body);
+          if (bodyResult.size() != 1) {
+            return error("forAll predicate must return singleton Boolean", ctx);
+          }
+
+          Boolean condition = bodyResult.getElements().get(0).tryGetBool();
+          if (condition == null) {
+            return error("forAll predicate must return Boolean", ctx);
+          }
+
+          if (!condition) {
+            return Value.boolValue(false);
+          }
         }
       }
       return Value.boolValue(true);
@@ -1133,9 +1384,33 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitExistsOp(VitruvOCLParser.ExistsOpContext ctx) {
     Value receiver = receiverStack.peek();
-    String iterVar = ctx.iteratorVar.getText();
-    Type elemType = receiver.getRuntimeType().getElementType();
 
+    // Get iterator variables
+    List<String> iterVars = new ArrayList<>();
+    if (ctx.iteratorVars != null) {
+      for (TerminalNode id : ctx.iteratorVarList().ID()) {
+        iterVars.add(id.getText());
+      }
+    }
+
+    if (iterVars.isEmpty()) {
+      return error("select requires at least one iterator variable", ctx);
+    }
+
+    if (iterVars.size() == 1) {
+      return evaluateExistsSingleVar(ctx, receiver, iterVars.get(0));
+    }
+
+    if (iterVars.size() == 2) {
+      return evaluateExistsTwoVars(ctx, receiver, iterVars.get(0), iterVars.get(1));
+    }
+
+    return error("select supports at most 2 iterator variables", ctx);
+  }
+
+  private Value evaluateExistsSingleVar(
+      VitruvOCLParser.ExistsOpContext ctx, Value receiver, String iterVar) {
+    Type elemType = receiver.getRuntimeType().getElementType();
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
 
@@ -1155,9 +1430,48 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           return error("exists predicate must return Boolean", ctx);
         }
 
-        // Short-circuit: return true immediately if any element satisfies
         if (condition) {
           return Value.boolValue(true);
+        }
+      }
+      return Value.boolValue(false);
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
+  private Value evaluateExistsTwoVars(
+      VitruvOCLParser.ExistsOpContext ctx, Value receiver, String var1, String var2) {
+    Type elemType = receiver.getRuntimeType().getElementType();
+    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    symbolTable.enterScope(iterScope);
+
+    try {
+      List<OCLElement> elements = receiver.getElements();
+
+      for (OCLElement elem1 : elements) {
+        for (OCLElement elem2 : elements) {
+          VariableSymbol var1Symbol = new VariableSymbol(var1, elemType, iterScope, true);
+          var1Symbol.setValue(new Value(List.of(elem1), elemType));
+          symbolTable.defineVariable(var1Symbol);
+
+          VariableSymbol var2Symbol = new VariableSymbol(var2, elemType, iterScope, true);
+          var2Symbol.setValue(new Value(List.of(elem2), elemType));
+          symbolTable.defineVariable(var2Symbol);
+
+          Value bodyResult = visit(ctx.body);
+          if (bodyResult.size() != 1) {
+            return error("exists predicate must return singleton Boolean", ctx);
+          }
+
+          Boolean condition = bodyResult.getElements().get(0).tryGetBool();
+          if (condition == null) {
+            return error("exists predicate must return Boolean", ctx);
+          }
+
+          if (condition) {
+            return Value.boolValue(true);
+          }
         }
       }
       return Value.boolValue(false);
@@ -1391,83 +1705,65 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
   // ==================== Unary Operations & Navigation ====================
 
-  /**
-   * Evaluates prefixed expressions with unary operators and navigation chains.
-   *
-   * <p>Handles:
-   *
-   * <ol>
-   *   <li>Unary minus ({@code -x})
-   *   <li>Unary not ({@code not x})
-   *   <li>Navigation chains ({@code receiver.property.operation()})
-   * </ol>
-   *
-   * <p><b>Examples:</b>
-   *
-   * <ul>
-   *   <li>{@code -5} → {@code -5}
-   *   <li>{@code not true} → {@code false}
-   *   <li>{@code person.age} → access age property
-   *   <li>{@code [1,2,3].select(x | x > 1).size()} → navigation chain
-   * </ul>
-   *
-   * @param ctx The prefixed expression node
-   * @return The result after applying unary operators and navigation
-   */
   @Override
-  public Value visitPrefixedPrimary(VitruvOCLParser.PrefixedPrimaryContext ctx) {
-    // Count unary operators (- and not)
-    int unaryOpCount = 0;
-    for (int i = 0; i < ctx.getChildCount(); i++) {
-      String text = ctx.getChild(i).getText();
-      if (text.equals("-") || text.equals("not")) {
-        unaryOpCount++;
-      } else {
-        break;
-      }
-    }
-
+  public Value visitPrimaryWithNav(VitruvOCLParser.PrimaryWithNavContext ctx) {
     // Evaluate base expression
-    Value currentValue = visit(ctx.primaryExpCS());
+    Value currentValue = visit(ctx.base);
 
     if (currentValue == null) {
       return error("Base expression returned null", ctx);
     }
 
-    // Apply unary operators from left to right
-    for (int i = 0; i < unaryOpCount; i++) {
-      String op = ctx.getChild(i).getText();
-
-      if (op.equals("-")) {
-        if (currentValue.size() != 1) {
-          return error("Unary minus requires singleton operand", ctx);
-        }
-        OCLElement elem = currentValue.getElements().get(0);
-        Integer value = elem.tryGetInt();
-        if (value == null) {
-          return error("Unary minus requires integer operand", ctx);
-        }
-        currentValue = Value.intValue(-value);
-      } else if (op.equals("not")) {
-        if (currentValue.size() != 1) {
-          return error("Unary not requires singleton operand", ctx);
-        }
-        OCLElement elem = currentValue.getElements().get(0);
-        Boolean value = elem.tryGetBool();
-        if (value == null) {
-          return error("Unary not requires boolean operand", ctx);
-        }
-        currentValue = Value.boolValue(!value);
-      }
-    }
-
-    // Process navigation chain (method calls on the result)
+    // Process navigation chain
     List<VitruvOCLParser.NavigationChainCSContext> navChain = ctx.navigationChainCS();
     for (VitruvOCLParser.NavigationChainCSContext nav : navChain) {
       currentValue = visitNavigationWithReceiver(nav, currentValue);
     }
 
     return currentValue;
+  }
+
+  @Override
+  public Value visitUnaryMinus(VitruvOCLParser.UnaryMinusContext ctx) {
+    Value operandValue = visit(ctx.operand);
+
+    if (operandValue == null) {
+      return error("Operand returned null", ctx);
+    }
+
+    if (operandValue.size() != 1) {
+      return error("Unary minus requires singleton operand", ctx);
+    }
+
+    OCLElement elem = operandValue.getElements().get(0);
+    Integer value = elem.tryGetInt();
+    if (value == null) {
+      return error("Unary minus requires integer operand", ctx);
+    }
+
+    return Value.intValue(-value);
+  }
+
+  @Override
+  public Value visitLogicalNot(VitruvOCLParser.LogicalNotContext ctx) {
+    Value operandValue = visit(ctx.operand);
+
+    if (operandValue == null) {
+      return error("Operand returned null", ctx);
+    }
+
+    // Handle collection of booleans - negate all elements
+    List<OCLElement> results = new ArrayList<>();
+    for (OCLElement elem : operandValue.getElements()) {
+      Boolean value = elem.tryGetBool();
+      if (value == null) {
+        return error("Logical not requires boolean operand", ctx);
+      }
+      results.add(new OCLElement.BoolValue(!value));
+    }
+
+    Type resultType = nodeTypes.get(ctx);
+    return Value.of(results, resultType != null ? resultType : Type.BOOLEAN);
   }
 
   /**
@@ -2259,12 +2555,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitTypeLiteralExpCS(VitruvOCLParser.TypeLiteralExpCSContext ctx) {
     return visit(ctx.typeLiteralCS());
-  }
-
-  /** Level specifications have no runtime value. */
-  @Override
-  public Value visitLevelSpecificationCS(VitruvOCLParser.LevelSpecificationCSContext ctx) {
-    return Value.empty(Type.ANY);
   }
 
   // ==================== Error States (Require Receiver Context) ====================

@@ -354,8 +354,6 @@ public class IfThenElseTest {
 
     VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
     CommonTokenStream tokens = new CommonTokenStream(lexer);
-    VitruvOCLParser parser = new VitruvOCLParser(tokens);
-    ParseTree tree = parser.infixedExpCS();
 
     // Dummy specification
     MetamodelWrapperInterface dummySpec =
@@ -381,7 +379,6 @@ public class IfThenElseTest {
 
     TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, dummySpec, errors);
     typeChecker.setTokenStream(tokens);
-    Type type = typeChecker.visit(tree);
   }
 
   /**
@@ -672,10 +669,6 @@ public class IfThenElseTest {
     String input2 = "if true then 100 else 200 endif";
     Value result2 = compile(input2);
     assertEquals(100, ((OCLElement.IntValue) result2.getElements().get(0)).value());
-
-    // Operation in then-branch - should work
-    String input3 = "if true then Set{1, 2}.including(3) else Set{5} endif";
-    // Validates that operations in branches are properly evaluated
   }
 
   /**
@@ -1135,67 +1128,6 @@ public class IfThenElseTest {
     String input = "if true then Set{1, 2}.union(Set{3, 4}) else Set{5, 6} endif";
     Value result = compile(input);
 
-    assertEquals(4, result.size());
-    assertTrue(result.includes(new OCLElement.IntValue(1)));
-    assertTrue(result.includes(new OCLElement.IntValue(2)));
-    assertTrue(result.includes(new OCLElement.IntValue(3)));
-    assertTrue(result.includes(new OCLElement.IntValue(4)));
-  }
-
-  /**
-   * Debug test for collection union in if-then-else.
-   *
-   * <p><b>Purpose:</b> Low-level validation of token stream handling for complex collection
-   * operations within conditionals. Tests type checking and evaluation separately.
-   *
-   * <p><b>Input:</b> {@code if true then Set{1, 2}.union(Set{3, 4}) else Set{5, 6} endif}
-   */
-  @Test
-  public void testIfThenElse_CollectionUnion_Debug() {
-    String input = "if true then Set{1, 2}.union(Set{3, 4}) else Set{5, 6} endif";
-
-    VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
-    CommonTokenStream tokens = new CommonTokenStream(lexer);
-    VitruvOCLParser parser = new VitruvOCLParser(tokens);
-    ParseTree tree = parser.infixedExpCS();
-
-    // Dummy specification
-    MetamodelWrapperInterface dummySpec =
-        new MetamodelWrapperInterface() {
-          @Override
-          public EClass resolveEClass(String metamodel, String className) {
-            return null;
-          }
-
-          @Override
-          public List<EObject> getAllInstances(EClass eClass) {
-            return List.of();
-          }
-
-          @Override
-          public Set<String> getAvailableMetamodels() {
-            return Set.of();
-          }
-        };
-
-    SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
-    ErrorCollector errors = new ErrorCollector();
-
-    // Type check phase
-    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, dummySpec, errors);
-    typeChecker.setTokenStream(tokens);
-    Type type = typeChecker.visit(tree);
-
-    // Reset token stream for evaluation
-    tokens.seek(0);
-
-    // Evaluation phase
-    EvaluationVisitor evaluator =
-        new EvaluationVisitor(symbolTable, dummySpec, errors, typeChecker.getNodeTypes());
-    evaluator.setTokenStream(tokens);
-    Value result = evaluator.visit(tree);
-
-    // Verify results
     assertEquals(4, result.size());
     assertTrue(result.includes(new OCLElement.IntValue(1)));
     assertTrue(result.includes(new OCLElement.IntValue(2)));

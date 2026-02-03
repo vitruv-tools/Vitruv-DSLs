@@ -567,20 +567,4 @@ public class StringOperationsTest {
 
     return result;
   }
-
-  /**
-   * Parses an OCL expression string into an ANTLR parse tree.
-   *
-   * <p>Uses {@code infixedExpCS} as the entry point to handle string operations and infix
-   * expressions.
-   *
-   * @param input The OCL expression string to parse
-   * @return The ANTLR parse tree representing the expression
-   */
-  private ParseTree parse(String input) {
-    VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
-    CommonTokenStream tokens = new CommonTokenStream(lexer);
-    VitruvOCLParser parser = new VitruvOCLParser(tokens);
-    return parser.infixedExpCS();
-  }
 }

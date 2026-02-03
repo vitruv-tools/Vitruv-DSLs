@@ -11,7 +11,7 @@ contextDeclCS
 
 classifierContextCS
 :
-    CONTEXT levelSpecificationCS?
+    CONTEXT
     (ID ':')?
     (metamodel=ID '::' className=ID | contextName=ID)
     invCS*
@@ -20,11 +20,6 @@ classifierContextCS
 invCS
 :
     'inv' (ID ('(' specificationCS ')')?)? ':' specificationCS
-;
-
-levelSpecificationCS
-:
-    '(' NumberLiteralExpCS (',' ('_' | NumberLiteralExpCS))? ')'
 ;
 
 CONTEXT: 'context';
@@ -96,8 +91,10 @@ infixedExpCS
 // Prefix operations and navigation
 prefixedExpCS
 :
-    op=('-'|'not')* base=primaryExpCS navigation=navigationChainCS*        # prefixedPrimary
-    | op=('-'|'not')* metamodel=ID '::' className=ID navigation=navigationChainCS+ # prefixedQualified
+    base=primaryExpCS navigation=navigationChainCS*                         # primaryWithNav
+    | '-' operand=prefixedExpCS                                             # unaryMinus
+    | 'not' operand=prefixedExpCS                                           # logicalNot
+    | metamodel=ID '::' className=ID navigation=navigationChainCS+         # prefixedQualified
 ;
 
 navigationChainCS
@@ -251,11 +248,16 @@ collectionOpCS
 
 iteratorOpCS
 :
-    'select' '(' iteratorVar=ID '|' body=expCS ')'    # selectOp
-    | 'reject' '(' iteratorVar=ID '|' body=expCS ')'  # rejectOp
-    | 'collect' '(' iteratorVar=ID '|' body=expCS ')' # collectOp
-    | 'forAll' '(' iteratorVar=ID '|' body=expCS ')'  # forAllOp
-    | 'exists' '(' iteratorVar=ID '|' body=expCS ')'  # existsOp
+    'select' '(' iteratorVars=iteratorVarList '|' body=expCS ')'    # selectOp
+    | 'reject' '(' iteratorVars=iteratorVarList '|' body=expCS ')'  # rejectOp
+    | 'collect' '(' iteratorVars=iteratorVarList '|' body=expCS ')' # collectOp
+    | 'forAll' '(' iteratorVars=iteratorVarList '|' body=expCS ')'  # forAllOp
+    | 'exists' '(' iteratorVars=iteratorVarList '|' body=expCS ')'  # existsOp
+;
+
+iteratorVarList
+:
+    ID (',' ID)*
 ;
 
 // ============================================================================
