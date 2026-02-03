@@ -9,6 +9,8 @@ import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvOCL.common.ErrorCollector;
 import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
+import tools.vitruv.dsls.vitruvOCL.symboltable.ScopeAnnotator;
+import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableBuilder;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
 
@@ -33,12 +35,25 @@ public class VitruvOCLCompiler {
 
     if (parser.getNumberOfSyntaxErrors() > 0) return null;
 
+    // Initialize 3-pass architecture
     SymbolTableImpl symbolTable = new SymbolTableImpl(wrapper);
-    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, wrapper, errors);
+    ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
+
+    // PASS 1: Symbol Table Construction
+    SymbolTableBuilder symbolTableBuilder =
+        new SymbolTableBuilder(symbolTable, wrapper, errors, scopeAnnotator);
+    symbolTableBuilder.visit(tree);
+
+    if (errors.hasErrors()) return null;
+
+    // PASS 2: Type Checking
+    TypeCheckVisitor typeChecker =
+        new TypeCheckVisitor(symbolTable, wrapper, errors, scopeAnnotator);
     typeChecker.visit(tree);
 
     if (errors.hasErrors()) return null;
 
+    // PASS 3: Evaluation
     EvaluationVisitor evaluator =
         new EvaluationVisitor(symbolTable, wrapper, errors, typeChecker.getNodeTypes());
     return evaluator.visit(tree);
@@ -55,14 +70,29 @@ public class VitruvOCLCompiler {
       return new ValidationResult(errors.getErrors(), java.util.List.of());
     }
 
+    // Initialize 3-pass architecture
     SymbolTableImpl symbolTable = new SymbolTableImpl(wrapper);
-    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, wrapper, errors);
+    ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
+
+    // PASS 1: Symbol Table Construction
+    SymbolTableBuilder symbolTableBuilder =
+        new SymbolTableBuilder(symbolTable, wrapper, errors, scopeAnnotator);
+    symbolTableBuilder.visit(tree);
+
+    if (errors.hasErrors()) {
+      return new ValidationResult(errors.getErrors(), java.util.List.of());
+    }
+
+    // PASS 2: Type Checking
+    TypeCheckVisitor typeChecker =
+        new TypeCheckVisitor(symbolTable, wrapper, errors, scopeAnnotator);
     typeChecker.visit(tree);
 
     if (errors.hasErrors()) {
       return new ValidationResult(errors.getErrors(), java.util.List.of());
     }
 
+    // PASS 3: Evaluation
     EvaluationVisitor evaluator =
         new EvaluationVisitor(symbolTable, wrapper, errors, typeChecker.getNodeTypes());
     evaluator.visit(tree);
@@ -81,29 +111,52 @@ public class VitruvOCLCompiler {
       return null;
     }
 
+    // Initialize 3-pass architecture
     SymbolTableImpl symbolTable = new SymbolTableImpl(wrapper);
-    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, wrapper, errors);
+    ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
+
+    // PASS 1: Symbol Table Construction
+    SymbolTableBuilder symbolTableBuilder =
+        new SymbolTableBuilder(symbolTable, wrapper, errors, scopeAnnotator);
+    symbolTableBuilder.visit(tree);
+
+    if (errors.hasErrors()) {
+      System.out.println("Errors After Pass 1 (Symbol Table): " + errors.getErrorCount());
+      errors
+          .getErrors()
+          .forEach(
+              err -> System.err.println("  " + err.getMessage() + " at line " + err.getLine()));
+      return null;
+    }
+
+    // PASS 2: Type Checking
+    TypeCheckVisitor typeChecker =
+        new TypeCheckVisitor(symbolTable, wrapper, errors, scopeAnnotator);
     typeChecker.visit(tree);
 
     if (errors.hasErrors()) {
-      System.out.println("Errors After Type Checking: " + errors.getErrorCount());
+      System.out.println("Errors After Pass 2 (Type Checking): " + errors.getErrorCount());
       errors
           .getErrors()
           .forEach(
               err -> System.err.println("  " + err.getMessage() + " at line " + err.getLine()));
       return null;
     }
+
+    // PASS 3: Evaluation
     EvaluationVisitor evaluator =
         new EvaluationVisitor(symbolTable, wrapper, errors, typeChecker.getNodeTypes());
     Value result = evaluator.visit(tree);
+
     if (errors.hasErrors()) {
-      System.out.println("Errors After Type Checking: " + errors.getErrorCount());
+      System.out.println("Errors After Pass 3 (Evaluation): " + errors.getErrorCount());
       errors
           .getErrors()
           .forEach(
               err -> System.err.println("  " + err.getMessage() + " at line " + err.getLine()));
       return null;
     }
+
     return result;
   }
 

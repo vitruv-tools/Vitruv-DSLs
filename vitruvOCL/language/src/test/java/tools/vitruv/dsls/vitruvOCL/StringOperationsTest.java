@@ -15,7 +15,9 @@ import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement;
 import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
 import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
+import tools.vitruv.dsls.vitruvOCL.symboltable.ScopeAnnotator;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTable;
+import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableBuilder;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
 
@@ -536,20 +538,32 @@ public class StringOperationsTest {
           }
         };
 
-    // Pass 1: Symbol Table (trivial for string operations)
+    // Initialize 3-pass architecture
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
-
-    // Pass 2: Type Checking
+    ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
     ErrorCollector errors = new ErrorCollector();
 
-    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, dummySpec, errors);
+    // Pass 1: Symbol Table Construction
+    SymbolTableBuilder symbolTableBuilder =
+        new SymbolTableBuilder(symbolTable, dummySpec, errors, scopeAnnotator);
+    symbolTableBuilder.visit(tree);
+
+    if (!errors.getErrors().isEmpty()) {
+      System.out.println("PASS 1 (SYMBOL TABLE) ERRORS:");
+      errors.getErrors().forEach(System.out::println);
+      fail("Pass 1 (Symbol Table) failed: " + errors.getErrors());
+    }
+
+    // Pass 2: Type Checking
+    TypeCheckVisitor typeChecker =
+        new TypeCheckVisitor(symbolTable, dummySpec, errors, scopeAnnotator);
     typeChecker.setTokenStream(tokens);
     typeChecker.visit(tree);
 
     if (!typeChecker.getErrorCollector().getErrors().isEmpty()) {
-      System.out.println("TYPE ERRORS:");
+      System.out.println("PASS 2 (TYPE CHECKING) ERRORS:");
       typeChecker.getErrorCollector().getErrors().forEach(System.out::println);
-      fail("Type checking failed: " + typeChecker.getErrorCollector().getErrors());
+      fail("Pass 2 (Type checking) failed: " + typeChecker.getErrorCollector().getErrors());
     }
 
     // Pass 3: Evaluation
@@ -560,9 +574,9 @@ public class StringOperationsTest {
     Value result = evaluator.visit(tree);
 
     if (!evaluator.getErrorCollector().getErrors().isEmpty()) {
-      System.out.println("EVALUATION ERRORS:");
+      System.out.println("PASS 3 (EVALUATION) ERRORS:");
       evaluator.getErrorCollector().getErrors().forEach(System.out::println);
-      fail("Evaluation failed: " + evaluator.getErrorCollector().getErrors());
+      fail("Pass 3 (Evaluation) failed: " + evaluator.getErrorCollector().getErrors());
     }
 
     return result;

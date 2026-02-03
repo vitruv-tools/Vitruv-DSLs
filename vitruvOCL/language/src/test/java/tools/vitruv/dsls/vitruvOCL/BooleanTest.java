@@ -15,7 +15,9 @@ import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement;
 import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
 import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
+import tools.vitruv.dsls.vitruvOCL.symboltable.ScopeAnnotator;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTable;
+import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableBuilder;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
 
@@ -441,14 +443,25 @@ public class BooleanTest {
         };
 
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
+    ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
     ErrorCollector errors = new ErrorCollector();
 
-    // Type check only (no evaluation)
-    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, dummySpec, errors);
+    // PASS 1: Symbol Table Construction
+    SymbolTableBuilder symbolTableBuilder =
+        new SymbolTableBuilder(symbolTable, dummySpec, errors, scopeAnnotator);
+    symbolTableBuilder.visit(tree);
+
+    if (errors.hasErrors()) {
+      fail("Pass 1 (Symbol Table Construction) failed");
+    }
+
+    // PASS 2: Type Checking
+    TypeCheckVisitor typeChecker =
+        new TypeCheckVisitor(symbolTable, dummySpec, errors, scopeAnnotator);
     typeChecker.visit(tree);
 
-    if (typeChecker.hasErrors()) {
-      fail("Type checking failed");
+    if (errors.hasErrors()) {
+      fail("Pass 2 (Type Checking) failed");
     }
   }
 
@@ -531,7 +544,7 @@ public class BooleanTest {
    * @throws AssertionError if parsing, type checking, or evaluation fails
    */
   private Value compile(String input) {
-    // Phase 1: Parse
+    // Phase 0: Parse
     ParseTree tree = parse(input);
 
     // Create dummy metamodel wrapper (no metamodels needed for boolean tests)
@@ -554,10 +567,27 @@ public class BooleanTest {
         };
 
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
+    ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
     ErrorCollector errors = new ErrorCollector();
 
+    // Phase 1: Symbol Table Construction
+    SymbolTableBuilder symbolTableBuilder =
+        new SymbolTableBuilder(symbolTable, dummySpec, errors, scopeAnnotator);
+    symbolTableBuilder.visit(tree);
+
+    // Check for symbol table errors
+    if (errors.hasErrors()) {
+      errors
+          .getErrors()
+          .forEach(
+              err ->
+                  System.err.println("  Error at line " + err.getLine() + ": " + err.getMessage()));
+      fail("Pass 1 (Symbol Table Construction) failed: " + errors.getErrors());
+    }
+
     // Phase 2: Type Check
-    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, dummySpec, errors);
+    TypeCheckVisitor typeChecker =
+        new TypeCheckVisitor(symbolTable, dummySpec, errors, scopeAnnotator);
     typeChecker.visit(tree);
 
     // Check for type checking errors
@@ -567,7 +597,7 @@ public class BooleanTest {
           .forEach(
               err ->
                   System.err.println("  Error at line " + err.getLine() + ": " + err.getMessage()));
-      fail("Type checking failed: " + errors.getErrors());
+      fail("Pass 2 (Type checking) failed: " + errors.getErrors());
     }
 
     if (typeChecker.hasErrors()) {
@@ -577,7 +607,7 @@ public class BooleanTest {
           .forEach(
               err ->
                   System.err.println("  Error at line " + err.getLine() + ": " + err.getMessage()));
-      fail("Type checking failed: " + typeChecker.getErrorCollector().getErrors());
+      fail("Pass 2 (Type checking) failed: " + typeChecker.getErrorCollector().getErrors());
     }
 
     // Phase 3: Evaluate
@@ -590,7 +620,7 @@ public class BooleanTest {
       errors
           .getErrors()
           .forEach(err -> System.err.println("  Line " + err.getLine() + ": " + err.getMessage()));
-      fail("Evaluation failed: " + errors.getErrors());
+      fail("Pass 3 (Evaluation) failed: " + errors.getErrors());
     }
 
     return result;

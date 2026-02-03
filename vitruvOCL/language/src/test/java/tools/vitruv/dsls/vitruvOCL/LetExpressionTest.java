@@ -15,7 +15,9 @@ import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement;
 import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
 import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
+import tools.vitruv.dsls.vitruvOCL.symboltable.ScopeAnnotator;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTable;
+import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableBuilder;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
 
@@ -620,13 +622,29 @@ public class LetExpressionTest {
           }
         };
 
+    // Initialize 3-pass architecture
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
+    ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
     ErrorCollector errors = new ErrorCollector();
 
+    // Pass 1: Symbol Table Construction (builds scopes for let-variables)
+    SymbolTableBuilder symbolTableBuilder =
+        new SymbolTableBuilder(symbolTable, dummySpec, errors, scopeAnnotator);
+    symbolTableBuilder.visit(tree);
+
+    if (errors.hasErrors()) {
+      fail("Pass 1 (Symbol Table) failed: " + errors.getErrors());
+    }
+
     // Pass 2: Type Checking (with token stream for keyword detection)
-    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, dummySpec, errors);
+    TypeCheckVisitor typeChecker =
+        new TypeCheckVisitor(symbolTable, dummySpec, errors, scopeAnnotator);
     typeChecker.setTokenStream(tokens);
     typeChecker.visit(tree);
+
+    if (errors.hasErrors()) {
+      fail("Pass 2 (Type Checking) failed: " + errors.getErrors());
+    }
 
     // Pass 3: Evaluation (with token stream and scope management)
     EvaluationVisitor evaluator =
@@ -634,6 +652,10 @@ public class LetExpressionTest {
     evaluator.setTokenStream(tokens);
 
     Value result = evaluator.visit(tree);
+
+    if (errors.hasErrors()) {
+      fail("Pass 3 (Evaluation) failed: " + errors.getErrors());
+    }
 
     return result;
   }

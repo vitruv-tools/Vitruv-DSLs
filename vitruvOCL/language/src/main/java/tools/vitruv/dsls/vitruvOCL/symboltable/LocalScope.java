@@ -69,4 +69,16 @@ public class LocalScope implements Scope {
   public Scope getEnclosingScope() {
     return parent;
   }
+
+  /**
+   * Check if a variable is defined ONLY in this scope (not in parent scopes).
+   *
+   * <p>Used for duplicate detection while allowing shadowing.
+   *
+   * @param name Variable name to check
+   * @return true if variable exists in this scope only
+   */
+  public boolean hasVariableInCurrentScope(String name) {
+    return variables.containsKey(name);
+  }
 }

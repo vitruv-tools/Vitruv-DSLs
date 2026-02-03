@@ -15,7 +15,9 @@ import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement;
 import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
 import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
+import tools.vitruv.dsls.vitruvOCL.symboltable.ScopeAnnotator;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTable;
+import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableBuilder;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
 import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
@@ -354,6 +356,8 @@ public class IfThenElseTest {
 
     VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
     CommonTokenStream tokens = new CommonTokenStream(lexer);
+    VitruvOCLParser parser = new VitruvOCLParser(tokens);
+    ParseTree tree = parser.expCS(); // oder welche Start-Regel auch immer passt
 
     // Dummy specification
     MetamodelWrapperInterface dummySpec =
@@ -374,11 +378,29 @@ public class IfThenElseTest {
           }
         };
 
+    // Initialize 3-pass architecture
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
+    ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
     ErrorCollector errors = new ErrorCollector();
 
-    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, dummySpec, errors);
+    // PASS 1: Symbol Table Construction
+    SymbolTableBuilder symbolTableBuilder =
+        new SymbolTableBuilder(symbolTable, dummySpec, errors, scopeAnnotator);
+    symbolTableBuilder.visit(tree);
+
+    if (errors.hasErrors()) {
+      fail("Pass 1 (Symbol Table) failed: " + errors.getErrors());
+    }
+
+    // PASS 2: Type Checking
+    TypeCheckVisitor typeChecker =
+        new TypeCheckVisitor(symbolTable, dummySpec, errors, scopeAnnotator);
     typeChecker.setTokenStream(tokens);
+    typeChecker.visit(tree);
+
+    if (errors.hasErrors()) {
+      fail("Pass 2 (Type Checking) failed: " + errors.getErrors());
+    }
   }
 
   /**
@@ -1188,16 +1210,28 @@ public class IfThenElseTest {
           }
         };
 
+    // Initialize 3-pass architecture
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
+    ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
     ErrorCollector errors = new ErrorCollector();
 
+    // Phase 1: Symbol Table Construction
+    SymbolTableBuilder symbolTableBuilder =
+        new SymbolTableBuilder(symbolTable, dummySpec, errors, scopeAnnotator);
+    symbolTableBuilder.visit(tree);
+
+    if (errors.hasErrors()) {
+      fail("Pass 1 (Symbol Table) failed: " + errors.getErrors());
+    }
+
     // Phase 2: Type Checking (with token stream for keyword detection)
-    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, dummySpec, errors);
+    TypeCheckVisitor typeChecker =
+        new TypeCheckVisitor(symbolTable, dummySpec, errors, scopeAnnotator);
     typeChecker.setTokenStream(tokens);
     typeChecker.visit(tree);
 
     if (typeChecker.hasErrors()) {
-      fail("Type checking failed: " + typeChecker.getErrorCollector().getErrors());
+      fail("Pass 2 (Type checking) failed: " + typeChecker.getErrorCollector().getErrors());
     }
 
     // Reset token stream for evaluator
@@ -1210,7 +1244,7 @@ public class IfThenElseTest {
     Value result = evaluator.visit(tree);
 
     if (evaluator.hasErrors()) {
-      fail("Evaluation failed: " + evaluator.getErrorCollector().getErrors());
+      fail("Pass 3 (Evaluation) failed: " + evaluator.getErrorCollector().getErrors());
     }
 
     return result;
@@ -1258,16 +1292,28 @@ public class IfThenElseTest {
           }
         };
 
+    // Initialize 3-pass architecture
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
+    ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
     ErrorCollector errors = new ErrorCollector();
 
-    // Type check only
-    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, dummySpec, errors);
+    // Pass 1: Symbol Table Construction
+    SymbolTableBuilder symbolTableBuilder =
+        new SymbolTableBuilder(symbolTable, dummySpec, errors, scopeAnnotator);
+    symbolTableBuilder.visit(tree);
+
+    if (errors.hasErrors()) {
+      fail("Pass 1 (Symbol Table) failed: " + errors.getErrors());
+    }
+
+    // Pass 2: Type check only
+    TypeCheckVisitor typeChecker =
+        new TypeCheckVisitor(symbolTable, dummySpec, errors, scopeAnnotator);
     typeChecker.setTokenStream(tokens);
     Type result = typeChecker.visit(tree);
 
     if (typeChecker.hasErrors()) {
-      fail("Type checking failed: " + typeChecker.getErrorCollector().getErrors());
+      fail("Pass 2 (Type checking) failed: " + typeChecker.getErrorCollector().getErrors());
     }
 
     return result;

@@ -15,7 +15,9 @@ import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement;
 import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
 import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
+import tools.vitruv.dsls.vitruvOCL.symboltable.ScopeAnnotator;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTable;
+import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableBuilder;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
 
@@ -1124,12 +1126,38 @@ public class IteratorTest {
           }
         };
 
-    // Pass 1: Symbol Table (trivial for iterator expressions)
+    // Initialize 3-pass architecture
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
+    ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
     ErrorCollector errors = new ErrorCollector();
 
+    // Pass 1: Symbol Table Construction (creates scopes for iterator variables)
+    SymbolTableBuilder symbolTableBuilder =
+        new SymbolTableBuilder(symbolTable, dummySpec, errors, scopeAnnotator);
+    symbolTableBuilder.visit(tree);
+
+    // Check for Symbol Table Errors
+    if (errors.hasErrors()) {
+      System.err.println("=== SYMBOL TABLE CONSTRUCTION ERRORS ===");
+      errors
+          .getErrors()
+          .forEach(
+              error -> {
+                System.err.println(
+                    "  Line "
+                        + error.getLine()
+                        + ":"
+                        + error.getColumn()
+                        + " - "
+                        + error.getMessage());
+              });
+      System.err.println("========================================");
+      fail("Pass 1 (Symbol Table) failed: " + errors.getErrors());
+    }
+
     // Pass 2: Type Checking (validates scoping and type inference)
-    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, dummySpec, errors);
+    TypeCheckVisitor typeChecker =
+        new TypeCheckVisitor(symbolTable, dummySpec, errors, scopeAnnotator);
     typeChecker.visit(tree);
 
     // Check for Type Errors - PRINT THEM for debugging!
@@ -1149,7 +1177,7 @@ public class IteratorTest {
                         + error.getMessage());
               });
       System.err.println("============================");
-      fail("Type checking failed: " + typeChecker.getErrorCollector().getErrors());
+      fail("Pass 2 (Type checking) failed: " + typeChecker.getErrorCollector().getErrors());
     }
 
     // Pass 3: Evaluation (evaluates iterator operations with variable binding)
@@ -1174,7 +1202,7 @@ public class IteratorTest {
                         + error.getMessage());
               });
       System.err.println("=========================");
-      fail("Evaluation failed: " + evaluator.getErrorCollector().getErrors());
+      fail("Pass 3 (Evaluation) failed: " + evaluator.getErrorCollector().getErrors());
     }
 
     return result;

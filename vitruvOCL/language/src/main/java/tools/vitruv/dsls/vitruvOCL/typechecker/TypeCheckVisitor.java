@@ -17,8 +17,8 @@ import tools.vitruv.dsls.vitruvOCL.common.ErrorCollector;
 import tools.vitruv.dsls.vitruvOCL.common.ErrorSeverity;
 import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
-import tools.vitruv.dsls.vitruvOCL.symboltable.LocalScope;
 import tools.vitruv.dsls.vitruvOCL.symboltable.Scope;
+import tools.vitruv.dsls.vitruvOCL.symboltable.ScopeAnnotator;
 import tools.vitruv.dsls.vitruvOCL.symboltable.Symbol;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTable;
 import tools.vitruv.dsls.vitruvOCL.symboltable.VariableSymbol;
@@ -150,6 +150,14 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   private final SymbolTable symbolTable;
 
   /**
+   * Scope annotator for retrieving scopes created in Pass 1.
+   *
+   * <p>Pass 1 (SymbolTableBuilder) annotates parse tree nodes with their scopes. Pass 2 (this
+   * visitor) retrieves these annotations to enter the correct scopes.
+   */
+  private final ScopeAnnotator scopeAnnotator;
+
+  /**
    * Token stream for accessing keyword positions.
    *
    * <p>Used in {@link #visitIfExpCS} to determine which expressions belong to condition,
@@ -165,11 +173,16 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    * @param symbolTable The symbol table containing variable and type definitions from Phase 1
    * @param wrapper The metamodel wrapper providing access to ECore metamodel information
    * @param errors The error collector for reporting type errors
+   * @param scopeAnnotator The scope annotator containing scope annotations from Phase 1
    */
   public TypeCheckVisitor(
-      SymbolTable symbolTable, MetamodelWrapperInterface wrapper, ErrorCollector errors) {
+      SymbolTable symbolTable,
+      MetamodelWrapperInterface wrapper,
+      ErrorCollector errors,
+      ScopeAnnotator scopeAnnotator) {
     super(symbolTable, wrapper, errors);
     this.symbolTable = symbolTable;
+    this.scopeAnnotator = scopeAnnotator;
   }
 
   // ==================== Error Reporting ====================
@@ -242,6 +255,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    * @param ctx The classifier context node
    * @return The context type (metaclass type)
    */
+  /**
+   * Type checks a classifier context declaration.
+   *
+   * <p>Enters the scope created by Pass 1 (SymbolTableBuilder) which already contains the 'self'
+   * variable.
+   */
   @Override
   public Type visitClassifierContextCS(VitruvOCLParser.ClassifierContextCSContext ctx) {
     // Resolve context type (qualified or unqualified)
@@ -275,10 +294,19 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
     nodeTypes.put(ctx, contextType);
 
-    // Create context scope and bind 'self'
-    Scope contextScope = new LocalScope(symbolTable.getCurrentScope());
+    // Enter scope created by Pass 1 - scope already contains 'self' variable
+    Scope contextScope = scopeAnnotator.getScope(ctx);
+    if (contextScope == null) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Internal error: No scope annotation from Pass 1",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
     symbolTable.enterScope(contextScope);
-    symbolTable.defineVariable(new VariableSymbol("self", contextType, contextScope, false));
 
     try {
       // Type-check all invariants
@@ -1278,11 +1306,22 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitLetExpCS(VitruvOCLParser.LetExpCSContext ctx) {
-    LocalScope letScope = new LocalScope(symbolTable.getCurrentScope());
+    // Enter scope created by Pass 1 - variables already defined
+    Scope letScope = scopeAnnotator.getScope(ctx);
+    if (letScope == null) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Internal error: No scope annotation from Pass 1",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
     symbolTable.enterScope(letScope);
 
     try {
-      // Process variable declarations
+      // Type-check variable declarations (validates type conformance only)
       visit(ctx.variableDeclarations());
 
       // Type-check body expressions
@@ -1342,13 +1381,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitVariableDeclaration(VitruvOCLParser.VariableDeclarationContext ctx) {
     String varName = ctx.varName.getText();
 
-    // Check for duplicate in current scope
-    LocalScope currentScope = (LocalScope) symbolTable.getCurrentScope();
-    if (currentScope.resolveVariable(varName) != null) {
+    // Variable already defined in Pass 1 - just look it up
+    VariableSymbol symbol = symbolTable.resolveVariable(varName);
+    if (symbol == null) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "Variable '" + varName + "' already defined",
+          "Variable '" + varName + "' not found (Pass 1 error?)",
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
@@ -1358,10 +1397,29 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type initType = visit(ctx.varInit);
 
     // Check explicit type if present
-    Type declaredType = initType;
+    Type declaredType = symbol.getType();
     if (ctx.varType != null) {
-      declaredType = visit(ctx.varType);
-      if (!initType.isConformantTo(declaredType)) {
+      Type explicitType = visit(ctx.varType);
+      if (!initType.isConformantTo(explicitType)) {
+        errors.add(
+            ctx.getStart().getLine(),
+            ctx.getStart().getCharPositionInLine(),
+            "Type mismatch: got " + initType + ", expected " + explicitType,
+            ErrorSeverity.ERROR,
+            "type-checker");
+        return Type.ERROR;
+      }
+      declaredType = explicitType;
+      // Refine type if it was ANY from Pass 1
+      if (symbol.getType() == Type.ANY) {
+        symbol.setType(declaredType);
+      }
+    } else {
+      // No explicit type - refine symbol with inferred type from initializer
+      if (declaredType == Type.ANY) {
+        symbol.setType(initType);
+        declaredType = initType;
+      } else if (!initType.isConformantTo(declaredType)) {
         errors.add(
             ctx.getStart().getLine(),
             ctx.getStart().getCharPositionInLine(),
@@ -1371,8 +1429,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       }
     }
 
-    // Define variable in symbol table
-    symbolTable.defineVariable(new VariableSymbol(varName, declaredType, currentScope, false));
     nodeTypes.put(ctx, declaredType);
     return declaredType;
   }
@@ -2154,7 +2210,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    // Get iterator variables
+    // Get iterator variables (already defined in Pass 1)
     List<String> iterVars = new ArrayList<>();
     if (ctx.iteratorVars != null) {
       for (TerminalNode id : ctx.iteratorVarList().ID()) {
@@ -2173,13 +2229,28 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     Type elemType = receiverType.getElementType();
-    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+
+    // Enter scope created by Pass 1 - iterator variables already defined
+    Scope iterScope = scopeAnnotator.getScope(ctx);
+    if (iterScope == null) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Internal error: No scope annotation from Pass 1",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
     symbolTable.enterScope(iterScope);
 
     try {
-      // Define all iterator variables
+      // Refine iterator variable types from Type.ANY to actual element type
       for (String iterVar : iterVars) {
-        symbolTable.defineVariable(new VariableSymbol(iterVar, elemType, iterScope, true));
+        VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
+        if (symbol != null && symbol.getType() == Type.ANY) {
+          symbol.setType(elemType);
+        }
       }
 
       Type bodyType = visit(ctx.body);
@@ -2203,7 +2274,18 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitRejectOp(VitruvOCLParser.RejectOpContext ctx) {
     Type receiverType = receiverStack.peek();
-    Type elemType = receiverType.isCollection() ? receiverType.getElementType() : receiverType;
+
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'reject' requires collection",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    Type elemType = receiverType.getElementType();
 
     List<String> iterVars = new ArrayList<>();
     if (ctx.iteratorVars != null) {
@@ -2222,12 +2304,27 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    // Enter scope created by Pass 1
+    Scope iterScope = scopeAnnotator.getScope(ctx);
+    if (iterScope == null) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Internal error: No scope annotation from Pass 1",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
     symbolTable.enterScope(iterScope);
 
     try {
+      // Refine iterator variable types
       for (String iterVar : iterVars) {
-        symbolTable.defineVariable(new VariableSymbol(iterVar, elemType, iterScope, true));
+        VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
+        if (symbol != null && symbol.getType() == Type.ANY) {
+          symbol.setType(elemType);
+        }
       }
 
       Type bodyType = visit(ctx.body);
@@ -2281,12 +2378,28 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     Type elemType = receiverType.getElementType();
-    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+
+    // Enter scope created by Pass 1
+    Scope iterScope = scopeAnnotator.getScope(ctx);
+    if (iterScope == null) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Internal error: No scope annotation from Pass 1",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
     symbolTable.enterScope(iterScope);
 
     try {
+      // Refine iterator variable types
       for (String iterVar : iterVars) {
-        symbolTable.defineVariable(new VariableSymbol(iterVar, elemType, iterScope, true));
+        VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
+        if (symbol != null && symbol.getType() == Type.ANY) {
+          symbol.setType(elemType);
+        }
       }
 
       Type bodyType = visit(ctx.body);
@@ -2306,7 +2419,18 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitForAllOp(VitruvOCLParser.ForAllOpContext ctx) {
     Type receiverType = receiverStack.peek();
-    Type elemType = receiverType.isCollection() ? receiverType.getElementType() : receiverType;
+
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'forAll' requires collection",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    Type elemType = receiverType.getElementType();
 
     List<String> iterVars = new ArrayList<>();
     if (ctx.iteratorVars != null) {
@@ -2325,12 +2449,27 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    // Enter scope created by Pass 1
+    Scope iterScope = scopeAnnotator.getScope(ctx);
+    if (iterScope == null) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Internal error: No scope annotation from Pass 1",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
     symbolTable.enterScope(iterScope);
 
     try {
+      // Refine iterator variable types
       for (String iterVar : iterVars) {
-        symbolTable.defineVariable(new VariableSymbol(iterVar, elemType, iterScope, true));
+        VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
+        if (symbol != null && symbol.getType() == Type.ANY) {
+          symbol.setType(elemType);
+        }
       }
 
       Type bodyType = visit(ctx.body);
@@ -2356,7 +2495,18 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitExistsOp(VitruvOCLParser.ExistsOpContext ctx) {
     Type receiverType = receiverStack.peek();
-    Type elemType = receiverType.isCollection() ? receiverType.getElementType() : receiverType;
+
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'exists' requires collection",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    Type elemType = receiverType.getElementType();
 
     List<String> iterVars = new ArrayList<>();
     if (ctx.iteratorVars != null) {
@@ -2375,12 +2525,27 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    // Enter scope created by Pass 1
+    Scope iterScope = scopeAnnotator.getScope(ctx);
+    if (iterScope == null) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Internal error: No scope annotation from Pass 1",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
     symbolTable.enterScope(iterScope);
 
     try {
+      // Refine iterator variable types
       for (String iterVar : iterVars) {
-        symbolTable.defineVariable(new VariableSymbol(iterVar, elemType, iterScope, true));
+        VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
+        if (symbol != null && symbol.getType() == Type.ANY) {
+          symbol.setType(elemType);
+        }
       }
 
       Type bodyType = visit(ctx.body);

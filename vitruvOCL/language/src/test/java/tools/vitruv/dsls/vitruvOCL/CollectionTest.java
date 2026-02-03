@@ -15,7 +15,9 @@ import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement;
 import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
 import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
+import tools.vitruv.dsls.vitruvOCL.symboltable.ScopeAnnotator;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTable;
+import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableBuilder;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
 
@@ -568,7 +570,7 @@ public class CollectionTest {
    * @throws AssertionError if any compilation phase fails
    */
   private Value compile(String input) {
-    // Phase 1: Parse
+    // Phase 0: Parse
     ParseTree tree = parse(input);
 
     // Create dummy specification - collections don't need metamodels
@@ -590,17 +592,28 @@ public class CollectionTest {
           }
         };
 
-    // Phase 1: Symbol Table (trivial for collection literals)
+    // Initialize 3-pass architecture
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
+    ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
     ErrorCollector errors = new ErrorCollector();
 
+    // Phase 1: Symbol Table Construction
+    SymbolTableBuilder symbolTableBuilder =
+        new SymbolTableBuilder(symbolTable, dummySpec, errors, scopeAnnotator);
+    symbolTableBuilder.visit(tree);
+
+    if (errors.hasErrors()) {
+      fail("Pass 1 (Symbol Table) failed: " + errors.getErrors());
+    }
+
     // Phase 2: Type Checking
-    TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, dummySpec, errors);
+    TypeCheckVisitor typeChecker =
+        new TypeCheckVisitor(symbolTable, dummySpec, errors, scopeAnnotator);
     typeChecker.visit(tree);
 
     // Check for type errors
     if (typeChecker.hasErrors()) {
-      fail("Type checking failed: " + typeChecker.getErrorCollector().getErrors());
+      fail("Pass 2 (Type checking) failed: " + typeChecker.getErrorCollector().getErrors());
     }
 
     // Phase 3: Evaluation
@@ -610,7 +623,7 @@ public class CollectionTest {
 
     // Check for evaluation errors
     if (evaluator.hasErrors()) {
-      fail("Evaluation failed: " + evaluator.getErrorCollector().getErrors());
+      fail("Pass 3 (Evaluation) failed: " + evaluator.getErrorCollector().getErrors());
     }
 
     return result;
