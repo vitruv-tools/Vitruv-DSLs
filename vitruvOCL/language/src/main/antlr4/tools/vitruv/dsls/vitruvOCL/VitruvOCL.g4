@@ -55,12 +55,13 @@ primitiveTypeCS
     'Boolean' | 'Integer' | 'Real' | 'String' | 'ID' | 'UnlimitedNatural' | 'OclAny'
 ;
 
+COLONCOLON : '::' ;
+
 typeNameExpCS
 :
-    metamodel=ID '::' className=ID
+    metamodel=ID COLONCOLON className=ID
     | unqualified=ID
 ;
-
 // ============================================================================
 // EXPRESSIONS
 // ============================================================================

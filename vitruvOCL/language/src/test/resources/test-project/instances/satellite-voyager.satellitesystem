@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<satelliteSystem:Satellite xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:satelliteSystem="http://www.example.org/satelliteSystem" identifier="Voyager-Sat" serialNumber="SC-001" massKg="722" active="true"/>

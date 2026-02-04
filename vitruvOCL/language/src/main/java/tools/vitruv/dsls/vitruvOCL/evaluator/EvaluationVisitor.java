@@ -34,52 +34,12 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * to handle method chaining (e.g., {@code collection.select(...).size()}) and uses the symbol table
  * for variable resolution.
  *
- * <h2>Key Features</h2>
- *
- * <ul>
- *   <li><b>Arithmetic operations:</b> +, -, *, / with singleton enforcement
- *   <li><b>Boolean logic:</b> and, or, xor, not, implies with short-circuit evaluation where
- *       appropriate
- *   <li><b>Comparison operators:</b> ==, !=, &lt;, &lt;=, &gt;, &gt;= with semantic equality
- *   <li><b>Collection operations:</b> size, isEmpty, notEmpty, first, last, reverse, union, etc.
- *   <li><b>Iterator operations:</b> select, reject, collect, forAll, exists with proper scoping
- *   <li><b>String operations:</b> concat, substring, toUpper, toLower, indexOf, equalsIgnoreCase
- *   <li><b>Control flow:</b> if-then-else, let expressions with scoped variable bindings
- *   <li><b>Metamodel operations:</b> allInstances(), property access, type checking (oclIsKindOf,
- *       oclIsTypeOf)
- *   <li><b>Cross-metamodel constraints:</b> Fully qualified names like {@code
- *       spaceMission::Spacecraft.allInstances()}
- * </ul>
- *
- * <h2>OCL# Semantics</h2>
- *
- * The evaluator implements OCL# semantics where "everything is a collection":
- *
- * <ul>
- *   <li>Single values are represented as singleton collections
- *   <li>Null values become empty collections
- *   <li>Operations are null-safe and type-safe
- * </ul>
- *
  * <h2>Error Handling</h2>
  *
  * Runtime errors (e.g., division by zero, type mismatches) are reported through the {@link
  * ErrorCollector} with source location information. The evaluator returns {@code
  * Value.empty(Type.ERROR)} for failed operations.
  *
- * <h2>Example Usage</h2>
- *
- * <pre>{@code
- * // Typical invocation from compiler pipeline
- * SymbolTable symbolTable = new SymbolTable();
- * ParseTreeProperty<Type> nodeTypes = typeChecker.getNodeTypes();
- * EvaluationVisitor evaluator = new EvaluationVisitor(
- *     symbolTable, metamodelWrapper, errorCollector, nodeTypes);
- *
- * Value result = evaluator.visit(parseTree);
- * }</pre>
- *
- * @author Max
  * @see Value The runtime value type representing OCL collections
  * @see TypeCheckVisitor Phase 2 visitor that produces type information
  * @see AbstractPhaseVisitor Base class providing common visitor infrastructure
@@ -976,6 +936,22 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return error("select supports at most 2 iterator variables", ctx);
   }
 
+  /**
+   * Evaluates select operation with a single iterator variable.
+   *
+   * <p>Implements OCL select semantics: filters collection by predicate, returning elements where
+   * predicate evaluates to true.
+   *
+   * <p>Creates a fresh local scope, binds each element to the iterator variable, evaluates the
+   * predicate, and collects matching elements. The predicate must return singleton Boolean for each
+   * iteration.
+   *
+   * @param ctx Parser context for select operation
+   * @param receiver Collection to filter
+   * @param iterVar Name of iterator variable to bind
+   * @return Collection of elements satisfying the predicate, or error Value if predicate returns
+   *     non-Boolean or non-singleton
+   */
   private Value evaluateSelectSingleVar(
       VitruvOCLParser.SelectOpContext ctx, Value receiver, String iterVar) {
     Type elemType = receiver.getRuntimeType().getElementType();
@@ -985,10 +961,12 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     try {
       List<OCLElement> results = new ArrayList<>();
       for (OCLElement elem : receiver.getElements()) {
+        // Bind current element to iterator variable
         VariableSymbol iterSymbol = new VariableSymbol(iterVar, elemType, iterScope, true);
         iterSymbol.setValue(new Value(List.of(elem), elemType));
         symbolTable.defineVariable(iterSymbol);
 
+        // Evaluate predicate with current binding
         Value bodyResult = visit(ctx.body);
         if (bodyResult.size() != 1) {
           return error("select predicate must return singleton Boolean", ctx);
@@ -999,6 +977,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           return error("select predicate must return Boolean", ctx);
         }
 
+        // Collect elements where predicate is true
         if (condition) {
           results.add(elem);
         }
@@ -1009,6 +988,23 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
   }
 
+  /**
+   * Evaluates select operation with two iterator variables (Cartesian product).
+   *
+   * <p>Implements OCL two-variable select: iterates over all pairs (e1, e2) from the receiver
+   * collection, evaluates predicate with both variables bound, and collects pairs where predicate
+   * is true.
+   *
+   * <p>Creates nested iteration over the collection, binding both iterator variables for each pair.
+   * Results are flattened into a single collection containing all elements from matching pairs.
+   *
+   * @param ctx Parser context for select operation
+   * @param receiver Collection to iterate over
+   * @param var1 Name of first iterator variable
+   * @param var2 Name of second iterator variable
+   * @return Collection containing both elements of each matching pair, or error Value if predicate
+   *     returns non-Boolean or non-singleton
+   */
   private Value evaluateSelectTwoVars(
       VitruvOCLParser.SelectOpContext ctx, Value receiver, String var1, String var2) {
     Type elemType = receiver.getRuntimeType().getElementType();
@@ -1093,6 +1089,22 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return error("reject supports at most 2 iterator variables", ctx);
   }
 
+  /**
+   * Evaluates reject operation with a single iterator variable.
+   *
+   * <p>Implements OCL reject semantics: filters collection by negated predicate, returning elements
+   * where predicate evaluates to false. Inverse of select.
+   *
+   * <p>Creates a fresh local scope, binds each element to the iterator variable, evaluates the
+   * predicate, and collects non-matching elements. The predicate must return singleton Boolean for
+   * each iteration.
+   *
+   * @param ctx Parser context for reject operation
+   * @param receiver Collection to filter
+   * @param iterVar Name of iterator variable to bind
+   * @return Collection of elements NOT satisfying the predicate, or error Value if predicate
+   *     returns non-Boolean or non-singleton
+   */
   private Value evaluateRejectSingleVar(
       VitruvOCLParser.RejectOpContext ctx, Value receiver, String iterVar) {
     Type elemType = receiver.getRuntimeType().getElementType();
@@ -1102,10 +1114,12 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     try {
       List<OCLElement> results = new ArrayList<>();
       for (OCLElement elem : receiver.getElements()) {
+        // Bind current element to iterator variable
         VariableSymbol iterSymbol = new VariableSymbol(iterVar, elemType, iterScope, true);
         iterSymbol.setValue(new Value(List.of(elem), elemType));
         symbolTable.defineVariable(iterSymbol);
 
+        // Evaluate predicate with current binding
         Value bodyResult = visit(ctx.body);
         if (bodyResult.size() != 1) {
           return error("reject predicate must return singleton Boolean", ctx);
@@ -1116,6 +1130,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           return error("reject predicate must return Boolean", ctx);
         }
 
+        // Collect elements where predicate is false
         if (!condition) {
           results.add(elem);
         }
@@ -1126,6 +1141,23 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
   }
 
+  /**
+   * Evaluates reject operation with two iterator variables (Cartesian product).
+   *
+   * <p>Implements OCL two-variable reject: iterates over all pairs (e1, e2) from the receiver
+   * collection, evaluates predicate with both variables bound, and collects pairs where predicate
+   * is false. Inverse of two-variable select.
+   *
+   * <p>Creates nested iteration over the collection, binding both iterator variables for each pair.
+   * Results are flattened into a single collection containing all elements from non-matching pairs.
+   *
+   * @param ctx Parser context for reject operation
+   * @param receiver Collection to iterate over
+   * @param var1 Name of first iterator variable
+   * @param var2 Name of second iterator variable
+   * @return Collection containing both elements of each non-matching pair, or error Value if
+   *     predicate returns non-Boolean or non-singleton
+   */
   private Value evaluateRejectTwoVars(
       VitruvOCLParser.RejectOpContext ctx, Value receiver, String var1, String var2) {
     Type elemType = receiver.getRuntimeType().getElementType();
@@ -1138,6 +1170,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
       for (OCLElement elem1 : elements) {
         for (OCLElement elem2 : elements) {
+          // Bind both iterator variables
           VariableSymbol var1Symbol = new VariableSymbol(var1, elemType, iterScope, true);
           var1Symbol.setValue(new Value(List.of(elem1), elemType));
           symbolTable.defineVariable(var1Symbol);
@@ -1146,6 +1179,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           var2Symbol.setValue(new Value(List.of(elem2), elemType));
           symbolTable.defineVariable(var2Symbol);
 
+          // Evaluate predicate
           Value bodyResult = visit(ctx.body);
           if (bodyResult.size() != 1) {
             return error("reject predicate must return singleton Boolean", ctx);
@@ -1206,6 +1240,22 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return error("collect supports at most 2 iterator variables", ctx);
   }
 
+  /**
+   * Evaluates collect operation with a single iterator variable.
+   *
+   * <p>Implements OCL collect semantics: transforms each element by applying the body expression,
+   * then flattens all results into a single collection. Unlike select/reject, the body can return
+   * any type (not just Boolean).
+   *
+   * <p>Creates a fresh local scope, binds each element to the iterator variable, evaluates the
+   * transformation expression, and aggregates all resulting elements into a flat collection.
+   *
+   * @param ctx Parser context for collect operation
+   * @param receiver Collection to transform
+   * @param iterVar Name of iterator variable to bind
+   * @return Flattened collection of all transformation results, typed according to type checker's
+   *     analysis or Set(Any) as fallback
+   */
   private Value evaluateCollectSingleVar(
       VitruvOCLParser.CollectOpContext ctx, Value receiver, String iterVar) {
     Type elemType = receiver.getRuntimeType().getElementType();
@@ -1215,10 +1265,12 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     try {
       List<OCLElement> results = new ArrayList<>();
       for (OCLElement elem : receiver.getElements()) {
+        // Bind current element to iterator variable
         VariableSymbol iterSymbol = new VariableSymbol(iterVar, elemType, iterScope, true);
         iterSymbol.setValue(new Value(List.of(elem), elemType));
         symbolTable.defineVariable(iterSymbol);
 
+        // Evaluate transformation expression and flatten into results
         Value bodyResult = visit(ctx.body);
         results.addAll(bodyResult.getElements());
       }
@@ -1229,6 +1281,24 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
   }
 
+  /**
+   * Evaluates collect operation with two iterator variables (Cartesian product).
+   *
+   * <p>Implements OCL two-variable collect: iterates over all pairs (e1, e2) from the receiver
+   * collection, applies transformation to each pair, and flattens all results into a single
+   * collection.
+   *
+   * <p>Creates nested iteration over the collection, binding both iterator variables for each pair,
+   * evaluating the body expression, and aggregating results. Useful for pairwise transformations or
+   * relationship queries.
+   *
+   * @param ctx Parser context for collect operation
+   * @param receiver Collection to iterate over
+   * @param var1 Name of first iterator variable
+   * @param var2 Name of second iterator variable
+   * @return Flattened collection of all transformation results from each pair, typed according to
+   *     type checker's analysis or Set(Any) as fallback
+   */
   private Value evaluateCollectTwoVars(
       VitruvOCLParser.CollectOpContext ctx, Value receiver, String var1, String var2) {
     Type elemType = receiver.getRuntimeType().getElementType();
@@ -1241,6 +1311,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
       for (OCLElement elem1 : elements) {
         for (OCLElement elem2 : elements) {
+          // Bind both iterator variables
           VariableSymbol var1Symbol = new VariableSymbol(var1, elemType, iterScope, true);
           var1Symbol.setValue(new Value(List.of(elem1), elemType));
           symbolTable.defineVariable(var1Symbol);
@@ -1249,6 +1320,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           var2Symbol.setValue(new Value(List.of(elem2), elemType));
           symbolTable.defineVariable(var2Symbol);
 
+          // Evaluate transformation and flatten into results
           Value bodyResult = visit(ctx.body);
           results.addAll(bodyResult.getElements());
         }
@@ -1298,6 +1370,21 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return error("forAll supports at most 2 iterator variables", ctx);
   }
 
+  /**
+   * Evaluates forAll operation with a single iterator variable.
+   *
+   * <p>Implements OCL forAll semantics: returns true if all elements satisfy the predicate, false
+   * if any element fails. Short-circuits on first failure.
+   *
+   * <p>Creates a fresh local scope, binds each element sequentially, and evaluates the predicate.
+   * The predicate must return singleton Boolean for each iteration.
+   *
+   * @param ctx Parser context for forAll operation
+   * @param receiver Collection to check
+   * @param iterVar Name of iterator variable to bind
+   * @return Singleton Boolean collection: [true] if all elements satisfy predicate, [false] if any
+   *     fails, or error Value if predicate returns non-Boolean
+   */
   private Value evaluateForAllSingleVar(
       VitruvOCLParser.ForAllOpContext ctx, Value receiver, String iterVar) {
     Type elemType = receiver.getRuntimeType().getElementType();
@@ -1306,10 +1393,12 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
     try {
       for (OCLElement elem : receiver.getElements()) {
+        // Bind current element to iterator variable
         VariableSymbol iterSymbol = new VariableSymbol(iterVar, elemType, iterScope, true);
         iterSymbol.setValue(new Value(List.of(elem), elemType));
         symbolTable.defineVariable(iterSymbol);
 
+        // Evaluate predicate with current binding
         Value bodyResult = visit(ctx.body);
         if (bodyResult.size() != 1) {
           return error("forAll predicate must return singleton Boolean", ctx);
@@ -1320,6 +1409,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           return error("forAll predicate must return Boolean", ctx);
         }
 
+        // Short-circuit on first false result
         if (!condition) {
           return Value.boolValue(false);
         }
@@ -1330,6 +1420,23 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
   }
 
+  /**
+   * Evaluates forAll operation with two iterator variables (Cartesian product).
+   *
+   * <p>Implements OCL two-variable forAll: checks if predicate holds for all pairs (e1, e2) from
+   * the receiver collection. Short-circuits on first failure.
+   *
+   * <p>Creates nested iteration over the collection, binding both iterator variables for each pair
+   * and evaluating the predicate. Useful for universal pairwise constraints like transitivity or
+   * symmetry checks.
+   *
+   * @param ctx Parser context for forAll operation
+   * @param receiver Collection to iterate over
+   * @param var1 Name of first iterator variable
+   * @param var2 Name of second iterator variable
+   * @return Singleton Boolean collection: [true] if predicate holds for all pairs, [false] if any
+   *     pair fails, or error Value if predicate returns non-Boolean
+   */
   private Value evaluateForAllTwoVars(
       VitruvOCLParser.ForAllOpContext ctx, Value receiver, String var1, String var2) {
     Type elemType = receiver.getRuntimeType().getElementType();
@@ -1341,6 +1448,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
       for (OCLElement elem1 : elements) {
         for (OCLElement elem2 : elements) {
+          // Bind both iterator variables
           VariableSymbol var1Symbol = new VariableSymbol(var1, elemType, iterScope, true);
           var1Symbol.setValue(new Value(List.of(elem1), elemType));
           symbolTable.defineVariable(var1Symbol);
@@ -1349,6 +1457,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           var2Symbol.setValue(new Value(List.of(elem2), elemType));
           symbolTable.defineVariable(var2Symbol);
 
+          // Evaluate predicate
           Value bodyResult = visit(ctx.body);
           if (bodyResult.size() != 1) {
             return error("forAll predicate must return singleton Boolean", ctx);
@@ -1359,6 +1468,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
             return error("forAll predicate must return Boolean", ctx);
           }
 
+          // Short-circuit on first false result
           if (!condition) {
             return Value.boolValue(false);
           }
@@ -1408,6 +1518,22 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return error("select supports at most 2 iterator variables", ctx);
   }
 
+  /**
+   * Evaluates exists operation with a single iterator variable.
+   *
+   * <p>Implements OCL exists semantics: returns true if at least one element satisfies the
+   * predicate, false if none do. Short-circuits on first match.
+   *
+   * <p>Creates a fresh local scope for the iterator variable, binds each collection element
+   * sequentially, and evaluates the body expression. The predicate must return a singleton Boolean
+   * for each iteration.
+   *
+   * @param ctx Parser context for exists operation
+   * @param receiver Collection to iterate over
+   * @param iterVar Name of iterator variable to bind
+   * @return Singleton Boolean collection: [true] if any element satisfies predicate, [false] if
+   *     none do, or error Value if predicate returns non-Boolean
+   */
   private Value evaluateExistsSingleVar(
       VitruvOCLParser.ExistsOpContext ctx, Value receiver, String iterVar) {
     Type elemType = receiver.getRuntimeType().getElementType();
@@ -1416,10 +1542,12 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
     try {
       for (OCLElement elem : receiver.getElements()) {
+        // Bind current element to iterator variable
         VariableSymbol iterSymbol = new VariableSymbol(iterVar, elemType, iterScope, true);
         iterSymbol.setValue(new Value(List.of(elem), elemType));
         symbolTable.defineVariable(iterSymbol);
 
+        // Evaluate predicate with current binding
         Value bodyResult = visit(ctx.body);
         if (bodyResult.size() != 1) {
           return error("exists predicate must return singleton Boolean", ctx);
@@ -1430,6 +1558,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           return error("exists predicate must return Boolean", ctx);
         }
 
+        // Short-circuit on first true result
         if (condition) {
           return Value.boolValue(true);
         }
@@ -1440,6 +1569,23 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
   }
 
+  /**
+   * Evaluates exists operation with two iterator variables (Cartesian product).
+   *
+   * <p>Implements OCL two-variable exists: returns true if at least one pair (e1, e2) satisfies the
+   * predicate. Short-circuits on first match.
+   *
+   * <p>Creates nested iteration over the collection, binding both iterator variables for each pair
+   * and evaluating the predicate. Useful for existential pairwise constraints like finding related
+   * elements or checking relationships.
+   *
+   * @param ctx Parser context for exists operation
+   * @param receiver Collection to iterate over
+   * @param var1 Name of first iterator variable
+   * @param var2 Name of second iterator variable
+   * @return Singleton Boolean collection: [true] if any pair satisfies predicate, [false] if no
+   *     pairs do, or error Value if predicate returns non-Boolean
+   */
   private Value evaluateExistsTwoVars(
       VitruvOCLParser.ExistsOpContext ctx, Value receiver, String var1, String var2) {
     Type elemType = receiver.getRuntimeType().getElementType();
@@ -1451,6 +1597,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
       for (OCLElement elem1 : elements) {
         for (OCLElement elem2 : elements) {
+          // Bind both iterator variables
           VariableSymbol var1Symbol = new VariableSymbol(var1, elemType, iterScope, true);
           var1Symbol.setValue(new Value(List.of(elem1), elemType));
           symbolTable.defineVariable(var1Symbol);
@@ -1459,6 +1606,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           var2Symbol.setValue(new Value(List.of(elem2), elemType));
           symbolTable.defineVariable(var2Symbol);
 
+          // Evaluate predicate
           Value bodyResult = visit(ctx.body);
           if (bodyResult.size() != 1) {
             return error("exists predicate must return singleton Boolean", ctx);
@@ -1469,6 +1617,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
             return error("exists predicate must return Boolean", ctx);
           }
 
+          // Short-circuit on first true result
           if (condition) {
             return Value.boolValue(true);
           }
@@ -1705,6 +1854,16 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
   // ==================== Unary Operations & Navigation ====================
 
+  /**
+   * Evaluates primary expression with navigation chain.
+   *
+   * <p>Processes base expression followed by zero or more navigation steps (property access, method
+   * calls, iterator operations). Each navigation step uses the previous result as its receiver,
+   * enabling method chaining like {@code spacecraft.payload.name}.
+   *
+   * @param ctx Parser context for primary expression with navigation
+   * @return Final value after applying all navigation steps, or error Value if any step fails
+   */
   @Override
   public Value visitPrimaryWithNav(VitruvOCLParser.PrimaryWithNavContext ctx) {
     // Evaluate base expression
@@ -1723,6 +1882,16 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return currentValue;
   }
 
+  /**
+   * Evaluates unary minus operation.
+   *
+   * <p>Implements OCL unary negation: requires singleton integer operand, returns negated value as
+   * singleton collection following "everything is a collection" principle.
+   *
+   * @param ctx Parser context for unary minus expression
+   * @return Singleton collection containing negated integer, or error Value if operand is
+   *     non-singleton or non-integer
+   */
   @Override
   public Value visitUnaryMinus(VitruvOCLParser.UnaryMinusContext ctx) {
     Value operandValue = visit(ctx.operand);
@@ -1744,6 +1913,16 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return Value.intValue(-value);
   }
 
+  /**
+   * Evaluates logical not operation.
+   *
+   * <p>Implements OCL boolean negation: negates all boolean elements in the operand collection.
+   * Supports both singleton and multi-element collections, returning a collection of the same size
+   * with all values negated.
+   *
+   * @param ctx Parser context for logical not expression
+   * @return Collection of negated boolean values, or error Value if any element is non-boolean
+   */
   @Override
   public Value visitLogicalNot(VitruvOCLParser.LogicalNotContext ctx) {
     Value operandValue = visit(ctx.operand);

@@ -14,17 +14,48 @@ import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableBuilder;
 import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
 
+/**
+ * 3-pass compiler for VitruvOCL constraints.
+ *
+ * <p>Executes compilation pipeline:
+ *
+ * <ol>
+ *   <li><b>Pass 1 - Symbol Table Construction</b>: Collects variable declarations and scopes
+ *   <li><b>Pass 2 - Type Checking</b>: Validates types and builds nodeTypes mapping
+ *   <li><b>Pass 3 - Evaluation</b>: Executes constraint against model instances
+ * </ol>
+ *
+ * <p>Each pass accumulates errors in {@link ErrorCollector}. If any pass encounters errors,
+ * subsequent passes are skipped. Supports compilation from strings, files, or paths.
+ */
 public class VitruvOCLCompiler {
 
+  /** Metamodel and instance access interface */
   private final MetamodelWrapperInterface wrapper;
+
+  /** Optional OCL file path (for file-based compilation) */
   private final Path oclFile;
+
+  /** Accumulates errors across all passes */
   private final ErrorCollector errors = new ErrorCollector();
 
+  /**
+   * Creates compiler with metamodel access.
+   *
+   * @param wrapper Interface to metamodels and instances
+   * @param oclFile Optional file path for file-based compilation
+   */
   public VitruvOCLCompiler(MetamodelWrapperInterface wrapper, Path oclFile) {
     this.wrapper = wrapper;
     this.oclFile = oclFile;
   }
 
+  /**
+   * Compiles constraint from path (treating path as string source).
+   *
+   * @param sourcePath Path object used as constraint source
+   * @return Evaluation result, or null if any pass fails
+   */
   public Value compile(Path sourcePath) {
     String source = sourcePath.toString();
     CharStream input = CharStreams.fromString(source);
@@ -59,6 +90,12 @@ public class VitruvOCLCompiler {
     return evaluator.visit(tree);
   }
 
+  /**
+   * Compiles constraint from configured file path.
+   *
+   * @return Validation result with errors (evaluation results not captured)
+   * @throws IOException If file cannot be read
+   */
   public ValidationResult compile() throws IOException {
     CharStream input = CharStreams.fromPath(oclFile);
     VitruvOCLLexer lexer = new VitruvOCLLexer(input);
@@ -100,6 +137,14 @@ public class VitruvOCLCompiler {
     return new ValidationResult(errors.getErrors(), java.util.List.of());
   }
 
+  /**
+   * Compiles constraint from string source with debug output.
+   *
+   * <p>Prints error messages to stderr after each pass for debugging.
+   *
+   * @param oclSource OCL constraint expression
+   * @return Evaluation result, or null if any pass fails
+   */
   public Value compile(String oclSource) {
     CharStream input = CharStreams.fromString(oclSource);
     VitruvOCLLexer lexer = new VitruvOCLLexer(input);
@@ -160,10 +205,16 @@ public class VitruvOCLCompiler {
     return result;
   }
 
+  /**
+   * @return {@code true} if any compilation errors occurred
+   */
   public boolean hasErrors() {
     return errors.hasErrors();
   }
 
+  /**
+   * @return Error collector with all accumulated errors
+   */
   public ErrorCollector getErrors() {
     return errors;
   }

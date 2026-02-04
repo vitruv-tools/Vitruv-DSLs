@@ -4,11 +4,7 @@ import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 
 /**
- * OCL# Element - represents a single element in an OCL collection.
- *
- * <p>In OCL#, all values are collections of elements. Elements can be: - Primitive values (int,
- * bool, string) - Object references (EObject IDs) - Nested collections (for nested collection types
- * like {{int}})
+ * OCL Element - represents a single element in an OCL collection.
  *
  * <p>This is a sealed interface to ensure exhaustiveness in pattern matching.
  */

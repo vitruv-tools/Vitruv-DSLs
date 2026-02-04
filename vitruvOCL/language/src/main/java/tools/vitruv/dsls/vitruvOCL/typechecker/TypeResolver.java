@@ -1,34 +1,34 @@
 package tools.vitruv.dsls.vitruvOCL.typechecker;
 
 /**
- * Static Helper-Methoden für Type Resolution und Type Operations.
+ * Static helper methods for type resolution and type operations.
  *
- * <p><b>Zweck:</b> Gemeinsame Type-Resolution-Logik, die sowohl TypeCheckVisitor als auch später
- * der Evaluator verwenden können.
+ * <p><b>Purpose:</b> Shared type resolution logic that can be used by both the TypeCheckVisitor and
+ * later by the evaluator.
  *
- * <p><b>Funktionen:</b>
+ * <p><b>Features:</b>
  *
  * <ul>
- *   <li>Binary Operator Type Resolution: {@code resolveBinaryOp("+", Integer, Integer) -> Integer}
- *   <li>Type Conformance: {@code isConformantTo(subtype, supertype)}
- *   <li>Common Supertype: {@code commonSupertype(Type a, Type b)}
- *   <li>Collection Element Type Extraction
+ *   <li>Binary operator type resolution: {@code resolveBinaryOp("+", Integer, Integer) -> Integer}
+ *   <li>Type conformance: {@code isConformantTo(subtype, supertype)}
+ *   <li>Common supertype: {@code commonSupertype(Type a, Type b)}
+ *   <li>Collection element type extraction
  * </ul>
  *
- * <p><b>Keine Duplikation:</b> Diese Logik ist gleich für Type Checking und Evaluation, daher
- * zentral in Helper-Klasse.
+ * <p><b>No duplication:</b> This logic is identical for type checking and evaluation, so it is
+ * centralized in this helper class.
  */
 public class TypeResolver {
 
   private TypeResolver() {} // Pure static utility class
 
   /**
-   * Löst den Result-Type einer binären Operation auf.
+   * Resolves the result type of a binary operation.
    *
    * @param operator "+", "-", "*", "/", "=", "<", etc.
-   * @param leftType Type des linken Operanden
-   * @param rightType Type des rechten Operanden
-   * @return Result Type oder Type.ERROR bei Type Mismatch
+   * @param leftType type of the left operand
+   * @param rightType type of the right operand
+   * @return the result type, or {@link Type#ERROR} in case of a type mismatch
    */
   public static Type resolveBinaryOp(String operator, Type leftType, Type rightType) {
     if (leftType == Type.ERROR || rightType == Type.ERROR) {
@@ -40,7 +40,7 @@ public class TypeResolver {
     if (leftType == Type.ANY || rightType == Type.ANY) {
       return switch (operator) {
         case "+", "-", "*", "/" -> Type.INTEGER; // Arithmetic → Integer
-        case "and", "or", "xor", "implies" -> Type.BOOLEAN; // Boolean ops
+        case "and", "or", "xor", "implies" -> Type.BOOLEAN; // Boolean operations
         case "<", "<=", ">", ">=", "==", "!=" -> Type.BOOLEAN; // Comparisons
         default -> Type.ERROR;
       };
@@ -63,7 +63,7 @@ public class TypeResolver {
       // Fall through to singleton comparison below
     }
 
-    // OCL#: Unwrap SINGLETON collections for arithmetic/ordering/boolean ops
+    // Unwrap SINGLETON collections for arithmetic/ordering/boolean ops
     // Real collections (SET, SEQUENCE) stay wrapped and will cause error
     if (leftType.isSingleton()) {
       leftType = leftType.getElementType();
@@ -392,17 +392,5 @@ public class TypeResolver {
   /** Checks if an operation is a valid object operation for the given type. */
   public static boolean isObjectOperation(Type sourceType, String operationName) {
     return resolveObjectOperation(sourceType, operationName) != Type.ERROR;
-  }
-
-  /** Prüft ob subtype konform zu supertype ist. */
-  public static boolean isConformantTo(Type subtype, Type supertype) {
-    // Wird implementiert
-    return false;
-  }
-
-  /** Findet den gemeinsamen Supertype zweier Types. */
-  public static Type commonSupertype(Type a, Type b) {
-    // Wird implementiert
-    return null;
   }
 }

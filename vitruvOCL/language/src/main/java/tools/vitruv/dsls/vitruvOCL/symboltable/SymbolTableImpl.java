@@ -5,19 +5,43 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
 import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
 
 /**
- * Implementation for SymbolTable
+ * Default implementation of the {@link SymbolTable} interface.
  *
- * <p>starts with GlobalScope as currentScope
+ * <p>This implementation maintains a hierarchy of {@link Scope}s and starts with a {@link
+ * GlobalScope} as the initial and current scope.
  *
- * @see SymbolTable interface with all operations
- * @see Scope single scope
+ * <p>Variables are defined in the currently active scope, whereas types and operations are always
+ * defined in the global scope.
+ *
+ * <p>The symbol table also provides a unified lookup mechanism for semantic {@link Type}s,
+ * including primitive OCL types and metamodel-based types.
+ *
+ * @see SymbolTable
+ * @see Scope
+ * @see GlobalScope
  */
 public class SymbolTableImpl implements SymbolTable {
 
+  /** The global (outermost) scope of the symbol table. */
   private final GlobalScope globalScope;
+
+  /**
+   * Wrapper providing access to the underlying EMF metamodels.
+   *
+   * <p>Used to resolve qualified metamodel types (e.g., {@code Metamodel::Class}).
+   */
   private final MetamodelWrapperInterface wrapper;
+
+  /** The currently active scope. */
   private Scope currentScope;
 
+  /**
+   * Creates a new symbol table instance.
+   *
+   * <p>The symbol table is initialized with a {@link GlobalScope} as the current scope.
+   *
+   * @param wrapper the metamodel wrapper used to resolve metamodel types
+   */
   public SymbolTableImpl(MetamodelWrapperInterface wrapper) {
     this.globalScope = new GlobalScope();
     this.currentScope = globalScope;
@@ -43,13 +67,13 @@ public class SymbolTableImpl implements SymbolTable {
 
   @Override
   public void defineType(TypeSymbol symbol) {
-    // Types werden nur im GlobalScope definiert
+    // Types are only defined in the global scope
     globalScope.defineType(symbol);
   }
 
   @Override
   public void defineOperation(OperationSymbol symbol) {
-    // Operations werden nur im GlobalScope definiert
+    // Operations are only defined in the global scope
     globalScope.defineOperation(symbol);
   }
 
@@ -78,6 +102,20 @@ public class SymbolTableImpl implements SymbolTable {
     return globalScope;
   }
 
+  /**
+   * Looks up a semantic {@link Type} by its name.
+   *
+   * <p>The lookup proceeds in the following order:
+   *
+   * <ol>
+   *   <li>Primitive OCL types ({@code Integer}, {@code Double}, {@code String}, {@code Boolean})
+   *   <li>Qualified metamodel types of the form {@code Metamodel::Class}
+   *   <li>Unqualified metamodel types defined in the global scope
+   * </ol>
+   *
+   * @param typeName the name of the type
+   * @return the resolved {@link Type}, or {@code null} if the type cannot be resolved
+   */
   @Override
   public Type lookupType(String typeName) {
     // Try to resolve as primitive type first
@@ -101,11 +139,10 @@ public class SymbolTableImpl implements SymbolTable {
             if (eClass != null) {
               return Type.metaclassType(eClass);
             }
-            System.err.println("eClass == " + eClass + ": " + metamodel + " with " + className);
           }
         }
 
-        // Try to resolve as unqualified metamodel type from global scope
+        // Try to resolve as unqualified metamodel type from the global scope
         TypeSymbol symbol = globalScope.resolveType(typeName);
         if (symbol != null && symbol.getType() != null) {
           return symbol.getType();

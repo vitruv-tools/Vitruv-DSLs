@@ -72,59 +72,6 @@ import org.junit.jupiter.params.ParameterizedTest;
  * All tests output the generated parse tree structure using {@link
  * VitruvOCLParserTestUtils#treeToString}, enabling:
  *
- * <ul>
- *   <li>Visual verification of parser behavior
- *   <li>Debugging unexpected parse results
- *   <li>Understanding grammar rule applications
- *   <li>Documenting expected parse tree structures
- * </ul>
- *
- * <h2>Assertion Libraries</h2>
- *
- * Tests use two assertion libraries:
- *
- * <ul>
- *   <li><b>JUnit assertions:</b> {@code assertNotNull()}, {@code assertDoesNotThrow()} for basic
- *       validation
- *   <li><b>AssertJ:</b> {@code assertThat()} for fluent, expressive assertions with better error
- *       messages
- * </ul>
- *
- * <h2>Parser Entry Point</h2>
- *
- * All tests use {@code contextDeclCS()} as the grammar entry point, which expects a complete
- * context declaration with invariant. This entry point is appropriate for parsing standalone OCL
- * constraints.
- *
- * <h2>Test Output</h2>
- *
- * Each test prints its parse tree to standard output for inspection:
- *
- * <pre>
- * Parse Tree:
- * (contextDeclCS context (pathNameCS Person) inv : (expCS ...))
- * </pre>
- *
- * <h2>Relationship to Other Tests</h2>
- *
- * <ul>
- *   <li><b>This class:</b> Inline string parsing with various expression patterns
- *   <li><b>{@link VitruvOCLFileParsingTest}:</b> File-based parsing tests
- *   <li><b>Integration tests:</b> End-to-end parsing, type checking, and evaluation
- * </ul>
- *
- * <h2>Future Extensions</h2>
- *
- * Potential test additions:
- *
- * <ul>
- *   <li>Collection operation tests (forAll, exists, select, reject, collect)
- *   <li>Navigation pattern tests (association traversal, multi-level navigation)
- *   <li>Complex boolean expressions with and/or/not
- *   <li>Let expressions and variable bindings
- *   <li>Nested collection operations
- * </ul>
- *
  * @see VitruvOCLLexer ANTLR-generated lexer for tokenization
  * @see VitruvOCLParser ANTLR-generated parser for parse tree construction
  * @see VitruvOCLParserTestUtils Utility methods for parsing and tree formatting
@@ -138,34 +85,6 @@ public class VitruvOCLParsingTest {
    * <p><b>Input:</b> {@code context Person inv: self.age > 0}
    *
    * <p><b>Syntax elements:</b>
-   *
-   * <ul>
-   *   <li><b>context:</b> Keyword introducing the context declaration
-   *   <li><b>Person:</b> Unqualified class name (no package/metamodel prefix)
-   *   <li><b>inv:</b> Invariant keyword
-   *   <li><b>self.age > 0:</b> Boolean expression using self variable
-   * </ul>
-   *
-   * <p><b>Parse tree structure:</b> The parser should produce a {@code contextDeclCS} node
-   * containing:
-   *
-   * <ul>
-   *   <li>Context keyword token
-   *   <li>PathName node with simple identifier "Person"
-   *   <li>Invariant keyword token
-   *   <li>Expression node with comparison operation
-   * </ul>
-   *
-   * <p><b>Validates:</b>
-   *
-   * <ul>
-   *   <li>Basic context declaration syntax
-   *   <li>Unqualified type names
-   *   <li>Simple self-navigation expressions
-   *   <li>Comparison operators in constraints
-   *   <li>Non-null parse tree generation
-   *   <li>Parse tree has child nodes
-   * </ul>
    *
    * <p><b>Output:</b> Prints the complete parse tree structure for manual inspection.
    */
@@ -192,36 +111,6 @@ public class VitruvOCLParsingTest {
    *
    * <p><b>Qualified name syntax:</b> {@code Package::ClassName} uses the double-colon {@code ::}
    * separator to specify:
-   *
-   * <ul>
-   *   <li><b>University:</b> Package, namespace, or metamodel name
-   *   <li><b>Student:</b> Class name within that package
-   * </ul>
-   *
-   * <p><b>Use case:</b> Qualified names are essential when:
-   *
-   * <ul>
-   *   <li>Multiple metamodels define classes with the same name
-   *   <li>Disambiguating between packages
-   *   <li>Explicitly specifying the metamodel context
-   * </ul>
-   *
-   * <p><b>Parse tree structure:</b> The {@code pathNameCS} node should contain:
-   *
-   * <ul>
-   *   <li>First path element: "University"
-   *   <li>Separator: {@code ::}
-   *   <li>Next path element: "Student"
-   * </ul>
-   *
-   * <p><b>Validates:</b>
-   *
-   * <ul>
-   *   <li>Qualified type name syntax
-   *   <li>Double-colon separator parsing
-   *   <li>Multi-level name resolution
-   *   <li>Metamodel/package qualification
-   * </ul>
    *
    * <p><b>Output:</b> Prints parse tree showing qualified name structure.
    */

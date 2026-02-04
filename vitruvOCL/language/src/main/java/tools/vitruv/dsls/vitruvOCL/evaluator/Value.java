@@ -5,9 +5,9 @@ import org.eclipse.emf.ecore.EObject;
 import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
 
 /**
- * OCL# Value - The unified value representation.
+ * OCL Value - The unified value representation.
  *
- * <p>Core OCL# Principle: "Everything is a collection"
+ * <p>Core OCL Principle: "Everything is a collection"
  *
  * <p>All values are represented as lists of elements: - Singleton: [elem] (¡τ! - exactly 1 element)
  * - Empty: [] (no τ - "kein Wert") - Multi-valued: [e1, e2, e3] (collections)
@@ -18,7 +18,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
  */
 public class Value {
 
-  /** The actual value - in OCL#, this is ALWAYS List<OCLElement> */
+  /** The actual value - in OCL, this is ALWAYS List<OCLElement> */
   private final List<OCLElement> elements;
 
   /** The runtime type - includes Ctype information (unique, ordered) */
@@ -26,7 +26,7 @@ public class Value {
 
   // ==================== Constructors ====================
 
-  /** Creates a Value from a list of elements. This is the main constructor for OCL# values. */
+  /** Creates a Value from a list of elements. This is the main constructor for OCL values. */
   public Value(List<OCLElement> elements, Type runtimeType) {
     this.elements = Collections.unmodifiableList(new ArrayList<>(elements));
     this.runtimeType = runtimeType;
@@ -42,7 +42,7 @@ public class Value {
       List<OCLElement> list = (List<OCLElement>) value;
       this.elements = Collections.unmodifiableList(new ArrayList<>(list));
     } else if (value == null) {
-      // null becomes empty collection in OCL#
+      // null becomes empty collection in OCL
       this.elements = List.of();
     } else {
       // Wrap single value as singleton
@@ -103,7 +103,7 @@ public class Value {
     return elements;
   }
 
-  /** Legacy getter - returns the elements list for OCL# compatibility. */
+  /** Legacy getter - returns the elements list for OCL compatibility. */
   public Object getValue() {
     return elements;
   }
@@ -129,8 +129,8 @@ public class Value {
   }
 
   /**
-   * In OCL#, null doesn't exist - only empty collections. This method returns true if the
-   * collection is empty.
+   * In OCL, null doesn't exist - only empty collections. This method returns true if the collection
+   * is empty.
    */
   public boolean isNull() {
     return elements.isEmpty();
@@ -139,7 +139,7 @@ public class Value {
   // ==================== Monoid Operations ====================
 
   /**
-   * Merges two Values using OCL# monoid semantics (⊕χ).
+   * Merges two Values using OCL monoid semantics (⊕χ).
    *
    * <p>Behavior depends on Type's Ctype properties: - Set (unique, unordered): Union with
    * uniqueness - Bag (non-unique, unordered): Concatenation with duplicates - Sequence (non-unique,
@@ -283,7 +283,7 @@ public class Value {
 
   // ==================== Ordered Collection Operations ====================
 
-  /** Returns the first element. Returns empty if this is empty (OCL# semantics). */
+  /** Returns the first element. Returns empty if this is empty (OCL semantics). */
   public Value first() {
     if (isEmpty()) {
       return empty(runtimeType);
@@ -291,7 +291,7 @@ public class Value {
     return singleton(elements.get(0), runtimeType.getElementType());
   }
 
-  /** Returns the last element. Returns empty if this is empty (OCL# semantics). */
+  /** Returns the last element. Returns empty if this is empty (OCL semantics). */
   public Value last() {
     if (isEmpty()) {
       return empty(runtimeType);

@@ -1,0 +1,74 @@
+context spaceMission::Spacecraft inv serialNumberMatch:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    sat.serialNumber == self.serialNumber
+  )
+
+
+context spaceMission::Spacecraft inv massConsistency:
+  satelliteSystem::Satellite.allInstances().forAll(sat |
+    sat.massKg == self.mass implies sat.active == self.operational
+  )
+
+
+context spaceMission::Spacecraft inv minSatelliteCount:
+  satelliteSystem::Satellite.allInstances().size() >= 2
+
+
+context spaceMission::Spacecraft inv totalMass:
+  satelliteSystem::Satellite.allInstances().collect(sat |
+    sat.massKg
+  ).sum() > 0
+
+context spaceMission::Spacecraft inv averageMass:
+  satelliteSystem::Satellite.allInstances().collect(sat |
+    sat.massKg
+  ).avg() > 0
+
+
+context spaceMission::Spacecraft inv serialInclusion:
+  satelliteSystem::Satellite.allInstances().collect(sat |
+    sat.serialNumber
+  ).includes(self.serialNumber)
+
+
+context satelliteSystem::Satellite inv correspondingSpacecraft:
+  spaceMission::Spacecraft.allInstances().exists(sc |
+    sc.serialNumber == self.serialNumber and sc.mass == self.massKg
+  )
+
+
+context spaceMission::Spacecraft inv andLogic:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    sat.serialNumber == self.serialNumber
+  ) and self.operational
+
+
+context spaceMission::Spacecraft inv nestedExists:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    spaceMission::Spacecraft.allInstances().exists(sc |
+      sc.serialNumber == sat.serialNumber and sc.operational
+    )
+  )
+
+context spaceMission::Spacecraft inv arithmeticComparison:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    (sat.massKg * 2) > self.mass
+  )
+
+context spaceMission::Spacecraft inv letBinding:
+  let satellites = satelliteSystem::Satellite.allInstances() in
+    satellites.size() >= 0
+
+context spaceMission::Spacecraft inv conditional:
+  if satelliteSystem::Satellite.allInstances().size() > 2
+  then self.operational
+  else self.mass > 0
+  endif
+
+context spaceMission::Spacecraft inv satellitesNotEmpty:
+  satelliteSystem::Satellite.allInstances().notEmpty()
+
+context spaceMission::Spacecraft inv nonExistentEmpty:
+  satelliteSystem::Satellite.allInstances().select(sat |
+    sat.serialNumber == "NONEXISTENT-999"
+  ).isEmpty()

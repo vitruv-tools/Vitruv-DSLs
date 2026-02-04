@@ -26,33 +26,6 @@ import org.antlr.v4.runtime.tree.ParseTreeProperty;
  * symbolTable.enterScope(contextScope);
  * }</pre>
  *
- * <h2>Why This Pattern?</h2>
- *
- * <p>Without scope annotation, Pass 2 would have to:
- *
- * <ul>
- *   <li>Recreate the entire scope hierarchy (duplicates Pass 1 work)
- *   <li>Use heuristics to guess which child scope to enter (error-prone)
- *   <li>Maintain parallel state machines (fragile, hard to synchronize)
- * </ul>
- *
- * <p>With scope annotation:
- *
- * <ul>
- *   <li>Pass 1 builds scopes once and annotates the tree
- *   <li>Pass 2 simply retrieves pre-built scopes
- *   <li>Clean separation of concerns between passes
- *   <li>Type-safe, explicit scope management
- * </ul>
- *
- * <h2>Scope Types Annotated</h2>
- *
- * <ul>
- *   <li><b>Context scopes:</b> {@code context Person inv: ...} nodes
- *   <li><b>Let scopes:</b> {@code let x = 5 in ...} nodes
- *   <li><b>Iterator scopes:</b> {@code collection.select(x | ...)} lambda bodies
- * </ul>
- *
  * <h2>Usage in Compiler Pipeline</h2>
  *
  * <pre>{@code
@@ -69,13 +42,6 @@ import org.antlr.v4.runtime.tree.ParseTreeProperty;
  * typeChecker.visit(parseTree);
  * }</pre>
  *
- * <h2>Thread Safety</h2>
- *
- * <p>This class is <b>not thread-safe</b>. Each compilation should use its own {@code
- * ScopeAnnotator} instance. The underlying {@link ParseTreeProperty} uses {@link
- * java.util.IdentityHashMap} for efficient tree node lookup.
- *
- * @author Max
  * @see ParseTreeProperty ANTLR4's node annotation utility
  * @see SymbolTableBuilder Pass 1 that populates annotations
  * @see tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor Pass 2 that reads annotations
@@ -101,16 +67,6 @@ public class ScopeAnnotator {
    *   <li>Iterator operations: {@code collection.select(x | ...)}
    * </ul>
    *
-   * <p><b>Example from SymbolTableBuilder:</b>
-   *
-   * <pre>{@code
-   * // Creating context scope
-   * Scope contextScope = new LocalScope(symbolTable.getCurrentScope());
-   * symbolTable.enterScope(contextScope);
-   * symbolTable.defineVariable(new VariableSymbol("self", contextType, contextScope, false));
-   * scopeAnnotator.annotate(ctx, contextScope);  // Annotate for Pass 2
-   * }</pre>
-   *
    * @param ctx The parse tree node to annotate
    * @param scope The scope associated with this node
    * @throws NullPointerException if ctx or scope is null
@@ -130,21 +86,6 @@ public class ScopeAnnotator {
    *
    * <p>Called by Pass 2 (TypeCheckVisitor) to retrieve scopes created by Pass 1.
    *
-   * <p><b>Example from TypeCheckVisitor:</b>
-   *
-   * <pre>{@code
-   * // Entering context scope
-   * Scope contextScope = scopeAnnotator.getScope(ctx);
-   * if (contextScope != null) {
-   *   symbolTable.enterScope(contextScope);
-   *   try {
-   *     // Type check invariants
-   *   } finally {
-   *     symbolTable.exitScope();
-   *   }
-   * }
-   * }</pre>
-   *
    * @param ctx The parse tree node to look up
    * @return The scope associated with this node, or {@code null} if no annotation exists
    * @throws NullPointerException if ctx is null
@@ -159,8 +100,6 @@ public class ScopeAnnotator {
   /**
    * Checks if a parse tree node has been annotated with a scope.
    *
-   * <p>Useful for debugging or validation to ensure Pass 1 properly annotated expected nodes.
-   *
    * @param ctx The parse tree node to check
    * @return {@code true} if the node has an associated scope, {@code false} otherwise
    * @throws NullPointerException if ctx is null
@@ -174,9 +113,6 @@ public class ScopeAnnotator {
 
   /**
    * Removes the scope annotation for a parse tree node.
-   *
-   * <p>Rarely needed in normal compilation. May be useful for testing or incremental compilation
-   * scenarios where tree nodes are reused.
    *
    * @param ctx The parse tree node to clear
    * @return The scope that was associated with the node, or {@code null} if no annotation existed
@@ -198,8 +134,6 @@ public class ScopeAnnotator {
    * a new instance is typically preferred).
    */
   public void clear() {
-    // ParseTreeProperty doesn't expose clear(), so we'd need to track nodes
-    // For now, best practice is to create a new ScopeAnnotator per compilation
     throw new UnsupportedOperationException(
         "Clearing scope annotations is not supported. Create a new ScopeAnnotator instance for each"
             + " compilation.");
@@ -215,8 +149,6 @@ public class ScopeAnnotator {
    */
   @Override
   public String toString() {
-    // We can't easily get the size from ParseTreeProperty without reflection
-    // But we can provide basic debug info
     return "ScopeAnnotator[annotations exist, use hasScope() to query specific nodes]";
   }
 }

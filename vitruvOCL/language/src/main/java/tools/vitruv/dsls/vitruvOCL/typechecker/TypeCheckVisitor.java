@@ -78,25 +78,6 @@ import tools.vitruv.dsls.vitruvOCL.symboltable.VariableSymbol;
  *   <li>Variable redefinition in scopes
  * </ul>
  *
- * <h2>Example Type Checking</h2>
- *
- * <pre>{@code
- * // Type checking this constraint:
- * context Person inv:
- *   self.age >= 18 and self.company.employees->size() > 0
- *
- * // Type checking flow:
- * 1. context Person → bind self: Person
- * 2. self.age → Person has age: Integer → Integer
- * 3. 18 → Integer
- * 4. >= → requires Integer, Integer → Boolean ✓
- * 5. self.company → Person.company: Company → !Company!
- * 6. .employees → Company.employees: Set(Employee) → Set(Employee)
- * 7. ->size() → Set(T).size(): Integer → Integer
- * 8. > 0 → Integer > Integer → Boolean ✓
- * 9. and → Boolean and Boolean → Boolean ✓
- * }</pre>
- *
  * <h2>Usage in Pipeline</h2>
  *
  * <pre>{@code
@@ -112,7 +93,6 @@ import tools.vitruv.dsls.vitruvOCL.symboltable.VariableSymbol;
  * }
  * }</pre>
  *
- * @author Max
  * @see Type The type system implementation
  * @see TypeResolver Helper class for binary operation type resolution
  * @see EvaluationVisitor Phase 3 visitor that uses the type information
@@ -855,6 +835,16 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
   // ==================== Unary Operations & Navigation ====================
 
+  /**
+   * Visits a primary expression with navigation (`primaryWithNav`) in the AST.
+   *
+   * <p>This method performs type checking for a primary expression that may be followed by a chain
+   * of navigation operations (e.g., property or association accesses).
+   *
+   * @param ctx the context of the primary expression with navigation in the AST
+   * @return the resulting type of the expression after applying the navigation chain; {@link
+   *     Type#ERROR} if the base expression has no type
+   */
   @Override
   public Type visitPrimaryWithNav(VitruvOCLParser.PrimaryWithNavContext ctx) {
     // Get base type from primary expression
@@ -887,6 +877,24 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return currentType;
   }
 
+  /**
+   * Visits a unary minus (`-`) node in the AST.
+   *
+   * <p>This method performs type checking for the operand of the unary minus. It supports both
+   * scalar and collection types (one level of unwrapping):
+   *
+   * <ul>
+   *   <li>If the operand is a singleton or a collection, the base element type is extracted.
+   *   <li>Allowed base types are {@link Type#INTEGER} and {@link Type#DOUBLE}.
+   *   <li>If the type is invalid, an error is added to the error list and {@link Type#ERROR} is
+   *       returned.
+   * </ul>
+   *
+   * The type of the operand is stored in the {@code nodeTypes} map.
+   *
+   * @param ctx the context of the unary minus node in the AST
+   * @return the type of the operand if valid; otherwise {@link Type#ERROR}
+   */
   @Override
   public Type visitUnaryMinus(VitruvOCLParser.UnaryMinusContext ctx) {
     Type operandType = visit(ctx.operand);
@@ -911,6 +919,24 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return operandType;
   }
 
+  /**
+   * Visits a logical NOT (`not`) node in the AST.
+   *
+   * <p>This method performs type checking for the operand of a logical NOT expression. It supports
+   * both scalar and collection types (one level of unwrapping):
+   *
+   * <ul>
+   *   <li>If the operand is a singleton or a collection, the base element type is extracted.
+   *   <li>Allowed base type is {@link Type#BOOLEAN}.
+   *   <li>If the type is invalid, an error is added to the error list and {@link Type#ERROR} is
+   *       returned.
+   * </ul>
+   *
+   * The type of the operand is stored in the {@code nodeTypes} map.
+   *
+   * @param ctx the context of the logical NOT node in the AST
+   * @return the type of the operand if valid; otherwise {@link Type#ERROR}
+   */
   @Override
   public Type visitLogicalNot(VitruvOCLParser.LogicalNotContext ctx) {
     Type operandType = visit(ctx.operand);
@@ -1848,6 +1874,24 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return receiverType;
   }
 
+  /**
+   * Visits an 'excluding' operation node in the AST.
+   *
+   * <p>This method performs type checking for the 'excluding' operation, which removes an element
+   * from a collection.
+   *
+   * <ul>
+   *   <li>The operation requires that the receiver type (top of {@code receiverStack}) is a
+   *       collection.
+   *   <li>If the receiver is not a collection, an error is added and {@link Type#ERROR} is
+   *       returned.
+   * </ul>
+   *
+   * The type of the receiver is stored in the {@code nodeTypes} map.
+   *
+   * @param ctx the context of the 'excluding' operation node in the AST
+   * @return the type of the collection receiver if valid; otherwise {@link Type#ERROR}
+   */
   @Override
   public Type visitExcludingOp(VitruvOCLParser.ExcludingOpContext ctx) {
     Type receiverType = receiverStack.peek();
@@ -1866,6 +1910,25 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return receiverType;
   }
 
+  /**
+   * Visits an 'includes' operation node in the AST.
+   *
+   * <p>This method performs type checking for the 'includes' operation, which checks whether a
+   * collection contains a given element.
+   *
+   * <ul>
+   *   <li>The operation requires that the receiver type (top of {@code receiverStack}) is a
+   *       collection.
+   *   <li>If the receiver is not a collection, an error is added and {@link Type#ERROR} is
+   *       returned.
+   *   <li>If the type is valid, the resulting type of the operation is {@link Type#BOOLEAN}.
+   * </ul>
+   *
+   * The resulting type is stored in the {@code nodeTypes} map.
+   *
+   * @param ctx the context of the 'includes' operation node in the AST
+   * @return {@link Type#BOOLEAN} if the receiver is a collection; otherwise {@link Type#ERROR}
+   */
   @Override
   public Type visitIncludesOp(VitruvOCLParser.IncludesOpContext ctx) {
     Type receiverType = receiverStack.peek();
@@ -1884,6 +1947,25 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return Type.BOOLEAN;
   }
 
+  /**
+   * Visits an 'excludes' operation node in the AST.
+   *
+   * <p>This method performs type checking for the 'excludes' operation, which checks whether a
+   * collection does not contain a given element.
+   *
+   * <ul>
+   *   <li>The operation requires that the receiver type (top of {@code receiverStack}) is a
+   *       collection.
+   *   <li>If the receiver is not a collection, an error is added and {@link Type#ERROR} is
+   *       returned.
+   *   <li>If the type is valid, the resulting type of the operation is {@link Type#BOOLEAN}.
+   * </ul>
+   *
+   * The resulting type is stored in the {@code nodeTypes} map.
+   *
+   * @param ctx the context of the 'excludes' operation node in the AST
+   * @return {@link Type#BOOLEAN} if the receiver is a collection; otherwise {@link Type#ERROR}
+   */
   @Override
   public Type visitExcludesOp(VitruvOCLParser.ExcludesOpContext ctx) {
     Type receiverType = receiverStack.peek();
@@ -1986,6 +2068,35 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return resultType;
   }
 
+  /**
+   * Visits an 'append' operation node in the AST.
+   *
+   * <p>This method performs type checking and result type computation for the 'append' operation,
+   * which combines two collections by adding all elements of the argument collection to the
+   * receiver collection.
+   *
+   * <p>The steps are as follows:
+   *
+   * <ol>
+   *   <li>Retrieve the receiver type from {@code receiverStack} and the argument type by visiting
+   *       {@code ctx.arg}.
+   *   <li>Check that both the receiver and argument are collections; if not, an error is added and
+   *       {@link Type#ERROR} is returned.
+   *   <li>Compute the common element type of the two collections using {@link
+   *       Type#commonSuperType}.
+   *   <li>Determine the resulting collection type based on uniqueness and ordering:
+   *       <ul>
+   *         <li>If both are unique and any is ordered → {@link Type#orderedSet}.
+   *         <li>If both are unique → {@link Type#set}.
+   *         <li>If any is ordered → {@link Type#sequence}.
+   *         <li>Otherwise → {@link Type#bag}.
+   *       </ul>
+   *   <li>The computed result type is stored in {@code nodeTypes}.
+   * </ol>
+   *
+   * @param ctx the context of the 'append' operation node in the AST
+   * @return the resulting collection type if operands are valid; otherwise {@link Type#ERROR}
+   */
   @Override
   public Type visitAppendOp(VitruvOCLParser.AppendOpContext ctx) {
     // Same logic as union
@@ -2058,16 +2169,43 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return resultType;
   }
 
+  /**
+   * Visits a 'max' operation node in the AST.
+   *
+   * <p>This method delegates to {@link #visitAggregateOp} to perform type checking and result type
+   * computation for the 'max' aggregate operation over a collection.
+   *
+   * @param ctx the context of the 'max' operation node in the AST
+   * @return the resulting type of the aggregate operation
+   */
   @Override
   public Type visitMaxOp(VitruvOCLParser.MaxOpContext ctx) {
     return visitAggregateOp(ctx, "max");
   }
 
+  /**
+   * Visits a 'min' operation node in the AST.
+   *
+   * <p>This method delegates to {@link #visitAggregateOp} to perform type checking and result type
+   * computation for the 'min' aggregate operation over a collection.
+   *
+   * @param ctx the context of the 'min' operation node in the AST
+   * @return the resulting type of the aggregate operation
+   */
   @Override
   public Type visitMinOp(VitruvOCLParser.MinOpContext ctx) {
     return visitAggregateOp(ctx, "min");
   }
 
+  /**
+   * Visits an 'avg' operation node in the AST.
+   *
+   * <p>This method delegates to {@link #visitAggregateOp} to perform type checking and result type
+   * computation for the 'avg' aggregate operation over a collection.
+   *
+   * @param ctx the context of the 'avg' operation node in the AST
+   * @return the resulting type of the aggregate operation
+   */
   @Override
   public Type visitAvgOp(VitruvOCLParser.AvgOpContext ctx) {
     return visitAggregateOp(ctx, "avg");
@@ -2114,16 +2252,43 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return visitNumericOp(ctx, "abs");
   }
 
+  /**
+   * Visits a 'floor' operation node in the AST.
+   *
+   * <p>This method delegates to {@link #visitNumericOp} to perform type checking and result type
+   * computation for the 'floor' numeric operation.
+   *
+   * @param ctx the context of the 'floor' operation node in the AST
+   * @return the resulting numeric type of the operation
+   */
   @Override
   public Type visitFloorOp(VitruvOCLParser.FloorOpContext ctx) {
     return visitNumericOp(ctx, "floor");
   }
 
+  /**
+   * Visits a 'ceil' operation node in the AST.
+   *
+   * <p>This method delegates to {@link #visitNumericOp} to perform type checking and result type
+   * computation for the 'ceil' numeric operation.
+   *
+   * @param ctx the context of the 'ceil' operation node in the AST
+   * @return the resulting numeric type of the operation
+   */
   @Override
   public Type visitCeilOp(VitruvOCLParser.CeilOpContext ctx) {
     return visitNumericOp(ctx, "ceil");
   }
 
+  /**
+   * Visits a 'round' operation node in the AST.
+   *
+   * <p>This method delegates to {@link #visitNumericOp} to perform type checking and result type
+   * computation for the 'round' numeric operation.
+   *
+   * @param ctx the context of the 'round' operation node in the AST
+   * @return the resulting numeric type of the operation
+   */
   @Override
   public Type visitRoundOp(VitruvOCLParser.RoundOpContext ctx) {
     return visitNumericOp(ctx, "round");
@@ -2271,6 +2436,17 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
   }
 
+  /**
+   * Visits a 'reject' operation node in the AST.
+   *
+   * <p>The 'reject' operation filters elements of a collection by a predicate, keeping only
+   * elements for which the predicate evaluates to false.
+   *
+   * <p>
+   *
+   * @param ctx the context of the 'reject' operation node in the AST
+   * @return the receiver collection type if successful; otherwise {@link Type#ERROR}
+   */
   @Override
   public Type visitRejectOp(VitruvOCLParser.RejectOpContext ctx) {
     Type receiverType = receiverStack.peek();
@@ -2346,6 +2522,18 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
   }
 
+  /**
+   * Visits a 'collect' operation node in the AST.
+   *
+   * <p>The 'collect' operation applies a body expression to each element of a collection, producing
+   * a new collection of the results.
+   *
+   * <p>This method performs type checking similarly to 'reject', refining iterator variable types,
+   * visiting the body, and computing the result type while preserving the collection kind.
+   *
+   * @param ctx the context of the 'collect' operation node in the AST
+   * @return the resulting collection type if successful; otherwise {@link Type#ERROR}
+   */
   @Override
   public Type visitCollectOp(VitruvOCLParser.CollectOpContext ctx) {
     Type receiverType = receiverStack.peek();
@@ -2416,6 +2604,18 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
   }
 
+  /**
+   * Visits a 'forAll' operation node in the AST.
+   *
+   * <p>The 'forAll' operation checks that a predicate evaluates to true for all elements in a
+   * collection.
+   *
+   * <p>This method performs type checking similar to 'reject', but ensures that the body expression
+   * returns Boolean values and that the final result type is {@link Type#BOOLEAN}.
+   *
+   * @param ctx the context of the 'forAll' operation node in the AST
+   * @return {@link Type#BOOLEAN} if successful; otherwise {@link Type#ERROR}
+   */
   @Override
   public Type visitForAllOp(VitruvOCLParser.ForAllOpContext ctx) {
     Type receiverType = receiverStack.peek();
@@ -2492,6 +2692,18 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
   }
 
+  /**
+   * Visits an 'exists' operation node in the AST.
+   *
+   * <p>The 'exists' operation checks whether there exists at least one element in a collection for
+   * which the predicate evaluates to true.
+   *
+   * <p>This method performs type checking similar to 'forAll', ensuring that the body expression
+   * returns Boolean values and that the final result type is {@link Type#BOOLEAN}.
+   *
+   * @param ctx the context of the 'exists' operation node in the AST
+   * @return {@link Type#BOOLEAN} if successful; otherwise {@link Type#ERROR}
+   */
   @Override
   public Type visitExistsOp(VitruvOCLParser.ExistsOpContext ctx) {
     Type receiverType = receiverStack.peek();
@@ -2603,6 +2815,22 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return Type.STRING;
   }
 
+  /**
+   * Visits a 'substring' operation node in the AST.
+   *
+   * <p>This operation extracts a substring from a String receiver using start and end indices.
+   *
+   * <p>Steps:
+   *
+   * <ul>
+   *   <li>Check that the receiver is of type {@link Type#STRING}.
+   *   <li>Visit and check that both start and end indices are of type {@link Type#INTEGER}.
+   *   <li>If type checks pass, the resulting type is {@link Type#STRING}.
+   * </ul>
+   *
+   * @param ctx the context of the 'substring' operation node in the AST
+   * @return {@link Type#STRING} if the receiver and indices are valid; otherwise {@link Type#ERROR}
+   */
   @Override
   public Type visitSubstringOp(VitruvOCLParser.SubstringOpContext ctx) {
     Type receiverType = receiverStack.peek();
@@ -2642,16 +2870,49 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return Type.STRING;
   }
 
+  /**
+   * Visits a 'toUpper' operation node in the AST.
+   *
+   * <p>Delegates to {@link #visitStringNoArgOp} for type checking and ensures the receiver is a
+   * String. The result type is {@link Type#STRING}.
+   *
+   * @param ctx the context of the 'toUpper' operation node in the AST
+   * @return {@link Type#STRING} if the receiver is a String; otherwise {@link Type#ERROR}
+   */
   @Override
   public Type visitToUpperOp(VitruvOCLParser.ToUpperOpContext ctx) {
     return visitStringNoArgOp(ctx, "toUpper");
   }
 
+  /**
+   * Visits a 'toLower' operation node in the AST.
+   *
+   * <p>Delegates to {@link #visitStringNoArgOp} for type checking and ensures the receiver is a
+   * String. The result type is {@link Type#STRING}.
+   *
+   * @param ctx the context of the 'toLower' operation node in the AST
+   * @return {@link Type#STRING} if the receiver is a String; otherwise {@link Type#ERROR}
+   */
   @Override
   public Type visitToLowerOp(VitruvOCLParser.ToLowerOpContext ctx) {
     return visitStringNoArgOp(ctx, "toLower");
   }
 
+  /**
+   * Visits an 'indexOf' operation node in the AST.
+   *
+   * <p>This operation returns the position of a substring within a String receiver.
+   *
+   * <ul>
+   *   <li>Check that the receiver is {@link Type#STRING}.
+   *   <li>Check that the argument is {@link Type#STRING}.
+   *   <li>If valid, the resulting type is {@link Type#INTEGER}.
+   * </ul>
+   *
+   * @param ctx the context of the 'indexOf' operation node in the AST
+   * @return {@link Type#INTEGER} if the receiver and argument are valid; otherwise {@link
+   *     Type#ERROR}
+   */
   @Override
   public Type visitIndexOfOp(VitruvOCLParser.IndexOfOpContext ctx) {
     Type receiverType = receiverStack.peek();
@@ -2680,6 +2941,21 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return Type.INTEGER;
   }
 
+  /**
+   * Visits an 'equalsIgnoreCase' operation node in the AST.
+   *
+   * <p>This operation compares the receiver String with another String argument, ignoring case.
+   *
+   * <ul>
+   *   <li>Check that the receiver is {@link Type#STRING}.
+   *   <li>Check that the argument is {@link Type#STRING}.
+   *   <li>If valid, the resulting type is {@link Type#BOOLEAN}.
+   * </ul>
+   *
+   * @param ctx the context of the 'equalsIgnoreCase' operation node in the AST
+   * @return {@link Type#BOOLEAN} if the receiver and argument are valid; otherwise {@link
+   *     Type#ERROR}
+   */
   @Override
   public Type visitEqualsIgnoreCaseOp(VitruvOCLParser.EqualsIgnoreCaseOpContext ctx) {
     Type receiverType = receiverStack.peek();
@@ -2773,6 +3049,22 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     };
   }
 
+  /**
+   * Visits an 'oclIsTypeOf' operation node in the AST.
+   *
+   * <p>This operation checks whether each element of a collection is exactly of a given type.
+   *
+   * <ul>
+   *   <li>Ensures that the receiver is a collection; otherwise reports an error and returns {@link
+   *       Type#ERROR}.
+   *   <li>The resulting type preserves the collection kind of the receiver, but with {@link
+   *       Type#BOOLEAN} as element type.
+   *   <li>The resulting type is stored in {@code nodeTypes}.
+   * </ul>
+   *
+   * @param ctx the context of the 'oclIsTypeOf' operation node in the AST
+   * @return the collection of Boolean type if receiver is valid; otherwise {@link Type#ERROR}
+   */
   @Override
   public Type visitOclIsTypeOfOp(VitruvOCLParser.OclIsTypeOfOpContext ctx) {
     Type receiverType = receiverStack.peek();
@@ -2792,6 +3084,24 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return resultType;
   }
 
+  /**
+   * Visits an 'oclAsType' operation node in the AST.
+   *
+   * <p>This operation casts each element of a collection to a specified target type.
+   *
+   * <ul>
+   *   <li>Ensures that the receiver is a collection; otherwise reports an error and returns {@link
+   *       Type#ERROR}.
+   *   <li>Visits the target type expression to determine the cast type.
+   *   <li>The resulting type preserves the collection kind of the receiver, but with the target
+   *       element type.
+   *   <li>The resulting type is stored in {@code nodeTypes}.
+   * </ul>
+   *
+   * @param ctx the context of the 'oclAsType' operation node in the AST
+   * @return the collection with elements cast to the target type if receiver is valid; otherwise
+   *     {@link Type#ERROR}
+   */
   @Override
   public Type visitOclAsTypeOp(VitruvOCLParser.OclAsTypeOpContext ctx) {
     Type receiverType = receiverStack.peek();
@@ -2883,46 +3193,127 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return visit(ctx.prefixedExpCS());
   }
 
+  /**
+   * Visits a literal node in the AST.
+   *
+   * <p>Delegates type checking to the underlying literal expression.
+   *
+   * @param ctx the context of the literal node in the AST
+   * @return the type of the literal expression
+   */
   @Override
   public Type visitLiteral(VitruvOCLParser.LiteralContext ctx) {
     return visit(ctx.literalExpCS());
   }
 
+  /**
+   * Visits a conditional (if-then-else) node in the AST.
+   *
+   * <p>Delegates type checking to the underlying if-expression.
+   *
+   * @param ctx the context of the conditional node in the AST
+   * @return the type of the if-expression
+   */
   @Override
   public Type visitConditional(VitruvOCLParser.ConditionalContext ctx) {
     return visit(ctx.ifExpCS());
   }
 
+  /**
+   * Visits a let-binding node in the AST.
+   *
+   * <p>Delegates type checking to the underlying let-expression.
+   *
+   * @param ctx the context of the let-binding node in the AST
+   * @return the type of the let-expression
+   */
   @Override
   public Type visitLetBinding(VitruvOCLParser.LetBindingContext ctx) {
     return visit(ctx.letExpCS());
   }
 
+  /**
+   * Visits a collection literal node in the AST.
+   *
+   * <p>Delegates type checking to the underlying collection literal expression.
+   *
+   * @param ctx the context of the collection literal node in the AST
+   * @return the type of the collection literal expression
+   */
   @Override
   public Type visitCollectionLiteral(VitruvOCLParser.CollectionLiteralContext ctx) {
     return visit(ctx.collectionLiteralExpCS());
   }
 
+  /**
+   * Visits a type literal node in the AST.
+   *
+   * <p>Delegates type checking to the underlying type literal expression.
+   *
+   * @param ctx the context of the type literal node in the AST
+   * @return the type of the type literal expression
+   */
   @Override
   public Type visitTypeLiteral(VitruvOCLParser.TypeLiteralContext ctx) {
     return visit(ctx.typeLiteralExpCS());
   }
 
+  /**
+   * Visits a nested expression node in the AST.
+   *
+   * <p>Delegates type checking to the underlying nested expression.
+   *
+   * @param ctx the context of the nested expression node in the AST
+   * @return the type of the nested expression
+   */
   @Override
   public Type visitNested(VitruvOCLParser.NestedContext ctx) {
     return visit(ctx.nestedExpCS());
   }
 
+  /**
+   * Visits a 'self' expression node in the AST.
+   *
+   * <p>Delegates type checking to the underlying self expression.
+   *
+   * @param ctx the context of the self expression node in the AST
+   * @return the type of the self expression
+   */
   @Override
   public Type visitSelf(VitruvOCLParser.SelfContext ctx) {
     return visit(ctx.selfExpCS());
   }
 
+  /**
+   * Visits a variable reference node in the AST.
+   *
+   * <p>Delegates type checking to the underlying variable expression.
+   *
+   * @param ctx the context of the variable reference node in the AST
+   * @return the type of the variable expression
+   */
   @Override
   public Type visitVariable(VitruvOCLParser.VariableContext ctx) {
     return visit(ctx.variableExpCS());
   }
 
+  /**
+   * Visits a nested expression node in the AST.
+   *
+   * <p>A nested expression may contain one or more sub-expressions. This method performs the
+   * following steps:
+   *
+   * <ul>
+   *   <li>Checks whether the nested expression contains any sub-expressions; if empty, an error is
+   *       reported and {@link Type#ERROR} is returned.
+   *   <li>Iterates over all sub-expressions, visiting each one and updating the resulting type to
+   *       the type of the last sub-expression.
+   *   <li>Stores the resulting type in {@code nodeTypes}.
+   * </ul>
+   *
+   * @param ctx the context of the nested expression node in the AST
+   * @return the type of the last sub-expression if any exist; otherwise {@link Type#ERROR}
+   */
   @Override
   public Type visitNestedExpCS(VitruvOCLParser.NestedExpCSContext ctx) {
     List<VitruvOCLParser.ExpCSContext> exps = ctx.expCS();
@@ -2946,11 +3337,29 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return resultType;
   }
 
+  /**
+   * Visits a type literal expression node in the AST.
+   *
+   * <p>This method delegates type checking to the underlying type literal node. The type literal
+   * represents a type as an expression (e.g., a class or primitive type).
+   *
+   * @param ctx the context of the type literal expression node in the AST
+   * @return the type of the underlying type literal
+   */
   @Override
   public Type visitTypeLiteralExpCS(VitruvOCLParser.TypeLiteralExpCSContext ctx) {
     return visit(ctx.typeLiteralCS());
   }
 
+  /**
+   * Visits a property access node in the AST.
+   *
+   * <p>This method performs type checking for property access expressions, e.g., accessing a field
+   * or attribute of an object or element of a collection.
+   *
+   * @param ctx the context of the property access node in the AST
+   * @return the type of the accessed property
+   */
   @Override
   public Type visitPropertyAccess(VitruvOCLParser.PropertyAccessContext ctx) {
     Type receiverType = receiverStack.peek();
@@ -2960,26 +3369,66 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return resultType;
   }
 
+  /**
+   * Visits a collection operation node in the AST.
+   *
+   * <p>Delegates type checking to the underlying collection operation expression.
+   *
+   * @param ctx the context of the collection operation node in the AST
+   * @return the type of the collection operation expression
+   */
   @Override
   public Type visitCollectionOperation(VitruvOCLParser.CollectionOperationContext ctx) {
     return visit(ctx.collectionOpCS());
   }
 
+  /**
+   * Visits a string operation node in the AST.
+   *
+   * <p>Delegates type checking to the underlying string operation expression.
+   *
+   * @param ctx the context of the string operation node in the AST
+   * @return the type of the string operation expression
+   */
   @Override
   public Type visitStringOperation(VitruvOCLParser.StringOperationContext ctx) {
     return visit(ctx.stringOpCS());
   }
 
+  /**
+   * Visits an iterator operation node in the AST.
+   *
+   * <p>Delegates type checking to the underlying iterator operation expression.
+   *
+   * @param ctx the context of the iterator operation node in the AST
+   * @return the type of the iterator operation expression
+   */
   @Override
   public Type visitIteratorOperation(VitruvOCLParser.IteratorOperationContext ctx) {
     return visit(ctx.iteratorOpCS());
   }
 
+  /**
+   * Visits a type operation node in the AST.
+   *
+   * <p>Delegates type checking to the underlying type operation expression.
+   *
+   * @param ctx the context of the type operation node in the AST
+   * @return the type of the type operation expression
+   */
   @Override
   public Type visitTypeOperation(VitruvOCLParser.TypeOperationContext ctx) {
     return visit(ctx.typeOpCS());
   }
 
+  /**
+   * Visits a 'onespace' lexical token in the AST.
+   *
+   * <p>This node represents a whitespace token and has type {@link Type#ANY}.
+   *
+   * @param ctx the context of the onespace token in the AST
+   * @return {@link Type#ANY} since it represents a lexical token
+   */
   @Override
   public Type visitOnespace(VitruvOCLParser.OnespaceContext ctx) {
     return Type.ANY; // Lexical token

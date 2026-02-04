@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="satelliteSystem" nsURI="http://www.example.org/satelliteSystem"
+    nsPrefix="satelliteSystem">
+  <eClassifiers xsi:type="ecore:EClass" name="SatelliteNetwork">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="networkName" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="operator" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="satellites" lowerBound="1"
+        upperBound="-1" eType="#//Satellite"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="groundStations" upperBound="-1"
+        eType="#//GroundStation"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Satellite">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="identifier" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="serialNumber" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="massKg" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="active" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="instruments" upperBound="-1"
+        eType="#//Instrument" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="assignedStation" eType="#//GroundStation"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Instrument">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="instrumentName" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="category" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="powerDraw" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="GroundStation">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="stationName" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="location" lowerBound="1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="trackedSatellites" upperBound="-1"
+        eType="#//Satellite"/>
+  </eClassifiers>
+</ecore:EPackage>
