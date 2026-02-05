@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.eclipse.emf.ecore.EClass;
@@ -1217,35 +1218,56 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitIfExpCS(VitruvOCLParser.IfExpCSContext ctx) {
-    // Parse structure using token positions to identify condition, then, and else parts
     List<VitruvOCLParser.ExpCSContext> allExps = ctx.expCS();
 
     int thenIndex = findKeywordIndex(ctx, "then");
     int elseIndex = findKeywordIndex(ctx, "else");
 
-    // Partition expressions into condition, then-branch, and else-branch
+    System.out.println("=== IF EXPRESSION DEBUG ===");
+    System.out.println("Total expressions: " + allExps.size());
+    System.out.println("thenIndex: " + thenIndex);
+    System.out.println("elseIndex: " + elseIndex);
+
     List<VitruvOCLParser.ExpCSContext> condExps = new ArrayList<>();
     List<VitruvOCLParser.ExpCSContext> thenExps = new ArrayList<>();
     List<VitruvOCLParser.ExpCSContext> elseExps = new ArrayList<>();
 
     for (VitruvOCLParser.ExpCSContext exp : allExps) {
       int expIndex = exp.getStart().getTokenIndex();
+      System.out.println("Expression '" + exp.getText() + "' at token index: " + expIndex);
+
       if (expIndex < thenIndex) {
+        System.out.println("  -> Added to CONDITION");
         condExps.add(exp);
       } else if (expIndex < elseIndex) {
+        System.out.println("  -> Added to THEN");
         thenExps.add(exp);
       } else {
+        System.out.println("  -> Added to ELSE");
         elseExps.add(exp);
       }
     }
 
+    System.out.println("condExps size: " + condExps.size());
+    System.out.println("thenExps size: " + thenExps.size());
+    System.out.println("elseExps size: " + elseExps.size());
+
     // Type-check condition
     Type condType = null;
     for (VitruvOCLParser.ExpCSContext exp : condExps) {
+      System.out.println("Visiting CONDITION: " + exp.getText());
       condType = visit(exp);
+      System.out.println("  -> Type: " + condType);
     }
 
-    if (condType != null && !condType.isConformantTo(Type.BOOLEAN)) {
+    System.out.println("Final condType: " + condType);
+    System.out.println(
+        "condType.getElementType(): " + (condType != null ? condType.getElementType() : "null"));
+
+    if (condType != null
+        && condType.getElementType() != Type.BOOLEAN
+        && !condType.isConformantTo(Type.BOOLEAN)) {
+      System.out.println("ERROR: Condition type check failed");
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
@@ -1257,19 +1279,24 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     // Type-check then-branch
     Type thenType = null;
     for (VitruvOCLParser.ExpCSContext exp : thenExps) {
+      System.out.println("Visiting THEN: " + exp.getText());
       thenType = visit(exp);
+      System.out.println("  -> Type: " + thenType);
     }
 
     // Type-check else-branch
     Type elseType = null;
     for (VitruvOCLParser.ExpCSContext exp : elseExps) {
+      System.out.println("Visiting ELSE: " + exp.getText());
       elseType = visit(exp);
+      System.out.println("  -> Type: " + elseType);
     }
 
     if (thenType == null || elseType == null) {
       return Type.ERROR;
     }
 
+    // Determine result type
     // Determine result type (common supertype of branches)
     Type resultType;
     if (thenType.equals(elseType)) {
@@ -1280,11 +1307,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       resultType = thenType;
     } else {
       resultType = Type.commonSuperType(thenType, elseType);
-      if (resultType == null) {
+      // ADD THIS CHECK:
+      if (resultType == Type.ANY || resultType == null) {
         errors.add(
             ctx.getStart().getLine(),
             ctx.getStart().getCharPositionInLine(),
-            "Incompatible branch types",
+            "Incompatible branch types: " + thenType + " and " + elseType,
             ErrorSeverity.ERROR,
             "type-checker");
         resultType = Type.ERROR;
@@ -1302,15 +1330,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    * @param keyword The keyword to find ("then" or "else")
    * @return The token index, or Integer.MAX_VALUE if not found
    */
-  private int findKeywordIndex(VitruvOCLParser.IfExpCSContext ctx, String keyword) {
-    if (tokens == null) return Integer.MAX_VALUE;
-
-    int start = ctx.getStart().getTokenIndex();
-    int stop = ctx.getStop().getTokenIndex();
-
-    for (int i = start; i <= stop; i++) {
-      if (tokens.get(i).getText().equals(keyword)) {
-        return i;
+  private int findKeywordIndex(ParserRuleContext ctx, String keyword) {
+    for (int i = 0; i < ctx.getChildCount(); i++) {
+      ParseTree child = ctx.getChild(i);
+      if (child instanceof TerminalNode) {
+        if (child.getText().equals(keyword)) {
+          return ((TerminalNode) child).getSymbol().getTokenIndex();
+        }
       }
     }
     return Integer.MAX_VALUE;
@@ -1469,8 +1495,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitNumberLit(VitruvOCLParser.NumberLitContext ctx) {
-    nodeTypes.put(ctx, Type.INTEGER);
-    return Type.INTEGER;
+    String text = ctx.getText();
+    Type type = text.contains(".") ? Type.DOUBLE : Type.INTEGER;
+    nodeTypes.put(ctx, type);
+    return type;
   }
 
   /**
@@ -1493,6 +1521,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitBooleanLit(VitruvOCLParser.BooleanLitContext ctx) {
+    System.out.println("visitBooleanLit called for: " + ctx.getText());
     nodeTypes.put(ctx, Type.BOOLEAN);
     return Type.BOOLEAN;
   }

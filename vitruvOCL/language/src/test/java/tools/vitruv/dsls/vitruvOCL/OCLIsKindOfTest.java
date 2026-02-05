@@ -1,3 +1,15 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Max Oesterle
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *    Max Oesterle - initial API and implementation
+ *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -421,6 +433,13 @@ public class OCLIsKindOfTest {
           public Set<String> getAvailableMetamodels() {
             return Set.of();
           }
+
+          @Override
+          public String getInstanceNameByIndex(int index) {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException(
+                "Unimplemented method 'getInstanceNameByIndex'");
+          }
         };
 
     // Initialize 3-pass architecture
@@ -483,6 +502,13 @@ public class OCLIsKindOfTest {
           @Override
           public Set<String> getAvailableMetamodels() {
             return Set.of();
+          }
+
+          @Override
+          public String getInstanceNameByIndex(int index) {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException(
+                "Unimplemented method 'getInstanceNameByIndex'");
           }
         };
 
@@ -761,6 +787,13 @@ public class OCLIsKindOfTest {
           @Override
           public Set<String> getAvailableMetamodels() {
             return Set.of();
+          }
+
+          @Override
+          public String getInstanceNameByIndex(int index) {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException(
+                "Unimplemented method 'getInstanceNameByIndex'");
           }
         };
 

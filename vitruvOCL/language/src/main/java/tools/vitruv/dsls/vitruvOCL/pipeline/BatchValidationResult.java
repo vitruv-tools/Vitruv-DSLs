@@ -1,3 +1,15 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Max Oesterle
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *    Max Oesterle - initial API and implementation
+ *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL.pipeline;
 
 import java.util.*;
@@ -145,5 +157,34 @@ public class BatchValidationResult {
     }
 
     return sb.toString();
+  }
+
+  /**
+   * Returns a detailed report of all constraint violations and errors.
+   *
+   * <p>Includes satisfied/violated counts and detailed information for each failed constraint
+   * including the constraint text, compilation errors, file errors, and violation warnings.
+   *
+   * @return Formatted string with complete validation results
+   */
+  public String getDetailedReport() {
+    StringBuilder report = new StringBuilder();
+
+    report.append("Satisfied: ").append(getSatisfiedConstraints().size()).append("\n");
+    report.append("Violated: ").append(getViolatedConstraints().size()).append("\n");
+
+    for (ConstraintResult cr : results) {
+      if (!cr.isSatisfied() || !cr.isSuccess()) {
+        report.append("\n--- FAILED CONSTRAINT ---\n");
+        report.append("Constraint: ").append(cr.getConstraint()).append("\n");
+        report.append("Success: ").append(cr.isSuccess()).append("\n");
+        report.append("Satisfied: ").append(cr.isSatisfied()).append("\n");
+        report.append("Errors: ").append(cr.getCompilerErrors()).append("\n");
+        report.append("File Errors: ").append(cr.getFileErrors()).append("\n");
+        report.append("Warnings: ").append(cr.getWarnings()).append("\n");
+      }
+    }
+
+    return report.toString();
   }
 }

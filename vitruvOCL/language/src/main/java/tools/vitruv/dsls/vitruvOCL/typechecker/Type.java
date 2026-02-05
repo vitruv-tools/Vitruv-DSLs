@@ -338,6 +338,7 @@ public abstract class Type {
     @Override
     public boolean isConformantTo(Type other) {
       if (other == INTEGER) return true;
+      if (other == DOUBLE) return true;
       if (other == ERROR) return true;
       if (other == ANY) return true;
 
@@ -399,6 +400,7 @@ public abstract class Type {
     @Override
     public boolean isConformantTo(Type other) {
       if (other == DOUBLE) return true;
+      if (other == INTEGER) return true;
       if (other == ERROR) return true;
       if (other == ANY) return true;
 

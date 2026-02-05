@@ -1,3 +1,15 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Max Oesterle
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *    Max Oesterle - initial API and implementation
+ *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -205,7 +217,7 @@ public class VitruvOCLErrorHandlingTest {
             .anyMatch(w -> w.getType() == Warning.WarningType.CONSTRAINT_VIOLATION),
         "Should have constraint violation warning");
     assertTrue(
-        result.getWarnings().stream().anyMatch(w -> w.getMessage().contains("indices")),
+        result.getWarnings().stream().anyMatch(w -> w.getMessage().contains("instances")),
         "Should indicate which instances violated");
   }
 

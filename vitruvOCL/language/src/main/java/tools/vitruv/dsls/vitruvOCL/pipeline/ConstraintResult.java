@@ -1,3 +1,15 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Max Oesterle
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *    Max Oesterle - initial API and implementation
+ *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL.pipeline;
 
 import java.util.*;
@@ -171,5 +183,35 @@ public class ConstraintResult {
     }
 
     return sb.toString();
+  }
+
+  /**
+   * Returns a human-readable summary of warnings and errors.
+   *
+   * <p>Provides a concise status message indicating whether the constraint evaluation encountered
+   * any issues:
+   *
+   * <ul>
+   *   <li>If compilation failed: Lists compiler errors
+   *   <li>If constraints violated: Reports number of violated instances
+   *   <li>If all clear: Confirms successful evaluation
+   * </ul>
+   *
+   * @return Human-readable warning/error summary
+   */
+  public String getWarningsSummary() {
+    if (!isSuccess()) {
+      return "Compilation failed: " + compilerErrors.size() + " error(s) detected";
+    }
+
+    if (!isSatisfied()) {
+      long violationCount =
+          warnings.stream()
+              .filter(w -> w.getType() == Warning.WarningType.CONSTRAINT_VIOLATION)
+              .count();
+      return "Warnings: " + violationCount + " constraint violation(s) detected";
+    }
+
+    return "No warnings - constraint satisfied";
   }
 }

@@ -1,3 +1,15 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Max Oesterle
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *    Max Oesterle - initial API and implementation
+ *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL.pipeline;
 
 import java.io.IOException;
@@ -36,6 +48,9 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
 
   /** Maps EClasses to all instances (including subtype instances) */
   private final Map<EClass, List<EObject>> instances = new HashMap<>();
+
+  /** Maps instance index to source filename for error reporting */
+  private final List<String> instanceFilenames = new ArrayList<>();
 
   /** EMF resource set for loading metamodels */
   private final ResourceSet resourceSet;
@@ -123,8 +138,10 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
         instanceResourceSet.getResource(
             URI.createFileURI(xmiPath.toAbsolutePath().toString()), true);
 
+    String filename = xmiPath.getFileName().toString();
+
     for (EObject root : resource.getContents()) {
-      addInstanceRecursive(root);
+      addInstanceRecursive(root, filename);
     }
   }
 
@@ -139,12 +156,18 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   }
 
   /** Recursively indexes instance and all contained objects by EClass. */
-  private void addInstanceRecursive(EObject instance) {
+  private void addInstanceRecursive(EObject instance, String sourceFile) {
     instances.computeIfAbsent(instance.eClass(), k -> new ArrayList<>()).add(instance);
+    instanceFilenames.add(sourceFile);
 
     for (EObject child : instance.eContents()) {
-      addInstanceRecursive(child);
+      addInstanceRecursive(child, sourceFile);
     }
+  }
+
+  /** Legacy method for backward compatibility */
+  private void addInstanceRecursive(EObject instance) {
+    addInstanceRecursive(instance, "unknown");
   }
 
   /**
@@ -198,11 +221,26 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   }
 
   /**
+   * Returns the source filename for an instance at the given index.
+   *
+   * @param index The instance index (0-based, across all loaded instances)
+   * @return The filename (e.g., "spacecraft-atlas.spacemission"), or null if index out of bounds
+   */
+  @Override
+  public String getInstanceNameByIndex(int index) {
+    if (index >= 0 && index < instanceFilenames.size()) {
+      return instanceFilenames.get(index);
+    }
+    return null;
+  }
+
+  /**
    * Manually adds instance to index.
    *
    * @param instance EObject to register
    */
   public void addInstance(EObject instance) {
     instances.computeIfAbsent(instance.eClass(), k -> new ArrayList<>()).add(instance);
+    instanceFilenames.add("manually-added");
   }
 }

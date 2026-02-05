@@ -1,3 +1,15 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Max Oesterle
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *    Max Oesterle - initial API and implementation
+ *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -1194,5 +1206,121 @@ public class CrossMetamodelConstraintTest {
 
     assertTrue(result.isSuccess());
     assertFalse(result.isSatisfied(), "Should not find impossible serial number");
+  }
+
+  /**
+   * Tests serialNumberMatch constraint with spacecraft-atlas that SHOULD match satellite-atlas.
+   * Both have serialNumber "ATLAS-V-2002".
+   */
+  @Test
+  public void testSerialNumberMatchAtlas() throws Exception {
+    String constraint =
+        """
+        context spaceMission::Spacecraft inv serialNumberMatch:
+          satelliteSystem::Satellite.allInstances().exists(sat |
+            sat.serialNumber == self.serialNumber
+          )
+        """;
+
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint,
+            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            new Path[] {
+              Path.of("src/test/resources/test-models/spacecraft-atlas.spacemission"),
+              Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem"),
+              Path.of("src/test/resources/test-models/satellite-voyager.satellitesystem"),
+              Path.of("src/test/resources/test-models/satellite-hubble.satellitesystem")
+            });
+
+    assertTrue(result.isSuccess(), "Constraint should compile without errors");
+    assertTrue(
+        result.isSatisfied(), "spacecraft-atlas should match satellite-atlas by serialNumber");
+  }
+
+  /**
+   * Tests correspondingSpacecraft constraint with satellite-atlas. EXPECTED TO FAIL due to type
+   * mismatch: Spacecraft.mass (EInt) vs Satellite.massKg (EDouble)
+   */
+  @Test
+  public void testCorrespondingSpacecraftTypeMismatch() throws Exception {
+    String constraint =
+        """
+        context satelliteSystem::Satellite inv correspondingSpacecraft:
+          spaceMission::Spacecraft.allInstances().exists(sc |
+            sc.serialNumber == self.serialNumber and sc.mass == self.massKg
+          )
+        """;
+
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint,
+            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            new Path[] {
+              Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem"),
+              Path.of("src/test/resources/test-models/spacecraft-atlas.spacemission")
+            });
+
+    assertTrue(result.isSuccess(), "Constraint should compile without errors");
+    // This will fail because 20000 (int) != 20000.5 (double)
+    assertFalse(result.isSatisfied(), "Should fail: mass type mismatch (EInt vs EDouble)");
+  }
+
+  /**
+   * Tests serialInclusion constraint with spacecraft-atlas. Should pass since satellite-atlas has
+   * matching serialNumber.
+   */
+  @Test
+  public void testSerialInclusionAtlas() throws Exception {
+    String constraint =
+        """
+        context spaceMission::Spacecraft inv serialInclusion:
+          satelliteSystem::Satellite.allInstances().collect(sat |
+            sat.serialNumber
+          ).includes(self.serialNumber)
+        """;
+
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint,
+            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            new Path[] {
+              Path.of("src/test/resources/test-models/spacecraft-atlas.spacemission"),
+              Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem"),
+              Path.of("src/test/resources/test-models/satellite-voyager.satellitesystem"),
+              Path.of("src/test/resources/test-models/satellite-hubble.satellitesystem")
+            });
+
+    assertTrue(result.isSuccess(), "Constraint should compile without errors");
+    assertTrue(result.isSatisfied(), "Collected serial numbers should include ATLAS-V-2002");
+  }
+
+  /**
+   * Tests andLogic constraint with spacecraft-atlas (operational=true, has matching satellite).
+   * Should pass both conditions.
+   */
+  @Test
+  public void testAndLogicAtlas() throws Exception {
+    String constraint =
+        """
+        context spaceMission::Spacecraft inv andLogic:
+          satelliteSystem::Satellite.allInstances().exists(sat |
+            sat.serialNumber == self.serialNumber
+          ) and self.operational
+        """;
+
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint,
+            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            new Path[] {
+              Path.of("src/test/resources/test-models/spacecraft-atlas.spacemission"),
+              Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem"),
+              Path.of("src/test/resources/test-models/satellite-voyager.satellitesystem"),
+              Path.of("src/test/resources/test-models/satellite-hubble.satellitesystem")
+            });
+
+    assertTrue(result.isSuccess(), "Constraint should compile without errors");
+    assertTrue(result.isSatisfied(), "spacecraft-atlas is operational and has matching satellite");
   }
 }

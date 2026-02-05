@@ -1,3 +1,18 @@
+/*******************************************************************************
+ * Copyright (c) 2012, 2016 University of Mannheim: Chair for Software Engineering
+ * Copyright (c) 2026 Max Oesterle
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *    Ralph Gerbig - initial API and implementation and initial documentation
+ *    Arne Lange - ocl2 implementation
+ *    Max Oesterle - VitruvOCL implementation, extensive refactoring and extensions
+ *******************************************************************************/
 grammar VitruvOCL;
 
 // ============================================================================

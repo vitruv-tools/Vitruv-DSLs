@@ -28,20 +28,19 @@
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>
             <version>${antlr4.version}</version>
-    </dependency>
+        </dependency>
 
-        
-    <dependency>
-        <groupId>tools.vitruv.dsls</groupId>
-        <artifactId>vitruvocl-runtime</artifactId>
-        <version>${project.version}</version>
-    </dependency>
+        <dependency>
+            <groupId>tools.vitruv.dsls</groupId>
+            <artifactId>vitruvocl-runtime</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
-    <dependency>
-        <groupId>org.eclipse.emf</groupId>
-        <artifactId>org.eclipse.emf.ecore</artifactId>
-        <version>2.35.0</version>
-    </dependency>
+        <dependency>
+            <groupId>org.eclipse.emf</groupId>
+            <artifactId>org.eclipse.emf.ecore</artifactId>
+            <version>2.35.0</version>
+        </dependency>
 
         <!-- JUnit 5 API -->
         <dependency>
@@ -91,9 +90,27 @@
     </dependencies>
 
     <build>
-        <!-- ENTFERNT: <sourceDirectory> überschreibt nicht mehr src/main/java -->
-
         <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.11</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- ANTLR Plugin -->
             <plugin>
                 <groupId>org.antlr</groupId>
@@ -116,7 +133,7 @@
                 </executions>
             </plugin>
 
-            <!-- Build Helper Plugin - fügt ANTLR Output als zusätzliche Source hinzu -->
+            <!-- Build Helper Plugin -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
@@ -137,7 +154,7 @@
                 </executions>
             </plugin>
 
-            <!-- Surefire Plugin für JUnit 5 -->
+            <!-- Surefire Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -163,10 +180,43 @@
                 <executions>
                     <execution>
                         <id>execute-mwe2-generate</id>
-                        <phase>none</phase> <!-- deaktiviert -->
+                        <phase>none</phase>
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Assembly Plugin for JAR with dependencies -->
+            <plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-shade-plugin</artifactId>
+    <version>3.5.1</version>
+    <executions>
+        <execution>
+            <phase>package</phase>
+            <goals>
+                <goal>shade</goal>
+            </goals>
+            <configuration>
+                <filters>
+                    <filter>
+                        <artifact>*:*</artifact>
+                        <excludes>
+                            <exclude>META-INF/*.SF</exclude>
+                            <exclude>META-INF/*.DSA</exclude>
+                            <exclude>META-INF/*.RSA</exclude>
+                        </excludes>
+                    </filter>
+                </filters>
+                <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                        <mainClass>tools.vitruv.dsls.vitruvOCL.TestMain</mainClass>
+                    </transformer>
+                </transformers>
+                <finalName>vitruvOCL-${project.version}</finalName>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
         </plugins>
     </build>
 </project>

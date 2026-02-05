@@ -1,3 +1,15 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Max Oesterle
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *    Max Oesterle - initial API and implementation
+ *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -184,5 +196,634 @@ public class SingleMetamodelConstraintTest {
 
     assertTrue(result.isSuccess());
     assertTrue(result.isSatisfied());
+  }
+
+  /**
+   * Tests exists iterator on collections.
+   *
+   * <p>Validates exists() returns true when at least one element matches the condition.
+   */
+  @Test
+  public void testExistsIterator() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.exists(p | p.powerConsumption > 50)";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_WITH_PAYLOADS});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /**
+   * Tests select iterator filtering collections.
+   *
+   * <p>Validates select() filters elements and returns a subset matching the condition.
+   */
+  @Test
+  public void testSelectIterator() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.select(p | p.powerConsumption >"
+            + " 30).size() >= 1";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_WITH_PAYLOADS});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /**
+   * Tests reject iterator (inverse of select).
+   *
+   * <p>Validates reject() filters out elements matching the condition.
+   */
+  @Test
+  public void testRejectIterator() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.reject(p | p.powerConsumption >"
+            + " 200).notEmpty()";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_WITH_PAYLOADS});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /**
+   * Tests collect iterator for transformation.
+   *
+   * <p>Validates collect() transforms elements by applying an expression to each.
+   */
+  @Test
+  public void testCollectIterator() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.collect(p | p.powerConsumption).sum()"
+            + " < 500";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_POWER_SUM});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests isEmpty() on empty collections. */
+  @Test
+  public void testIsEmptyOperation() throws Exception {
+    String constraint = "context spaceMission::Mission inv: self.spacecraft.isEmpty() == false";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {MISSION_APOLLO});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests notEmpty() on non-empty collections. */
+  @Test
+  public void testNotEmptyOperation() throws Exception {
+    String constraint = "context spaceMission::Spacecraft inv: self.payloads.notEmpty()";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_WITH_PAYLOADS});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests includes() membership check. */
+  @Test
+  public void testIncludesOperation() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.powerConsumption.includes(50)";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_WITH_PAYLOADS});
+
+    assertTrue(result.isSuccess());
+    // Result depends on whether any payload has exactly 50W consumption
+  }
+
+  /** Tests excludes() negative membership check. */
+  @Test
+  public void testExcludesOperation() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.powerConsumption.excludes(999)";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_WITH_PAYLOADS});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests chained iterator operations. */
+  @Test
+  public void testChainedIterators() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.select(p | p.powerConsumption >"
+            + " 30).collect(p | p.powerConsumption).sum() < 400";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_POWER_SUM});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests logical AND in constraints. */
+  @Test
+  public void testLogicalAnd() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.operational and self.mass < 2000";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_OPERATIONAL});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests logical OR in constraints. */
+  @Test
+  public void testLogicalOr() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.mass > 5000 or self.operational";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_OPERATIONAL});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests logical NOT in constraints. */
+  @Test
+  public void testLogicalNot() throws Exception {
+    String constraint = "context spaceMission::Spacecraft inv: not (self.mass > 10000)";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_HEAVY});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests implies operator (logical implication). */
+  @Test
+  public void testImpliesOperator() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.operational implies self.payloads.notEmpty()";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_ACTIVE});
+
+    assertTrue(result.isSuccess());
+    // Satisfaction depends on model data
+  }
+
+  /** Tests nested forAll iterators. */
+  @Test
+  public void testNestedForAll() throws Exception {
+    String constraint =
+        "context spaceMission::Mission inv: self.spacecraft.forAll(s | s.payloads.forAll(p |"
+            + " p.powerConsumption > 0))";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {MISSION_APOLLO});
+
+    assertTrue(result.isSuccess());
+  }
+
+  /** Tests arithmetic in constraints. */
+  @Test
+  public void testArithmeticOperations() throws Exception {
+    String constraint = "context spaceMission::Spacecraft inv: (self.mass * 2) - 1000 > 0";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_HEAVY});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests greater-or-equal comparison. */
+  @Test
+  public void testGreaterOrEqualComparison() throws Exception {
+    String constraint = "context spaceMission::Spacecraft inv: self.mass >= 500";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_VOYAGER});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests less-or-equal comparison. */
+  @Test
+  public void testLessOrEqualComparison() throws Exception {
+    String constraint = "context spaceMission::Spacecraft inv: self.payloads.size() <= 10";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_WITH_PAYLOADS});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests not-equal comparison. */
+  @Test
+  public void testNotEqualComparison() throws Exception {
+    String constraint = "context spaceMission::Spacecraft inv: self.name != \"Unknown\"";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_VOYAGER});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests max() operation on numeric collections. */
+  @Test
+  public void testMaxOperation() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.powerConsumption.max() < 150";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_WITH_PAYLOADS});
+
+    assertTrue(result.isSuccess());
+  }
+
+  /** Tests min() operation on numeric collections. */
+  @Test
+  public void testMinOperation() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.powerConsumption.min() > 0";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_WITH_PAYLOADS});
+
+    assertTrue(result.isSuccess());
+  }
+
+  /** Tests constraint on empty payload collection. */
+  @Test
+  public void testEmptyPayloadsCollection() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.isEmpty() or self.payloads.size() =="
+            + " 0";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_VOYAGER});
+
+    assertTrue(result.isSuccess());
+  }
+
+  /** Tests forAll on empty collection (vacuous truth). */
+  @Test
+  public void testForAllOnEmptyCollection() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.forAll(p | p.powerConsumption > 1000)";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_VOYAGER});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied(), "forAll on empty collection should be true");
+  }
+
+  /** Tests exists on empty collection. */
+  @Test
+  public void testExistsOnEmptyCollection() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: not self.payloads.exists(p | p.powerConsumption >"
+            + " 0)";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_VOYAGER});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied(), "exists on empty collection should be false");
+  }
+
+  /** Tests zero mass edge case. */
+  @Test
+  public void testZeroMass() throws Exception {
+    String constraint = "context spaceMission::Spacecraft inv: self.mass >= 0";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_VOYAGER});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests division by positive number. */
+  @Test
+  public void testDivisionOperation() throws Exception {
+    String constraint = "context spaceMission::Spacecraft inv: self.mass / 2 > 0";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_HEAVY});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests negative mass constraint (boundary). */
+  @Test
+  public void testNegativeMassBoundary() throws Exception {
+    String constraint = "context spaceMission::Spacecraft inv: self.mass > -1";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_VOYAGER});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests string concatenation in constraint. */
+  @Test
+  public void testStringConcatenation() throws Exception {
+    String constraint = "context spaceMission::Spacecraft inv: self.name.concat(\"-1\") != \"\"";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_VOYAGER});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests size of single-element collection. */
+  @Test
+  public void testSingleElementCollectionSize() throws Exception {
+    String constraint = "context spaceMission::Mission inv: self.spacecraft.size() >= 1";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {MISSION_APOLLO});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests collect with constant expression. */
+  @Test
+  public void testCollectConstant() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.collect(p | 1).sum() =="
+            + " self.payloads.size()";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_WITH_PAYLOADS});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests select with always-true condition. */
+  @Test
+  public void testSelectAlwaysTrue() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.select(p | true).size() =="
+            + " self.payloads.size()";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_WITH_PAYLOADS});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests select with always-false condition. */
+  @Test
+  public void testSelectAlwaysFalse() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.select(p | false).isEmpty()";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_WITH_PAYLOADS});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests equality reflexivity (self == self). */
+  @Test
+  public void testEqualityReflexivity() throws Exception {
+    String constraint = "context spaceMission::Spacecraft inv: self.mass == self.mass";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_VOYAGER});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests double negation. */
+  @Test
+  public void testDoubleNegation() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: not (not self.operational) == self.operational";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_OPERATIONAL});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests tautology (always true). */
+  @Test
+  public void testTautology() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.operational or not self.operational";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_VOYAGER});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests complex nested boolean expression. */
+  @Test
+  public void testComplexBooleanNesting() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: ((self.operational and true) or false) =="
+            + " self.operational";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_OPERATIONAL});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests parenthesized arithmetic precedence. */
+  @Test
+  public void testArithmeticPrecedenceWithParentheses() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: (self.mass + 100) * 2 == self.mass * 2 + 200";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_HEAVY});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests chained comparisons (transitive property). */
+  @Test
+  public void testChainedComparisons() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: (self.mass > 0 and 0 < 2000) implies self.mass <"
+            + " 2000";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_VOYAGER});
+
+    assertTrue(result.isSuccess());
+  }
+
+  /** Tests max on single-element collection. */
+  @Test
+  public void testMaxOnSingleElement() throws Exception {
+    String constraint = "context spaceMission::Spacecraft inv: Set{self.mass}.max() == self.mass";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_VOYAGER});
+
+    assertTrue(result.isSuccess());
+  }
+
+  /** Tests min on single-element collection. */
+  @Test
+  public void testMinOnSingleElement() throws Exception {
+    String constraint = "context spaceMission::Spacecraft inv: Set{self.mass}.min() == self.mass";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_VOYAGER});
+
+    assertTrue(result.isSuccess());
+  }
+
+  /** Tests size invariant under select-reject complement. */
+  @Test
+  public void testSelectRejectComplement() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.select(p | p.powerConsumption >"
+            + " 50).size() + self.payloads.reject(p | p.powerConsumption > 50).size() =="
+            + " self.payloads.size()";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_WITH_PAYLOADS});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests exists equivalent to select.notEmpty(). */
+  @Test
+  public void testExistsSelectEquivalence() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.exists(p | p.powerConsumption > 30) =="
+            + " self.payloads.select(p | p.powerConsumption > 30).notEmpty()";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_WITH_PAYLOADS});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests forAll equivalent to select.size() == collection.size(). */
+  @Test
+  public void testForAllSelectEquivalence() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.forAll(p | p.powerConsumption > 0) =="
+            + " (self.payloads.select(p | p.powerConsumption > 0).size() == self.payloads.size())";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_WITH_PAYLOADS});
+
+    assertTrue(result.isSuccess());
+  }
+
+  /** Tests includes on collected values. */
+  @Test
+  public void testIncludesOnCollectedValues() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.collect(p |"
+            + " p.powerConsumption).includes(self.payloads.first().powerConsumption)";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_WITH_PAYLOADS});
+
+    assertTrue(result.isSuccess());
+  }
+
+  /** Tests attribute access through double navigation. */
+  @Test
+  public void testDoubleNavigation() throws Exception {
+    String constraint =
+        "context spaceMission::Mission inv: self.spacecraft.first().payloads.notEmpty()";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {MISSION_APOLLO});
+
+    assertTrue(result.isSuccess());
+  }
+
+  /** Tests constraint with literal Set construction. */
+  @Test
+  public void testLiteralSetConstruction() throws Exception {
+    String constraint = "context spaceMission::Spacecraft inv: Set{100, 200, 300}.includes(100)";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_VOYAGER});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests constraint with literal Sequence construction. */
+  @Test
+  public void testLiteralSequenceConstruction() throws Exception {
+    String constraint = "context spaceMission::Spacecraft inv: Sequence{1, 2, 2, 3}.size() == 4";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_VOYAGER});
+
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied());
+  }
+
+  /** Tests absolute value using conditional. */
+  @Test
+  public void testAbsoluteValuePattern() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: if self.mass >= 0 then self.mass else -1 * self.mass"
+            + " endif > 0";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_HEAVY});
+
+    assertTrue(result.isSuccess());
+  }
+
+  /** Tests nested iterator with self reference. */
+  @Test
+  public void testNestedIteratorSelfReference() throws Exception {
+    String constraint =
+        "context spaceMission::Spacecraft inv: self.payloads.forAll(p | self.operational implies"
+            + " p.powerConsumption > 0)";
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {SPACECRAFT_ACTIVE});
+
+    assertTrue(result.isSuccess());
   }
 }
