@@ -624,24 +624,173 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   // ==================== Comparison Operations ====================
 
   /**
-   * Type checks comparison operations (==, !=, <, <=, >, >=).
+   * Type checks equality comparison (==).
    *
-   * <p>All comparison operators return Boolean. Validates that operands are comparable (same type
-   * or one conforms to the other).
+   * <p>Validates that operands are comparable (same type or one conforms to the other).
    *
-   * <p><b>Examples:</b>
+   * <p><b>Example:</b> {@code 5 == 10} → Boolean
    *
-   * <ul>
-   *   <li>{@code 5 < 10} → Boolean
-   *   <li>{@code "hello" == "world"} → Boolean
-   *   <li>{@code person1 == person2} → Boolean
-   * </ul>
-   *
-   * @param ctx The comparison operation node
+   * @param ctx The equality comparison operation node
    * @return Type.BOOLEAN if operands are comparable, Type.ERROR otherwise
    */
   @Override
-  public Type visitComparison(VitruvOCLParser.ComparisonContext ctx) {
+  public Type visitEqualityComparison(VitruvOCLParser.EqualityComparisonContext ctx) {
+    Type leftType = visit(ctx.left);
+    Type rightType = visit(ctx.right);
+    Type resultType = Type.BOOLEAN;
+
+    // Check if types are comparable
+    if (!areComparable(leftType, rightType)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Cannot compare incompatible types: " + leftType + " and " + rightType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      resultType = Type.ERROR;
+    }
+
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks inequality comparison (!=).
+   *
+   * <p>Validates that operands are comparable (same type or one conforms to the other).
+   *
+   * <p><b>Example:</b> {@code "hello" != "world"} → Boolean
+   *
+   * @param ctx The inequality comparison operation node
+   * @return Type.BOOLEAN if operands are comparable, Type.ERROR otherwise
+   */
+  @Override
+  public Type visitInequalityComparison(VitruvOCLParser.InequalityComparisonContext ctx) {
+    Type leftType = visit(ctx.left);
+    Type rightType = visit(ctx.right);
+    Type resultType = Type.BOOLEAN;
+
+    // Check if types are comparable
+    if (!areComparable(leftType, rightType)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Cannot compare incompatible types: " + leftType + " and " + rightType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      resultType = Type.ERROR;
+    }
+
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks less-than comparison (<).
+   *
+   * <p>Validates that operands are comparable (same type or one conforms to the other).
+   *
+   * <p><b>Example:</b> {@code 5 < 10} → Boolean
+   *
+   * @param ctx The less-than comparison operation node
+   * @return Type.BOOLEAN if operands are comparable, Type.ERROR otherwise
+   */
+  @Override
+  public Type visitLessThanComparison(VitruvOCLParser.LessThanComparisonContext ctx) {
+    Type leftType = visit(ctx.left);
+    Type rightType = visit(ctx.right);
+    Type resultType = Type.BOOLEAN;
+
+    // Check if types are comparable
+    if (!areComparable(leftType, rightType)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Cannot compare incompatible types: " + leftType + " and " + rightType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      resultType = Type.ERROR;
+    }
+
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks less-than-or-equal comparison (<=).
+   *
+   * <p>Validates that operands are comparable (same type or one conforms to the other).
+   *
+   * <p><b>Example:</b> {@code 5 <= 10} → Boolean
+   *
+   * @param ctx The less-than-or-equal comparison operation node
+   * @return Type.BOOLEAN if operands are comparable, Type.ERROR otherwise
+   */
+  @Override
+  public Type visitLessThanOrEqualComparison(VitruvOCLParser.LessThanOrEqualComparisonContext ctx) {
+    Type leftType = visit(ctx.left);
+    Type rightType = visit(ctx.right);
+    Type resultType = Type.BOOLEAN;
+
+    // Check if types are comparable
+    if (!areComparable(leftType, rightType)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Cannot compare incompatible types: " + leftType + " and " + rightType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      resultType = Type.ERROR;
+    }
+
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks greater-than comparison (>).
+   *
+   * <p>Validates that operands are comparable (same type or one conforms to the other).
+   *
+   * <p><b>Example:</b> {@code 10 > 5} → Boolean
+   *
+   * @param ctx The greater-than comparison operation node
+   * @return Type.BOOLEAN if operands are comparable, Type.ERROR otherwise
+   */
+  @Override
+  public Type visitGreaterThanComparison(VitruvOCLParser.GreaterThanComparisonContext ctx) {
+    Type leftType = visit(ctx.left);
+    Type rightType = visit(ctx.right);
+    Type resultType = Type.BOOLEAN;
+
+    // Check if types are comparable
+    if (!areComparable(leftType, rightType)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Cannot compare incompatible types: " + leftType + " and " + rightType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      resultType = Type.ERROR;
+    }
+
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks greater-than-or-equal comparison (>=).
+   *
+   * <p>Validates that operands are comparable (same type or one conforms to the other).
+   *
+   * <p><b>Example:</b> {@code 10 >= 5} → Boolean
+   *
+   * @param ctx The greater-than-or-equal comparison operation node
+   * @return Type.BOOLEAN if operands are comparable, Type.ERROR otherwise
+   */
+  @Override
+  public Type visitGreaterThanOrEqualComparison(
+      VitruvOCLParser.GreaterThanOrEqualComparisonContext ctx) {
     Type leftType = visit(ctx.left);
     Type rightType = visit(ctx.right);
     Type resultType = Type.BOOLEAN;
@@ -760,28 +909,86 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   // ==================== Logical Operations ====================
 
   /**
-   * Type checks logical operations (and, or, xor).
+   * Type checks logical AND operation.
    *
    * <p>Uses {@link TypeResolver#resolveBinaryOp} to validate Boolean operands and return Boolean
    * result.
    *
-   * <p><b>Examples:</b>
+   * <p><b>Example:</b> {@code true and false} → Boolean
    *
-   * <ul>
-   *   <li>{@code true and false} → Boolean
-   *   <li>{@code true or false} → Boolean
-   *   <li>{@code true xor true} → Boolean
-   * </ul>
-   *
-   * @param ctx The logical operation node
+   * @param ctx The logical AND operation node
    * @return Type.BOOLEAN if operands are Boolean, Type.ERROR otherwise
    */
   @Override
-  public Type visitLogical(VitruvOCLParser.LogicalContext ctx) {
+  public Type visitLogicalAnd(VitruvOCLParser.LogicalAndContext ctx) {
     Type leftType = visit(ctx.left);
     Type rightType = visit(ctx.right);
 
-    String operator = ctx.op.getText();
+    String operator = "and";
+    Type resultType = TypeResolver.resolveBinaryOp(operator, leftType, rightType);
+
+    if (resultType == Type.ERROR) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Type mismatch: cannot apply '" + operator + "' to " + leftType + " and " + rightType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks logical OR operation.
+   *
+   * <p>Uses {@link TypeResolver#resolveBinaryOp} to validate Boolean operands and return Boolean
+   * result.
+   *
+   * <p><b>Example:</b> {@code true or false} → Boolean
+   *
+   * @param ctx The logical OR operation node
+   * @return Type.BOOLEAN if operands are Boolean, Type.ERROR otherwise
+   */
+  @Override
+  public Type visitLogicalOr(VitruvOCLParser.LogicalOrContext ctx) {
+    Type leftType = visit(ctx.left);
+    Type rightType = visit(ctx.right);
+
+    String operator = "or";
+    Type resultType = TypeResolver.resolveBinaryOp(operator, leftType, rightType);
+
+    if (resultType == Type.ERROR) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Type mismatch: cannot apply '" + operator + "' to " + leftType + " and " + rightType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks logical XOR operation.
+   *
+   * <p>Uses {@link TypeResolver#resolveBinaryOp} to validate Boolean operands and return Boolean
+   * result.
+   *
+   * <p><b>Example:</b> {@code true xor true} → Boolean
+   *
+   * @param ctx The logical XOR operation node
+   * @return Type.BOOLEAN if operands are Boolean, Type.ERROR otherwise
+   */
+  @Override
+  public Type visitLogicalXor(VitruvOCLParser.LogicalXorContext ctx) {
+    Type leftType = visit(ctx.left);
+    Type rightType = visit(ctx.right);
+
+    String operator = "xor";
     Type resultType = TypeResolver.resolveBinaryOp(operator, leftType, rightType);
 
     if (resultType == Type.ERROR) {
@@ -1223,51 +1430,30 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     int thenIndex = findKeywordIndex(ctx, "then");
     int elseIndex = findKeywordIndex(ctx, "else");
 
-    System.out.println("=== IF EXPRESSION DEBUG ===");
-    System.out.println("Total expressions: " + allExps.size());
-    System.out.println("thenIndex: " + thenIndex);
-    System.out.println("elseIndex: " + elseIndex);
-
     List<VitruvOCLParser.ExpCSContext> condExps = new ArrayList<>();
     List<VitruvOCLParser.ExpCSContext> thenExps = new ArrayList<>();
     List<VitruvOCLParser.ExpCSContext> elseExps = new ArrayList<>();
 
     for (VitruvOCLParser.ExpCSContext exp : allExps) {
       int expIndex = exp.getStart().getTokenIndex();
-      System.out.println("Expression '" + exp.getText() + "' at token index: " + expIndex);
 
       if (expIndex < thenIndex) {
-        System.out.println("  -> Added to CONDITION");
         condExps.add(exp);
       } else if (expIndex < elseIndex) {
-        System.out.println("  -> Added to THEN");
         thenExps.add(exp);
       } else {
-        System.out.println("  -> Added to ELSE");
         elseExps.add(exp);
       }
     }
 
-    System.out.println("condExps size: " + condExps.size());
-    System.out.println("thenExps size: " + thenExps.size());
-    System.out.println("elseExps size: " + elseExps.size());
-
     // Type-check condition
     Type condType = null;
     for (VitruvOCLParser.ExpCSContext exp : condExps) {
-      System.out.println("Visiting CONDITION: " + exp.getText());
       condType = visit(exp);
-      System.out.println("  -> Type: " + condType);
     }
-
-    System.out.println("Final condType: " + condType);
-    System.out.println(
-        "condType.getElementType(): " + (condType != null ? condType.getElementType() : "null"));
-
     if (condType != null
         && condType.getElementType() != Type.BOOLEAN
         && !condType.isConformantTo(Type.BOOLEAN)) {
-      System.out.println("ERROR: Condition type check failed");
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
@@ -1279,17 +1465,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     // Type-check then-branch
     Type thenType = null;
     for (VitruvOCLParser.ExpCSContext exp : thenExps) {
-      System.out.println("Visiting THEN: " + exp.getText());
       thenType = visit(exp);
-      System.out.println("  -> Type: " + thenType);
     }
 
     // Type-check else-branch
     Type elseType = null;
     for (VitruvOCLParser.ExpCSContext exp : elseExps) {
-      System.out.println("Visiting ELSE: " + exp.getText());
       elseType = visit(exp);
-      System.out.println("  -> Type: " + elseType);
     }
 
     if (thenType == null || elseType == null) {
@@ -1521,7 +1703,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitBooleanLit(VitruvOCLParser.BooleanLitContext ctx) {
-    System.out.println("visitBooleanLit called for: " + ctx.getText());
     nodeTypes.put(ctx, Type.BOOLEAN);
     return Type.BOOLEAN;
   }

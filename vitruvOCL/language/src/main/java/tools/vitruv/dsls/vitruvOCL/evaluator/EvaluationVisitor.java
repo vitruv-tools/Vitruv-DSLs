@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.function.BiFunction;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -1728,77 +1730,176 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   // ==================== Comparison Operations ====================
 
   /**
-   * Evaluates comparison operations (==, !=, <, <=, >, >=).
+   * Evaluates equality comparison (==). Both operands must be singletons for comparison.
    *
-   * <p>Both operands must be singletons. Uses {@link OCLElement#semanticEquals} for equality and
-   * {@link OCLElement#compare} for ordering.
-   *
-   * <p><b>Examples:</b>
-   *
-   * <ul>
-   *   <li>{@code 5 == 5} → {@code true}
-   *   <li>{@code 3 < 7} → {@code true}
-   *   <li>{@code 'hello' != 'world'} → {@code true}
-   * </ul>
-   *
-   * @param ctx The comparison operation node
-   * @return A singleton boolean value
+   * @param ctx the equality comparison context
+   * @return singleton boolean Value with comparison result
    */
   @Override
-  public Value visitComparison(VitruvOCLParser.ComparisonContext ctx) {
-    Value leftValue = visit(ctx.left);
-    Value rightValue = visit(ctx.right);
-    String operator = ctx.op.getText();
+  public Value visitEqualityComparison(VitruvOCLParser.EqualityComparisonContext ctx) {
+    return evaluateBinaryComparison(
+        ctx.left, ctx.right, ctx, (left, right) -> OCLElement.semanticEquals(left, right));
+  }
+
+  /**
+   * Evaluates inequality comparison (!=). Both operands must be singletons for comparison.
+   *
+   * @param ctx the inequality comparison context
+   * @return singleton boolean Value with comparison result
+   */
+  @Override
+  public Value visitInequalityComparison(VitruvOCLParser.InequalityComparisonContext ctx) {
+    return evaluateBinaryComparison(
+        ctx.left, ctx.right, ctx, (left, right) -> !OCLElement.semanticEquals(left, right));
+  }
+
+  /**
+   * Evaluates less-than comparison (<). Both operands must be singletons for comparison.
+   *
+   * @param ctx the less-than comparison context
+   * @return singleton boolean Value with comparison result
+   */
+  @Override
+  public Value visitLessThanComparison(VitruvOCLParser.LessThanComparisonContext ctx) {
+    return evaluateBinaryComparison(
+        ctx.left, ctx.right, ctx, (left, right) -> OCLElement.compare(left, right) < 0);
+  }
+
+  /**
+   * Evaluates less-than-or-equal comparison (<=). Both operands must be singletons for comparison.
+   *
+   * @param ctx the less-than-or-equal comparison context
+   * @return singleton boolean Value with comparison result
+   */
+  @Override
+  public Value visitLessThanOrEqualComparison(
+      VitruvOCLParser.LessThanOrEqualComparisonContext ctx) {
+    return evaluateBinaryComparison(
+        ctx.left, ctx.right, ctx, (left, right) -> OCLElement.compare(left, right) <= 0);
+  }
+
+  /**
+   * Evaluates greater-than comparison (>). Both operands must be singletons for comparison.
+   *
+   * @param ctx the greater-than comparison context
+   * @return singleton boolean Value with comparison result
+   */
+  @Override
+  public Value visitGreaterThanComparison(VitruvOCLParser.GreaterThanComparisonContext ctx) {
+    return evaluateBinaryComparison(
+        ctx.left, ctx.right, ctx, (left, right) -> OCLElement.compare(left, right) > 0);
+  }
+
+  /**
+   * Evaluates greater-than-or-equal comparison (>=). Both operands must be singletons for
+   * comparison.
+   *
+   * @param ctx the greater-than-or-equal comparison context
+   * @return singleton boolean Value with comparison result
+   */
+  @Override
+  public Value visitGreaterThanOrEqualComparison(
+      VitruvOCLParser.GreaterThanOrEqualComparisonContext ctx) {
+    return evaluateBinaryComparison(
+        ctx.left, ctx.right, ctx, (left, right) -> OCLElement.compare(left, right) >= 0);
+  }
+
+  /**
+   * Helper method for evaluating binary comparisons. Extracts singleton operands and applies the
+   * comparison function.
+   *
+   * @param leftCtx the left operand context
+   * @param rightCtx the right operand context
+   * @param errorCtx context for error reporting
+   * @param comparisonFn the comparison function to apply
+   * @return singleton boolean Value with comparison result
+   */
+  private Value evaluateBinaryComparison(
+      ParserRuleContext leftCtx,
+      ParserRuleContext rightCtx,
+      ParserRuleContext errorCtx,
+      BiFunction<OCLElement, OCLElement, Boolean> comparisonFn) {
+
+    Value leftValue = visit(leftCtx);
+    Value rightValue = visit(rightCtx);
 
     if (leftValue.size() != 1 || rightValue.size() != 1) {
-      return error("Comparison requires singleton operands", ctx);
+      return error("Comparison requires singleton operands", errorCtx);
     }
 
     OCLElement leftElem = leftValue.getElements().get(0);
     OCLElement rightElem = rightValue.getElements().get(0);
 
-    boolean result =
-        switch (operator) {
-          case "==" -> OCLElement.semanticEquals(leftElem, rightElem);
-          case "!=" -> !OCLElement.semanticEquals(leftElem, rightElem);
-          case "<" -> OCLElement.compare(leftElem, rightElem) < 0;
-          case "<=" -> OCLElement.compare(leftElem, rightElem) <= 0;
-          case ">" -> OCLElement.compare(leftElem, rightElem) > 0;
-          case ">=" -> OCLElement.compare(leftElem, rightElem) >= 0;
-          default -> {
-            yield false;
-          }
-        };
-
+    boolean result = comparisonFn.apply(leftElem, rightElem);
     return Value.boolValue(result);
   }
 
   // ==================== Boolean Logic Operations ====================
 
+  // ============================================================================
+  // Logical operations (3 labeled alternatives)
+  // ============================================================================
+
   /**
-   * Evaluates logical operations (and, or, xor).
+   * Evaluates logical AND operation. Both operands must be singleton booleans.
    *
-   * <p>Both operands must be singleton booleans.
+   * <p><b>Example:</b> {@code true and false} → {@code false}
    *
-   * <p><b>Examples:</b>
-   *
-   * <ul>
-   *   <li>{@code true and false} → {@code false}
-   *   <li>{@code true or false} → {@code true}
-   *   <li>{@code true xor true} → {@code false}
-   * </ul>
-   *
-   * @param ctx The logical operation node
-   * @return A singleton boolean value
+   * @param ctx the logical AND context
+   * @return singleton boolean Value with AND result
    */
   @Override
-  public Value visitLogical(VitruvOCLParser.LogicalContext ctx) {
-    Value leftValue = visit(ctx.left);
-    Value rightValue = visit(ctx.right);
-    String operator = ctx.op.getText();
+  public Value visitLogicalAnd(VitruvOCLParser.LogicalAndContext ctx) {
+    return evaluateBinaryLogical(ctx.left, ctx.right, ctx, (left, right) -> left && right);
+  }
+
+  /**
+   * Evaluates logical OR operation. Both operands must be singleton booleans.
+   *
+   * <p><b>Example:</b> {@code true or false} → {@code true}
+   *
+   * @param ctx the logical OR context
+   * @return singleton boolean Value with OR result
+   */
+  @Override
+  public Value visitLogicalOr(VitruvOCLParser.LogicalOrContext ctx) {
+    return evaluateBinaryLogical(ctx.left, ctx.right, ctx, (left, right) -> left || right);
+  }
+
+  /**
+   * Evaluates logical XOR operation. Both operands must be singleton booleans.
+   *
+   * <p><b>Example:</b> {@code true xor true} → {@code false}
+   *
+   * @param ctx the logical XOR context
+   * @return singleton boolean Value with XOR result
+   */
+  @Override
+  public Value visitLogicalXor(VitruvOCLParser.LogicalXorContext ctx) {
+    return evaluateBinaryLogical(ctx.left, ctx.right, ctx, (left, right) -> left ^ right);
+  }
+
+  /**
+   * Helper method for evaluating binary logical operations. Extracts singleton boolean operands and
+   * applies the logical function.
+   *
+   * @param leftCtx the left operand context
+   * @param rightCtx the right operand context
+   * @param errorCtx context for error reporting
+   * @param logicalFn the logical function to apply
+   * @return singleton boolean Value with operation result
+   */
+  private Value evaluateBinaryLogical(
+      ParserRuleContext leftCtx,
+      ParserRuleContext rightCtx,
+      ParserRuleContext errorCtx,
+      BiFunction<Boolean, Boolean, Boolean> logicalFn) {
+
+    Value leftValue = visit(leftCtx);
+    Value rightValue = visit(rightCtx);
 
     if (leftValue.size() != 1 || rightValue.size() != 1) {
-      return error("Boolean operators require singleton operands", ctx);
+      return error("Boolean operators require singleton operands", errorCtx);
     }
 
     OCLElement leftElem = leftValue.getElements().get(0);
@@ -1808,17 +1909,10 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Boolean right = rightElem.tryGetBool();
 
     if (left == null || right == null) {
-      return error("Boolean operators require boolean operands", ctx);
+      return error("Boolean operators require boolean operands", errorCtx);
     }
 
-    boolean result =
-        switch (operator) {
-          case "and" -> left && right;
-          case "or" -> left || right;
-          case "xor" -> left ^ right;
-          default -> false;
-        };
-
+    boolean result = logicalFn.apply(left, right);
     return Value.boolValue(result);
   }
 

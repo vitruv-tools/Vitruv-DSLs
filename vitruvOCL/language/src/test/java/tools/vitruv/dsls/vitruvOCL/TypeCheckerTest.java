@@ -16,7 +16,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -1171,11 +1170,6 @@ public class TypeCheckerTest {
     TypeCheckResult result = typeCheckWithErrors(input, errors);
 
     if (errors.hasErrors()) {
-      System.out.println(
-          "Errors: "
-              + errors.getErrors().stream()
-                  .map(e -> e.getMessage())
-                  .collect(Collectors.joining(", ")));
       fail("Type checking failed for '" + input + "': " + errors.getErrors());
     }
 

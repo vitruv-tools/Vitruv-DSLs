@@ -199,10 +199,6 @@ public class CrossMetamodelConstraintTest {
             new Path[] {SATELLITE_ECORE},
             new Path[] {SATELLITE_VOYAGER, SATELLITE_ATLAS, SATELLITE_HUBBLE});
 
-    System.out.println(result.toDetailedErrorString());
-    System.out.println("Result size: " + result.toString());
-    System.out.println("Result: " + result);
-
     if (!result.isSuccess()) {
       fail("Compilation failed: " + result.toDetailedErrorString());
     }
@@ -1239,34 +1235,6 @@ public class CrossMetamodelConstraintTest {
   }
 
   /**
-   * Tests correspondingSpacecraft constraint with satellite-atlas. EXPECTED TO FAIL due to type
-   * mismatch: Spacecraft.mass (EInt) vs Satellite.massKg (EDouble)
-   */
-  @Test
-  public void testCorrespondingSpacecraftTypeMismatch() throws Exception {
-    String constraint =
-        """
-        context satelliteSystem::Satellite inv correspondingSpacecraft:
-          spaceMission::Spacecraft.allInstances().exists(sc |
-            sc.serialNumber == self.serialNumber and sc.mass == self.massKg
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {
-              Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem"),
-              Path.of("src/test/resources/test-models/spacecraft-atlas.spacemission")
-            });
-
-    assertTrue(result.isSuccess(), "Constraint should compile without errors");
-    // This will fail because 20000 (int) != 20000.5 (double)
-    assertFalse(result.isSatisfied(), "Should fail: mass type mismatch (EInt vs EDouble)");
-  }
-
-  /**
    * Tests serialInclusion constraint with spacecraft-atlas. Should pass since satellite-atlas has
    * matching serialNumber.
    */
@@ -1322,5 +1290,38 @@ public class CrossMetamodelConstraintTest {
 
     assertTrue(result.isSuccess(), "Constraint should compile without errors");
     assertTrue(result.isSatisfied(), "spacecraft-atlas is operational and has matching satellite");
+  }
+
+  /**
+   * Tests testIntDoubleComparison constraint with satellite-atlas. EXPECTED TO SUCCESS due to
+   * masses are equal even though one is Int and other is Double.
+   */
+  @Test
+  public void testIntDoubleComparison() throws Exception {
+    String constraint =
+        """
+        context satelliteSystem::Satellite inv:
+          spaceMission::Spacecraft.allInstances().exists(sc |
+            sc.serialNumber == self.serialNumber and sc.mass == self.massKg
+          )
+        """;
+
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint,
+            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            new Path[] {
+              Path.of("src/test/resources/test-models/spacecraft-voyager.spacemission"),
+              Path.of("src/test/resources/test-models/spacecraft-atlas.spacemission"),
+              Path.of("src/test/resources/test-models/satellite-voyager.satellitesystem"),
+              Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem")
+            });
+
+    System.out.println("Success: " + result.isSuccess());
+    System.out.println("Satisfied: " + result.isSatisfied());
+    System.out.println("Warnings: " + result.getWarnings());
+
+    assertTrue(result.isSuccess(), "Should compile");
+    assertTrue(result.isSatisfied(), "Int should equal Double with type coercion");
   }
 }

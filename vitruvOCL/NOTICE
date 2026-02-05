@@ -1,0 +1,47 @@
+VitruvOCL
+Copyright (c) 2025 Max Oesterle
+
+This project includes software developed at:
+- Karlsruhe Institute of Technology (KIT)
+- Software Design and Quality (SDQ)
+
+Third-Party Dependencies:
+
+ANTLR 4 (v4.13.2)
+Copyright (c) 2012-2024 The ANTLR Project
+License: BSD 3-Clause
+https://github.com/antlr/antlr4
+
+Eclipse Modeling Framework - EMF Core (v2.35.0)
+Eclipse Modeling Framework - EMF XMI (v2.39.0)
+Copyright (c) Eclipse Foundation
+License: Eclipse Public License 2.0
+https://www.eclipse.org/modeling/emf/
+
+JUnit 5 (v5.10.2)
+JUnit Platform (v1.10.2)
+Copyright (c) JUnit Team
+License: Eclipse Public License 2.0
+https://junit.org/junit5/
+
+AssertJ Core (v3.24.2)
+Copyright (c) AssertJ Authors
+License: Apache License 2.0
+https://assertj.github.io/doc/
+
+Build Tools:
+- Apache Maven Surefire Plugin (v3.5.3) - Apache License 2.0
+- Build Helper Maven Plugin (v3.5.0) - MIT License
+- Exec Maven Plugin (v3.1.0) - Apache License 2.0
+- JaCoCo Maven Plugin (v0.8.11) - Eclipse Public License 2.0
+
+Grammar derived from:
+OCL2 Grammar by Ralph Gerbig and Arne Lange
+University of Mannheim: Chair for Software Engineering
+License: Eclipse Public License 1.0
+
+Based on OCL# semantics:
+Gogolla, M., Vallecillo, A., Büttner, F. (2013)
+"OCL# - A New Approach to Type-Safe OCL"
+ECMFA 2013
+https://dl.acm.org/doi/10.1145/2499777.2499781

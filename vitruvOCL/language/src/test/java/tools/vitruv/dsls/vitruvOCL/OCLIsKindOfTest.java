@@ -809,7 +809,6 @@ public class OCLIsKindOfTest {
 
     if (errors.hasErrors()) {
       for (CompileError error : errors.getErrors()) {
-        System.out.println("  PASS 1 ERROR: " + error.getMessage() + " at line " + error.getLine());
       }
       fail("Pass 1 (Symbol Table) failed: " + errors.getErrors());
     }
@@ -821,7 +820,6 @@ public class OCLIsKindOfTest {
 
     if (errors.hasErrors()) {
       for (CompileError error : errors.getErrors()) {
-        System.out.println("  PASS 2 ERROR: " + error.getMessage() + " at line " + error.getLine());
       }
       fail("Pass 2 (Type checking) failed: " + typeChecker.getErrorCollector().getErrors());
     }
@@ -833,7 +831,6 @@ public class OCLIsKindOfTest {
 
     if (evaluator.hasErrors()) {
       for (CompileError error : errors.getErrors()) {
-        System.out.println("  PASS 3 ERROR: " + error.getMessage() + " at line " + error.getLine());
       }
       fail("Pass 3 (Evaluation) failed: " + evaluator.getErrorCollector().getErrors());
     }

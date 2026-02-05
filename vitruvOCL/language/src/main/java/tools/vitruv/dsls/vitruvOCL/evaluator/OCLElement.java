@@ -88,7 +88,7 @@ public sealed interface OCLElement
   }
 
   /** Double value element. */
-  record DoubleValue(int value) implements OCLElement {
+  record DoubleValue(double value) implements OCLElement {
     @Override
     public String toString() {
       return String.valueOf(value);
@@ -96,7 +96,7 @@ public sealed interface OCLElement
 
     @Override
     public Double tryGetDouble() {
-      return (double) value;
+      return value;
     }
   }
 
@@ -183,6 +183,16 @@ public sealed interface OCLElement
     // Handle different types
     if (a instanceof IntValue ia && b instanceof IntValue ib) {
       return ia.value == ib.value;
+    }
+    if (a instanceof DoubleValue da && b instanceof DoubleValue db) {
+      return da.value == db.value;
+    }
+    // Type coercion: Int == Double
+    if (a instanceof IntValue ia && b instanceof DoubleValue db) {
+      return ia.value == db.value;
+    }
+    if (a instanceof DoubleValue da && b instanceof IntValue ib) {
+      return da.value == ib.value;
     }
     if (a instanceof BoolValue ba && b instanceof BoolValue bb) {
       return ba.value == bb.value;

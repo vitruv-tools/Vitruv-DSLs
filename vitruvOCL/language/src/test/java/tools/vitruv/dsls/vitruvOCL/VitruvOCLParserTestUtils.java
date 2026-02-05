@@ -78,7 +78,6 @@ import org.antlr.v4.runtime.tree.*;
  *
  * // Get readable tree representation
  * String treeString = VitruvOCLParserTestUtils.treeToString(tree, parser);
- * System.out.println(treeString);
  * }</pre>
  *
  * <h2>Error Handling Strategy</h2>
@@ -104,7 +103,6 @@ import org.antlr.v4.runtime.tree.*;
  *   <li><b>Parse tree:</b> Show raw parse tree structure
  * </ul>
  *
- * <p>To enable debugging, uncomment the relevant {@code System.out.println} statements in the
  * {@link #parse} method.
  *
  * <h2>Design Patterns</h2>
@@ -232,19 +230,13 @@ public class VitruvOCLParserTestUtils {
    *
    * <pre>{@code
    * // Uncomment to see input string
-   * System.out.println("INPUT STRING: " + cs.toString());
    *
    * // Uncomment to see all tokens
    * tokens.fill();
-   * System.out.println("TOKENS:");
    * for (Token t : tokens.getTokens()) {
-   *     System.out.println(t.getText() + " [" + t.getType() + "]");
    * }
    *
    * // Uncomment to see parse tree construction
-   * System.out.println("Calling parser.contextDeclCS()...");
-   * System.out.println("PARSE TREE: " + tree);
-   * System.out.println("TREE OBJECT: " + tree.toStringTree(parser));
    * }</pre>
    *
    * <h3>Entry Point</h3>

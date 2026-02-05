@@ -97,10 +97,17 @@ infixedExpCS
     prefixedExpCS                                                           # prefixedExpr
     | left=infixedExpCS op=('*'|'/') right=infixedExpCS                    # multiplicative
     | left=infixedExpCS op=('+'|'-') right=infixedExpCS                    # additive
-    | left=infixedExpCS op=('<='|'>='|'!='|'<'|'>'|'==') right=infixedExpCS # comparison
+    | left=infixedExpCS op='==' right=infixedExpCS                         # equalityComparison
+    | left=infixedExpCS op='!=' right=infixedExpCS                         # inequalityComparison
+    | left=infixedExpCS op='<' right=infixedExpCS                          # lessThanComparison
+    | left=infixedExpCS op='<=' right=infixedExpCS                         # lessThanOrEqualComparison
+    | left=infixedExpCS op='>' right=infixedExpCS                          # greaterThanComparison
+    | left=infixedExpCS op='>=' right=infixedExpCS                         # greaterThanOrEqualComparison
     | left=infixedExpCS op='~' right=infixedExpCS                          # correspondence
     | left=infixedExpCS op='^' right=infixedExpCS                          # message
-    | left=infixedExpCS op=('and'|'or'|'xor') right=infixedExpCS           # logical
+    | left=infixedExpCS op='and' right=infixedExpCS                        # logicalAnd
+    | left=infixedExpCS op='or' right=infixedExpCS                         # logicalOr
+    | left=infixedExpCS op='xor' right=infixedExpCS                        # logicalXor
     | left=infixedExpCS op='implies' right=infixedExpCS                    # implication
 ;
 

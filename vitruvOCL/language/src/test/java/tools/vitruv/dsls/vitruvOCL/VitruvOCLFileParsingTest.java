@@ -111,13 +111,6 @@ public class VitruvOCLFileParsingTest {
     VitruvOCLParser parser = new VitruvOCLParser(tokens);
 
     ParseTree tree = parser.contextDeclCS();
-
-    System.out.println(
-        "Parse Tree for file "
-            + fileName
-            + ":\n"
-            + VitruvOCLParserTestUtils.treeToString(tree, parser));
-
     assertNotNull(tree);
     assertTrue(tree.getChildCount() > 0, "Parse tree should not be empty");
   }
@@ -176,13 +169,6 @@ public class VitruvOCLFileParsingTest {
     VitruvOCLParser parser = new VitruvOCLParser(tokens);
 
     ParseTree tree = parser.contextDeclCS();
-
-    System.out.println(
-        "Parse Tree for complex file "
-            + fileName
-            + ":\n"
-            + VitruvOCLParserTestUtils.treeToString(tree, parser));
-
     assertNotNull(tree);
     assertTrue(tree.getChildCount() > 0, "Parse tree should not be empty");
     // Future: Add more detailed assertions about parse tree structure

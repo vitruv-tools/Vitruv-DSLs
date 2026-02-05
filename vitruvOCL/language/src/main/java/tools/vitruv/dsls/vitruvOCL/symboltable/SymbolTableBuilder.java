@@ -812,13 +812,79 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
   // Binary and unary operations don't affect symbol table, just traverse operands
 
   /**
-   * Visits a comparison operation (=, &lt;&gt;, &lt;, &gt;, &lt;=, &gt;=).
+   * Visits an equality comparison operation (==).
    *
-   * @param ctx The comparison parse tree node
+   * @param ctx The equality comparison parse tree node
    * @return null (void visitor)
    */
   @Override
-  public Void visitComparison(VitruvOCLParser.ComparisonContext ctx) {
+  public Void visitEqualityComparison(VitruvOCLParser.EqualityComparisonContext ctx) {
+    visit(ctx.left);
+    visit(ctx.right);
+    return null;
+  }
+
+  /**
+   * Visits an inequality comparison operation (!=).
+   *
+   * @param ctx The inequality comparison parse tree node
+   * @return null (void visitor)
+   */
+  @Override
+  public Void visitInequalityComparison(VitruvOCLParser.InequalityComparisonContext ctx) {
+    visit(ctx.left);
+    visit(ctx.right);
+    return null;
+  }
+
+  /**
+   * Visits a less-than comparison operation (<).
+   *
+   * @param ctx The less-than comparison parse tree node
+   * @return null (void visitor)
+   */
+  @Override
+  public Void visitLessThanComparison(VitruvOCLParser.LessThanComparisonContext ctx) {
+    visit(ctx.left);
+    visit(ctx.right);
+    return null;
+  }
+
+  /**
+   * Visits a less-than-or-equal comparison operation (<=).
+   *
+   * @param ctx The less-than-or-equal comparison parse tree node
+   * @return null (void visitor)
+   */
+  @Override
+  public Void visitLessThanOrEqualComparison(VitruvOCLParser.LessThanOrEqualComparisonContext ctx) {
+    visit(ctx.left);
+    visit(ctx.right);
+    return null;
+  }
+
+  /**
+   * Visits a greater-than comparison operation (>).
+   *
+   * @param ctx The greater-than comparison parse tree node
+   * @return null (void visitor)
+   */
+  @Override
+  public Void visitGreaterThanComparison(VitruvOCLParser.GreaterThanComparisonContext ctx) {
+    visit(ctx.left);
+    visit(ctx.right);
+    return null;
+  }
+
+  /**
+   * Visits a greater-than-or-equal comparison operation (>=).
+   *
+   * @param ctx The greater-than-or-equal comparison parse tree node
+   * @return null (void visitor)
+   */
+  @Override
+  public Void visitGreaterThanOrEqualComparison(
+      VitruvOCLParser.GreaterThanOrEqualComparisonContext ctx) {
     visit(ctx.left);
     visit(ctx.right);
     return null;
@@ -851,13 +917,39 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
   }
 
   /**
-   * Visits a logical operation (and, or, xor).
+   * Visits a logical AND operation.
    *
-   * @param ctx The logical parse tree node
+   * @param ctx The logical AND parse tree node
    * @return null (void visitor)
    */
   @Override
-  public Void visitLogical(VitruvOCLParser.LogicalContext ctx) {
+  public Void visitLogicalAnd(VitruvOCLParser.LogicalAndContext ctx) {
+    visit(ctx.left);
+    visit(ctx.right);
+    return null;
+  }
+
+  /**
+   * Visits a logical OR operation.
+   *
+   * @param ctx The logical OR parse tree node
+   * @return null (void visitor)
+   */
+  @Override
+  public Void visitLogicalOr(VitruvOCLParser.LogicalOrContext ctx) {
+    visit(ctx.left);
+    visit(ctx.right);
+    return null;
+  }
+
+  /**
+   * Visits a logical XOR operation.
+   *
+   * @param ctx The logical XOR parse tree node
+   * @return null (void visitor)
+   */
+  @Override
+  public Void visitLogicalXor(VitruvOCLParser.LogicalXorContext ctx) {
     visit(ctx.left);
     visit(ctx.right);
     return null;

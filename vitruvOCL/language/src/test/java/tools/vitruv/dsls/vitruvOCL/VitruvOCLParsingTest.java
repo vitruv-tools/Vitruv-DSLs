@@ -110,7 +110,6 @@ public class VitruvOCLParsingTest {
 
     ParseTree tree = parser.contextDeclCS();
 
-    System.out.println("Parse Tree:\n" + VitruvOCLParserTestUtils.treeToString(tree, parser));
 
     assertNotNull(tree);
     assertThat(tree.getChildCount()).isGreaterThan(0);
@@ -136,7 +135,6 @@ public class VitruvOCLParsingTest {
 
     ParseTree tree = parser.contextDeclCS();
 
-    System.out.println("Parse Tree:\n" + VitruvOCLParserTestUtils.treeToString(tree, parser));
 
     assertNotNull(tree);
   }

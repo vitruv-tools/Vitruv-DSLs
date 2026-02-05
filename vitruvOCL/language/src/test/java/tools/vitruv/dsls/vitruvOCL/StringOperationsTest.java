@@ -568,7 +568,6 @@ public class StringOperationsTest {
     symbolTableBuilder.visit(tree);
 
     if (!errors.getErrors().isEmpty()) {
-      System.out.println("PASS 1 (SYMBOL TABLE) ERRORS:");
       errors.getErrors().forEach(System.out::println);
       fail("Pass 1 (Symbol Table) failed: " + errors.getErrors());
     }
@@ -580,7 +579,6 @@ public class StringOperationsTest {
     typeChecker.visit(tree);
 
     if (!typeChecker.getErrorCollector().getErrors().isEmpty()) {
-      System.out.println("PASS 2 (TYPE CHECKING) ERRORS:");
       typeChecker.getErrorCollector().getErrors().forEach(System.out::println);
       fail("Pass 2 (Type checking) failed: " + typeChecker.getErrorCollector().getErrors());
     }
@@ -593,7 +591,6 @@ public class StringOperationsTest {
     Value result = evaluator.visit(tree);
 
     if (!evaluator.getErrorCollector().getErrors().isEmpty()) {
-      System.out.println("PASS 3 (EVALUATION) ERRORS:");
       evaluator.getErrorCollector().getErrors().forEach(System.out::println);
       fail("Pass 3 (Evaluation) failed: " + evaluator.getErrorCollector().getErrors());
     }
