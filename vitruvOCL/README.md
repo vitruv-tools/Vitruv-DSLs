@@ -19,7 +19,7 @@ Based on: Gogolla, M., Vallecillo, A., Büttner, F. (2013). ["OCL# - A New Appro
 
 ### Download
 
-Download `vitruvOCL-0.1.0.jar` from [releases](https://github.com/YOUR_USERNAME/vitruvOCL/releases).
+//TODO
 
 ### Project Structure Convention
 ```
