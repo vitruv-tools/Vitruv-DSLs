@@ -22,6 +22,14 @@
         <junit.platform.version>1.10.2</junit.platform.version>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>central</id>
+            <name>Maven Central</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <!-- ANTLR Runtime -->
         <dependency>
@@ -40,6 +48,13 @@
             <groupId>org.eclipse.emf</groupId>
             <artifactId>org.eclipse.emf.ecore</artifactId>
             <version>2.35.0</version>
+        </dependency>
+
+        <!-- Gson for JSON serialization in CLI -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.8.9</version>
         </dependency>
 
         <!-- JUnit 5 API -->
@@ -209,10 +224,10 @@
                 </filters>
                 <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                        <mainClass>tools.vitruv.dsls.vitruvOCL.TestMain</mainClass>
+                        <mainClass>tools.vitruv.dsls.vitruvOCL.cli.VitruvOCLCLI</mainClass>
                     </transformer>
                 </transformers>
-                <finalName>vitruvOCL-${project.version}</finalName>
+                <finalName>vitruvOCL</finalName>
             </configuration>
         </execution>
     </executions>
