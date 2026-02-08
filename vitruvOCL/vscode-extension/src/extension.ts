@@ -398,6 +398,7 @@ function updateDiagnosticsForConstraint(
     const diagnostics: vscode.Diagnostic[] = [];
 
     if (!result.success) {
+        // Nur Compilation Errors anzeigen
         for (const error of result.errors) {
             const line = Math.max(0, error.line - 1);
             const range = new vscode.Range(line, 0, line, 1000);
@@ -410,27 +411,11 @@ function updateDiagnosticsForConstraint(
             diagnostics.push(diagnostic);
         }
     } else if (!result.satisfied) {
-        const constraintLine = findConstraintLine(document.getText(), constraintName);
-        if (constraintLine >= 0) {
-            const range = new vscode.Range(constraintLine, 0, constraintLine, 1000);
-
-            let message = `❌ Constraint Violated`;
-            if (result.warnings.length > 0) {
-                message += '\n\n' + result.warnings.join('\n');
-            }
-
-            const diagnostic = new vscode.Diagnostic(
-                range,
-                message,
-                vscode.DiagnosticSeverity.Error
-            );
-            diagnostic.source = 'VitruvOCL';
-            diagnostic.code = 'constraint-violation';
-            diagnostics.push(diagnostic);
-        }
+        // intentionally no diagnostics for constraint violations
+        // Violations werden nur inline angezeigt
     }
 
-    // FIX: Convert readonly to mutable array
+    // Convert readonly to mutable array
     const existingDiagnostics = Array.from(diagnosticCollection.get(document.uri) || []);
     const otherDiagnostics = existingDiagnostics.filter(d => {
         const line = d.range.start.line;
