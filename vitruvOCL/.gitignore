@@ -27,3 +27,16 @@ bin/
 
 # Development artifacts
 grammars/
+
+# VSCode Extension
+vscode-extension/node_modules/
+vscode-extension/out/
+vscode-extension/*.vsix
+vscode-extension/.vscode-test/
+vscode-extension/npm-debug.log*
+vscode-extension/yarn-debug.log*
+vscode-extension/yarn-error.log*
+
+# VSCode Extension - Development
+vscode-extension/.DS_Store
+vscode-extension/Thumbs.db

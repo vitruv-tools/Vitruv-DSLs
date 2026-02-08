@@ -1,0 +1,101 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "VitruvOCL",
+    "scopeName": "source.vitruvocl",
+    "patterns": [
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#keywords"
+        },
+        {
+            "include": "#operators"
+        },
+        {
+            "include": "#constants"
+        },
+        {
+            "include": "#functions"
+        },
+        {
+            "include": "#strings"
+        },
+        {
+            "include": "#numbers"
+        }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.double-dash.vitruvocl",
+                    "match": "--.*$"
+                }
+            ]
+        },
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.control.vitruvocl",
+                    "match": "\\b(context|inv|pre|post|body|def|package|endpackage|if|then|else|endif|let|in)\\b"
+                },
+                {
+                    "name": "keyword.operator.logical.vitruvocl",
+                    "match": "\\b(and|or|not|implies|xor)\\b"
+                }
+            ]
+        },
+        "operators": {
+            "patterns": [
+                {
+                    "name": "keyword.operator.comparison.vitruvocl",
+                    "match": "(=|!=|<|>|<=|>=)"
+                },
+                {
+                    "name": "keyword.operator.arithmetic.vitruvocl",
+                    "match": "(\\+|-|\\*|/)"
+                }
+            ]
+        },
+        "constants": {
+            "patterns": [
+                {
+                    "name": "constant.language.vitruvocl",
+                    "match": "\\b(self|result|true|false|null)\\b"
+                }
+            ]
+        },
+        "functions": {
+            "patterns": [
+                {
+                    "name": "support.function.vitruvocl",
+                    "match": "\\b(select|reject|collect|forAll|exists|any|one|isUnique|sortedBy|size|isEmpty|notEmpty|includes|excludes|includesAll|excludesAll|sum|count|min|max|first|last|at|indexOf|union|intersection|append|prepend|insertAt|subSequence|allInstances|oclIsKindOf|oclIsTypeOf|oclAsType)\\b"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.single.vitruvocl",
+                    "begin": "'",
+                    "end": "'",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.vitruvocl",
+                            "match": "\\\\."
+                        }
+                    ]
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.vitruvocl",
+                    "match": "\\b\\d+(\\.\\d+)?\\b"
+                }
+            ]
+        }
+    }
+}

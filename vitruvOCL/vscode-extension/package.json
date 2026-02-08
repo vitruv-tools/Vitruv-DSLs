@@ -1,0 +1,111 @@
+{
+  "name": "vitruvocl",
+  "displayName": "VitruvOCL",
+  "description": "OCL constraint evaluation for Vitruvius",
+  "version": "0.0.1",
+  "publisher": "vitruvius",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "vitruvocl",
+        "aliases": [
+          "VitruvOCL",
+          "vocl"
+        ],
+        "extensions": [
+          ".ocl",
+          ".vocl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "vitruvocl",
+        "scopeName": "source.vitruvocl",
+        "path": "./syntaxes/vitruvocl.tmLanguage.json"
+      }
+    ],
+    "views": {
+      "test": [
+        {
+          "id": "vitruvoclTestExplorer",
+          "name": "VitruvOCL Constraints"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "vitruvocl.runAllConstraints",
+          "when": "view == vitruvoclTestExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "vitruvocl.refreshExplorer",
+          "when": "view == vitruvoclTestExplorer",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "vitruvocl.runConstraint",
+          "when": "view == vitruvoclTestExplorer && viewItem == constraint",
+          "group": "inline"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "vitruvocl.runConstraint",
+        "title": "Run VitruvOCL Constraint",
+        "icon": "$(play)"
+      },
+      {
+        "command": "vitruvocl.runAllConstraints",
+        "title": "Run All VitruvOCL Constraints",
+        "icon": "$(play-circle)"
+      },
+      {
+        "command": "vitruvocl.refreshExplorer",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "vitruvocl.checkDocument",
+        "title": "Check VitruvOCL Document",
+        "icon": "$(check)"
+      }
+    ],
+    "configuration": {
+      "title": "VitruvOCL",
+      "properties": {
+        "vitruvocl.compilerPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to vitruvocl.jar (leave empty for auto-detection)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.22.0",
+    "typescript": "^5.3.0"
+  }
+}
