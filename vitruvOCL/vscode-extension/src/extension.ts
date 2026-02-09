@@ -155,18 +155,15 @@ function updateInlineErrors(editor: vscode.TextEditor, constraintDetails?: Map<s
                 const range = new vscode.Range(i, lineLength, i, lineLength);
 
                 let errorText = `${constraintName} violated`;
-                let detailedErrorText = `${constraintName} violated`;
                 const details = constraintDetails?.get(constraintName);
                 if (details && details.length > 0) {
-                    detailedErrorText = details[0];
+                    errorText = details[0];
                     if (details.length > 1) {
-                        detailedErrorText += ` (+${details.length - 1} more)`;
+                        errorText += ` (+${details.length - 1} more)`;
                     }
                 }
 
-
                 const hover = new vscode.MarkdownString();
-
                 hover.appendMarkdown(`**❌ Constraint violated**\n\n`);
 
                 if (details && details.length > 0) {
@@ -190,7 +187,6 @@ function updateInlineErrors(editor: vscode.TextEditor, constraintDetails?: Map<s
                         }
                     }
                 };
-
 
                 inlineDecorations.push(decoration);
             }
@@ -251,8 +247,8 @@ async function runAllConstraints() {
             return;
         }
 
-        const ecoreFiles = await findEcoreFiles();
-        const instanceFiles = await findInstanceFiles();
+        const ecoreFiles = await findEcoreFiles(document.uri);
+        const instanceFiles = await findInstanceFiles(document.uri);
 
         if (ecoreFiles.length === 0 || instanceFiles.length === 0) {
             vscode.window.showWarningMessage('Missing .ecore or instance files');
@@ -328,8 +324,8 @@ async function runConstraint(constraintName: string, documentUri: vscode.Uri) {
             return;
         }
 
-        const ecoreFiles = await findEcoreFiles();
-        const instanceFiles = await findInstanceFiles();
+        const ecoreFiles = await findEcoreFiles(documentUri);
+        const instanceFiles = await findInstanceFiles(documentUri);
 
         if (ecoreFiles.length === 0 || instanceFiles.length === 0) {
             vscode.window.showWarningMessage('Missing files');
@@ -398,7 +394,6 @@ function updateDiagnosticsForConstraint(
     const diagnostics: vscode.Diagnostic[] = [];
 
     if (!result.success) {
-        // Nur Compilation Errors anzeigen
         for (const error of result.errors) {
             const line = Math.max(0, error.line - 1);
             const range = new vscode.Range(line, 0, line, 1000);
@@ -412,10 +407,8 @@ function updateDiagnosticsForConstraint(
         }
     } else if (!result.satisfied) {
         // intentionally no diagnostics for constraint violations
-        // Violations werden nur inline angezeigt
     }
 
-    // Convert readonly to mutable array
     const existingDiagnostics = Array.from(diagnosticCollection.get(document.uri) || []);
     const otherDiagnostics = existingDiagnostics.filter(d => {
         const line = d.range.start.line;
@@ -430,7 +423,6 @@ function updateDiagnosticsForConstraintBatch(
     document: vscode.TextDocument,
     constraint: ConstraintBatchResult
 ) {
-    // FIX: Convert readonly to mutable array
     const diagnostics: vscode.Diagnostic[] = Array.from(diagnosticCollection.get(document.uri) || []);
 
     if (!constraint.success) {
@@ -450,7 +442,6 @@ function updateDiagnosticsForConstraintBatch(
     } else if (!constraint.satisfied) {
         // intentionally no diagnostics for constraint violations
     }
-
 
     diagnosticCollection.set(document.uri, diagnostics);
 }
@@ -584,12 +575,54 @@ async function findCompilerJar(): Promise<string | null> {
     return null;
 }
 
-async function findEcoreFiles(): Promise<string[]> {
+async function findEcoreFiles(constraintFileUri?: vscode.Uri): Promise<string[]> {
+    if (constraintFileUri) {
+        const constraintDir = path.dirname(constraintFileUri.fsPath);
+
+        let searchDir = constraintDir;
+        const workspaceRoot = vscode.workspace.getWorkspaceFolder(constraintFileUri)?.uri.fsPath;
+
+        while (searchDir && searchDir !== workspaceRoot) {
+            const metamodelsPath = path.join(searchDir, 'metamodels');
+            if (fs.existsSync(metamodelsPath)) {
+                const ecorePattern = new vscode.RelativePattern(searchDir, 'metamodels/*.ecore');
+                const files = await vscode.workspace.findFiles(ecorePattern);
+                if (files.length > 0) {
+                    return files.map(uri => uri.fsPath);
+                }
+            }
+            const parentDir = path.dirname(searchDir);
+            if (parentDir === searchDir) break;
+            searchDir = parentDir;
+        }
+    }
+
     const files = await vscode.workspace.findFiles('**/metamodels/*.ecore');
     return files.map(uri => uri.fsPath);
 }
 
-async function findInstanceFiles(): Promise<string[]> {
+async function findInstanceFiles(constraintFileUri?: vscode.Uri): Promise<string[]> {
+    if (constraintFileUri) {
+        const constraintDir = path.dirname(constraintFileUri.fsPath);
+
+        let searchDir = constraintDir;
+        const workspaceRoot = vscode.workspace.getWorkspaceFolder(constraintFileUri)?.uri.fsPath;
+
+        while (searchDir && searchDir !== workspaceRoot) {
+            const instancesPath = path.join(searchDir, 'instances');
+            if (fs.existsSync(instancesPath)) {
+                const instancePattern = new vscode.RelativePattern(searchDir, 'instances/*.*');
+                const files = await vscode.workspace.findFiles(instancePattern);
+                if (files.length > 0) {
+                    return files.map(uri => uri.fsPath);
+                }
+            }
+            const parentDir = path.dirname(searchDir);
+            if (parentDir === searchDir) break;
+            searchDir = parentDir;
+        }
+    }
+
     const files = await vscode.workspace.findFiles('**/instances/*.*');
     return files.map(uri => uri.fsPath);
 }

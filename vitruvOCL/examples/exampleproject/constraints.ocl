@@ -66,3 +66,9 @@ context spaceMission::Spacecraft inv nonExistentEmpty:
   satelliteSystem::Satellite.allInstances().select(sat |
     sat.serialNumber == "NONEXISTENT-999"
   ).isEmpty()
+  
+
+context satelliteSystem::Satellite inv selectWithTwoVariables:
+    satelliteSystem::Satellite.allInstances().select(s1, s2 |
+      s1.serialNumber != s2.serialNumber
+  ).size() > 0
