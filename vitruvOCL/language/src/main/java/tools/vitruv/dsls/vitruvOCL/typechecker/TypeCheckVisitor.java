@@ -3363,20 +3363,329 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return resultType;
   }
 
-  // ==================== Not Yet Implemented ====================
-  /** Placeholder for correspondence operator (~). */
+  /**
+   * Type checks correspondence operator (~).
+   *
+   * <p>The correspondence operator is a binary predicate that checks if two objects are related via
+   * a Correspondence model instance. Both operands must be single object instances (not
+   * collections, not primitives).
+   *
+   * <p><b>Syntax:</b> {@code obj1 ~ obj2}
+   *
+   * <p><b>Type:</b> {@code Boolean}
+   *
+   * <p><b>Examples:</b>
+   *
+   * <pre>
+   * self ~ sat                                    // Boolean
+   * Satellite.allInstances().select(s | self ~ s) // Filtered collection
+   * self ~ sat implies sat.active                 // Consistency check
+   * </pre>
+   *
+   * @param ctx Correspondence comparison operation node
+   * @return Type.BOOLEAN if operands are valid, Type.ERROR otherwise
+   */
   @Override
   public Type visitCorrespondence(VitruvOCLParser.CorrespondenceContext ctx) {
+    Type leftType = visit(ctx.left);
     Type rightType = visit(ctx.right);
 
-    errors.add(
-        ctx.getStart().getLine(),
-        ctx.getStart().getCharPositionInLine(),
-        "Correspondence operator '~' not yet implemented",
-        ErrorSeverity.WARNING,
-        "type-checker");
+    // Unwrap singletons to get base types
+    Type baseLeftType = leftType.isSingleton() ? leftType.getElementType() : leftType;
+    Type baseRightType = rightType.isSingleton() ? rightType.getElementType() : rightType;
 
-    Type resultType = Type.set(rightType);
+    // Both sides must be single objects (singleton or object type, not multi-valued collection)
+    if (leftType.isCollection() && leftType.getMultiplicity() != Multiplicity.SINGLETON) {
+      errors.add(
+          ctx.left.start.getLine(),
+          ctx.left.start.getCharPositionInLine(),
+          "Correspondence operator ~ requires single object on left side, got collection: "
+              + leftType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    if (rightType.isCollection() && rightType.getMultiplicity() != Multiplicity.SINGLETON) {
+      errors.add(
+          ctx.right.start.getLine(),
+          ctx.right.start.getCharPositionInLine(),
+          "Correspondence operator ~ requires single object on right side, got collection: "
+              + rightType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Both must be metaclass types (not primitives)
+    if (!baseLeftType.isMetaclassType() && baseLeftType != Type.ANY) {
+      errors.add(
+          ctx.left.start.getLine(),
+          ctx.left.start.getCharPositionInLine(),
+          "Correspondence operator ~ requires object type on left side, got: " + baseLeftType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    if (!baseRightType.isMetaclassType() && baseRightType != Type.ANY) {
+      errors.add(
+          ctx.right.start.getLine(),
+          ctx.right.start.getCharPositionInLine(),
+          "Correspondence operator ~ requires object type on right side, got: " + baseRightType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Result is always Boolean
+    Type resultType = Type.BOOLEAN;
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks select(~) shorthand for correspondence filtering.
+   *
+   * <p>Desugars to: {@code select(x | self ~ x)}
+   *
+   * <p>Validates that:
+   *
+   * <ul>
+   *   <li>'self' is bound in the current scope
+   *   <li>'self' is an object type (not primitive)
+   *   <li>Receiver collection contains object types (not primitives)
+   * </ul>
+   *
+   * <p><b>Example:</b>
+   *
+   * <pre>{@code
+   * context Spacecraft inv:
+   *   Satellite.allInstances().select(~).notEmpty()
+   * }</pre>
+   *
+   * @param ctx The select(~) operation node
+   * @return Collection type matching the receiver's type, or Type.ERROR if validation fails
+   */
+  @Override
+  public Type visitSelectCorrespondence(VitruvOCLParser.SelectCorrespondenceContext ctx) {
+    // The receiver was already pushed onto receiverTypeStack by visitPrimaryWithNav
+    // Get it from the stack (same approach as visitSelectOp uses)
+    Type receiverType = receiverStack.peek();
+
+    if (receiverType == null || receiverType == Type.ERROR) {
+      errors.add(
+          ctx.start.getLine(),
+          ctx.start.getCharPositionInLine(),
+          "Cannot determine receiver type for select(~)",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Check that 'self' is bound
+    VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
+    if (selfSymbol == null) {
+      errors.add(
+          ctx.start.getLine(),
+          ctx.start.getCharPositionInLine(),
+          "select(~) requires 'self' to be bound in current context",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    Type selfType = selfSymbol.getType();
+
+    // Unwrap singleton if needed
+    Type baseSelfType = selfType.isSingleton() ? selfType.getElementType() : selfType;
+
+    // Self must be object type (not primitive)
+    if (!baseSelfType.isMetaclassType() && baseSelfType != Type.ANY) {
+      errors.add(
+          ctx.start.getLine(),
+          ctx.start.getCharPositionInLine(),
+          "select(~) requires 'self' to be an object type, got: " + baseSelfType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Get element type from receiver collection
+    Type elemType = receiverType.getElementType();
+
+    // Elements must be object types (not primitives)
+    if (!elemType.isMetaclassType() && elemType != Type.ANY) {
+      errors.add(
+          ctx.start.getLine(),
+          ctx.start.getCharPositionInLine(),
+          "select(~) requires collection of object types, got: " + elemType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Result is same collection type as receiver
+    Type resultType = receiverType;
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks reject(~) shorthand for inverse correspondence filtering.
+   *
+   * <p>Desugars to: {@code reject(x | self ~ x)}
+   *
+   * <p>Validates that:
+   *
+   * <ul>
+   *   <li>'self' is bound in the current scope
+   *   <li>'self' is an object type (not primitive)
+   *   <li>Receiver collection contains object types (not primitives)
+   * </ul>
+   *
+   * <p><b>Example:</b>
+   *
+   * <pre>{@code
+   * context Satellite inv:
+   *   Spacecraft.allInstances().reject(~).isEmpty()
+   * }</pre>
+   *
+   * @param ctx The reject(~) operation node
+   * @return Collection type matching the receiver's type, or Type.ERROR if validation fails
+   */
+  @Override
+  public Type visitRejectCorrespondence(VitruvOCLParser.RejectCorrespondenceContext ctx) {
+    Type receiverType = receiverStack.peek();
+
+    System.out.println("NUTTE");
+
+    if (receiverType == null || receiverType == Type.ERROR) {
+      errors.add(
+          ctx.start.getLine(),
+          ctx.start.getCharPositionInLine(),
+          "Cannot determine receiver type for reject(~)",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
+    if (selfSymbol == null) {
+      errors.add(
+          ctx.start.getLine(),
+          ctx.start.getCharPositionInLine(),
+          "reject(~) requires 'self' to be bound in current context",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    Type selfType = selfSymbol.getType();
+    Type baseSelfType = selfType.isSingleton() ? selfType.getElementType() : selfType;
+
+    if (!baseSelfType.isMetaclassType() && baseSelfType != Type.ANY) {
+      errors.add(
+          ctx.start.getLine(),
+          ctx.start.getCharPositionInLine(),
+          "reject(~) requires 'self' to be an object type, got: " + baseSelfType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    Type elemType = receiverType.getElementType();
+
+    if (!elemType.isMetaclassType() && elemType != Type.ANY) {
+      errors.add(
+          ctx.start.getLine(),
+          ctx.start.getCharPositionInLine(),
+          "reject(~) requires collection of object types, got: " + elemType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    Type resultType = receiverType;
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks exists(~) shorthand for correspondence existence check.
+   *
+   * <p>Desugars to: {@code exists(x | self ~ x)}
+   *
+   * <p>Validates that:
+   *
+   * <ul>
+   *   <li>'self' is bound in the current scope
+   *   <li>'self' is an object type (not primitive)
+   *   <li>Receiver collection contains object types (not primitives)
+   * </ul>
+   *
+   * <p><b>Example:</b>
+   *
+   * <pre>{@code
+   * context Spacecraft inv:
+   *   Satellite.allInstances().exists(~)
+   * }</pre>
+   *
+   * @param ctx The exists(~) operation node
+   * @return Type.BOOLEAN if validation succeeds, Type.ERROR otherwise
+   */
+  @Override
+  public Type visitExistsCorrespondence(VitruvOCLParser.ExistsCorrespondenceContext ctx) {
+    Type receiverType = receiverStack.peek();
+
+    if (receiverType == null || receiverType == Type.ERROR) {
+      errors.add(
+          ctx.start.getLine(),
+          ctx.start.getCharPositionInLine(),
+          "Cannot determine receiver type for exists(~)",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
+    if (selfSymbol == null) {
+      errors.add(
+          ctx.start.getLine(),
+          ctx.start.getCharPositionInLine(),
+          "exists(~) requires 'self' to be bound in current context",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    Type selfType = selfSymbol.getType();
+    Type baseSelfType = selfType.isSingleton() ? selfType.getElementType() : selfType;
+
+    if (!baseSelfType.isMetaclassType() && baseSelfType != Type.ANY) {
+      errors.add(
+          ctx.start.getLine(),
+          ctx.start.getCharPositionInLine(),
+          "exists(~) requires 'self' to be an object type, got: " + baseSelfType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    Type elemType = receiverType.getElementType();
+
+    if (!elemType.isMetaclassType() && elemType != Type.ANY) {
+      errors.add(
+          ctx.start.getLine(),
+          ctx.start.getCharPositionInLine(),
+          "exists(~) requires collection of object types, got: " + elemType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    // Result is always Boolean for exists
+    Type resultType = Type.BOOLEAN;
     nodeTypes.put(ctx, resultType);
     return resultType;
   }

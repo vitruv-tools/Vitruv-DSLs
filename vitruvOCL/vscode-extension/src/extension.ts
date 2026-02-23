@@ -38,8 +38,6 @@ interface ConstraintBatchResult {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('VitruvOCL extension activated');
-
     diagnosticCollection = vscode.languages.createDiagnosticCollection('vitruvocl');
     context.subscriptions.push(diagnosticCollection);
 
@@ -87,8 +85,6 @@ export function activate(context: vscode.ExtensionContext) {
         updateGutterIcons(vscode.window.activeTextEditor);
         updateInlineErrors(vscode.window.activeTextEditor);
     }
-
-    console.log('✓ VitruvOCL extension ready');
 }
 
 function updateGutterIcons(editor: vscode.TextEditor) {
@@ -268,9 +264,6 @@ async function runAllConstraints() {
             stderr: err.stderr || err.message
         }));
 
-        console.log('Batch eval STDOUT:', stdout);
-        if (stderr) console.log('Batch eval STDERR:', stderr);
-
         const result = JSON.parse(stdout) as BatchEvalResult;
 
         if (!result.success) {
@@ -309,7 +302,6 @@ async function runAllConstraints() {
 
     } catch (error: any) {
         vscode.window.showErrorMessage(`Run all failed: ${error.message}`);
-        console.error('Full error:', error);
     }
 }
 
@@ -405,8 +397,6 @@ function updateDiagnosticsForConstraint(
             diagnostic.source = 'VitruvOCL';
             diagnostics.push(diagnostic);
         }
-    } else if (!result.satisfied) {
-        // intentionally no diagnostics for constraint violations
     }
 
     const existingDiagnostics = Array.from(diagnosticCollection.get(document.uri) || []);
@@ -439,8 +429,6 @@ function updateDiagnosticsForConstraintBatch(
                 diagnostics.push(diagnostic);
             }
         }
-    } else if (!constraint.satisfied) {
-        // intentionally no diagnostics for constraint violations
     }
 
     diagnosticCollection.set(document.uri, diagnostics);

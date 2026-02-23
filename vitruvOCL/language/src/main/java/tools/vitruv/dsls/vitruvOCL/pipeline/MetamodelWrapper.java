@@ -20,6 +20,7 @@ import org.eclipse.emf.ecore.*;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 
@@ -121,7 +122,7 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    * @throws IOException If file cannot be read
    */
   public void loadModelInstance(Path xmiPath) throws IOException {
-    ResourceSet instanceResourceSet = new ResourceSetImpl();
+    ResourceSet instanceResourceSet = this.resourceSet;
 
     String extension = xmiPath.getFileName().toString();
     int dotIndex = extension.lastIndexOf('.');
@@ -163,11 +164,6 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
     for (EObject child : instance.eContents()) {
       addInstanceRecursive(child, sourceFile);
     }
-  }
-
-  /** Legacy method for backward compatibility */
-  private void addInstanceRecursive(EObject instance) {
-    addInstanceRecursive(instance, "unknown");
   }
 
   /**
@@ -242,5 +238,63 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   public void addInstance(EObject instance) {
     instances.computeIfAbsent(instance.eClass(), k -> new ArrayList<>()).add(instance);
     instanceFilenames.add("manually-added");
+  }
+
+  /**
+   * Returns all root objects from all loaded model resources.
+   *
+   * <p>Iterates through all resources in the resource set and collects their root contents. This
+   * includes metamodel packages, model instances, and correspondence models.
+   *
+   * @return List of all root EObjects from all loaded resources
+   */
+  @Override
+  public List<EObject> getAllRootObjects() {
+    List<EObject> roots = new ArrayList<>();
+
+    // Iterate through all resources in the resource set
+    for (Resource resource : resourceSet.getResources()) {
+      // Add all root contents from this resource
+      roots.addAll(resource.getContents());
+    }
+    return roots;
+  }
+
+  @Override
+  public Set<EObject> getCorrespondingObjects(EObject source) {
+    Set<EObject> result = new HashSet<>();
+
+    for (EObject root : getAllRootObjects()) {
+      if (!root.eClass().getName().equals("Correspondences")) continue;
+
+      EStructuralFeature correspondencesFeature =
+          root.eClass().getEStructuralFeature("correspondences");
+      if (correspondencesFeature == null) continue;
+
+      @SuppressWarnings("unchecked")
+      List<EObject> correspondences = (List<EObject>) root.eGet(correspondencesFeature);
+
+      for (EObject correspondence : correspondences) {
+        EStructuralFeature leftFeature =
+            correspondence.eClass().getEStructuralFeature("leftEObjects");
+        EStructuralFeature rightFeature =
+            correspondence.eClass().getEStructuralFeature("rightEObjects");
+        if (leftFeature == null || rightFeature == null) continue;
+
+        @SuppressWarnings("unchecked")
+        List<EObject> leftObjects = (List<EObject>) correspondence.eGet(leftFeature);
+        @SuppressWarnings("unchecked")
+        List<EObject> rightObjects = (List<EObject>) correspondence.eGet(rightFeature);
+
+        List<EObject> resolvedLeft =
+            leftObjects.stream().map(o -> EcoreUtil.resolve(o, correspondence)).toList();
+        List<EObject> resolvedRight =
+            rightObjects.stream().map(o -> EcoreUtil.resolve(o, correspondence)).toList();
+
+        if (resolvedLeft.contains(source)) result.addAll(resolvedRight);
+        if (resolvedRight.contains(source)) result.addAll(resolvedLeft);
+      }
+    }
+    return result;
   }
 }

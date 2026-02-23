@@ -97,13 +97,13 @@ infixedExpCS
     prefixedExpCS                                                           # prefixedExpr
     | left=infixedExpCS op=('*'|'/') right=infixedExpCS                    # multiplicative
     | left=infixedExpCS op=('+'|'-') right=infixedExpCS                    # additive
+    | left=infixedExpCS op='~' right=infixedExpCS                          # correspondence
     | left=infixedExpCS op='==' right=infixedExpCS                         # equalityComparison
     | left=infixedExpCS op='!=' right=infixedExpCS                         # inequalityComparison
     | left=infixedExpCS op='<' right=infixedExpCS                          # lessThanComparison
     | left=infixedExpCS op='<=' right=infixedExpCS                         # lessThanOrEqualComparison
     | left=infixedExpCS op='>' right=infixedExpCS                          # greaterThanComparison
     | left=infixedExpCS op='>=' right=infixedExpCS                         # greaterThanOrEqualComparison
-    | left=infixedExpCS op='~' right=infixedExpCS                          # correspondence
     | left=infixedExpCS op='^' right=infixedExpCS                          # message
     | left=infixedExpCS op='and' right=infixedExpCS                        # logicalAnd
     | left=infixedExpCS op='or' right=infixedExpCS                         # logicalOr
@@ -271,8 +271,11 @@ collectionOpCS
 
 iteratorOpCS
 :
-    'select' '(' iteratorVars=iteratorVarList '|' body=expCS ')'    # selectOp
-    | 'reject' '(' iteratorVars=iteratorVarList '|' body=expCS ')'  # rejectOp
+    'select' '(' '~' ')'                                            # selectCorrespondence
+    | 'reject' '(' '~' ')'                                          # rejectCorrespondence
+    | 'exists' '(' '~' ')'                                          # existsCorrespondence 
+    | 'select' '(' iteratorVars=iteratorVarList '|' body=expCS ')'  # selectOp
+    | 'reject' '(' iteratorVars=iteratorVarList '|' body=expCS ')'  # rejectOp                                  
     | 'collect' '(' iteratorVars=iteratorVarList '|' body=expCS ')' # collectOp
     | 'forAll' '(' iteratorVars=iteratorVarList '|' body=expCS ')'  # forAllOp
     | 'exists' '(' iteratorVars=iteratorVarList '|' body=expCS ')'  # existsOp

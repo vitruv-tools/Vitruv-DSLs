@@ -440,6 +440,19 @@ public class OCLIsKindOfTest {
             throw new UnsupportedOperationException(
                 "Unimplemented method 'getInstanceNameByIndex'");
           }
+
+          @Override
+          public List<EObject> getAllRootObjects() {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException("Unimplemented method 'getAllRootObjects'");
+          }
+
+          @Override
+          public Set<EObject> getCorrespondingObjects(EObject source) {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException(
+                "Unimplemented method 'getCorrespondingObjects'");
+          }
         };
 
     // Initialize 3-pass architecture
@@ -509,6 +522,19 @@ public class OCLIsKindOfTest {
             // TODO Auto-generated method stub
             throw new UnsupportedOperationException(
                 "Unimplemented method 'getInstanceNameByIndex'");
+          }
+
+          @Override
+          public List<EObject> getAllRootObjects() {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException("Unimplemented method 'getAllRootObjects'");
+          }
+
+          @Override
+          public Set<EObject> getCorrespondingObjects(EObject source) {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException(
+                "Unimplemented method 'getCorrespondingObjects'");
           }
         };
 
@@ -795,6 +821,19 @@ public class OCLIsKindOfTest {
             throw new UnsupportedOperationException(
                 "Unimplemented method 'getInstanceNameByIndex'");
           }
+
+          @Override
+          public List<EObject> getAllRootObjects() {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException("Unimplemented method 'getAllRootObjects'");
+          }
+
+          @Override
+          public Set<EObject> getCorrespondingObjects(EObject source) {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException(
+                "Unimplemented method 'getCorrespondingObjects'");
+          }
         };
 
     // Initialize 3-pass architecture
@@ -808,8 +847,7 @@ public class OCLIsKindOfTest {
     symbolTableBuilder.visit(tree);
 
     if (errors.hasErrors()) {
-      for (CompileError error : errors.getErrors()) {
-      }
+      for (CompileError error : errors.getErrors()) {}
       fail("Pass 1 (Symbol Table) failed: " + errors.getErrors());
     }
 
@@ -819,8 +857,7 @@ public class OCLIsKindOfTest {
     typeChecker.visit(tree);
 
     if (errors.hasErrors()) {
-      for (CompileError error : errors.getErrors()) {
-      }
+      for (CompileError error : errors.getErrors()) {}
       fail("Pass 2 (Type checking) failed: " + typeChecker.getErrorCollector().getErrors());
     }
 
@@ -830,8 +867,7 @@ public class OCLIsKindOfTest {
     Value result = evaluator.visit(tree);
 
     if (evaluator.hasErrors()) {
-      for (CompileError error : errors.getErrors()) {
-      }
+      for (CompileError error : errors.getErrors()) {}
       fail("Pass 3 (Evaluation) failed: " + evaluator.getErrorCollector().getErrors());
     }
 

@@ -135,6 +135,11 @@ public class SmartLoader {
       return new LoadResult(wrapper, fileErrors, warnings);
     }
 
+    // ALWAYS load correspondence metamodel if available
+    if (availableEcores.containsKey("correspondence")) {
+      requiredPackages.add("correspondence");
+    }
+
     // Load only required metamodels
     for (String pkg : requiredPackages) {
       if (!availableEcores.containsKey(pkg)) {
@@ -168,8 +173,11 @@ public class SmartLoader {
           }
         }
       } else {
-        warnings.add(
-            new Warning(Warning.WarningType.UNUSED_MODEL, "No instances for '" + pkg + "'"));
+        // Don't warn for correspondence package if it has no instances
+        if (!pkg.equals("correspondence")) {
+          warnings.add(
+              new Warning(Warning.WarningType.UNUSED_MODEL, "No instances for '" + pkg + "'"));
+        }
       }
     }
 

@@ -4,16 +4,16 @@ A domain-specific language for cross-metamodel OCL constraint evaluation in the 
 
 ## Overview
 
-VitruvOCL implements OCL# semantics for type-safe constraint evaluation across multiple EMF metamodels. It features a three-pass compiler architecture with smart metamodel loading, comprehensive type checking, and support for cross-metamodel references.
+VitruvOCL implements OCL# semantics for type-safe constraint evaluation across multiple EMF metamodels. It features a three-pass compiler architecture with smart metamodel loading, type checking, and support for cross-metamodel references.
 
 **Key Features:**
-- **OCL# Semantics**: Null-safe "everything is a collection" approach
+- **OCL# Semantics**: Null-safe
 - **Cross-Metamodel Constraints**: Reference entities across different metamodels
 - **Smart Loading**: Automatically loads only required metamodels
 - **Type Safety**: Full static type checking before evaluation
 - **EMF Integration**: Native support for Ecore metamodels and XMI instances
 
-Based on: Gogolla, M., Vallecillo, A., Büttner, F. (2013). ["OCL# - A New Approach to Type-Safe OCL"](https://dl.acm.org/doi/10.1145/2499777.2499781). ECMFA 2013.
+Based on: Steinmann, F., Clarisó, R., Gogolla, M. (2025). ["Meet OCL{^\sharp }, a relational object constraint language"](https://link.springer.com/article/10.1007/s10270-025-01286-1).
 
 ## Quick Start
 

@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiFunction;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -2769,16 +2770,214 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return visit(ctx.variableExpCS());
   }
 
-  // ==================== Not Yet Implemented Features ====================
-
   /**
-   * Placeholder for correspondence operator (~).
+   * Evaluates correspondence operator (~).
    *
-   * <p>Not yet implemented - reports error.
+   * <p>Checks if two objects are related via a Correspondence model instance. Searches through all
+   * loaded Correspondence objects to find a relationship between the left and right operands.
+   *
+   * <p><b>Algorithm:</b>
+   *
+   * <ol>
+   *   <li>Evaluate both operands to get EObject instances
+   *   <li>Get all Correspondence objects from loaded models
+   *   <li>For each Correspondence, check if leftEObjects contains obj1 and rightEObjects contains
+   *       obj2
+   *   <li>Also check reverse: leftEObjects contains obj2 and rightEObjects contains obj1
+   *   <li>Return true if any correspondence found, false otherwise
+   * </ol>
+   *
+   * @param ctx Correspondence expression context
+   * @return Value.of(true) if correspondence exists, Value.of(false) otherwise
    */
   @Override
   public Value visitCorrespondence(VitruvOCLParser.CorrespondenceContext ctx) {
-    return error("Correspondence operator '~' not yet implemented", ctx);
+    Value leftValue = visit(ctx.left);
+    Value rightValue = visit(ctx.right);
+
+    // Both sides must be singletons
+    if (leftValue.size() != 1 || rightValue.size() != 1) {
+      return error("Correspondence operator ~ requires singleton operands", ctx);
+    }
+
+    // Extract EObject instances
+    EObject leftObject = leftValue.getElements().get(0).tryGetInstance();
+    EObject rightObject = rightValue.getElements().get(0).tryGetInstance();
+
+    if (leftObject == null || rightObject == null) {
+      return error("Correspondence operator ~ requires object instances", ctx);
+    }
+
+    // Check if correspondence exists between these two objects
+    boolean corresponds = checkCorrespondence(leftObject, rightObject);
+
+    return Value.boolValue(corresponds);
+  }
+
+  /**
+   * Checks if two EObjects are related via a Correspondence.
+   *
+   * <p>Searches all Correspondence objects loaded in the VSUM for a relationship between obj1 and
+   * obj2. The correspondence is bidirectional: obj1 can appear in leftEObjects or rightEObjects.
+   *
+   * @param obj1 First object
+   * @param obj2 Second object
+   * @return true if a Correspondence relates obj1 and obj2, false otherwise
+   */
+  private boolean checkCorrespondence(EObject obj1, EObject obj2) {
+    Set<EObject> corresponding = specification.getCorrespondingObjects(obj1);
+    if (corresponding.contains(obj2)) return true;
+    // bidirektional prüfen
+    return specification.getCorrespondingObjects(obj2).contains(obj1);
+  }
+
+  /**
+   * Evaluates select(~) shorthand for correspondence filtering.
+   *
+   * <p>Desugars to: {@code select(x | self ~ x)}
+   *
+   * <p>Filters the receiver collection to keep only elements that correspond to 'self' according to
+   * the loaded Correspondence model instances.
+   *
+   * <p><b>Example:</b>
+   *
+   * <pre>{@code
+   * context Spacecraft inv:
+   *   Satellite.allInstances().select(~).notEmpty()
+   * }</pre>
+   *
+   * @param ctx The select(~) operation node
+   * @return Filtered collection containing only elements corresponding to 'self'
+   */
+  @Override
+  public Value visitSelectCorrespondence(VitruvOCLParser.SelectCorrespondenceContext ctx) {
+    Value receiver = receiverStack.peek();
+
+    // Get 'self' from symbol table
+    VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
+    if (selfSymbol == null) {
+      return error("'self' not defined in current context", ctx);
+    }
+
+    Value selfValue = selfSymbol.getValue();
+    if (selfValue.size() != 1) {
+      return error("select(~) requires singleton 'self'", ctx);
+    }
+
+    EObject selfObject = selfValue.getElements().get(0).tryGetInstance();
+    if (selfObject == null) {
+      return error("select(~) requires 'self' to be an object instance", ctx);
+    }
+
+    // Filter receiver collection by correspondence
+    List<OCLElement> results = new ArrayList<>();
+    for (OCLElement elem : receiver.getElements()) {
+      EObject elemObject = elem.tryGetInstance();
+      if (elemObject != null && checkCorrespondence(selfObject, elemObject)) {
+        results.add(elem);
+      }
+    }
+
+    return Value.of(results, receiver.getRuntimeType());
+  }
+
+  /**
+   * Evaluates reject(~) shorthand for inverse correspondence filtering.
+   *
+   * <p>Desugars to: {@code reject(x | self ~ x)}
+   *
+   * <p>Filters the receiver collection to keep only elements that do NOT correspond to 'self'
+   * according to the loaded Correspondence model instances.
+   *
+   * <p><b>Example:</b>
+   *
+   * <pre>{@code
+   * context Satellite inv:
+   *   Spacecraft.allInstances().reject(~).isEmpty()
+   * }</pre>
+   *
+   * @param ctx The reject(~) operation node
+   * @return Filtered collection containing only elements NOT corresponding to 'self'
+   */
+  @Override
+  public Value visitRejectCorrespondence(VitruvOCLParser.RejectCorrespondenceContext ctx) {
+    Value receiver = receiverStack.peek();
+
+    // Get 'self' from symbol table
+    VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
+    if (selfSymbol == null) {
+      return error("'self' not defined in current context", ctx);
+    }
+
+    Value selfValue = selfSymbol.getValue();
+    if (selfValue.size() != 1) {
+      return error("reject(~) requires singleton 'self'", ctx);
+    }
+
+    EObject selfObject = selfValue.getElements().get(0).tryGetInstance();
+    if (selfObject == null) {
+      return error("reject(~) requires 'self' to be an object instance", ctx);
+    }
+
+    // Filter OUT corresponding objects (inverse of select)
+    List<OCLElement> results = new ArrayList<>();
+    for (OCLElement elem : receiver.getElements()) {
+      EObject elemObject = elem.tryGetInstance();
+      if (elemObject != null && !checkCorrespondence(selfObject, elemObject)) {
+        results.add(elem);
+      }
+    }
+
+    return Value.of(results, receiver.getRuntimeType());
+  }
+
+  /**
+   * Evaluates exists(~) shorthand for correspondence existence check.
+   *
+   * <p>Desugars to: {@code exists(x | self ~ x)}
+   *
+   * <p>Returns true if at least one element in the receiver collection corresponds to 'self'
+   * according to the loaded Correspondence model instances. Short-circuits on first match.
+   *
+   * <p><b>Example:</b>
+   *
+   * <pre>{@code
+   * context Spacecraft inv:
+   *   Satellite.allInstances().exists(~)
+   * }</pre>
+   *
+   * @param ctx The exists(~) operation node
+   * @return Singleton Boolean: true if any element corresponds to 'self', false otherwise
+   */
+  @Override
+  public Value visitExistsCorrespondence(VitruvOCLParser.ExistsCorrespondenceContext ctx) {
+    Value receiver = receiverStack.peek();
+
+    // Get 'self' from symbol table
+    VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
+    if (selfSymbol == null) {
+      return error("'self' not defined in current context", ctx);
+    }
+
+    Value selfValue = selfSymbol.getValue();
+    if (selfValue.size() != 1) {
+      return error("exists(~) requires singleton 'self'", ctx);
+    }
+
+    EObject selfObject = selfValue.getElements().get(0).tryGetInstance();
+    if (selfObject == null) {
+      return error("exists(~) requires 'self' to be an object instance", ctx);
+    }
+
+    // Check if ANY element corresponds (short-circuit on first match)
+    for (OCLElement elem : receiver.getElements()) {
+      EObject elemObject = elem.tryGetInstance();
+      if (elemObject != null && checkCorrespondence(selfObject, elemObject)) {
+        return Value.boolValue(true);
+      }
+    }
+
+    return Value.boolValue(false);
   }
 
   /**

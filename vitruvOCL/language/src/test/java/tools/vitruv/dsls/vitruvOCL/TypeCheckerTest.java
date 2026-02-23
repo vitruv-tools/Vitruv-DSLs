@@ -1202,6 +1202,19 @@ public class TypeCheckerTest {
             throw new UnsupportedOperationException(
                 "Unimplemented method 'getInstanceNameByIndex'");
           }
+
+          @Override
+          public List<EObject> getAllRootObjects() {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException("Unimplemented method 'getAllRootObjects'");
+          }
+
+          @Override
+          public Set<EObject> getCorrespondingObjects(EObject source) {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException(
+                "Unimplemented method 'getCorrespondingObjects'");
+          }
         };
 
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);

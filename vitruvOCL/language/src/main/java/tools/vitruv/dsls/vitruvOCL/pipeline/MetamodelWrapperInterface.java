@@ -54,4 +54,20 @@ public interface MetamodelWrapperInterface {
    * @return The filename (e.g., "spacecraft-atlas.spacemission"), or null if index out of bounds
    */
   String getInstanceNameByIndex(int index);
+
+  /**
+   * Returns all root objects from all loaded model resources.
+   *
+   * <p>This includes root objects from all metamodels and instances currently loaded in the
+   * resource set. Used for accessing correspondence models and other cross-cutting model elements.
+   *
+   * @return List of all root EObjects from all loaded resources
+   */
+  List<EObject> getAllRootObjects();
+
+  /**
+   * Returns all objects corresponding to the given source object. Returns empty set if no
+   * correspondence model is available (file-path mode).
+   */
+  Set<EObject> getCorrespondingObjects(EObject source);
 }

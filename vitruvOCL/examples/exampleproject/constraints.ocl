@@ -55,7 +55,7 @@ context spaceMission::Spacecraft inv letBinding:
 
 context spaceMission::Spacecraft inv conditional:
   if satelliteSystem::Satellite.allInstances().size() > 2
-  then self.operational
+  then self.operationalP
   else self.mass > 0
   endif
 
@@ -72,3 +72,7 @@ context satelliteSystem::Satellite inv selectWithTwoVariables:
     satelliteSystem::Satellite.allInstances().select(s1, s2 |
       s1.serialNumber != s2.serialNumber
   ).size() > 0
+
+context spaceMission::Spacecraft inv correspondence:
+          self.operational and
+          satelliteSystem::Satellite.allInstances().exists(~)

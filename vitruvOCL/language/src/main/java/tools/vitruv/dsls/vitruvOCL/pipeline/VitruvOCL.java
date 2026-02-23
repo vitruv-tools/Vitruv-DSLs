@@ -22,6 +22,7 @@ import tools.vitruv.dsls.vitruvOCL.common.CompileError;
 import tools.vitruv.dsls.vitruvOCL.common.ErrorSeverity;
 import tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement;
 import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
+import tools.vitruv.framework.vsum.VirtualModel;
 
 /**
  * Main API for VitruvOCL constraint evaluation.
@@ -36,10 +37,29 @@ import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
  *   <li>Single constraint evaluation with explicit file lists
  *   <li>Batch constraint evaluation from constraint files
  *   <li>Convention-over-configuration project evaluation
+ *   <li>VSUM-integrated evaluation via {@link #registerVSUM(VirtualModel)}
  * </ul>
  *
- * <p><b>Thread Safety:</b> All methods are thread-safe. Each invocation creates isolated compiler
- * and loader instances with no shared mutable state.
+ * <h2>VSUM Integration</h2>
+ *
+ * <p>When used within a Vitruvius project, constraints can be evaluated directly against a running
+ * VSUM without providing explicit file paths. The VSUM already holds all model resources in memory,
+ * so no additional file loading is needed.
+ *
+ * <pre>{@code
+ * // Once at startup, register the VSUM:
+ * VirtualModel vsum = new VirtualModelBuilder()...buildAndInitialize();
+ * VitruvOCL.registerVSUM(vsum);
+ *
+ * // Then evaluate constraints without file paths:
+ * BatchValidationResult results = VitruvOCL.evaluateConstraints(
+ *     Path.of("constraints/templateConstraints.vitruvocl")
+ * );
+ *
+ * // When disposing the VSUM:
+ * vsum.dispose();
+ * VitruvOCL.clearVSUM();
+ * }</pre>
  *
  * <h2>Constraint Syntax</h2>
  *
@@ -59,99 +79,6 @@ import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
  *   <li>All values are collections (singletons like {@code [5]} or empty {@code []})
  * </ul>
  *
- * <h2>Usage Examples</h2>
- *
- * <h3>Single Constraint Evaluation</h3>
- *
- * <pre>{@code
- * // Within-metamodel constraint
- * ConstraintResult result = VitruvOCL.evaluateConstraint(
- *     "context spaceMission::Spacecraft inv: self.mass > 0",
- *     new Path[]{Path.of("spacemission.ecore")},
- *     new Path[]{Path.of("voyager.spacemission")}
- * );
- *
- * if (result.isSuccess() && result.isSatisfied()) {
- *     System.out.println("Constraint satisfied!");
- * } else {
- *     result.getCompilerErrors().forEach(System.err::println);
- *     result.getWarnings().forEach(System.err::println);
- * }
- * }</pre>
- *
- * <h3>Cross-Metamodel Constraint</h3>
- *
- * <pre>{@code
- * // Reference entities from different metamodels
- * String constraint = """
- *     context spaceMission::Spacecraft inv:
- *       satelliteSystem::Satellite.allInstances().collect(sat |
- *         sat.massKg
- *       ).sum() > self.mass
- *     """;
- *
- * ConstraintResult result = VitruvOCL.evaluateConstraint(
- *     constraint,
- *     new Path[]{
- *         Path.of("spacemission.ecore"),
- *         Path.of("satellitesystem.ecore")
- *     },
- *     new Path[]{
- *         Path.of("voyager.spacemission"),
- *         Path.of("atlas.satellitesystem")
- *     }
- * );
- * }</pre>
- *
- * <h3>Batch Evaluation from File</h3>
- *
- * <pre>{@code
- * // constraints.ocl contains multiple constraints
- * BatchValidationResult results = VitruvOCL.evaluateConstraints(
- *     Path.of("constraints.ocl"),
- *     new Path[]{Path.of("model.ecore")},
- *     new Path[]{Path.of("instance.xmi")}
- * );
- *
- * System.out.println("Satisfied: " + results.getSatisfiedCount());
- * System.out.println("Violated: " + results.getViolatedCount());
- * }</pre>
- *
- * <h3>Project-Based Evaluation (Convention over Configuration)</h3>
- *
- * <pre>
- * project/
- *   constraints.ocl              - Constraint definitions
- *   metamodels/
- *     spacemission.ecore
- *     satellitesystem.ecore
- *   instances/
- *     voyager.spacemission
- *     atlas.satellitesystem
- * </pre>
- *
- * <pre>{@code
- * BatchValidationResult results = VitruvOCL.evaluateProject(
- *     Path.of("project")
- * );
- * }</pre>
- *
- * <h2>Constraint File Format</h2>
- *
- * Multiple constraints can be defined in a single file:
- *
- * <pre>
- * -- Comments start with double dash
- * context spaceMission::Spacecraft inv:
- *   self.mass > 0
- *
- * context satelliteSystem::Satellite inv:
- *   self.serialNumber.size() > 0
- * </pre>
- *
- * <p>Each constraint must begin with {@code context} keyword. Lines starting with {@code --} are
- * treated as comments and ignored.
- *
  * <h2>Result Interpretation</h2>
  *
  * {@link ConstraintResult} provides multiple status indicators:
@@ -164,28 +91,96 @@ import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
  *   <li>{@code getWarnings()} - Non-fatal issues (violations, duplicates, unused metamodels)
  * </ul>
  *
- * <p><b>Important:</b> {@code isSatisfied() == false} indicates constraint violation (instances
- * exist where the constraint evaluates to false), not compilation errors. Check {@code isSuccess()}
- * first to ensure the constraint was successfully evaluated.
- *
- * <h2>File Extensions</h2>
- *
- * Model instance files use extensions matching their metamodel name:
- *
- * <ul>
- *   <li>{@code .ecore} - Metamodel definitions
- *   <li>{@code .xmi} - Generic EMF instances
- *   <li>{@code .spacemission} - Instances of spaceMission metamodel
- *   <li>{@code .satellitesystem} - Instances of satelliteSystem metamodel
- * </ul>
- *
- * <p>The extension after the dot corresponds to the metamodel package name (e.g., {@code
- * spaceMission.ecore} creates instances with {@code .spacemission} extension).
- *
  * @see ConstraintResult for single constraint evaluation results
  * @see BatchValidationResult for multi-constraint validation results
  */
 public class VitruvOCL {
+
+  /**
+   * The wrapper around the currently registered VSUM. {@code null} if no VSUM has been registered.
+   *
+   * <p>Set via {@link #registerVSUM(VirtualModel)}, cleared via {@link #clearVSUM()}.
+   */
+  private static VSUMWrapper vsumWrapper = null;
+
+  // ---------------------------------------------------------------------------
+  // VSUM registration
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Registers a VSUM as the model source for constraint evaluation.
+   *
+   * <p>Creates a {@link VSUMWrapper} that discovers and registers all metamodels from the VSUM's
+   * in-memory resources. After calling this method, constraints can be evaluated without supplying
+   * explicit file paths via {@link #evaluateConstraint(String)} and {@link
+   * #evaluateConstraints(Path)}.
+   *
+   * <p>Replaces any previously registered VSUM. Call {@link #clearVSUM()} to deregister.
+   *
+   * @param vsum The VSUM to register. Must not be {@code null}.
+   * @throws IllegalArgumentException if {@code vsum} is {@code null}
+   */
+  public static synchronized void registerVSUM(VirtualModel vsum) {
+    if (vsum == null) {
+      throw new IllegalArgumentException("VSUM must not be null");
+    }
+    vsumWrapper = new VSUMWrapper(vsum);
+  }
+
+  /**
+   * Deregisters the currently registered VSUM and releases its resources.
+   *
+   * <p>Should be called when the VSUM is disposed to avoid holding stale references:
+   *
+   * <pre>{@code
+   * vsum.dispose();
+   * VitruvOCL.clearVSUM();
+   * }</pre>
+   */
+  public static synchronized void clearVSUM() {
+    vsumWrapper = null;
+  }
+
+  /**
+   * Returns whether a VSUM is currently registered.
+   *
+   * @return {@code true} if a VSUM has been registered via {@link #registerVSUM}
+   */
+  public static synchronized boolean hasRegisteredVSUM() {
+    return vsumWrapper != null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // VSUM-aware evaluation (no file paths needed)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Evaluates a single constraint against the registered VSUM.
+   *
+   * @param constraint OCL constraint expression (must start with {@code context})
+   * @return Evaluation result with satisfaction status and diagnostics
+   * @throws IllegalStateException if no VSUM has been registered via {@link #registerVSUM}
+   */
+  public static ConstraintResult evaluateConstraint(String constraint) {
+    return compileAndEvaluate(constraint, getVsumWrapper(), List.of());
+  }
+
+  /**
+   * Evaluates all constraints from a file against the registered VSUM.
+   *
+   * @param constraintsFile File containing one or more constraint definitions
+   * @return Batch validation result for all constraints in file
+   * @throws IOException If the constraint file cannot be read
+   * @throws IllegalStateException if no VSUM has been registered via {@link #registerVSUM}
+   */
+  public static BatchValidationResult evaluateConstraints(Path constraintsFile) throws IOException {
+    List<String> constraints = parseConstraintsFile(constraintsFile);
+    return evaluateConstraints(constraints, getVsumWrapper());
+  }
+
+  // ---------------------------------------------------------------------------
+  // File-path-based evaluation (original API, unchanged)
+  // ---------------------------------------------------------------------------
 
   /**
    * Evaluates single constraint against provided models.
@@ -198,14 +193,10 @@ public class VitruvOCL {
    *   <li>Runtime evaluation against model instances
    * </ol>
    *
-   * <p>The constraint is evaluated for each instance of the context type. Result indicates whether
-   * ALL instances satisfy the constraint.
-   *
    * @param constraint OCL constraint expression (must start with {@code context})
    * @param ecoreFiles Metamodel definition files (.ecore)
    * @param xmiFiles Model instance files (any EMF-compatible extension)
-   * @return Evaluation result with satisfaction status and diagnostics. Use {@code isSuccess()} to
-   *     check for compilation errors, {@code isSatisfied()} to check constraint satisfaction.
+   * @return Evaluation result with satisfaction status and diagnostics
    */
   public static ConstraintResult evaluateConstraint(
       String constraint, Path[] ecoreFiles, Path[] xmiFiles) {
@@ -217,115 +208,32 @@ public class VitruvOCL {
           constraint, false, List.of(), loadResult.fileErrors, loadResult.warnings);
     }
 
-    VitruvOCLCompiler compiler = new VitruvOCLCompiler(loadResult.wrapper, null);
-    Value result = compiler.compile(constraint);
-
-    if (result == null) {
-      return new ConstraintResult(
-          constraint,
-          false,
-          List.of(
-              new CompileError(
-                  1, 0, "Syntax error in constraint", ErrorSeverity.ERROR, constraint)),
-          loadResult.fileErrors,
-          loadResult.warnings);
-    }
-
-    List<CompileError> compilerErrors =
-        compiler.hasErrors() ? compiler.getErrors().getErrors() : List.of();
-
-    if (!compilerErrors.isEmpty()) {
-      return new ConstraintResult(
-          constraint, false, compilerErrors, loadResult.fileErrors, loadResult.warnings);
-    }
-
-    boolean satisfied = true;
-    List<Integer> violatingIndices = new ArrayList<>();
-    List<Warning> warnings = new ArrayList<>(loadResult.warnings);
-
-    for (int i = 0; i < result.size(); i++) {
-      OCLElement elem = result.getElements().get(i);
-      if (elem instanceof OCLElement.BoolValue boolVal) {
-        if (!boolVal.value()) {
-          satisfied = false;
-          violatingIndices.add(i);
-        }
-      } else {
-        satisfied = false;
-        violatingIndices.add(i);
-      }
-    }
-
-    if (!violatingIndices.isEmpty()) {
-      // Hole Instanznamen aus dem Wrapper
-      List<String> instanceNames = new ArrayList<>();
-      for (int idx : violatingIndices) {
-        String name = loadResult.wrapper.getInstanceNameByIndex(idx); // NEU
-        instanceNames.add(name != null ? name : "index_" + idx);
-      }
-
-      warnings.add(
-          new Warning(
-              Warning.WarningType.CONSTRAINT_VIOLATION,
-              "Constraint violated for instances: " + instanceNames));
-    }
-
-    return new ConstraintResult(
-        constraint, satisfied, compilerErrors, loadResult.fileErrors, warnings);
+    return compileAndEvaluate(constraint, loadResult.wrapper, loadResult.warnings);
   }
 
-  /**
-   * Evaluates multiple constraints, deduplicating and reporting duplicates as warnings.
-   *
-   * <p>Each constraint is evaluated independently. Duplicate constraints (exact string match) are
-   * detected and marked with warnings but not re-evaluated.
-   *
-   * @param constraints List of constraint expressions (each must start with {@code context})
-   * @param ecoreFiles Metamodel definition files
-   * @param xmiFiles Model instance files
-   * @return Aggregated batch validation result containing individual constraint results
-   */
   public static BatchValidationResult evaluateConstraints(
       List<String> constraints, Path[] ecoreFiles, Path[] xmiFiles) {
-    List<ConstraintResult> results = new ArrayList<>();
-    Set<String> seenConstraints = new HashSet<>();
+    if (constraints.isEmpty()) {
+      return new BatchValidationResult(List.of());
+    }
+    SmartLoader.LoadResult loadResult =
+        SmartLoader.loadForConstraint(constraints.get(0), ecoreFiles, xmiFiles);
 
-    for (String constraint : constraints) {
-      if (seenConstraints.contains(constraint)) {
-        ConstraintResult duplicate =
-            new ConstraintResult(
-                constraint,
-                false,
-                List.of(),
-                List.of(),
-                List.of(
-                    new Warning(
-                        Warning.WarningType.DUPLICATE_CONSTRAINT,
-                        "Constraint specified multiple times")));
-        results.add(duplicate);
-        continue;
-      }
-
-      seenConstraints.add(constraint);
-      results.add(evaluateConstraint(constraint, ecoreFiles, xmiFiles));
+    if (loadResult.hasErrors()) {
+      return new BatchValidationResult(
+          constraints.stream()
+              .map(
+                  c ->
+                      new ConstraintResult(
+                          c, false, List.of(), loadResult.fileErrors, loadResult.warnings))
+              .toList());
     }
 
-    return new BatchValidationResult(results);
+    return evaluateConstraints(constraints, loadResult.wrapper);
   }
 
   /**
-   * Evaluates constraints from file.
-   *
-   * <p>Parses constraint file format:
-   *
-   * <pre>
-   * -- Comments start with double dash
-   * context Type1 inv:
-   *   expression1
-   *
-   * context Type2 inv:
-   *   expression2
-   * </pre>
+   * Evaluates constraints from file against provided models.
    *
    * @param constraintsFile File containing constraint definitions
    * @param ecoreFiles Metamodel definition files
@@ -351,9 +259,6 @@ public class VitruvOCL {
    *   instances/            - All model instance files
    * </pre>
    *
-   * <p>Automatically discovers all metamodels and instances in respective directories. Instance
-   * files can have any EMF-compatible extension (.xmi, .spacemission, .satellitesystem, etc.).
-   *
    * @param projectDir Root directory containing conventional structure
    * @return Batch validation result for all constraints
    * @throws IOException If files cannot be read or required directories don't exist
@@ -372,9 +277,6 @@ public class VitruvOCL {
   /**
    * Evaluates project with custom constraint file location.
    *
-   * <p>Uses convention-over-configuration for metamodels and instances, but allows constraints file
-   * to be located anywhere.
-   *
    * @param constraintsFile Path to constraints file
    * @param resourcesDir Directory containing metamodels/ and instances/ subdirectories
    * @return Batch validation result
@@ -391,11 +293,121 @@ public class VitruvOCL {
     return evaluateConstraints(constraintsFile, ecoreFiles, xmiFiles);
   }
 
+  // ---------------------------------------------------------------------------
+  // Shared compile + evaluate logic
+  // ---------------------------------------------------------------------------
+
   /**
-   * Parses constraint file, extracting individual constraint definitions.
+   * Runs the compiler pipeline and evaluates the constraint against the given wrapper.
    *
-   * <p>Splits file by {@code context} keyword after removing comment lines (starting with {@code
-   * --}).
+   * <p>Single entry point for both the file-path path (wrapper built by {@link SmartLoader}) and
+   * the VSUM path (wrapper is a {@link VSUMWrapper}).
+   *
+   * @param constraint OCL constraint expression
+   * @param wrapper Metamodel and instance access
+   * @return Evaluation result
+   */
+  private static ConstraintResult compileAndEvaluate(
+      String constraint, MetamodelWrapperInterface wrapper, List<Warning> loaderWarnings) {
+    VitruvOCLCompiler compiler = new VitruvOCLCompiler(wrapper, null);
+    Value result = compiler.compile(constraint);
+
+    if (result == null) {
+      return new ConstraintResult(
+          constraint,
+          false,
+          List.of(
+              new CompileError(
+                  1, 0, "Syntax error in constraint", ErrorSeverity.ERROR, constraint)),
+          List.of(),
+          loaderWarnings);
+    }
+
+    List<CompileError> compilerErrors =
+        compiler.hasErrors() ? compiler.getErrors().getErrors() : List.of();
+
+    if (!compilerErrors.isEmpty()) {
+      return new ConstraintResult(constraint, false, compilerErrors, List.of(), loaderWarnings);
+    }
+
+    boolean satisfied = true;
+    List<Integer> violatingIndices = new ArrayList<>();
+
+    for (int i = 0; i < result.size(); i++) {
+      OCLElement elem = result.getElements().get(i);
+      if (elem instanceof OCLElement.BoolValue boolVal) {
+        if (!boolVal.value()) {
+          satisfied = false;
+          violatingIndices.add(i);
+        }
+      } else {
+        satisfied = false;
+        violatingIndices.add(i);
+      }
+    }
+
+    List<Warning> warnings = new ArrayList<>(loaderWarnings);
+    if (!violatingIndices.isEmpty()) {
+      List<String> instanceNames = new ArrayList<>();
+      for (int idx : violatingIndices) {
+        String name = wrapper.getInstanceNameByIndex(idx);
+        instanceNames.add(name != null ? name : "index_" + idx);
+      }
+      warnings.add(
+          new Warning(
+              Warning.WarningType.CONSTRAINT_VIOLATION,
+              "Constraint violated for instances: " + instanceNames));
+    }
+
+    return new ConstraintResult(constraint, satisfied, compilerErrors, List.of(), warnings);
+  }
+
+  /** Evaluates multiple constraints against a wrapper, deduplicating duplicates. */
+  private static BatchValidationResult evaluateConstraints(
+      List<String> constraints, MetamodelWrapperInterface wrapper) {
+    List<ConstraintResult> results = new ArrayList<>();
+    Set<String> seenConstraints = new HashSet<>();
+
+    for (String constraint : constraints) {
+      if (seenConstraints.contains(constraint)) {
+        results.add(duplicateResult(constraint));
+        continue;
+      }
+      seenConstraints.add(constraint);
+      results.add(compileAndEvaluate(constraint, wrapper, List.of()));
+    }
+
+    return new BatchValidationResult(results);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  /** Returns the VSUM wrapper, throwing if no VSUM is registered. */
+  private static synchronized VSUMWrapper getVsumWrapper() {
+    if (vsumWrapper == null) {
+      throw new IllegalStateException(
+          "No VSUM registered. Call VitruvOCL.registerVSUM(vsum) before evaluating constraints "
+              + "without explicit file paths.");
+    }
+    return vsumWrapper;
+  }
+
+  /** Creates a {@link ConstraintResult} representing a duplicate constraint warning. */
+  private static ConstraintResult duplicateResult(String constraint) {
+    return new ConstraintResult(
+        constraint,
+        false,
+        List.of(),
+        List.of(),
+        List.of(
+            new Warning(
+                Warning.WarningType.DUPLICATE_CONSTRAINT, "Constraint specified multiple times")));
+  }
+
+  /**
+   * Parses a constraint file into individual constraint strings.
    *
    * @param file Constraint file to parse
    * @return List of constraint expressions, each starting with {@code context}
@@ -405,7 +417,6 @@ public class VitruvOCL {
     String content = Files.readString(file);
     List<String> constraints = new ArrayList<>();
 
-    // Remove comments
     String[] lines = content.split("\n");
     StringBuilder cleaned = new StringBuilder();
     for (String line : lines) {
@@ -415,7 +426,6 @@ public class VitruvOCL {
       }
     }
 
-    // Split by "context" keyword
     String[] parts = cleaned.toString().split("(?=context\\s)");
     for (String part : parts) {
       String trimmed = part.trim();
@@ -430,11 +440,8 @@ public class VitruvOCL {
   /**
    * Recursively collects files with given extensions from directory.
    *
-   * <p>Extensions are case-insensitive. Returns empty array if directory doesn't exist (allowing
-   * graceful handling of optional directories).
-   *
    * @param directory Directory to search recursively
-   * @param extensions File extensions to match (e.g., ".ecore", ".xmi", ".spacemission")
+   * @param extensions File extensions to match (e.g., ".ecore", ".xmi")
    * @return Array of matching file paths, empty if directory doesn't exist
    * @throws IOException If directory traversal fails
    */
@@ -451,9 +458,7 @@ public class VitruvOCL {
                   p -> {
                     String name = p.getFileName().toString().toLowerCase();
                     for (String ext : extensions) {
-                      if (name.endsWith(ext)) {
-                        return true;
-                      }
+                      if (name.endsWith(ext)) return true;
                     }
                     return false;
                   })

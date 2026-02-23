@@ -15,37 +15,36 @@ package tools.vitruv.dsls.vitruvOCL.pipeline;
 import java.util.*;
 import org.eclipse.emf.ecore.*;
 import org.eclipse.emf.ecore.resource.Resource;
+import tools.vitruv.change.correspondence.Correspondence;
+import tools.vitruv.change.correspondence.view.CorrespondenceModelView;
 import tools.vitruv.framework.views.ViewSource;
 import tools.vitruv.framework.vsum.VirtualModel;
+import tools.vitruv.framework.vsum.internal.InternalVirtualModel;
 
 /**
  * VSUM-based implementation of the metamodel wrapper interface for VitruvOCL constraint evaluation.
  *
- * <p>This wrapper provides access to metamodels and model instances through the Vitruvius Virtual
- * Single Underlying Model (VSUM). It automatically discovers and registers all metamodels from the
- * VSUM's view source models, enabling constraint evaluation across multiple metamodels without
- * explicit import declarations.
+ * <p>This wrapper provides access to metamodels, model instances, and the correspondence model
+ * through the Vitruvius Virtual Single Underlying Model (VSUM). It automatically discovers and
+ * registers all metamodels from the VSUM's view source models, enabling constraint evaluation
+ * across multiple metamodels without explicit import declarations.
  *
- * <p>The wrapper serves as the bridge between VitruvOCL's compilation pipeline and the Vitruvius
- * framework, allowing constraints to resolve fully qualified metaclass names (e.g., {@code
- * spacemission::Spacecraft}) and retrieve all instances of a given metaclass from the VSUM.
- *
- * <p><b>Metamodel Discovery:</b> During initialization, the wrapper extracts all {@link EPackage}s
- * from the VSUM's resources and registers them both internally and in the global EMF package
- * registry. This enables automatic resolution of metamodel names used in VitruvOCL constraints.
- *
- * <p><b>Instance Retrieval:</b> The wrapper provides recursive traversal of all model resources in
- * the VSUM to collect instances of a given metaclass, including instances of subclasses (following
- * EMF's {@link EClass#isSuperTypeOf(EClass)} semantics).
+ * <p>The correspondence model is accessible via {@link #getCorrespondingObjects(EObject)} and
+ * {@link #getCorrespondingObjects(EObject, Class)}, enabling evaluation of VitruvOCL's {@code ~}
+ * (correspondence) operator for cross-metamodel consistency checking.
  *
  * @see MetamodelWrapperInterface
  * @see VirtualModel
- * @see ViewSource
  */
 public class VSUMWrapper implements MetamodelWrapperInterface {
 
   /** The Vitruvius virtual model providing access to all registered model resources. */
   private final VirtualModel vsum;
+
+  /**
+   * The correspondence model view, used to resolve the {@code ~} operator in VitruvOCL constraints.
+   */
+  private final CorrespondenceModelView<Correspondence> correspondenceModel;
 
   /**
    * Internal registry mapping metamodel names (EPackage names) to their corresponding {@link
@@ -54,62 +53,59 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
   private final Map<String, EPackage> metamodelRegistry = new HashMap<>();
 
   /**
-   * Creates a new VSUM wrapper and initializes the metamodel registry.
+   * Flat list of all root objects across all VSUM resources, built once at construction time.
    *
-   * <p>During construction, the wrapper automatically discovers all metamodels from the VSUM's view
-   * source models and registers them for constraint evaluation.
+   * <p>Used by {@link #getAllRootObjects()} and {@link #getInstanceNameByIndex(int)}.
+   */
+  private final List<EObject> allRootObjects = new ArrayList<>();
+
+  /**
+   * Creates a new VSUM wrapper and initializes the metamodel registry and correspondence model.
    *
-   * @param vsum the Vitruvius virtual model to wrap
-   * @throws NullPointerException if {@code vsum} is null
+   * <p>The VSUM must be an {@link InternalVirtualModel} to allow access to the correspondence model
+   * via {@code getCorrespondenceModel()}.
+   *
+   * @param vsum the Vitruvius virtual model to wrap, must be an {@link InternalVirtualModel}
+   * @throws IllegalArgumentException if {@code vsum} is not an {@link InternalVirtualModel}
    */
   public VSUMWrapper(VirtualModel vsum) {
+    if (!(vsum instanceof InternalVirtualModel)) {
+      throw new IllegalArgumentException(
+          "VSUMWrapper requires an InternalVirtualModel to access the correspondence model");
+    }
     this.vsum = vsum;
+    this.correspondenceModel = ((InternalVirtualModel) vsum).getCorrespondenceModel();
     loadMetamodelsFromVSUM();
   }
 
   /**
    * Discovers and registers all metamodels from the VSUM's view source models.
    *
-   * <p>This method extracts all {@link EPackage}s from the VSUM's resources by:
-   *
-   * <ol>
-   *   <li>Accessing the VSUM's view source models (resources)
-   *   <li>Extracting the {@link EClass} of each root model element
-   *   <li>Retrieving the containing {@link EPackage} for each {@link EClass}
-   *   <li>Registering each unique package in both the internal registry and the global EMF package
-   *       registry
-   * </ol>
-   *
-   * <p>This automatic discovery eliminates the need for explicit metamodel import declarations in
-   * VitruvOCL constraints.
+   * <p>Also populates {@link #allRootObjects} for use by {@link #getAllRootObjects()} and {@link
+   * #getInstanceNameByIndex(int)}.
    */
   private void loadMetamodelsFromVSUM() {
-    // VirtualModel extends ViewSource - use getViewSourceModels()
     Collection<Resource> resources = ((ViewSource) vsum).getViewSourceModels();
 
-    // Extract and register all EPackages from resources
-    resources.stream()
-        .flatMap(r -> r.getContents().stream())
-        .map(EObject::eClass)
-        .map(EClass::getEPackage)
-        .distinct()
-        .forEach(
-            pkg -> {
-              metamodelRegistry.put(pkg.getName(), pkg);
-              EPackage.Registry.INSTANCE.put(pkg.getNsURI(), pkg);
-            });
+    for (Resource resource : resources) {
+      for (EObject root : resource.getContents()) {
+        allRootObjects.add(root);
+
+        EPackage pkg = root.eClass().getEPackage();
+        if (!metamodelRegistry.containsKey(pkg.getName())) {
+          metamodelRegistry.put(pkg.getName(), pkg);
+          EPackage.Registry.INSTANCE.put(pkg.getNsURI(), pkg);
+        }
+      }
+    }
   }
 
   /**
    * Resolves a fully qualified metaclass name to its corresponding {@link EClass}.
    *
-   * <p>This method enables VitruvOCL constraints to reference metaclasses using fully qualified
-   * names like {@code spacemission::Spacecraft} or {@code pfandmodel::Dose}.
-   *
    * @param metamodelName the name of the metamodel (EPackage name), e.g., "spacemission"
    * @param className the name of the metaclass within the metamodel, e.g., "Spacecraft"
-   * @return the resolved {@link EClass}, or {@code null} if the metamodel is not registered or the
-   *     classifier does not exist or is not an {@link EClass}
+   * @return the resolved {@link EClass}, or {@code null} if not found
    */
   @Override
   public EClass resolveEClass(String metamodelName, String className) {
@@ -123,19 +119,10 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
   /**
    * Retrieves all instances of a given metaclass from the VSUM.
    *
-   * <p>This method performs a recursive traversal of all model resources in the VSUM to collect
-   * instances of the specified {@link EClass}. The method follows EMF's subtyping semantics: if the
-   * requested {@link EClass} has subclasses, instances of those subclasses are also included in the
-   * result.
-   *
-   * <p>This operation supports VitruvOCL's implicit allInstances semantics where a fully qualified
-   * metaclass name like {@code spacemission::Spacecraft} automatically resolves to all spacecraft
-   * instances in the VSUM.
+   * <p>Follows EMF subtyping semantics — instances of subclasses are included.
    *
    * @param eClass the metaclass whose instances should be retrieved
-   * @return an immutable list of all model elements that are instances of {@code eClass} or any of
-   *     its subclasses; returns an empty list if no instances are found
-   * @throws NullPointerException if {@code eClass} is null
+   * @return list of all matching model elements; empty if none found
    */
   @Override
   public List<EObject> getAllInstances(EClass eClass) {
@@ -149,39 +136,94 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
   }
 
   /**
-   * Recursively collects all model elements contained within a root element.
-   *
-   * <p>This helper method traverses the containment hierarchy of an {@link EObject} to collect the
-   * root element itself and all its direct and indirect children.
-   *
-   * @param root the root element to traverse
-   * @return a mutable list containing {@code root} and all elements reachable via {@link
-   *     EObject#eAllContents()}
-   */
-  private List<EObject> getAllContentsRecursive(EObject root) {
-    List<EObject> result = new ArrayList<>();
-    result.add(root);
-    root.eAllContents().forEachRemaining(result::add);
-    return result;
-  }
-
-  /**
    * Returns the names of all metamodels currently registered in this wrapper.
    *
-   * <p>The returned set contains the EPackage names of all metamodels discovered during
-   * initialization. These names can be used in fully qualified metaclass references in VitruvOCL
-   * constraints.
-   *
-   * @return an unmodifiable set of metamodel names (EPackage names)
+   * @return unmodifiable set of metamodel names (EPackage names)
    */
   @Override
   public Set<String> getAvailableMetamodels() {
     return Collections.unmodifiableSet(metamodelRegistry.keySet());
   }
 
+  /**
+   * Returns the source resource URI for the root object at the given index.
+   *
+   * @param index 0-based index into the flat list of all root objects
+   * @return the last segment of the resource URI (filename), or {@code null} if out of bounds
+   */
   @Override
   public String getInstanceNameByIndex(int index) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'getInstanceNameByIndex'");
+    if (index < 0 || index >= allRootObjects.size()) {
+      return null;
+    }
+    EObject root = allRootObjects.get(index);
+    Resource resource = root.eResource();
+    if (resource == null || resource.getURI() == null) {
+      return null;
+    }
+    return resource.getURI().lastSegment();
+  }
+
+  /**
+   * Returns all root objects from all loaded model resources in the VSUM.
+   *
+   * @return unmodifiable list of all root EObjects across all VSUM resources
+   */
+  @Override
+  public List<EObject> getAllRootObjects() {
+    return Collections.unmodifiableList(allRootObjects);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Correspondence model access (for the ~ operator)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Returns all objects corresponding to the given source object.
+   *
+   * <p>Used to evaluate the VitruvOCL {@code ~} (correspondence) operator:
+   *
+   * <pre>
+   * self~model2::Entity
+   * </pre>
+   *
+   * @param source the source object to look up correspondences for
+   * @return set of all corresponding objects; empty if none exist
+   */
+  public Set<EObject> getCorrespondingObjects(EObject source) {
+    return correspondenceModel.getCorrespondingEObjects(source);
+  }
+
+  /**
+   * Returns all objects corresponding to the given source object that are instances of the given
+   * target type.
+   *
+   * <p>Filters the result of {@link #getCorrespondingObjects(EObject)} to only include objects
+   * whose {@link EClass} is a subtype of {@code targetType}. This is what the fully qualified
+   * {@code ~} operator uses:
+   *
+   * <pre>
+   * self~model2::Entity  -- only returns corresponding Entity instances
+   * </pre>
+   *
+   * @param source the source object to look up correspondences for
+   * @param targetType the EClass to filter corresponding objects by
+   * @return set of corresponding objects that are instances of {@code targetType}; empty if none
+   */
+  public Set<EObject> getCorrespondingObjects(EObject source, EClass targetType) {
+    return correspondenceModel.getCorrespondingEObjects(source).stream()
+        .filter(obj -> targetType.isSuperTypeOf(obj.eClass()))
+        .collect(java.util.stream.Collectors.toSet());
+  }
+
+  // ---------------------------------------------------------------------------
+  // Internal helpers
+  // ---------------------------------------------------------------------------
+
+  private List<EObject> getAllContentsRecursive(EObject root) {
+    List<EObject> result = new ArrayList<>();
+    result.add(root);
+    root.eAllContents().forEachRemaining(result::add);
+    return result;
   }
 }

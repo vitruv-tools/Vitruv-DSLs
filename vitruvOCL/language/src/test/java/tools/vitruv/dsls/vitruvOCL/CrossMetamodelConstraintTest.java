@@ -1317,10 +1317,6 @@ public class CrossMetamodelConstraintTest {
               Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem")
             });
 
-    System.out.println("Success: " + result.isSuccess());
-    System.out.println("Satisfied: " + result.isSatisfied());
-    System.out.println("Warnings: " + result.getWarnings());
-
     assertTrue(result.isSuccess(), "Should compile");
     assertTrue(result.isSatisfied(), "Int should equal Double with type coercion");
   }
