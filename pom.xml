@@ -151,22 +151,22 @@
       <dependency>
         <groupId>org.eclipse.jdt</groupId>
         <artifactId>ecj</artifactId>
-        <version>3.44.0</version>
+        <version>3.45.0</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jdt</groupId>
         <artifactId>org.eclipse.jdt.core</artifactId>
-        <version>3.44.0</version>
+        <version>3.45.0</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.platform</groupId>
         <artifactId>org.eclipse.core.resources</artifactId>
-        <version>3.23.100</version>
+        <version>3.23.200</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.platform</groupId>
         <artifactId>org.eclipse.core.runtime</artifactId>
-        <version>3.34.100</version>
+        <version>3.34.200</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.platform</groupId>
