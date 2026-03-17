@@ -15,7 +15,7 @@
 
   <name>Vitruv Reactions Language</name>
   <description>Definition of the Reactions Language with Xtext and Code Generation.</description>
-
+  <url>https://artifacts.itemis.cloud/repository/p2/antlr-generator-3.2.0-patch.jar</url>
 
   <build>
     <plugins>
