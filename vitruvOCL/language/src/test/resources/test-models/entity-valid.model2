@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model2:Root xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:model2="http://vitruv.tools/methodologisttemplate/model2">
+  <entities name="ValidEntity"/>
+</model2:Root>

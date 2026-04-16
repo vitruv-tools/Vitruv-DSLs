@@ -56,8 +56,7 @@ import tools.vitruv.dsls.vitruvOCL.symboltable.VariableSymbol;
  * <h2>Type System Features</h2>
  *
  * <ul>
- *   <li><b>OCL# semantics:</b> "Everything is a collection" - singletons are {@code
- *       Collection(T,1,1)}
+ *   <li>"Everything is a collection" - singletons are {@code Collection(T,1,1)}
  *   <li><b>Collection types:</b> Set, Bag, Sequence, OrderedSet with element types
  *   <li><b>Primitive types:</b> Integer, String, Boolean, Real (Double)
  *   <li><b>Metaclass types:</b> Types representing EMF EClasses
@@ -686,11 +685,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   }
 
   /**
-   * Type checks less-than comparison (<).
+   * Type checks less-than comparison (&lt;).
    *
    * <p>Validates that operands are comparable (same type or one conforms to the other).
    *
-   * <p><b>Example:</b> {@code 5 < 10} → Boolean
+   * <p><b>Example:</b> {@code 5 &lt; 10} → Boolean
    *
    * @param ctx The less-than comparison operation node
    * @return Type.BOOLEAN if operands are comparable, Type.ERROR otherwise
@@ -717,11 +716,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   }
 
   /**
-   * Type checks less-than-or-equal comparison (<=).
+   * Type checks less-than-or-equal comparison (&lt;=).
    *
    * <p>Validates that operands are comparable (same type or one conforms to the other).
    *
-   * <p><b>Example:</b> {@code 5 <= 10} → Boolean
+   * <p><b>Example:</b> {@code 5 &lt;= 10} → Boolean
    *
    * @param ctx The less-than-or-equal comparison operation node
    * @return Type.BOOLEAN if operands are comparable, Type.ERROR otherwise
@@ -826,9 +825,23 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    * @return true if types are comparable
    */
   private boolean areComparable(Type t1, Type t2) {
-    if (t1 == Type.ERROR || t2 == Type.ERROR) return true;
-    if (t1.equals(t2)) return true;
-    if (t1.isConformantTo(t2) || t2.isConformantTo(t1)) return true;
+    if (t1 == Type.ERROR || t2 == Type.ERROR) {
+      return true;
+    }
+    if (t1.equals(t2)) {
+      return true;
+    }
+    if (t1.isConformantTo(t2) || t2.isConformantTo(t1)) {
+      return true;
+    }
+
+    // Unwrap collections and compare element types
+    Type e1 = t1.isCollection() ? t1.getElementType() : t1;
+    Type e2 = t2.isCollection() ? t2.getElementType() : t2;
+    if (!e1.equals(t1) || !e2.equals(t2)) {
+      return areComparable(e1, e2);
+    }
+
     return false;
   }
 
@@ -1086,19 +1099,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   }
 
   /**
-   * Visits a unary minus (`-`) node in the AST.
+   * Visits a unary minus ({@code -}) node in the AST.
    *
-   * <p>This method performs type checking for the operand of the unary minus. It supports both
-   * scalar and collection types (one level of unwrapping):
+   * <p>Accepts any numeric base type: {@link Type#INTEGER}, {@link Type#FLOAT}, or {@link
+   * Type#DOUBLE}. The result type equals the operand type (i.e., {@code -3.14f} stays FLOAT).
    *
-   * <ul>
-   *   <li>If the operand is a singleton or a collection, the base element type is extracted.
-   *   <li>Allowed base types are {@link Type#INTEGER} and {@link Type#DOUBLE}.
-   *   <li>If the type is invalid, an error is added to the error list and {@link Type#ERROR} is
-   *       returned.
-   * </ul>
-   *
-   * The type of the operand is stored in the {@code nodeTypes} map.
+   * <p>Supports singleton and collection receivers via one level of unwrapping.
    *
    * @param ctx the context of the unary minus node in the AST
    * @return the type of the operand if valid; otherwise {@link Type#ERROR}
@@ -1107,13 +1113,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitUnaryMinus(VitruvOCLParser.UnaryMinusContext ctx) {
     Type operandType = visit(ctx.operand);
 
-    // Unwrap one level
+    // Unwrap one level for collections / singletons
     Type baseType = operandType;
     if (baseType.isSingleton() || baseType.isCollection()) {
       baseType = baseType.getElementType();
     }
 
-    if (baseType != Type.INTEGER && baseType != Type.DOUBLE && baseType != Type.ERROR) {
+    if (!TypeResolver.isNumeric(baseType) && baseType != Type.ERROR) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
@@ -1235,7 +1241,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   /**
    * Type checks property navigation.
    *
-   * <p>Accesses a property on the receiver type from the receiverStack.
+   * <p>Unwraps singleton {@code !T!} receivers before property access. After the RC2
+   * iterator-variable fix all iterator vars are {@code ¡T!}, so this is the normal path for
+   * navigating from iterator variables.
    *
    * @param ctx The property navigation node
    * @return The property type
@@ -1244,13 +1252,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitPropertyNav(VitruvOCLParser.PropertyNavContext ctx) {
     Type receiverType = receiverStack.peek();
 
-    // Unwrap singleton for property access (OCL# compatibility)
-    if (receiverType.getMultiplicity() == Multiplicity.SINGLETON) {
+    // Unwrap singleton !T! to T for property access — every iterated
+    // element is ¡T!, so unwrapping here is the standard path
+    if (receiverType.isSingleton()) {
       receiverType = receiverType.getElementType();
     }
 
     String propertyName = ctx.propertyAccess().propertyName.getText();
-
     Type resultType = typeCheckPropertyAccess(receiverType, propertyName, ctx);
     nodeTypes.put(ctx, resultType);
     return resultType;
@@ -1347,11 +1355,14 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   /**
    * Maps an EMF structural feature to a VitruvOCL type.
    *
-   * <p>Handles:
+   * <p>Respects EMF ordering and uniqueness annotations:
    *
    * <ul>
-   *   <li>Multi-valued features (upper bound > 1 or -1) → Set type
-   *   <li>Single-valued features → Singleton type
+   *   <li>ordered + unique → OrderedSet {@code <T>}
+   *   <li>ordered + !unique → Sequence {@code [T]}
+   *   <li>!ordered + unique → Set {@code {T}}
+   *   <li>!ordered + !unique → Bag {@code {{T}}}
+   *   <li>single-valued → Singleton {@code !T!}
    * </ul>
    *
    * @param feature The EMF structural feature
@@ -1361,8 +1372,21 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type baseType = mapEClassifierToType(feature.getEType());
 
     if (feature.getUpperBound() > 1 || feature.getUpperBound() == -1) {
-      return Type.set(baseType);
+      // Multi-valued: respect EMF ordering and uniqueness annotations
+      boolean ordered = feature.isOrdered();
+      boolean unique = feature.isUnique();
+
+      if (ordered && unique) {
+        return Type.orderedSet(baseType); // <T>
+      } else if (ordered) {
+        return Type.sequence(baseType); // [T]
+      } else if (unique) {
+        return Type.set(baseType); // {T}
+      } else {
+        return Type.bag(baseType); // {{T}}
+      }
     } else {
+      // Single-valued: singleton !T!
       return Type.singleton(baseType);
     }
   }
@@ -1391,6 +1415,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         return Type.INTEGER;
       case "EBoolean":
         return Type.BOOLEAN;
+      case "EFloat":
+        return Type.FLOAT;
+      case "EDouble":
+        return Type.DOUBLE;
       default:
         if (EcorePackage.Literals.ECLASS.equals(classifier.eClass())) {
           return Type.metaclassType((EClass) classifier);
@@ -1603,10 +1631,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    *
    * <ul>
    *   <li>No duplicate variable names in current scope
-   *   <li>Initializer type conforms to declared type (if present)
+   *   <li>Initializer type conforms to declared type (if present), using singleton-unwrapping rules
+   *       via {@link #conformsWithUnwrapping}
    * </ul>
    *
-   * <p><b>Example:</b> {@code let x : Integer = 5} - checks that 5 conforms to Integer
+   * <p>The variable is registered with the declared type (not the wrapped initType) so that
+   * downstream navigation operates on the correct member type.
    *
    * @param ctx The variable declaration node
    * @return The variable type
@@ -1634,7 +1664,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type declaredType = symbol.getType();
     if (ctx.varType != null) {
       Type explicitType = visit(ctx.varType);
-      if (!initType.isConformantTo(explicitType)) {
+
+      // use standard isConformantTo first, then singleton-unwrapping
+      if (!initType.isConformantTo(explicitType)
+          && !conformsWithUnwrapping(initType, explicitType)) {
         errors.add(
             ctx.getStart().getLine(),
             ctx.getStart().getCharPositionInLine(),
@@ -1643,17 +1676,20 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
             "type-checker");
         return Type.ERROR;
       }
+
+      // Always use the declared type for the variable so navigation on it uses
+      // the correct (potentially more specific) type
       declaredType = explicitType;
-      // Refine type if it was ANY from Pass 1
       if (symbol.getType() == Type.ANY) {
         symbol.setType(declaredType);
       }
     } else {
-      // No explicit type - refine symbol with inferred type from initializer
+      // No explicit type — refine symbol with inferred type from initializer
       if (declaredType == Type.ANY) {
         symbol.setType(initType);
         declaredType = initType;
-      } else if (!initType.isConformantTo(declaredType)) {
+      } else if (!initType.isConformantTo(declaredType)
+          && !conformsWithUnwrapping(initType, declaredType)) {
         errors.add(
             ctx.getStart().getLine(),
             ctx.getStart().getCharPositionInLine(),
@@ -1712,14 +1748,22 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   /**
    * Type checks variable references.
    *
-   * <p>Looks up the variable in the symbol table and returns its declared type.
+   * <p>Handles the special {@code null} keyword, which is the empty optional {@code ?Any?} = {@code
+   * []} rather than a variable. All other names are resolved from the symbol table.
    *
    * @param ctx The variable expression node
-   * @return The variable's type
+   * @return The variable's type, or {@code ?Any?} for {@code null}
    */
   @Override
   public Type visitVariableExpCS(VitruvOCLParser.VariableExpCSContext ctx) {
     String varName = ctx.varName.getText();
+
+    // null is the empty optional ?Any? = []
+    if (varName.equals("null")) {
+      Type nullType = Type.optional(Type.ANY);
+      nodeTypes.put(ctx, nullType);
+      return nullType;
+    }
 
     VariableSymbol symbol = symbolTable.resolveVariable(varName);
     if (symbol == null) {
@@ -1904,33 +1948,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   }
 
   // ==================== Collection Operations ====================
-
-  /**
-   * Type checks the {@code size()} operation.
-   *
-   * <p>Requires collection receiver, returns Integer.
-   *
-   * @param ctx The size operation node
-   * @return Type.INTEGER
-   */
-  @Override
-  public Type visitSizeOp(VitruvOCLParser.SizeOpContext ctx) {
-    Type receiverType = receiverStack.peek();
-
-    if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "size() requires collection receiver",
-          ErrorSeverity.ERROR,
-          "type-checker");
-      return Type.ERROR;
-    }
-
-    Type resultType = Type.INTEGER;
-    nodeTypes.put(ctx, resultType);
-    return resultType;
-  }
 
   /**
    * Type checks the {@code first()} operation.
@@ -2346,9 +2363,14 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   // ==================== Aggregate Operations ====================
 
   /**
-   * Type checks aggregate operations (sum, max, min, avg).
+   * Type checks the {@code sum()} collection operation.
    *
-   * <p>All require numeric collection receivers and return singleton Integer.
+   * <p>Requires a numeric collection receiver (elements must be INTEGER, FLOAT, or DOUBLE). The
+   * result type is a singleton of the element type (preserves FLOAT for Float collections rather
+   * than always returning INTEGER).
+   *
+   * @param ctx The sum operation node
+   * @return Singleton of the element numeric type (INTEGER / FLOAT / DOUBLE)
    */
   @Override
   public Type visitSumOp(VitruvOCLParser.SumOpContext ctx) {
@@ -2365,7 +2387,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     Type elemType = receiverType.getElementType();
-    if (elemType != Type.ANY && !elemType.isConformantTo(Type.INTEGER)) {
+    if (elemType != Type.ANY && !TypeResolver.isNumeric(elemType)) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
@@ -2374,7 +2396,8 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
           "type-checker");
     }
 
-    Type resultType = Type.singleton(Type.INTEGER);
+    // Preserve the concrete numeric element type (FLOAT stays FLOAT, not INTEGER)
+    Type resultType = Type.singleton(TypeResolver.isNumeric(elemType) ? elemType : Type.INTEGER);
     nodeTypes.put(ctx, resultType);
     return resultType;
   }
@@ -2419,35 +2442,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitAvgOp(VitruvOCLParser.AvgOpContext ctx) {
     return visitAggregateOp(ctx, "avg");
-  }
-
-  /** Helper for aggregate operation type checking. */
-  private Type visitAggregateOp(ParserRuleContext ctx, String opName) {
-    Type receiverType = receiverStack.peek();
-
-    if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'" + opName + "' requires collection",
-          ErrorSeverity.ERROR,
-          "type-checker");
-      return Type.ERROR;
-    }
-
-    Type elemType = receiverType.getElementType();
-    if (elemType != Type.ANY && !elemType.isConformantTo(Type.INTEGER)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'" + opName + "' requires numeric collection",
-          ErrorSeverity.ERROR,
-          "type-checker");
-    }
-
-    Type resultType = Type.singleton(Type.INTEGER);
-    nodeTypes.put(ctx, resultType);
-    return resultType;
   }
 
   // ==================== Numeric Operations ====================
@@ -2504,11 +2498,24 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return visitNumericOp(ctx, "round");
   }
 
-  /** Helper for numeric operation type checking. */
-  private Type visitNumericOp(ParserRuleContext ctx, String opName) {
+  /**
+   * Helper for aggregate operation type checking ({@code min}, {@code max}, {@code avg}).
+   *
+   * <p>Accepts both multi-valued collections and singleton ¡T! receivers. A singleton is a
+   * degenerate collection of one element, so min/max/avg are valid on it.
+   *
+   * @param ctx the operation node
+   * @param opName operation name for error messages
+   * @return singleton of the element type, or {@link Type#ERROR}
+   */
+  private Type visitAggregateOp(ParserRuleContext ctx, String opName) {
     Type receiverType = receiverStack.peek();
 
-    if (!receiverType.isCollection()) {
+    // Unwrap singleton ¡T! to treat it like a single-element collection
+    Type effectiveType =
+        receiverType.isSingleton() ? Type.set(receiverType.getElementType()) : receiverType;
+
+    if (!effectiveType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
@@ -2518,8 +2525,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    Type elemType = receiverType.getElementType();
-    if (!elemType.isConformantTo(Type.INTEGER)) {
+    Type elemType = effectiveType.getElementType();
+    // Unwrap nested singleton element type (e.g. Set{¡Float!} → Float)
+    if (elemType.isSingleton()) {
+      elemType = elemType.getElementType();
+    }
+
+    if (elemType != Type.ANY && !TypeResolver.isNumeric(elemType)) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
@@ -2528,9 +2540,88 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
           "type-checker");
     }
 
-    // Preserve collection type
-    nodeTypes.put(ctx, receiverType);
-    return receiverType;
+    Type resultType = Type.singleton(TypeResolver.isNumeric(elemType) ? elemType : Type.INTEGER);
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks the {@code size()} operation.
+   *
+   * <p>Accepts both collections and singletons — a singleton ¡T! has size 1.
+   *
+   * @param ctx The size operation node
+   * @return Type.INTEGER
+   */
+  @Override
+  public Type visitSizeOp(VitruvOCLParser.SizeOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+
+    // Accept singleton ¡T! — size of a singleton is always 1
+    if (!receiverType.isCollection() && !receiverType.isSingleton()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "size() requires collection receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    nodeTypes.put(ctx, Type.INTEGER);
+    return Type.INTEGER;
+  }
+
+  /**
+   * Helper for numeric element operations ({@code abs}, {@code floor}, {@code ceil}, {@code
+   * round}).
+   *
+   * <p>Accepts both collections and singletons ¡T! — a scalar Real/Float/Integer is ¡T! and numeric
+   * operations on it are valid.
+   *
+   * @param ctx the operation node
+   * @param opName operation name for error messages
+   * @return the receiver's type unchanged, or {@link Type#ERROR}
+   */
+  private Type visitNumericOp(ParserRuleContext ctx, String opName) {
+    Type receiverType = receiverStack.peek();
+
+    // Unwrap singleton ¡T! to get the element type for validation
+    Type checkType = receiverType.isSingleton() ? receiverType.getElementType() : receiverType;
+
+    // Bare numeric type (e.g. Float, Double, Integer) — also valid
+    if (TypeResolver.isNumeric(checkType)) {
+      nodeTypes.put(ctx, receiverType);
+      return receiverType;
+    }
+
+    if (checkType.isCollection()) {
+      Type elemType = checkType.getElementType();
+      // Unwrap nested singleton element (e.g. {¡Float!})
+      if (elemType.isSingleton()) {
+        elemType = elemType.getElementType();
+      }
+      if (elemType != Type.ANY && !TypeResolver.isNumeric(elemType)) {
+        errors.add(
+            ctx.getStart().getLine(),
+            ctx.getStart().getCharPositionInLine(),
+            "'" + opName + "' requires numeric collection",
+            ErrorSeverity.ERROR,
+            "type-checker");
+      }
+      nodeTypes.put(ctx, receiverType);
+      return receiverType;
+    }
+
+    if (checkType != Type.ERROR) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'" + opName + "' requires collection",
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    return Type.ERROR;
   }
 
   /**
@@ -2565,8 +2656,8 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   /**
    * Type checks the {@code select()} iterator.
    *
-   * <p>Creates scope with iterator variable, validates predicate is Boolean, returns same
-   * collection type.
+   * <p>Iterator variable receives type {@code ¡T!} (singleton — each element drawn from a
+   * collection is a singleton value.
    *
    * @param ctx The select operation node
    * @return Same collection type as receiver
@@ -2585,7 +2676,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    // Get iterator variables (already defined in Pass 1)
     List<String> iterVars = new ArrayList<>();
     if (ctx.iteratorVars != null) {
       for (TerminalNode id : ctx.iteratorVarList().ID()) {
@@ -2603,9 +2693,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
+    // each iterated element is a singleton ¡T! of the collection's element type
     Type elemType = receiverType.getElementType();
+    Type iterVarType = normalizeToSingleton(elemType);
 
-    // Enter scope created by Pass 1 - iterator variables already defined
     Scope iterScope = scopeAnnotator.getScope(ctx);
     if (iterScope == null) {
       errors.add(
@@ -2620,17 +2711,17 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     symbolTable.enterScope(iterScope);
 
     try {
-      // Refine iterator variable types from Type.ANY to actual element type
       for (String iterVar : iterVars) {
         VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
         if (symbol != null && symbol.getType() == Type.ANY) {
-          symbol.setType(elemType);
+          symbol.setType(iterVarType);
         }
       }
 
       Type bodyType = visit(ctx.body);
+      Type checkType = bodyType.isCollection() ? bodyType.getElementType() : bodyType;
 
-      if (!bodyType.isConformantTo(Type.BOOLEAN)) {
+      if (!checkType.isConformantTo(Type.BOOLEAN)) {
         errors.add(
             ctx.getStart().getLine(),
             ctx.getStart().getCharPositionInLine(),
@@ -2647,15 +2738,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   }
 
   /**
-   * Visits a 'reject' operation node in the AST.
+   * Type checks the {@code reject()} iterator.
    *
-   * <p>The 'reject' operation filters elements of a collection by a predicate, keeping only
-   * elements for which the predicate evaluates to false.
+   * <p>Iterator variable receives type {@code ¡T!} (singleton)
    *
-   * <p>
-   *
-   * @param ctx the context of the 'reject' operation node in the AST
-   * @return the receiver collection type if successful; otherwise {@link Type#ERROR}
+   * @param ctx The reject operation node
+   * @return Same collection type as receiver
    */
   @Override
   public Type visitRejectOp(VitruvOCLParser.RejectOpContext ctx) {
@@ -2670,8 +2758,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
           "type-checker");
       return Type.ERROR;
     }
-
-    Type elemType = receiverType.getElementType();
 
     List<String> iterVars = new ArrayList<>();
     if (ctx.iteratorVars != null) {
@@ -2690,7 +2776,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    // Enter scope created by Pass 1
+    // each iterated element is a singleton ¡T! of the collection's element type
+    Type elemType = receiverType.getElementType();
+    Type iterVarType = normalizeToSingleton(elemType);
+
     Scope iterScope = scopeAnnotator.getScope(ctx);
     if (iterScope == null) {
       errors.add(
@@ -2705,11 +2794,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     symbolTable.enterScope(iterScope);
 
     try {
-      // Refine iterator variable types
       for (String iterVar : iterVars) {
         VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
         if (symbol != null && symbol.getType() == Type.ANY) {
-          symbol.setType(elemType);
+          symbol.setType(iterVarType);
         }
       }
 
@@ -2733,16 +2821,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   }
 
   /**
-   * Visits a 'collect' operation node in the AST.
+   * Type checks the {@code collect()} iterator.
    *
-   * <p>The 'collect' operation applies a body expression to each element of a collection, producing
-   * a new collection of the results.
+   * <p>Iterator variable receives type {@code ¡T!} (singleton)
    *
-   * <p>This method performs type checking similarly to 'reject', refining iterator variable types,
-   * visiting the body, and computing the result type while preserving the collection kind.
-   *
-   * @param ctx the context of the 'collect' operation node in the AST
-   * @return the resulting collection type if successful; otherwise {@link Type#ERROR}
+   * @param ctx The collect operation node
+   * @return Collection of the body expression type
    */
   @Override
   public Type visitCollectOp(VitruvOCLParser.CollectOpContext ctx) {
@@ -2775,9 +2859,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
+    // each iterated element is a singleton ¡T! of the collection's element type
     Type elemType = receiverType.getElementType();
+    Type iterVarType = normalizeToSingleton(elemType);
 
-    // Enter scope created by Pass 1
     Scope iterScope = scopeAnnotator.getScope(ctx);
     if (iterScope == null) {
       errors.add(
@@ -2792,11 +2877,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     symbolTable.enterScope(iterScope);
 
     try {
-      // Refine iterator variable types
       for (String iterVar : iterVars) {
         VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
         if (symbol != null && symbol.getType() == Type.ANY) {
-          symbol.setType(elemType);
+          symbol.setType(iterVarType);
         }
       }
 
@@ -2806,7 +2890,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         return Type.ERROR;
       }
 
-      Type resultType = preserveCollectionKind(receiverType, bodyType);
+      // collect result: preserve collection kind of receiver, element type from body
+      // If body returns ¡T!, the collection element type is T (unwrap singleton)
+      Type resultElemType = bodyType.isSingleton() ? bodyType.getElementType() : bodyType;
+      Type resultType = preserveCollectionKind(receiverType, resultElemType);
       nodeTypes.put(ctx, resultType);
       return resultType;
     } finally {
@@ -2815,13 +2902,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   }
 
   /**
-   * Visits a 'forAll' operation node in the AST.
+   * Type checks the {@code forAll()} iterator.
    *
-   * <p>The 'forAll' operation checks that a predicate evaluates to true for all elements in a
-   * collection.
-   *
-   * <p>This method performs type checking similar to 'reject', but ensures that the body expression
-   * returns Boolean values and that the final result type is {@link Type#BOOLEAN}.
+   * <p>Iterator variable receives type {@code ¡T!} (singleton) — each element drawn from a
+   * collection is a singleton value.
    *
    * @param ctx the context of the 'forAll' operation node in the AST
    * @return {@link Type#BOOLEAN} if successful; otherwise {@link Type#ERROR}
@@ -2840,7 +2924,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
+    // each iterated element is a singleton ¡T! of the collection's element type
     Type elemType = receiverType.getElementType();
+    Type iterVarType = normalizeToSingleton(elemType);
 
     List<String> iterVars = new ArrayList<>();
     if (ctx.iteratorVars != null) {
@@ -2859,7 +2945,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    // Enter scope created by Pass 1
     Scope iterScope = scopeAnnotator.getScope(ctx);
     if (iterScope == null) {
       errors.add(
@@ -2874,11 +2959,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     symbolTable.enterScope(iterScope);
 
     try {
-      // Refine iterator variable types
       for (String iterVar : iterVars) {
         VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
         if (symbol != null && symbol.getType() == Type.ANY) {
-          symbol.setType(elemType);
+          symbol.setType(iterVarType);
         }
       }
 
@@ -2894,22 +2978,17 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         return Type.ERROR;
       }
 
-      Type resultType = Type.BOOLEAN;
-      nodeTypes.put(ctx, resultType);
-      return resultType;
+      nodeTypes.put(ctx, Type.BOOLEAN);
+      return Type.BOOLEAN;
     } finally {
       symbolTable.exitScope();
     }
   }
 
   /**
-   * Visits an 'exists' operation node in the AST.
+   * Type checks the {@code exists()} iterator.
    *
-   * <p>The 'exists' operation checks whether there exists at least one element in a collection for
-   * which the predicate evaluates to true.
-   *
-   * <p>This method performs type checking similar to 'forAll', ensuring that the body expression
-   * returns Boolean values and that the final result type is {@link Type#BOOLEAN}.
+   * <p>Iterator variable receives type {@code ¡T!} (singleton) per.
    *
    * @param ctx the context of the 'exists' operation node in the AST
    * @return {@link Type#BOOLEAN} if successful; otherwise {@link Type#ERROR}
@@ -2928,7 +3007,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
+    // each iterated element is a singleton ¡T! of the collection's element type
     Type elemType = receiverType.getElementType();
+    Type iterVarType = normalizeToSingleton(elemType);
 
     List<String> iterVars = new ArrayList<>();
     if (ctx.iteratorVars != null) {
@@ -2947,7 +3028,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    // Enter scope created by Pass 1
     Scope iterScope = scopeAnnotator.getScope(ctx);
     if (iterScope == null) {
       errors.add(
@@ -2962,11 +3042,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     symbolTable.enterScope(iterScope);
 
     try {
-      // Refine iterator variable types
       for (String iterVar : iterVars) {
         VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
         if (symbol != null && symbol.getType() == Type.ANY) {
-          symbol.setType(elemType);
+          symbol.setType(iterVarType);
         }
       }
 
@@ -2982,9 +3061,8 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         return Type.ERROR;
       }
 
-      Type resultType = Type.BOOLEAN;
-      nodeTypes.put(ctx, resultType);
-      return resultType;
+      nodeTypes.put(ctx, Type.BOOLEAN);
+      return Type.BOOLEAN;
     } finally {
       symbolTable.exitScope();
     }
@@ -3232,13 +3310,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "oclIsKindOf() requires collection receiver",
-          ErrorSeverity.ERROR,
-          "type-checker");
-      return Type.ERROR;
+      receiverType = Type.set(receiverType);
     }
 
     // Preserve collection kind from receiver
@@ -3279,57 +3351,58 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitOclIsTypeOfOp(VitruvOCLParser.OclIsTypeOfOpContext ctx) {
     Type receiverType = receiverStack.peek();
 
+    Type targetType = visit(ctx.type);
+    if (targetType == null && ctx.type != null) {
+      targetType = resolveTypeExpression(ctx.type);
+    }
+
+    // Wrap singleton/metaclass in collection for oclIsTypeOf
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'oclIsTypeOf' requires collection",
-          ErrorSeverity.ERROR,
-          "type-checker");
-      return Type.ERROR;
+      receiverType = Type.set(receiverType);
     }
 
     Type resultType = preserveCollectionKind(receiverType, Type.BOOLEAN);
     nodeTypes.put(ctx, resultType);
+    nodeTypes.put(ctx.type, targetType);
     return resultType;
   }
 
   /**
    * Visits an 'oclAsType' operation node in the AST.
    *
-   * <p>This operation casts each element of a collection to a specified target type.
+   * <p>Casts the receiver to the target type while preserving the multiplicity. The receiver's
+   * ctype multiplicity is preserved — only the member type τ is replaced by the target type:
    *
    * <ul>
-   *   <li>Ensures that the receiver is a collection; otherwise reports an error and returns {@link
-   *       Type#ERROR}.
-   *   <li>Visits the target type expression to determine the cast type.
-   *   <li>The resulting type preserves the collection kind of the receiver, but with the target
-   *       element type.
-   *   <li>The resulting type is stored in {@code nodeTypes}.
+   *   <li>{@code ¡Shape! .oclAsType(Box)} → {@code ¡Box!}
+   *   <li>{@code {Shape} .oclAsType(Box)} → {@code {Box}}
    * </ul>
    *
    * @param ctx the context of the 'oclAsType' operation node in the AST
-   * @return the collection with elements cast to the target type if receiver is valid; otherwise
-   *     {@link Type#ERROR}
+   * @return the cast type with preserved multiplicity, or {@link Type#ERROR}
    */
   @Override
   public Type visitOclAsTypeOp(VitruvOCLParser.OclAsTypeOpContext ctx) {
     Type receiverType = receiverStack.peek();
 
-    if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'oclAsType' requires collection",
-          ErrorSeverity.ERROR,
-          "type-checker");
-      return Type.ERROR;
+    Type targetType = visit(ctx.type);
+    if (targetType == null && ctx.type != null) {
+      targetType = resolveTypeExpression(ctx.type);
     }
 
-    Type targetType = visit(ctx.type);
+    // preserve the receiver's multiplicity, replace only the
+    // member type τ. Bare metaclass types are implicitly ¡T! (singleton).
+    Type resultType;
+    if (receiverType.isCollection() && !receiverType.isSingleton()) {
+      // Multi-valued collection {T}, [T], etc. — preserve collection kind
+      resultType = preserveCollectionKind(receiverType, targetType);
+    } else {
+      // Singleton ¡T! or bare metaclass T → result is ¡targetType!
+      resultType = Type.singleton(targetType);
+    }
 
-    Type resultType = preserveCollectionKind(receiverType, targetType);
     nodeTypes.put(ctx, resultType);
+    nodeTypes.put(ctx.type, targetType);
     return resultType;
   }
 
@@ -3363,6 +3436,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return resultType;
   }
 
+  // ==================== Not Yet Implemented ====================
   /**
    * Type checks correspondence operator (~).
    *
@@ -3557,8 +3631,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitRejectCorrespondence(VitruvOCLParser.RejectCorrespondenceContext ctx) {
     Type receiverType = receiverStack.peek();
-
-    System.out.println("NUTTE");
+    ;
 
     if (receiverType == null || receiverType == Type.ERROR) {
       errors.add(
@@ -3976,5 +4049,66 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   public void setTokenStream(org.antlr.v4.runtime.TokenStream tokens) {
     this.tokens = tokens;
+  }
+
+  /**
+   * Normalizes a bare type to it singleton ctype ¡T!.
+   *
+   * <p>every expression has a ctype χ = τ[l,r](μ,ω). Bare primitive types (INTEGER, STRING, etc.)
+   * and bare metaclass types are implicitly ¡T![1,1]. This method makes that wrapping explicit so
+   * all downstream operations can rely on it. Multi-valued collections ({T}, [T], etc.) are
+   * returned unchanged since they are already proper ctypes.
+   *
+   * @param t the type to normalize
+   * @return ¡t! if t is a bare scalar or metaclass, t unchanged if already a proper ctype
+   */
+  private Type normalizeToSingleton(Type t) {
+    if (t == Type.ERROR || t == Type.ANY) {
+      return t;
+    }
+    if (t.isCollection()) {
+      return t;
+    } // {T}, [T], <T>, {{T}} — already proper ctype
+    if (t.isSingleton()) {
+      return t;
+    } // !T! — already wrapped
+    if (t.isOptional()) {
+      return t;
+    } // ?T? — already wrapped
+    return Type.singleton(t); // bare INTEGER, STRING, cad::Sphere → !T!
+  }
+
+  /**
+   * Checks conformance with singleton-unwrapping rules at let-binding sites.
+   *
+   * <p>A singleton {@code !T!} can be bound to a variable declared as T, and vice versa. Also
+   * handles optional {@code ?T?} binding to T.
+   *
+   * <p>Examples:
+   *
+   * <ul>
+   *   <li>{@code !cad::Box!} conforms to {@code cad::Box} (oclAsType result in let)
+   *   <li>{@code cad::Box} conforms to {@code !cad::Box!} (bare type to singleton decl)
+   *   <li>{@code ?Any?} conforms to {@code cad::Coordinate} (null comparison context)
+   * </ul>
+   *
+   * @param initType the type of the initializer expression
+   * @param declared the declared type of the variable
+   * @return true if initType conforms to declared after unwrapping rules
+   */
+  private boolean conformsWithUnwrapping(Type initType, Type declared) {
+    // !T! conforms to T  (e.g. oclAsType returns !Box!, declared as cad::Box)
+    if (initType.isSingleton() && initType.getElementType().isConformantTo(declared)) {
+      return true;
+    }
+    // T conforms to !T!  (bare type assigned to singleton-declared variable)
+    if (declared.isSingleton() && initType.isConformantTo(declared.getElementType())) {
+      return true;
+    }
+    // ?T? conforms to T  (optional binding, e.g. null comparison context)
+    if (initType.isOptional() && initType.getElementType().isConformantTo(declared)) {
+      return true;
+    }
+    return false;
   }
 }

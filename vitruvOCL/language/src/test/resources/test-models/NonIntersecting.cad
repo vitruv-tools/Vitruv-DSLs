@@ -1,0 +1,15 @@
+<cad:CAD_Model xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:cad="http://vitruv.tools/cad/model">
+  <namespaces id="9" name="Calliper">
+    <shapes xsi:type="cad:Cylinder" id="5" name="TestCylinder" radius="5.0">
+      <bottomCenter id="8" name="bottom" x="3.0" y="4.0" z="2.0" />
+      <topCenter id="7" name="top" x="3.0" y="2.0" z="4.0" />
+    </shapes>
+  </namespaces>
+  <namespaces id="1" name="Disk">
+    <shapes xsi:type="cad:Sphere" id="4" name="Disk" radius="5.0">
+      <center id="33" name="213" x="16.0" y="4.0" z="2.0" />
+    </shapes>
+  </namespaces>
+</cad:CAD_Model>

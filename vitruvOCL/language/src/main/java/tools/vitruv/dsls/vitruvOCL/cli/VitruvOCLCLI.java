@@ -23,171 +23,11 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.ConstraintResult;
 import tools.vitruv.dsls.vitruvOCL.pipeline.VitruvOCL;
 
 /**
- * Command-line interface for VitruvOCL constraint evaluation.
- *
- * <p>Provides a JSON-based CLI designed for integration with IDEs, build tools, and scripts. All
- * output is written to stdout as JSON for easy parsing by external tools.
- *
- * <h2>Installation</h2>
- *
- * <pre>
- * # Download the JAR from releases, then run via:
- * java -jar vitruvOCL-0.1.0.jar &lt;command&gt; [arguments]
- * </pre>
- *
- * <h2>Commands</h2>
- *
- * <h3>check - Type-check a constraint</h3>
- *
- * <p>Parses and type-checks a constraint without evaluating it against instances. Useful for syntax
- * validation in IDEs.
- *
- * <pre>
- * java -jar vitruvOCL.jar check &lt;constraint-file&gt; --ecore &lt;files&gt;
- * </pre>
- *
- * Example:
- *
- * <pre>
- * java -jar vitruvOCL.jar check constraint.ocl --ecore spacemission.ecore
- * </pre>
- *
- * Output on success:
- *
- * <pre>{@code
- * {
- *   "success": true,
- *   "diagnostics": []
- * }
- * }</pre>
- *
- * Output on error:
- *
- * <pre>{@code
- * {
- *   "success": false,
- *   "diagnostics": [
- *     {
- *       "line": 2,
- *       "column": 5,
- *       "message": "Unknown property 'mas' on type Spacecraft",
- *       "severity": "ERROR"
- *     }
- *   ]
- * }
- * }</pre>
- *
- * <h3>eval - Evaluate a single constraint</h3>
- *
- * <p>Evaluates a constraint against model instances and returns satisfaction result.
- *
- * <pre>
- * java -jar vitruvOCL.jar eval &lt;constraint-file&gt; --ecore &lt;files&gt; --xmi &lt;files&gt;
- * </pre>
- *
- * Example:
- *
- * <pre>
- * java -jar vitruvOCL.jar eval constraint.ocl \
- *   --ecore spacemission.ecore,satellitesystem.ecore \
- *   --xmi voyager.spacemission,atlas.satellitesystem
- * </pre>
- *
- * Output:
- *
- * <pre>{@code
- * {
- *   "success": true,
- *   "satisfied": true,
- *   "errors": [],
- *   "warnings": []
- * }
- * }</pre>
- *
- * <h3>eval-batch - Evaluate multiple constraints</h3>
- *
- * <p>Evaluates all constraints defined in a constraints file and returns individual results for
- * each. Failed evaluations for individual constraints do not abort the batch - they are reported as
- * error results.
- *
- * <pre>
- * java -jar vitruvOCL.jar eval-batch &lt;constraints-file&gt; --ecore &lt;files&gt; --xmi &lt;files&gt;
- * </pre>
- *
- * Example:
- *
- * <pre>
- * java -jar vitruvOCL.jar eval-batch constraints.ocl \
- *   --ecore spacemission.ecore \
- *   --xmi voyager.spacemission,atlas.satellitesystem
- * </pre>
- *
- * Output:
- *
- * <pre>{@code
- * {
- *   "success": true,
- *   "constraints": [
- *     {
- *       "name": "positiveMass",
- *       "success": true,
- *       "satisfied": true
- *     },
- *     {
- *       "name": "validSerialNumber",
- *       "success": true,
- *       "satisfied": false,
- *       "warnings": ["Constraint violated for instances at indices: [0]"]
- *     }
- *   ]
- * }
- * }</pre>
- *
- * <h3>version - Print version information</h3>
- *
- * <pre>
- * java -jar vitruvOCL.jar version
- * </pre>
- *
- * <h2>Constraint File Format</h2>
- *
- * <pre>
- * -- Comments start with double dash
- * context spaceMission::Spacecraft inv positiveMass:
- *   self.mass > 0
- *
- * context spaceMission::Spacecraft inv validSerialNumber:
- *   self.serialNumber.size() > 0
- * </pre>
- *
- * <p>Constraint names (e.g. {@code positiveMass}) are extracted from the {@code inv} keyword and
- * used to identify constraints in batch results. If no name is provided, the constraint is reported
- * as {@code "unknown"}.
- *
- * <h2>Exit Codes</h2>
- *
- * <ul>
- *   <li>{@code 0} - Command executed successfully (does NOT indicate constraint satisfaction)
- *   <li>{@code 1} - Unexpected error or invalid arguments
- * </ul>
- *
- * <p><b>Note:</b> Both satisfied and violated constraints return exit code 0. Use the {@code
- * "satisfied"} field in the JSON output to determine constraint satisfaction.
- *
- * @see VitruvOCL for the programmatic Java API
+ * Command-line interface for VitruvOCL compiler. Outputs JSON for easy integration with IDEs and
+ * tools.
  */
 public class VitruvOCLCLI {
 
-  /**
-   * Main entry point for the VitruvOCL CLI.
-   *
-   * <p>Dispatches to the appropriate command handler based on the first argument. If no arguments
-   * are provided, prints usage information and exits with code 1. Unexpected exceptions are caught
-   * and reported as JSON error output.
-   *
-   * @param args Command-line arguments. First argument must be a valid command ({@code check},
-   *     {@code eval}, {@code eval-batch}, {@code version}).
-   */
   public static void main(String[] args) {
     if (args.length == 0) {
       printUsage();
@@ -215,15 +55,6 @@ public class VitruvOCLCLI {
     }
   }
 
-  /**
-   * Handles the {@code check} command.
-   *
-   * <p>Reads the constraint file and runs the full compilation pipeline (parse + type check)
-   * without evaluating against model instances. Prints a JSON diagnostics report to stdout.
-   *
-   * @param args Full CLI argument array (args[1] is constraint file path, args[2+] are options)
-   * @throws IOException If the constraint file cannot be read
-   */
   private static void checkConstraint(String[] args) throws IOException {
     CLIArgs parsed = parseArgs(args);
     String constraintText = Files.readString(parsed.constraintFile);
@@ -234,15 +65,6 @@ public class VitruvOCLCLI {
     System.out.println(buildCheckJson(result));
   }
 
-  /**
-   * Handles the {@code eval} command.
-   *
-   * <p>Reads the constraint file and evaluates it against provided model instances. Prints a JSON
-   * result containing success status, satisfaction, errors, and warnings.
-   *
-   * @param args Full CLI argument array (args[1] is constraint file path, args[2+] are options)
-   * @throws IOException If the constraint file cannot be read
-   */
   private static void evalConstraint(String[] args) throws IOException {
     CLIArgs parsed = parseArgs(args);
     String constraintText = Files.readString(parsed.constraintFile);
@@ -253,21 +75,14 @@ public class VitruvOCLCLI {
     System.out.println(buildEvalJson(result));
   }
 
-  /**
-   * Handles the {@code eval-batch} command.
-   *
-   * <p>Parses a constraints file containing multiple constraints, evaluates each independently, and
-   * returns a JSON array with individual results per constraint. Failed evaluations for individual
-   * constraints do not abort the batch - they are reported as error results.
-   *
-   * @param args Full CLI argument array (args[1] is constraints file path, args[2+] are options)
-   * @throws IOException If the constraints file cannot be read
-   */
+  /** Evaluates all constraints in a file and returns individual results for each. */
   private static void evalBatch(String[] args) throws IOException {
     CLIArgs parsed = parseArgs(args);
 
+    // Read and parse constraints file
     List<String> constraints = parseConstraintsFile(parsed.constraintFile);
 
+    // Build batch result JSON
     StringBuilder json = new StringBuilder();
     json.append("{");
     json.append("\"success\":true,");
@@ -280,6 +95,7 @@ public class VitruvOCLCLI {
         ConstraintResult result =
             VitruvOCL.evaluateConstraint(constraint, parsed.ecoreFiles, parsed.xmiFiles);
 
+        // Extract constraint name from "context X inv NAME:"
         String name = extractConstraintName(constraint);
 
         StringBuilder constraintJson = new StringBuilder();
@@ -316,6 +132,7 @@ public class VitruvOCLCLI {
         constraintResults.add(constraintJson.toString());
 
       } catch (Exception e) {
+        // If evaluation fails for this constraint, add error result
         String name = extractConstraintName(constraint);
         constraintResults.add(
             String.format(
@@ -330,21 +147,11 @@ public class VitruvOCLCLI {
     System.out.println(json.toString());
   }
 
-  /**
-   * Parses a constraints file into individual constraint strings.
-   *
-   * <p>Strips comment lines (starting with {@code --}) and splits the remaining content by the
-   * {@code context} keyword. Each resulting string represents one complete constraint starting with
-   * {@code context}.
-   *
-   * @param file Path to the constraints file
-   * @return List of constraint strings, each starting with {@code context}
-   * @throws IOException If the file cannot be read
-   */
   private static List<String> parseConstraintsFile(Path file) throws IOException {
     String content = Files.readString(file);
     List<String> constraints = new ArrayList<>();
 
+    // Remove comments
     String[] lines = content.split("\n");
     StringBuilder cleaned = new StringBuilder();
     for (String line : lines) {
@@ -354,6 +161,7 @@ public class VitruvOCLCLI {
       }
     }
 
+    // Split by "context" keyword
     String[] parts = cleaned.toString().split("(?=context\\s)");
     for (String part : parts) {
       String trimmed = part.trim();
@@ -365,19 +173,8 @@ public class VitruvOCLCLI {
     return constraints;
   }
 
-  /**
-   * Extracts the constraint name from an {@code inv} declaration.
-   *
-   * <p>Searches for the pattern {@code inv NAME:} and returns the name between the {@code inv}
-   * keyword and the colon. Returns {@code "unknown"} if no name can be found (e.g. anonymous
-   * constraints like {@code inv:}).
-   *
-   * <p>Example: given {@code context Spacecraft inv positiveMass:}, returns {@code "positiveMass"}.
-   *
-   * @param constraint The full constraint string
-   * @return The constraint name, or {@code "unknown"} if not found
-   */
-  private static String extractConstraintName(String constraint) {
+  public static String extractConstraintName(String constraint) {
+    // Extract name from "context ... inv NAME:"
     String[] lines = constraint.split("\n");
     for (String line : lines) {
       if (line.contains(" inv ")) {
@@ -392,15 +189,6 @@ public class VitruvOCLCLI {
     return "unknown";
   }
 
-  /**
-   * Builds a JSON response for the {@code check} command.
-   *
-   * <p>Produces a JSON object with {@code success} flag and a {@code diagnostics} array containing
-   * line, column, message, and severity for each compiler error.
-   *
-   * @param result The constraint evaluation result containing compiler errors
-   * @return JSON string with check result
-   */
   private static String buildCheckJson(ConstraintResult result) {
     StringBuilder json = new StringBuilder();
     json.append("{");
@@ -425,16 +213,6 @@ public class VitruvOCLCLI {
     return json.toString();
   }
 
-  /**
-   * Builds a JSON response for the {@code eval} command.
-   *
-   * <p>Produces a JSON object with {@code success} flag, {@code satisfied} flag, an {@code errors}
-   * array with compiler errors, and a {@code warnings} array with non-fatal issues such as
-   * constraint violations or unused metamodels.
-   *
-   * @param result The constraint evaluation result
-   * @return JSON string with evaluation result
-   */
   private static String buildEvalJson(ConstraintResult result) {
     StringBuilder json = new StringBuilder();
     json.append("{");
@@ -467,15 +245,6 @@ public class VitruvOCLCLI {
     return json.toString();
   }
 
-  /**
-   * Escapes a string for safe inclusion in a JSON value.
-   *
-   * <p>Handles all standard JSON escape sequences including backslash, double quote, newline,
-   * carriage return, tab, backspace, and form feed.
-   *
-   * @param str The string to escape, may be {@code null}
-   * @return JSON-safe quoted string, or {@code "null"} if input is {@code null}
-   */
   private static String jsonString(String str) {
     if (str == null) {
       return "null";
@@ -491,21 +260,6 @@ public class VitruvOCLCLI {
         + "\"";
   }
 
-  /**
-   * Parses and validates CLI arguments into a structured {@link CLIArgs} record.
-   *
-   * <p>Expects at least a constraint file path as the second argument (args[1]). Optional {@code
-   * --ecore} and {@code --xmi} flags accept comma-separated file paths.
-   *
-   * <p>Example:
-   *
-   * <pre>
-   * eval constraint.ocl --ecore model.ecore,other.ecore --xmi instance.xmi
-   * </pre>
-   *
-   * @param args Full CLI argument array including the command name at args[0]
-   * @return Parsed {@link CLIArgs} with constraint file, ecore files, and xmi files
-   */
   private static CLIArgs parseArgs(String[] args) {
     if (args.length < 2) {
       System.err.println("Missing constraint file");
@@ -536,11 +290,6 @@ public class VitruvOCLCLI {
     return new CLIArgs(constraintFile, ecoreFiles, xmiFiles);
   }
 
-  /**
-   * Prints CLI usage information to stdout.
-   *
-   * <p>Called when no arguments are provided or an unknown command is encountered.
-   */
   private static void printUsage() {
     System.out.println(
         """
@@ -566,23 +315,15 @@ public class VitruvOCLCLI {
           --xmi <files>         Comma-separated model instance files
 
         Examples:
-          vitruvocl check constraint.ocl --ecore spacemission.ecore
-          vitruvocl eval constraint.ocl --ecore model.ecore --xmi instance.xmi
+          vitruvocl check constraints.ocl --ecore spacemission.ecore
+          vitruvocl eval constraints.ocl --ecore model.ecore --xmi instance.xmi
           vitruvocl eval-batch constraints.ocl --ecore model.ecore --xmi instance.xmi
         """);
   }
 
-  /** Prints the current VitruvOCL version to stdout. */
   private static void printVersion() {
     System.out.println("VitruvOCL 1.0.0");
   }
 
-  /**
-   * Structured container for parsed CLI arguments.
-   *
-   * @param constraintFile Path to the constraint or constraints file
-   * @param ecoreFiles Array of metamodel (.ecore) file paths
-   * @param xmiFiles Array of model instance file paths
-   */
   record CLIArgs(Path constraintFile, Path[] ecoreFiles, Path[] xmiFiles) {}
 }

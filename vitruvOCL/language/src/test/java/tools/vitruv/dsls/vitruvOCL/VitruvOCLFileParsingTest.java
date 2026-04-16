@@ -53,9 +53,9 @@ import org.junit.jupiter.params.provider.ValueSource;
  *       </ul>
  * </ul>
  *
- * @see VitruvOCLLexer ANTLR-generated lexer
- * @see VitruvOCLParser ANTLR-generated parser
- * @see VitruvOCLParserTestUtils Parse tree visualization utilities
+ * @see VitruvLLexer ANTLR-generated lexer
+ * @see OCLParser ANTLR-generated parser
+ * @see OCLParserTestUtils Parse tree visualization utilities
  */
 public class VitruvOCLFileParsingTest {
 
@@ -149,10 +149,10 @@ public class VitruvOCLFileParsingTest {
    *
    * <pre>{@code
    * // Verify context declaration exists
-   * assertTrue(tree.getChild(0) instanceof VitruvOCLParser.ContextDeclCSContext);
+   * assertTrue(tree.getChild(0) instanceof OCLParser.ContextDeclCSContext);
    *
    * // Check invariant name
-   * VitruvOCLParser.InvariantCSContext inv = ...;
+   * OCLParser.InvariantCSContext inv = ...;
    * assertEquals("validMass", inv.ID().getText());
    * }</pre>
    *

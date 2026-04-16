@@ -52,6 +52,14 @@ public class VitruvOCLCompiler {
   private final ErrorCollector errors = new ErrorCollector();
 
   /**
+   * Last evaluator instance — available after any {@code compile} call for violation introspection.
+   *
+   * <p>Callers can use {@code getLastEvaluator().getViolatingInstances()} to retrieve the concrete
+   * EObjects that violated the constraint, enabling precise per-instance violation messages.
+   */
+  private EvaluationVisitor lastEvaluator = null;
+
+  /**
    * Creates compiler with metamodel access.
    *
    * @param wrapper Interface to metamodels and instances
@@ -99,6 +107,7 @@ public class VitruvOCLCompiler {
     // PASS 3: Evaluation
     EvaluationVisitor evaluator =
         new EvaluationVisitor(symbolTable, wrapper, errors, typeChecker.getNodeTypes());
+    lastEvaluator = evaluator;
     return evaluator.visit(tree);
   }
 
@@ -144,6 +153,7 @@ public class VitruvOCLCompiler {
     // PASS 3: Evaluation
     EvaluationVisitor evaluator =
         new EvaluationVisitor(symbolTable, wrapper, errors, typeChecker.getNodeTypes());
+    lastEvaluator = evaluator;
     evaluator.visit(tree);
 
     return new ValidationResult(errors.getErrors(), java.util.List.of());
@@ -203,6 +213,7 @@ public class VitruvOCLCompiler {
     // PASS 3: Evaluation
     EvaluationVisitor evaluator =
         new EvaluationVisitor(symbolTable, wrapper, errors, typeChecker.getNodeTypes());
+    lastEvaluator = evaluator;
     Value result = evaluator.visit(tree);
 
     if (errors.hasErrors()) {
@@ -229,5 +240,17 @@ public class VitruvOCLCompiler {
    */
   public ErrorCollector getErrors() {
     return errors;
+  }
+
+  /**
+   * Returns the evaluator from the last {@code compile} call.
+   *
+   * <p>Use {@code getLastEvaluator().getViolatingInstances()} to retrieve the concrete EObjects
+   * that violated the constraint, for precise per-instance violation messages.
+   *
+   * @return The last EvaluationVisitor, or null if no evaluation has run yet
+   */
+  public EvaluationVisitor getLastEvaluator() {
+    return lastEvaluator;
   }
 }

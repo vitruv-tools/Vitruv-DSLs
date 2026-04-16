@@ -20,7 +20,6 @@ import org.eclipse.emf.ecore.*;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 
@@ -41,19 +40,28 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
  */
 public class MetamodelWrapper implements MetamodelWrapperInterface {
 
-  /** Default directory for test model files (legacy support) */
+  /** Default directory for test model files (legacy support). */
   public static Path TEST_MODELS_PATH = Path.of("test-models");
 
-  /** Maps package names to loaded EPackages */
+  /** Maps package names to loaded EPackages. */
   private final Map<String, EPackage> metamodelRegistry = new HashMap<>();
 
-  /** Maps EClasses to all instances (including subtype instances) */
+  /** Maps EClasses to all instances (including subtype instances). */
   private final Map<EClass, List<EObject>> instances = new HashMap<>();
 
-  /** Maps instance index to source filename for error reporting */
+  /**
+   * Maps each registered EObject to its source filename. Uses identity (not equals) so different.
+   * objects from same file are tracked separately.
+   */
+  private final Map<EObject, String> instanceSourceFile = new IdentityHashMap<>();
+
+  /** Ordered list of context-level (root) EObjects for index-based lookup from evaluator. */
+  private final List<EObject> contextObjects = new ArrayList<>();
+
+  /** Maps instance index to source filename for error reporting (index matches contextObjects). */
   private final List<String> instanceFilenames = new ArrayList<>();
 
-  /** EMF resource set for loading metamodels */
+  /** EMF resource set for loading metamodels. */
   private final ResourceSet resourceSet;
 
   /** Creates metamodel wrapper with EMF resource factories configured. */
@@ -142,8 +150,25 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
     String filename = xmiPath.getFileName().toString();
 
     for (EObject root : resource.getContents()) {
-      addInstanceRecursive(root, filename);
+      addInstanceRecursiveInternal(root, filename);
+      // Register root as context candidate (one entry per root EObject per file)
+      contextObjects.add(root);
+      instanceFilenames.add(filename);
     }
+  }
+
+  /**
+   * Returns the context EObject at the given evaluation index.
+   *
+   * @param index The evaluation index (0-based)
+   * @return The EObject at that index, or null if out of bounds
+   */
+  @Override
+  public EObject getContextObjectByIndex(int index) {
+    if (index >= 0 && index < contextObjects.size()) {
+      return contextObjects.get(index);
+    }
+    return null;
   }
 
   /**
@@ -156,13 +181,16 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
     loadModelInstance(TEST_MODELS_PATH.resolve(xmiFileName));
   }
 
-  /** Recursively indexes instance and all contained objects by EClass. */
-  private void addInstanceRecursive(EObject instance, String sourceFile) {
+  /**
+   * Internal recursive helper. All levels add to instances map and instanceSourceFile. Only
+   * top-level roots are registered in contextObjects/instanceFilenames.
+   */
+  private void addInstanceRecursiveInternal(EObject instance, String sourceFile) {
     instances.computeIfAbsent(instance.eClass(), k -> new ArrayList<>()).add(instance);
-    instanceFilenames.add(sourceFile);
+    instanceSourceFile.put(instance, sourceFile);
 
     for (EObject child : instance.eContents()) {
-      addInstanceRecursive(child, sourceFile);
+      addInstanceRecursiveInternal(child, sourceFile);
     }
   }
 
@@ -217,10 +245,11 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   }
 
   /**
-   * Returns the source filename for an instance at the given index.
+   * Returns source filename for the context object at the given evaluation index. Index corresponds
+   * to the i-th root EObject loaded (one per root per XMI file).
    *
-   * @param index The instance index (0-based, across all loaded instances)
-   * @return The filename (e.g., "spacecraft-atlas.spacemission"), or null if index out of bounds
+   * @param index The evaluation index (0-based, one per root context object)
+   * @return The filename (e.g., "spacecraft-atlas.spacemission"), or null if out of bounds
    */
   @Override
   public String getInstanceNameByIndex(int index) {
@@ -228,6 +257,19 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
       return instanceFilenames.get(index);
     }
     return null;
+  }
+
+  /**
+   * Returns the source filename for a specific EObject instance (by identity). More reliable than
+   * index-based lookup.
+   */
+  public String getSourceFileForInstance(EObject instance) {
+    return instanceSourceFile.get(instance);
+  }
+
+  /** Returns all registered context (root) objects in load order. */
+  public List<EObject> getContextObjects() {
+    return Collections.unmodifiableList(contextObjects);
   }
 
   /**
@@ -260,41 +302,48 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
     return roots;
   }
 
+  /**
+   * Resolves an EClass by its unqualified short name across all registered metamodel packages.
+   *
+   * <p>Iterates all loaded {@link EPackage}s and returns the first {@link EClassifier} whose name
+   * equals {@code shortName} and which is an {@link EClass}. Subpackages are also searched one
+   * level deep.
+   *
+   * @param shortName the unqualified class name (e.g., {@code "Coordinate"})
+   * @return the first matching {@link EClass}, or {@code null} if not found
+   */
   @Override
-  public Set<EObject> getCorrespondingObjects(EObject source) {
-    Set<EObject> result = new HashSet<>();
-
-    for (EObject root : getAllRootObjects()) {
-      if (!root.eClass().getName().equals("Correspondences")) continue;
-
-      EStructuralFeature correspondencesFeature =
-          root.eClass().getEStructuralFeature("correspondences");
-      if (correspondencesFeature == null) continue;
-
-      @SuppressWarnings("unchecked")
-      List<EObject> correspondences = (List<EObject>) root.eGet(correspondencesFeature);
-
-      for (EObject correspondence : correspondences) {
-        EStructuralFeature leftFeature =
-            correspondence.eClass().getEStructuralFeature("leftEObjects");
-        EStructuralFeature rightFeature =
-            correspondence.eClass().getEStructuralFeature("rightEObjects");
-        if (leftFeature == null || rightFeature == null) continue;
-
-        @SuppressWarnings("unchecked")
-        List<EObject> leftObjects = (List<EObject>) correspondence.eGet(leftFeature);
-        @SuppressWarnings("unchecked")
-        List<EObject> rightObjects = (List<EObject>) correspondence.eGet(rightFeature);
-
-        List<EObject> resolvedLeft =
-            leftObjects.stream().map(o -> EcoreUtil.resolve(o, correspondence)).toList();
-        List<EObject> resolvedRight =
-            rightObjects.stream().map(o -> EcoreUtil.resolve(o, correspondence)).toList();
-
-        if (resolvedLeft.contains(source)) result.addAll(resolvedRight);
-        if (resolvedRight.contains(source)) result.addAll(resolvedLeft);
+  public EClass resolveEClassByShortName(String shortName) {
+    for (EPackage ePackage : metamodelRegistry.values()) {
+      EClass found = resolveEClassInPackage(ePackage, shortName);
+      if (found != null) {
+        return found;
       }
     }
-    return result;
+    return null;
+  }
+
+  /**
+   * Searches {@code ePackage} and its direct subpackages for an {@link EClass} with the given short
+   * name.
+   *
+   * @param ePackage the package to search
+   * @param shortName the unqualified class name
+   * @return the matching {@link EClass}, or {@code null}
+   */
+  private EClass resolveEClassInPackage(EPackage ePackage, String shortName) {
+    // Search classifiers in this package
+    EClassifier classifier = ePackage.getEClassifier(shortName);
+    if (classifier instanceof EClass eClass) {
+      return eClass;
+    }
+    // Recurse into sub-packages (one level — sufficient for standard Ecore layouts)
+    for (EPackage subPkg : ePackage.getESubpackages()) {
+      EClassifier subClassifier = subPkg.getEClassifier(shortName);
+      if (subClassifier instanceof EClass eClass) {
+        return eClass;
+      }
+    }
+    return null;
   }
 }

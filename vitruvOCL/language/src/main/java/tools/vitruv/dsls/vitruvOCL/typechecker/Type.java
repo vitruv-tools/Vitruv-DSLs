@@ -2,9 +2,11 @@ package tools.vitruv.dsls.vitruvOCL.typechecker;
 
 import java.util.List;
 import org.eclipse.emf.ecore.EClass;
+import tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement;
+import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
 
 /**
- * Represents a type in the VitruviusOCL type system.
+ * Represents a type in the OCL type system.
  *
  * <p>Implements OCL semantics where "everything is a collection" - even primitive values have
  * implicit SINGLETON multiplicity. The type system supports:
@@ -13,7 +15,7 @@ import org.eclipse.emf.ecore.EClass;
  *   <li>Primitive types (INTEGER, STRING, BOOLEAN, DOUBLE) with implicit singleton multiplicity
  *   <li>Collection types created via factory methods (set(), sequence(), bag(), orderedSet())
  *   <li>Optional types (?T?) replacing OCL's null concept
- *   <li>Metaclass types (EClass references) for cross-metamodel constraints in Vitruvius
+ *   <li>Metaclass types (EClass references) for cross-metamodel constraints in OCL
  * </ul>
  *
  * <p>This is the base Type AST node produced during Pass 2 (Type Checking) of the compiler. Each
@@ -21,7 +23,7 @@ import org.eclipse.emf.ecore.EClass;
  *
  * @see TypeCheckVisitor which produces Type annotations for parsed expressions
  * @see Multiplicity for OCL multiplicity semantics
- * @see MetaclassType for Vitruvius metamodel integration
+ * @see MetaclassType for metamodel integration
  */
 public abstract class Type {
 
@@ -61,6 +63,9 @@ public abstract class Type {
 
   /** Primitive String type with implicit SINGLETON multiplicity. */
   public static final Type STRING = new StringType();
+
+  /** Primitive Float type with implicit SINGLETON multiplicity. */
+  public static final Type FLOAT = new FloatType();
 
   /** Top type in the type hierarchy - all types conform to ANY. */
   public static final Type ANY = new AnyType();
@@ -146,7 +151,7 @@ public abstract class Type {
   }
 
   /**
-   * Creates a Metaclass type for Vitruvius metamodel elements.
+   * Creates a Metaclass type for metamodel elements.
    *
    * <p>Used in cross-metamodel constraints where the ~ operator accesses instances from other
    * metamodels in the VSUM. The EClass represents a metaclass from a loaded EMF metamodel.
@@ -235,7 +240,7 @@ public abstract class Type {
   /**
    * Checks if this type represents a metamodel class (EClass wrapper).
    *
-   * <p>Metaclass types are used for cross-metamodel constraints in Vitruvius VSUMs.
+   * <p>Metaclass types are used for cross-metamodel constraints
    *
    * @return true if this is a metaclass type
    */
@@ -337,13 +342,19 @@ public abstract class Type {
   private static class IntegerType extends Type {
     @Override
     public boolean isConformantTo(Type other) {
-      if (other == INTEGER) return true;
-      if (other == DOUBLE) return true;
-      if (other == ERROR) return true;
-      if (other == ANY) return true;
-
-      // Singleton !int! conforms to base int
-      if (other.isSingleton() && other.getElementType() == INTEGER) {
+      if (other == INTEGER) {
+        return true;
+      }
+      if (other == FLOAT) {
+        return true;
+      }
+      if (other == DOUBLE) {
+        return true;
+      }
+      if (other == ERROR) {
+        return true;
+      }
+      if (other == ANY) {
         return true;
       }
 
@@ -369,9 +380,15 @@ public abstract class Type {
   private static class BooleanType extends Type {
     @Override
     public boolean isConformantTo(Type other) {
-      if (other == BOOLEAN) return true;
-      if (other == ERROR) return true;
-      if (other == ANY) return true;
+      if (other == BOOLEAN) {
+        return true;
+      }
+      if (other == ERROR) {
+        return true;
+      }
+      if (other == ANY) {
+        return true;
+      }
 
       // Singleton !bool! conforms to base bool
       if (other.isSingleton() && other.getElementType() == BOOLEAN) {
@@ -399,13 +416,19 @@ public abstract class Type {
   private static class DoubleType extends Type {
     @Override
     public boolean isConformantTo(Type other) {
-      if (other == DOUBLE) return true;
-      if (other == INTEGER) return true;
-      if (other == ERROR) return true;
-      if (other == ANY) return true;
-
-      // Singleton !double! conforms to base double
-      if (other.isSingleton() && other.getElementType() == DOUBLE) {
+      if (other == DOUBLE) {
+        return true;
+      }
+      if (other == INTEGER) {
+        return true;
+      }
+      if (other == ERROR) {
+        return true;
+      }
+      if (other == ANY) {
+        return true;
+      }
+      if (other == FLOAT) {
         return true;
       }
 
@@ -423,6 +446,50 @@ public abstract class Type {
   }
 
   /**
+   * Float type implementation with implicit SINGLETON multiplicity.
+   *
+   * <p>Represents EFloat attributes from EMF metamodels (e.g., Coordinate.x). Conforms to Double
+   * and Integer for arithmetic compatibility.
+   */
+  private static class FloatType extends Type {
+    @Override
+    public boolean isConformantTo(Type other) {
+      if (other == FLOAT) {
+        return true;
+      }
+      if (other == DOUBLE) {
+        return true;
+      }
+      if (other == INTEGER) {
+        return true;
+      }
+      if (other == ERROR) {
+        return true;
+      }
+      if (other == ANY) {
+        return true;
+      }
+
+      if (other.isSingleton() && other.getElementType() == FLOAT) {
+        return true;
+      }
+      if (other.getElementType() == FLOAT) {
+        return true;
+      }
+      if (other.getElementType() == DOUBLE) {
+        return true;
+      }
+
+      return false;
+    }
+
+    @Override
+    public String getTypeName() {
+      return "Float";
+    }
+  }
+
+  /**
    * String type implementation with implicit SINGLETON multiplicity.
    *
    * <p>Represents OCL string literals and string operation results. Supports concatenation,
@@ -431,12 +498,13 @@ public abstract class Type {
   private static class StringType extends Type {
     @Override
     public boolean isConformantTo(Type other) {
-      if (other == STRING) return true;
-      if (other == ERROR) return true;
-      if (other == ANY) return true;
-
-      // Singleton !String! conforms to base String
-      if (other.isSingleton() && other.getElementType() == STRING) {
+      if (other == STRING) {
+        return true;
+      }
+      if (other == ERROR) {
+        return true;
+      }
+      if (other == ANY) {
         return true;
       }
 
@@ -462,7 +530,9 @@ public abstract class Type {
   private static class AnyType extends Type {
     @Override
     public boolean isConformantTo(Type other) {
-      if (other == ERROR) return true;
+      if (other == ERROR) {
+        return true;
+      }
       return other == ANY;
     }
 
@@ -475,7 +545,7 @@ public abstract class Type {
   // ==================== Metaclass Type Implementation ====================
 
   /**
-   * Metaclass type representing an EClass from a Vitruvius metamodel.
+   * Metaclass type representing an EClass from a metamodel.
    *
    * <p>Used for cross-metamodel consistency checking with the ~ operator. The EClass reference
    * provides access to the metamodel's type hierarchy for conformance checking based on EClass
@@ -493,7 +563,9 @@ public abstract class Type {
 
     @Override
     public boolean isConformantTo(Type other) {
-      if (other == ERROR || other == ANY) return true;
+      if (other == ERROR || other == ANY) {
+        return true;
+      }
 
       // Singleton metaclass conforms to base metaclass
       if (other.isSingleton() && other.getElementType() instanceof MetaclassType otherMeta) {
@@ -554,15 +626,27 @@ public abstract class Type {
 
     @Override
     public boolean isConformantTo(Type other) {
-      if (other == ERROR) return true;
-      if (other == ANY) return true;
-
-      // Singleton conforms to its unwrapped element type
-      if (this.isSingleton() && this.elementType.equals(other)) {
+      if (other == ERROR) {
+        return true;
+      }
+      if (other == ANY) {
         return true;
       }
 
-      // Collection conformance: both element type and multiplicity must conform
+      // ── Singleton unwrapping rules ──────────────────────────────────────────
+      // 1. Singleton!T! conforms to its bare element type T
+      //    e.g.: !Integer! conforms to Integer
+      if (this.isSingleton() && this.elementType.isConformantTo(other)) {
+        return true;
+      }
+
+      // 2. Singleton!Metaclass! conforms to Metaclass (without wrapping)
+      if (this.isSingleton() && other.isMetaclassType() && this.elementType.isMetaclassType()) {
+        // delegate to MetaclassType's own conformance (handles inheritance)
+        return this.elementType.isConformantTo(other);
+      }
+
+      // ── Collection-to-collection conformance ────────────────────────────────
       if (other instanceof CollectionType otherColl) {
         if (!this.elementType.isConformantTo(otherColl.elementType)) {
           return false;
@@ -664,11 +748,17 @@ public abstract class Type {
    * @return The least common supertype of t1 and t2
    */
   public static Type commonSuperType(Type t1, Type t2) {
-    if (t1.equals(t2)) return t1;
-    if (t1 == ERROR || t2 == ERROR) return ERROR;
+    if (t1.equals(t2)) {
+      return t1;
+    }
+    if (t1 == ERROR || t2 == ERROR) {
+      return ERROR;
+    }
 
-    boolean t1Primitive = (t1 == INTEGER || t1 == STRING || t1 == BOOLEAN);
-    boolean t2Primitive = (t2 == INTEGER || t2 == STRING || t2 == BOOLEAN);
+    boolean t1Primitive =
+        (t1 == INTEGER || t1 == STRING || t1 == BOOLEAN || t1 == DOUBLE || t1 == FLOAT);
+    boolean t2Primitive =
+        (t2 == INTEGER || t2 == STRING || t2 == BOOLEAN || t2 == DOUBLE || t2 == FLOAT);
 
     if (t1Primitive && t2Primitive && !t1.equals(t2)) {
       return ANY;
@@ -680,9 +770,15 @@ public abstract class Type {
       boolean unique = t1.isUnique() && t2.isUnique();
       boolean ordered = t1.isOrdered() && t2.isOrdered();
 
-      if (unique && ordered) return orderedSet(elemSuper);
-      if (unique) return set(elemSuper);
-      if (ordered) return sequence(elemSuper);
+      if (unique && ordered) {
+        return orderedSet(elemSuper);
+      }
+      if (unique) {
+        return set(elemSuper);
+      }
+      if (ordered) {
+        return sequence(elemSuper);
+      }
       return bag(elemSuper);
     }
 
@@ -703,24 +799,27 @@ public abstract class Type {
    * @param v2 Second value
    * @return Negative if v1 &lt; v2, zero if equal, positive if v1 &gt; v2
    */
-  public static int compare(
-      tools.vitruv.dsls.vitruvOCL.evaluator.Value v1,
-      tools.vitruv.dsls.vitruvOCL.evaluator.Value v2) {
-    if (v1 == v2) return 0;
-    if (v1 == null) return -1;
-    if (v2 == null) return 1;
+  public static int compare(Value v1, Value v2) {
+    if (v1 == v2) {
+      return 0;
+    }
+    if (v1 == null) {
+      return -1;
+    }
+    if (v2 == null) {
+      return 1;
+    }
 
     int sizeCompare = Integer.compare(v1.size(), v2.size());
     if (sizeCompare != 0) {
       return sizeCompare;
     }
 
-    List<tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement> elems1 = v1.getElements();
-    List<tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement> elems2 = v2.getElements();
+    List<OCLElement> elems1 = v1.getElements();
+    List<OCLElement> elems2 = v2.getElements();
 
     for (int i = 0; i < elems1.size(); i++) {
-      int elemCompare =
-          tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement.compare(elems1.get(i), elems2.get(i));
+      int elemCompare = OCLElement.compare(elems1.get(i), elems2.get(i));
       if (elemCompare != 0) {
         return elemCompare;
       }

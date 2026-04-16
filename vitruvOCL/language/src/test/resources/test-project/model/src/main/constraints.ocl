@@ -31,12 +31,6 @@ context spaceMission::Spacecraft inv serialInclusion:
   ).includes(self.serialNumber)
 
 
-context satelliteSystem::Satellite inv correspondingSpacecraft:
-  spaceMission::Spacecraft.allInstances().exists(sc |
-    sc.serialNumber == self.serialNumber and sc.mass == self.massKg
-  )
-
-
 context spaceMission::Spacecraft inv andLogic:
   satelliteSystem::Satellite.allInstances().exists(sat |
     sat.serialNumber == self.serialNumber
@@ -72,3 +66,9 @@ context spaceMission::Spacecraft inv nonExistentEmpty:
   satelliteSystem::Satellite.allInstances().select(sat |
     sat.serialNumber == "NONEXISTENT-999"
   ).isEmpty()
+  
+
+context satelliteSystem::Satellite inv selectWithTwoVariables:
+    satelliteSystem::Satellite.allInstances().select(s1, s2 |
+      s1.serialNumber != s2.serialNumber
+  ).size() > 0

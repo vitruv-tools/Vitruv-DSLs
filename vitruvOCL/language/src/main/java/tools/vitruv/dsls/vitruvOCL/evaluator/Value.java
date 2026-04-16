@@ -12,7 +12,9 @@
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL.evaluator;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.eclipse.emf.ecore.EObject;
 import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
 
@@ -22,7 +24,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
  * <p>Core OCL Principle: "Everything is a collection"
  *
  * <p>All values are represented as lists of elements: - Singleton: [elem] (¡τ! - exactly 1 element)
- * - Empty: [] (no τ - "kein Wert") - Multi-valued: [e1, e2, e3] (collections)
+ * - Empty: [] (no τ - "no Value") - Multi-valued: [e1, e2, e3] (collections)
  *
  * <p>The Type's Ctype properties determine how the list is interpreted: - {τ} (Set): Unique,
  * unordered - [τ] (Sequence): Non-unique, ordered - {{τ}} (Bag): Non-unique, unordered - ⟨τ⟩
@@ -30,10 +32,10 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
  */
 public class Value {
 
-  /** The actual value - in OCL, this is ALWAYS List<OCLElement> */
+  /** The actual value - in OCL, this is ALWAYS List&lt;OCLElement&gt;. */
   private final List<OCLElement> elements;
 
-  /** The runtime type - includes Ctype information (unique, ordered) */
+  /** The runtime type - includes Ctype information (unique, ordered). */
   private final Type runtimeType;
 
   // ==================== Constructors ====================
@@ -45,7 +47,7 @@ public class Value {
   }
 
   /**
-   * Legacy constructor for backwards compatibility. If value is already List<OCLElement>, use it
+   * Legacy constructor for backwards compatibility. If value is already List of OCLElement, use it
    * directly. Otherwise, wrap it as a singleton OCLElement.
    */
   public Value(Object value, Type runtimeType) {
@@ -374,8 +376,12 @@ public class Value {
 
   /** Semantic equality (≡χ₁,χ₂). Compares normalized forms. */
   public static boolean semanticEquals(Value v1, Value v2) {
-    if (v1 == null && v2 == null) return true;
-    if (v1 == null || v2 == null) return false;
+    if (v1 == null && v2 == null) {
+      return true;
+    }
+    if (v1 == null || v2 == null) {
+      return false;
+    }
 
     Value norm1 = v1.normalize();
     Value norm2 = v2.normalize();
@@ -423,9 +429,15 @@ public class Value {
    * for NestedCollection comparison.
    */
   public static int compare(Value v1, Value v2) {
-    if (v1 == v2) return 0;
-    if (v1 == null) return -1;
-    if (v2 == null) return 1;
+    if (v1 == v2) {
+      return 0;
+    }
+    if (v1 == null) {
+      return -1;
+    }
+    if (v2 == null) {
+      return 1;
+    }
 
     // First compare by size
     int sizeCompare = Integer.compare(v1.size(), v2.size());
@@ -468,10 +480,18 @@ public class Value {
 
   /** Returns the collection kind based on Ctype properties. */
   private String getCollectionKind() {
-    if (runtimeType.isUnique() && !runtimeType.isOrdered()) return "Set";
-    if (!runtimeType.isUnique() && runtimeType.isOrdered()) return "Sequence";
-    if (!runtimeType.isUnique() && !runtimeType.isOrdered()) return "Bag";
-    if (runtimeType.isUnique() && runtimeType.isOrdered()) return "OrderedSet";
+    if (runtimeType.isUnique() && !runtimeType.isOrdered()) {
+      return "Set";
+    }
+    if (!runtimeType.isUnique() && runtimeType.isOrdered()) {
+      return "Sequence";
+    }
+    if (!runtimeType.isUnique() && !runtimeType.isOrdered()) {
+      return "Bag";
+    }
+    if (runtimeType.isUnique() && runtimeType.isOrdered()) {
+      return "OrderedSet";
+    }
     return "Collection";
   }
 
@@ -509,5 +529,15 @@ public class Value {
 
   public static Value metaclassValue(EObject instance, Type type) {
     return singleton(new OCLElement.MetaclassValue(instance), type);
+  }
+
+  /** Convenience: Creates double singleton. */
+  public static Value doubleValue(double value) {
+    return singleton(new OCLElement.DoubleValue(value), Type.DOUBLE);
+  }
+
+  /** Convenience: Creates float singleton. */
+  public static Value floatValue(float value) {
+    return singleton(new OCLElement.FloatValue(value), Type.FLOAT);
   }
 }

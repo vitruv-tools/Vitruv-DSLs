@@ -27,6 +27,10 @@ package tools.vitruv.dsls.vitruvOCL.typechecker;
  *   <li>Collection element type extraction
  * </ul>
  *
+ * <p><b>Numeric type hierarchy:</b> INTEGER ⊂ FLOAT ⊂ DOUBLE. Any arithmetic between numeric types
+ * upcasts to the wider type (e.g., {@code FLOAT + DOUBLE = DOUBLE}, {@code INTEGER + FLOAT =
+ * FLOAT}).
+ *
  * <p><b>No duplication:</b> This logic is identical for type checking and evaluation, so it is
  * centralized in this helper class.
  */
@@ -34,34 +38,93 @@ public class TypeResolver {
 
   private TypeResolver() {} // Pure static utility class
 
+  // ==================== Numeric helpers ====================
+
+  /**
+   * Returns true if the type is any floating-point type (FLOAT or DOUBLE).
+   *
+   * @param t the type to check
+   * @return true for FLOAT or DOUBLE
+   */
+  public static boolean isFloatingPoint(Type t) {
+    return t == Type.FLOAT || t == Type.DOUBLE;
+  }
+
+  /**
+   * Returns true if the type is any numeric type (INTEGER, FLOAT, or DOUBLE).
+   *
+   * @param t the type to check
+   * @return true for INTEGER, FLOAT, or DOUBLE
+   */
+  public static boolean isNumeric(Type t) {
+    return t == Type.INTEGER || t == Type.FLOAT || t == Type.DOUBLE;
+  }
+
+  /**
+   * Returns the wider of two numeric types following the numeric hierarchy INTEGER ⊂ FLOAT ⊂
+   * DOUBLE. Used to determine the result type of mixed-numeric arithmetic.
+   *
+   * <p>Examples:
+   *
+   * <ul>
+   *   <li>{@code INTEGER, INTEGER → INTEGER}
+   *   <li>{@code INTEGER, FLOAT → FLOAT}
+   *   <li>{@code FLOAT, DOUBLE → DOUBLE}
+   *   <li>{@code INTEGER, DOUBLE → DOUBLE}
+   * </ul>
+   *
+   * @param a first numeric type
+   * @param b second numeric type
+   * @return the wider type; Type.ERROR if either argument is not numeric
+   */
+  public static Type widenNumeric(Type a, Type b) {
+    if (!isNumeric(a) || !isNumeric(b)) {
+      return Type.ERROR;
+    }
+    if (a == Type.DOUBLE || b == Type.DOUBLE) {
+      return Type.DOUBLE;
+    }
+    if (a == Type.FLOAT || b == Type.FLOAT) {
+      return Type.FLOAT;
+    }
+    return Type.INTEGER;
+  }
+
+  // ==================== Binary operator resolution ====================
+
   /**
    * Resolves the result type of a binary operation.
    *
-   * @param operator "+", "-", "*", "/", "=", "<", etc.
+   * <p>Unwraps singleton {@code !T!} and optional {@code ?T?} receivers before resolution.
+   * Multi-valued collections (Set, Bag etc.) on either side cause an error unless the operator is
+   * {@code ==} or {@code !=} on two collections.
+   *
+   * @param operator "+", "-", "*", "/", "==", etc.
    * @param leftType type of the left operand
    * @param rightType type of the right operand
-   * @return the result type, or {@link Type#ERROR} in case of a type mismatch
+   * @return the result type, or {@link Type#ERROR} on type mismatch
    */
   public static Type resolveBinaryOp(String operator, Type leftType, Type rightType) {
     if (leftType == Type.ERROR || rightType == Type.ERROR) {
       return Type.ERROR;
     }
 
-    // SPECIAL CASE: ANY type (from empty collections or untyped contexts)
-    // Allow operations and infer result type
     if (leftType == Type.ANY || rightType == Type.ANY) {
       return switch (operator) {
-        case "+", "-", "*", "/" -> Type.INTEGER; // Arithmetic → Integer
-        case "and", "or", "xor", "implies" -> Type.BOOLEAN; // Boolean operations
-        case "<", "<=", ">", ">=", "==", "!=" -> Type.BOOLEAN; // Comparisons
+        case "+", "-", "*" -> Type.INTEGER;
+        case "/" -> Type.DOUBLE;
+        case "and", "or", "xor", "implies" -> Type.BOOLEAN;
+        case "<", "<=", ">", ">=", "==", "!=" -> Type.BOOLEAN;
         default -> Type.ERROR;
       };
     }
 
-    // Equality/Inequality: Allow collections to be compared
+    // Collection == / != : compare element-wise without unwrapping
     if (operator.equals("==") || operator.equals("!=")) {
-      // Both are collections: compare element types
-      if (leftType.isCollection() && rightType.isCollection()) {
+      if (leftType.isCollection()
+          && rightType.isCollection()
+          && !leftType.isSingleton()
+          && !rightType.isSingleton()) {
         Type leftElem = leftType.getElementType();
         Type rightElem = rightType.getElementType();
         if (leftElem.isConformantTo(rightElem)
@@ -72,112 +135,99 @@ public class TypeResolver {
         }
         return Type.ERROR;
       }
-      // Fall through to singleton comparison below
     }
 
-    // Unwrap SINGLETON collections for arithmetic/ordering/boolean ops
-    // Real collections (SET, SEQUENCE) stay wrapped and will cause error
-    if (leftType.isSingleton()) {
-      leftType = leftType.getElementType();
-    }
-    if (rightType.isSingleton()) {
-      rightType = rightType.getElementType();
-    }
+    // Unwrap singleton !T! and optional ?T? to their scalar member types
+    leftType = unwrapToScalar(leftType);
+    rightType = unwrapToScalar(rightType);
 
-    // After unwrapping: If still collections → ERROR
-    // (Collections not allowed for arithmetic, ordering, or boolean ops)
+    // After unwrapping: multi-valued collection on either side → ERROR
     if (leftType.isCollection() || rightType.isCollection()) {
       return Type.ERROR;
     }
 
-    // Check again after unwrapping (collection element might be ANY)
+    // Re-check ANY after unwrapping (element may be ANY)
     if (leftType == Type.ANY || rightType == Type.ANY) {
       return switch (operator) {
-        case "+", "-", "*", "/" -> Type.INTEGER;
+        case "+", "-", "*" -> Type.INTEGER;
+        case "/" -> Type.DOUBLE;
         case "and", "or", "xor", "implies" -> Type.BOOLEAN;
         case "<", "<=", ">", ">=", "==", "!=" -> Type.BOOLEAN;
         default -> Type.ERROR;
       };
     }
 
-    // Arithmetic Operations
+    // Arithmetic
     if (operator.equals("+")
         || operator.equals("-")
         || operator.equals("*")
         || operator.equals("/")) {
-      if (leftType == Type.INTEGER && rightType == Type.INTEGER) {
-        return Type.INTEGER;
-      }
-      if (leftType == Type.DOUBLE && rightType == Type.DOUBLE) {
-        return Type.DOUBLE;
-      }
-      if (leftType == Type.INTEGER && rightType == Type.DOUBLE) {
-        return Type.DOUBLE;
-      }
-      if (leftType == Type.DOUBLE && rightType == Type.INTEGER) {
-        return Type.DOUBLE;
+      if (isNumeric(leftType) && isNumeric(rightType)) {
+        if (operator.equals("/")) {
+          // OCL division returns Real; integer division must not truncate to Integer.
+          if (leftType == Type.DOUBLE || rightType == Type.DOUBLE) {
+            return Type.DOUBLE;
+          }
+          if (leftType == Type.FLOAT || rightType == Type.FLOAT) {
+            return Type.FLOAT;
+          }
+          return Type.DOUBLE;
+        }
+        return widenNumeric(leftType, rightType);
       }
       return Type.ERROR;
     }
 
-    // Logical Operations
+    // Logical
     if (operator.equals("and") || operator.equals("or") || operator.equals("xor")) {
       if (leftType == Type.BOOLEAN && rightType == Type.BOOLEAN) {
         return Type.BOOLEAN;
       }
       return Type.ERROR;
     }
-
-    // Equality Comparison (for singletons/primitives)
-    if (operator.equals("==") || operator.equals("!=")) {
-      if (leftType == Type.INTEGER && rightType == Type.INTEGER) {
-        return Type.BOOLEAN;
-      }
+    if (operator.equals("implies")) {
       if (leftType == Type.BOOLEAN && rightType == Type.BOOLEAN) {
-        return Type.BOOLEAN;
-      }
-      if (leftType == Type.INTEGER && rightType == Type.DOUBLE) {
-        return Type.BOOLEAN;
-      }
-      if (leftType == Type.DOUBLE && rightType == Type.INTEGER) {
-        return Type.BOOLEAN;
-      }
-      if (leftType == Type.STRING && rightType == Type.STRING) {
-        return Type.BOOLEAN;
-      }
-      if (leftType == Type.STRING && rightType == Type.DOUBLE) {
-        return Type.BOOLEAN;
-      }
-      if (leftType == Type.STRING && rightType == Type.INTEGER) {
-        return Type.BOOLEAN;
-      }
-      if (leftType == Type.STRING && rightType == Type.BOOLEAN) {
-        return Type.BOOLEAN;
-      }
-      if (leftType == Type.DOUBLE && rightType == Type.STRING) {
-        return Type.BOOLEAN;
-      }
-      if (leftType == Type.INTEGER && rightType == Type.STRING) {
-        return Type.BOOLEAN;
-      }
-      if (leftType == Type.BOOLEAN && rightType == Type.STRING) {
         return Type.BOOLEAN;
       }
       return Type.ERROR;
     }
 
-    // Numerical Comparison (ordering operators)
+    // Equality (scalars)
+    if (operator.equals("==") || operator.equals("!=")) {
+      if (isNumeric(leftType) && isNumeric(rightType)) {
+        return Type.BOOLEAN;
+      }
+      if (leftType == Type.BOOLEAN && rightType == Type.BOOLEAN) {
+        return Type.BOOLEAN;
+      }
+      if (leftType == Type.STRING && rightType == Type.STRING) {
+        return Type.BOOLEAN;
+      }
+      if (leftType == Type.STRING || rightType == Type.STRING) {
+        return Type.BOOLEAN;
+      }
+      if (leftType.isMetaclassType() && rightType.isMetaclassType()) {
+        return Type.BOOLEAN;
+      }
+      // null-comparison: ?T? compared to anything
+      if (leftType.isOptional() || rightType.isOptional()) {
+        return Type.BOOLEAN;
+      }
+      if (leftType == Type.ANY || rightType == Type.ANY) {
+        return Type.BOOLEAN;
+      }
+      return Type.ERROR;
+    }
+
+    // Ordering
     if (operator.equals("<")
         || operator.equals(">")
         || operator.equals(">=")
         || operator.equals("<=")) {
-      if (leftType == Type.INTEGER && rightType == Type.INTEGER) {
+      if (isNumeric(leftType) && isNumeric(rightType)) {
         return Type.BOOLEAN;
       }
-      if (leftType == Type.INTEGER && rightType == Type.DOUBLE) {
-        return Type.BOOLEAN;
-      }
-      if (leftType == Type.DOUBLE && rightType == Type.INTEGER) {
+      if (leftType == Type.STRING && rightType == Type.STRING) {
         return Type.BOOLEAN;
       }
       return Type.ERROR;
@@ -187,15 +237,38 @@ public class TypeResolver {
   }
 
   /**
-   * resolves the result-Type of a unary Operation auf.
+   * Unwraps a type to its scalar member type for arithmetic/logical operations.
+   *
+   * <p>Every scalar value is implicitly {@code ¡T!}, so both explicit {@code Singleton!T!} and bare
+   * primitive/metaclass types are treated identically. Multi-valued collections (Set, Bag,
+   * Sequence, OrderedSet) are NOT unwrapped — applying arithmetic to a collection is a type error.
+   *
+   * @param t the type to unwrap
+   * @return the scalar element type, or t unchanged if it is a multi-valued collection
+   */
+  public static Type unwrapToScalar(Type t) {
+    if (t.isSingleton()) {
+      return t.getElementType(); // !T! → T
+    }
+    if (t.isOptional()) {
+      return t.getElementType(); // ?T? → T (for null comparisons)
+    }
+    return t; // bare primitive/metaclass or multi-valued collection — return as-is
+  }
+
+  /**
+   * Resolves the result type of a unary operation.
+   *
+   * <p>Unary minus preserves the operand's numeric type (e.g., {@code -3.14} → DOUBLE).
    *
    * @param operator "-", "not", etc.
-   * @param operandType Type des Operanden
-   * @return Result Type or Type.ERROR at Type Mismatch
+   * @param operandType type of the operand
+   * @return result type or Type.ERROR on type mismatch
    */
   public static Type resolveUnaryOp(String operator, Type operandType) {
     return switch (operator) {
-      case "-" -> operandType.isConformantTo(Type.INTEGER) ? Type.INTEGER : Type.ERROR;
+      // Unary minus: preserve numeric type (INTEGER → INTEGER, FLOAT → FLOAT, DOUBLE → DOUBLE)
+      case "-" -> isNumeric(operandType) ? operandType : Type.ERROR;
       case "not" -> operandType.isConformantTo(Type.BOOLEAN) ? Type.BOOLEAN : Type.ERROR;
       default -> Type.ERROR;
     };
@@ -218,21 +291,20 @@ public class TypeResolver {
     Type elementType = sourceType.getElementType();
 
     switch (operationName) {
-      // Query operations -> Boolean
+      // Query operations → Boolean
       case "includes":
       case "excludes":
       case "isEmpty":
       case "notEmpty":
         return Type.BOOLEAN;
 
-      // Size -> Integer
+      // Size → Integer
       case "size":
         return Type.INTEGER;
 
-      // Including/Excluding -> Same collection type
+      // Including/Excluding → same collection type
       case "including":
       case "excluding":
-        // Validate argument type if provided
         if (argumentTypes.length > 0) {
           if (!argumentTypes[0].isConformantTo(elementType)) {
             return Type.ERROR;
@@ -240,33 +312,35 @@ public class TypeResolver {
         }
         return sourceType;
 
-      // Filter operations -> Same collection type
+      // Filter operations → same collection type
       case "select":
       case "reject":
         return sourceType;
 
-      // Collect -> Collection of transformed type
+      // Collect → collection of transformed type
       case "collect":
-        // Requires lambda type inference (simplified for now)
         return Type.set(Type.ANY);
 
-      // Element extraction -> Optional of element type
+      // Element extraction → optional of element type
       case "first":
       case "last":
       case "any":
         return Type.optional(elementType);
 
-      // Flatten -> Unwrap nested collections
+      // Flatten → unwrap nested collections
       case "flatten":
         if (elementType.isCollection()) {
           return Type.set(elementType.getElementType());
         }
         return sourceType;
 
-      // Sum -> Integer or Double
+      // Sum → preserves numeric element type (Integer, Float, or Double)
       case "sum":
         if (elementType == Type.INTEGER) {
           return Type.INTEGER;
+        }
+        if (elementType == Type.FLOAT) {
+          return Type.FLOAT;
         }
         if (elementType == Type.DOUBLE) {
           return Type.DOUBLE;
@@ -282,11 +356,10 @@ public class TypeResolver {
       case "asOrderedSet":
         return Type.sequence(elementType);
 
-      // Union/intersection -> Same collection type
+      // Union/intersection → same collection type
       case "union":
       case "intersection":
         if (argumentTypes.length > 0 && argumentTypes[0].isCollection()) {
-          // Check element type compatibility
           Type otherElement = argumentTypes[0].getElementType();
           if (elementType.isConformantTo(otherElement)
               || otherElement.isConformantTo(elementType)) {
@@ -309,7 +382,7 @@ public class TypeResolver {
               "notEmpty",
               "size",
               "including",
-              "excluding", // <- ADDED!
+              "excluding",
               "select",
               "reject",
               "collect",
@@ -332,72 +405,60 @@ public class TypeResolver {
   /**
    * Resolves object operations (non-collection methods).
    *
+   * <p>Numeric operations ({@code abs}, {@code min}, {@code max}) preserve the operand's numeric
+   * type. This means {@code (3.14).abs()} returns DOUBLE, {@code (1.0f).abs()} returns FLOAT.
+   *
    * @param sourceType The type of the object
-   * @param operationName The operation name (toUpper, size, etc.)
+   * @param operationName The operation name (toUpper, size, abs, etc.)
    * @param argumentTypes The types of operation arguments
    * @return The result type or Type.ERROR
    */
   public static Type resolveObjectOperation(
       Type sourceType, String operationName, Type... argumentTypes) {
+
     // String operations
     if (sourceType == Type.STRING) {
-      switch (operationName) {
-        case "size":
-        case "length":
-          return Type.INTEGER;
-
-        case "toUpper":
-        case "toLower":
-        case "trim":
-        case "substring":
-          return Type.STRING;
-
-        case "startsWith":
-        case "endsWith":
-        case "contains":
-        case "equalsIgnoreCase":
-          return Type.BOOLEAN;
-
-        case "concat":
-          // concat requires a String argument
+      return switch (operationName) {
+        case "size", "length" -> Type.INTEGER;
+        case "toUpper", "toLower", "trim", "substring" -> Type.STRING;
+        case "startsWith", "endsWith", "contains", "equalsIgnoreCase" -> Type.BOOLEAN;
+        case "concat" -> {
           if (argumentTypes.length > 0 && argumentTypes[0] == Type.STRING) {
-            return Type.STRING;
+            yield Type.STRING;
           }
-          return Type.ERROR;
-
-        default:
-          return Type.ERROR;
-      }
+          yield Type.ERROR;
+        }
+        default -> Type.ERROR;
+      };
     }
 
-    // Integer/Double operations
-    if (sourceType == Type.INTEGER || sourceType == Type.DOUBLE) {
-      switch (operationName) {
-        case "abs":
-        case "max":
-        case "min":
-          return sourceType;
-
-        case "toString":
-          return Type.STRING;
-
-        default:
-          return Type.ERROR;
-      }
+    // Numeric operations — preserve the concrete numeric type (INTEGER / FLOAT / DOUBLE)
+    if (isNumeric(sourceType)) {
+      return switch (operationName) {
+        // abs/floor/ceil/round preserve the type
+        case "abs" -> sourceType;
+        case "floor", "ceil", "round" -> sourceType;
+        // min/max with a same-type argument preserve the type;
+        // with a different numeric type, widen
+        case "min", "max" -> {
+          if (argumentTypes.length > 0 && isNumeric(argumentTypes[0])) {
+            yield widenNumeric(sourceType, argumentTypes[0]);
+          }
+          yield sourceType; // no-arg form (collection min/max handled separately)
+        }
+        case "toString" -> Type.STRING;
+        default -> Type.ERROR;
+      };
     }
 
     // Boolean operations
     if (sourceType == Type.BOOLEAN) {
-      switch (operationName) {
-        case "toString":
-          return Type.STRING;
-
-        default:
-          return Type.ERROR;
-      }
+      return switch (operationName) {
+        case "toString" -> Type.STRING;
+        default -> Type.ERROR;
+      };
     }
 
-    // Unknown type or operation
     return Type.ERROR;
   }
 

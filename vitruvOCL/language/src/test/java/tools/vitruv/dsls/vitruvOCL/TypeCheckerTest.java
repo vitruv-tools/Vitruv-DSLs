@@ -12,16 +12,15 @@
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import java.util.List;
-import java.util.Set;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
-import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.EObject;
 import org.junit.jupiter.api.Test;
 import tools.vitruv.dsls.vitruvOCL.common.ErrorCollector;
 import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
@@ -40,7 +39,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * @see TypeCheckVisitor
  * @see Type
  */
-public class TypeCheckerTest {
+public class TypeCheckerTest extends DummyTestSpecification {
 
   // ==================== Literals ====================
 
@@ -115,7 +114,7 @@ public class TypeCheckerTest {
   @Test
   public void testIntegerDivisionType() {
     Type type = getType("20 / 4");
-    assertEquals(Type.INTEGER, type);
+    assertEquals(Type.DOUBLE, type);
   }
 
   @Test
@@ -808,7 +807,7 @@ public class TypeCheckerTest {
   public void testDivisionByZeroType() {
     // Type checking doesn't catch runtime errors, should type correctly
     Type type = getType("10 / 0");
-    assertEquals(Type.INTEGER, type);
+    assertEquals(Type.DOUBLE, type);
   }
 
   @Test
@@ -1142,7 +1141,7 @@ public class TypeCheckerTest {
   @Test
   public void testParenthesizedArithmeticComplexType() {
     Type type = getType("((5 + 3) * 2) - ((10 / 2) + 1)");
-    assertEquals(Type.INTEGER, type);
+    assertEquals(Type.DOUBLE, type);
   }
 
   // ==================== Helper Methods ====================
@@ -1179,43 +1178,7 @@ public class TypeCheckerTest {
   private TypeCheckResult typeCheckWithErrors(String input, ErrorCollector errors) {
     ParseTree tree = parse(input);
 
-    MetamodelWrapperInterface dummySpec =
-        new MetamodelWrapperInterface() {
-          @Override
-          public EClass resolveEClass(String metamodel, String className) {
-            return null;
-          }
-
-          @Override
-          public List<EObject> getAllInstances(EClass eClass) {
-            return List.of();
-          }
-
-          @Override
-          public Set<String> getAvailableMetamodels() {
-            return Set.of();
-          }
-
-          @Override
-          public String getInstanceNameByIndex(int index) {
-            // TODO Auto-generated method stub
-            throw new UnsupportedOperationException(
-                "Unimplemented method 'getInstanceNameByIndex'");
-          }
-
-          @Override
-          public List<EObject> getAllRootObjects() {
-            // TODO Auto-generated method stub
-            throw new UnsupportedOperationException("Unimplemented method 'getAllRootObjects'");
-          }
-
-          @Override
-          public Set<EObject> getCorrespondingObjects(EObject source) {
-            // TODO Auto-generated method stub
-            throw new UnsupportedOperationException(
-                "Unimplemented method 'getCorrespondingObjects'");
-          }
-        };
+    MetamodelWrapperInterface dummySpec = buildDummySpec();
 
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
     ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
@@ -1235,10 +1198,10 @@ public class TypeCheckerTest {
     return new TypeCheckResult(tree, typeChecker.getNodeTypes());
   }
 
-  private ParseTree parse(String input) {
-    VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
-    CommonTokenStream tokens = new CommonTokenStream(lexer);
-    VitruvOCLParser parser = new VitruvOCLParser(tokens);
-    return parser.infixedExpCS();
+  @Override
+  protected ParseTree parse(String input) {
+    CommonTokenStream tokens =
+        new CommonTokenStream(new VitruvOCLLexer(CharStreams.fromString(input)));
+    return new VitruvOCLParser(tokens).infixedExpCS();
   }
 }

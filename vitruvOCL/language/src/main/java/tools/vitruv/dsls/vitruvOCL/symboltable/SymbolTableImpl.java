@@ -115,51 +115,67 @@ public class SymbolTableImpl implements SymbolTable {
   }
 
   /**
-   * Looks up a semantic {@link Type} by its name.
+   * Looks up a semantic {@link Type} by name.
    *
    * <p>The lookup proceeds in the following order:
    *
    * <ol>
-   *   <li>Primitive OCL types ({@code Integer}, {@code Double}, {@code String}, {@code Boolean})
+   *   <li>Primitive OCL types ({@code Integer}, {@code Double}, {@code Float}, {@code String},
+   *       {@code Boolean})
    *   <li>Qualified metamodel types of the form {@code Metamodel::Class}
-   *   <li>Unqualified metamodel types defined in the global scope
+   *   <li>Unqualified metamodel types registered in the global scope
+   *   <li>Short-name fallback: search all loaded metamodels for a class whose simple name matches
+   *       (handles unqualified type annotations like {@code Coordinate} in let-expressions)
    * </ol>
    *
-   * @param typeName the name of the type
-   * @return the resolved {@link Type}, or {@code null} if the type cannot be resolved
+   * @param typeName the name of the type (qualified or unqualified)
+   * @return the resolved {@link Type}, or {@code null} if not found
    */
   @Override
   public Type lookupType(String typeName) {
-    // Try to resolve as primitive type first
+    // 1. Primitive types
     switch (typeName) {
       case "Integer":
         return Type.INTEGER;
       case "Double":
+      case "Real":
         return Type.DOUBLE;
+      case "Float":
+        return Type.FLOAT;
       case "String":
         return Type.STRING;
       case "Boolean":
         return Type.BOOLEAN;
+      case "OclAny":
+        return Type.ANY;
       default:
-        // Check if it's a qualified metamodel type (Metamodel::Class)
-        if (typeName.contains("::")) {
-          String[] parts = typeName.split("::");
-          if (parts.length == 2) {
-            String metamodel = parts[0];
-            String className = parts[1];
-            EClass eClass = wrapper.resolveEClass(metamodel, className);
-            if (eClass != null) {
-              return Type.metaclassType(eClass);
-            }
-          }
-        }
-
-        // Try to resolve as unqualified metamodel type from the global scope
-        TypeSymbol symbol = globalScope.resolveType(typeName);
-        if (symbol != null && symbol.getType() != null) {
-          return symbol.getType();
-        }
-        return null;
+        break;
     }
+
+    // 2. Qualified metamodel type (Metamodel::Class)
+    if (typeName.contains("::")) {
+      String[] parts = typeName.split("::");
+      if (parts.length == 2) {
+        EClass eClass = wrapper.resolveEClass(parts[0], parts[1]);
+        if (eClass != null) {
+          return Type.metaclassType(eClass);
+        }
+      }
+    }
+
+    // 3. Unqualified type registered in the global scope (e.g., via SymbolTableBuilder)
+    TypeSymbol symbol = globalScope.resolveType(typeName);
+    if (symbol != null && symbol.getType() != null) {
+      return symbol.getType();
+    }
+
+    // 4. Short-name fallback: search all loaded metamodels
+    //    Handles unqualified annotations like "Coordinate" in let-declarations
+    EClass eClass = wrapper.resolveEClassByShortName(typeName);
+    if (eClass != null) {
+      return Type.metaclassType(eClass);
+    }
+
+    return null;
   }
 }

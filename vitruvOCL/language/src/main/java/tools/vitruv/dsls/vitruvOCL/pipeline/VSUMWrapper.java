@@ -13,6 +13,7 @@
 package tools.vitruv.dsls.vitruvOCL.pipeline;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import org.eclipse.emf.ecore.*;
 import org.eclipse.emf.ecore.resource.Resource;
 import tools.vitruv.change.correspondence.Correspondence;
@@ -25,12 +26,12 @@ import tools.vitruv.framework.vsum.internal.InternalVirtualModel;
  * VSUM-based implementation of the metamodel wrapper interface for VitruvOCL constraint evaluation.
  *
  * <p>This wrapper provides access to metamodels, model instances, and the correspondence model
- * through the Vitruvius Virtual Single Underlying Model (VSUM). It automatically discovers and
- * registers all metamodels from the VSUM's view source models, enabling constraint evaluation
- * across multiple metamodels without explicit import declarations.
+ * through the Vitruvius Virtual Single Underlying Model (VSUM). It discovers metamodels from the
+ * global {@link EPackage.Registry}, which is populated by the VSUM during initialization — before
+ * any model instances are created.
  *
  * <p>The correspondence model is accessible via {@link #getCorrespondingObjects(EObject)} and
- * {@link #getCorrespondingObjects(EObject, Class)}, enabling evaluation of VitruvOCL's {@code ~}
+ * {@link #getCorrespondingObjects(EObject, EClass)}, enabling evaluation of VitruvOCL's {@code ~}
  * (correspondence) operator for cross-metamodel consistency checking.
  *
  * @see MetamodelWrapperInterface
@@ -49,21 +50,21 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
   /**
    * Internal registry mapping metamodel names (EPackage names) to their corresponding {@link
    * EPackage} instances.
+   *
+   * <p>Populated from the global {@link EPackage.Registry} at construction time — the VSUM
+   * registers all metamodels during {@code buildAndInitialize()}, before any instances exist.
    */
   private final Map<String, EPackage> metamodelRegistry = new HashMap<>();
-
-  /**
-   * Flat list of all root objects across all VSUM resources, built once at construction time.
-   *
-   * <p>Used by {@link #getAllRootObjects()} and {@link #getInstanceNameByIndex(int)}.
-   */
-  private final List<EObject> allRootObjects = new ArrayList<>();
 
   /**
    * Creates a new VSUM wrapper and initializes the metamodel registry and correspondence model.
    *
    * <p>The VSUM must be an {@link InternalVirtualModel} to allow access to the correspondence model
    * via {@code getCorrespondenceModel()}.
+   *
+   * <p>Metamodels are loaded from the global {@link EPackage.Registry} rather than from VSUM
+   * resources directly, because the registry is already populated by the VSUM during initialization
+   * — before any model instances are added.
    *
    * @param vsum the Vitruvius virtual model to wrap, must be an {@link InternalVirtualModel}
    * @throws IllegalArgumentException if {@code vsum} is not an {@link InternalVirtualModel}
@@ -75,43 +76,36 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
     }
     this.vsum = vsum;
     this.correspondenceModel = ((InternalVirtualModel) vsum).getCorrespondenceModel();
-    loadMetamodelsFromVSUM();
+    loadMetamodelsFromRegistry();
   }
 
   /**
-   * Discovers and registers all metamodels from the VSUM's view source models.
+   * Discovers and registers all metamodels from the global EMF {@link EPackage.Registry}.
    *
-   * <p>Also populates {@link #allRootObjects} for use by {@link #getAllRootObjects()} and {@link
-   * #getInstanceNameByIndex(int)}.
+   * <p>The VSUM registers all metamodel packages during {@code buildAndInitialize()} — they are
+   * available in the global registry even before any model instances are created. This approach
+   * avoids the need to have instances in the VSUM at construction time.
    */
-  private void loadMetamodelsFromVSUM() {
-    Collection<Resource> resources = ((ViewSource) vsum).getViewSourceModels();
-
-    for (Resource resource : resources) {
-      for (EObject root : resource.getContents()) {
-        allRootObjects.add(root);
-
-        EPackage pkg = root.eClass().getEPackage();
-        if (!metamodelRegistry.containsKey(pkg.getName())) {
-          metamodelRegistry.put(pkg.getName(), pkg);
-          EPackage.Registry.INSTANCE.put(pkg.getNsURI(), pkg);
-        }
-      }
-    }
+  private void loadMetamodelsFromRegistry() {
+    EPackage.Registry.INSTANCE.forEach(
+        (nsURI, value) -> {
+          if (value instanceof EPackage pkg) {
+            metamodelRegistry.put(pkg.getName(), pkg);
+          }
+        });
   }
 
   /**
    * Resolves a fully qualified metaclass name to its corresponding {@link EClass}.
    *
-   * @param metamodelName the name of the metamodel (EPackage name), e.g., "spacemission"
-   * @param className the name of the metaclass within the metamodel, e.g., "Spacecraft"
+   * @param metamodelName the name of the metamodel (EPackage name), e.g., "model"
+   * @param className the name of the metaclass within the metamodel, e.g., "Component"
    * @return the resolved {@link EClass}, or {@code null} if not found
    */
   @Override
   public EClass resolveEClass(String metamodelName, String className) {
     EPackage ePackage = metamodelRegistry.get(metamodelName);
     if (ePackage == null) return null;
-
     EClassifier classifier = ePackage.getEClassifier(className);
     return (classifier instanceof EClass) ? (EClass) classifier : null;
   }
@@ -119,20 +113,33 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
   /**
    * Retrieves all instances of a given metaclass from the VSUM.
    *
-   * <p>Follows EMF subtyping semantics — instances of subclasses are included.
+   * <p>Always reads live from the VSUM's view source models to reflect the current state, including
+   * instances added after construction. Follows EMF subtyping semantics — instances of subclasses
+   * are included.
    *
    * @param eClass the metaclass whose instances should be retrieved
    * @return list of all matching model elements; empty if none found
    */
   @Override
   public List<EObject> getAllInstances(EClass eClass) {
-    Collection<Resource> resources = ((ViewSource) vsum).getViewSourceModels();
-
-    return resources.stream()
-        .flatMap(r -> r.getContents().stream())
-        .flatMap(root -> getAllContentsRecursive(root).stream())
-        .filter(obj -> eClass.isSuperTypeOf(obj.eClass()))
-        .toList();
+    var result =
+        ((ViewSource) vsum)
+            .getViewSourceModels().stream()
+                .flatMap(r -> r.getContents().stream())
+                .flatMap(root -> getAllContentsRecursive(root).stream())
+                .filter(obj -> eClass.isSuperTypeOf(obj.eClass()))
+                .toList();
+    System.out.println(
+        "getAllInstances(" + eClass.getName() + ") -> " + result.size() + " objects");
+    result.forEach(
+        obj -> {
+          System.out.println("  " + obj.eClass().getName());
+          var nameFeature = obj.eClass().getEStructuralFeature("name");
+          if (nameFeature != null) {
+            System.out.println("    name=" + obj.eGet(nameFeature));
+          }
+        });
+    return result;
   }
 
   /**
@@ -148,30 +155,32 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
   /**
    * Returns the source resource URI for the root object at the given index.
    *
+   * <p>Always reads live from the VSUM to reflect current state.
+   *
    * @param index 0-based index into the flat list of all root objects
    * @return the last segment of the resource URI (filename), or {@code null} if out of bounds
    */
   @Override
   public String getInstanceNameByIndex(int index) {
-    if (index < 0 || index >= allRootObjects.size()) {
-      return null;
-    }
-    EObject root = allRootObjects.get(index);
+    List<EObject> roots = getAllRootObjects();
+    if (index < 0 || index >= roots.size()) return null;
+    EObject root = roots.get(index);
     Resource resource = root.eResource();
-    if (resource == null || resource.getURI() == null) {
-      return null;
-    }
+    if (resource == null || resource.getURI() == null) return null;
     return resource.getURI().lastSegment();
   }
 
   /**
    * Returns all root objects from all loaded model resources in the VSUM.
    *
-   * @return unmodifiable list of all root EObjects across all VSUM resources
+   * <p>Always reads live from the VSUM to reflect current state.
+   *
+   * @return list of all root EObjects across all VSUM resources
    */
   @Override
   public List<EObject> getAllRootObjects() {
-    return Collections.unmodifiableList(allRootObjects);
+    return ((ViewSource) vsum)
+        .getViewSourceModels().stream().flatMap(r -> r.getContents().stream()).toList();
   }
 
   // ---------------------------------------------------------------------------
@@ -181,11 +190,7 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
   /**
    * Returns all objects corresponding to the given source object.
    *
-   * <p>Used to evaluate the VitruvOCL {@code ~} (correspondence) operator:
-   *
-   * <pre>
-   * self~model2::Entity
-   * </pre>
+   * <p>Used to evaluate the VitruvOCL {@code ~} (correspondence) operator.
    *
    * @param source the source object to look up correspondences for
    * @return set of all corresponding objects; empty if none exist
@@ -198,14 +203,6 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
    * Returns all objects corresponding to the given source object that are instances of the given
    * target type.
    *
-   * <p>Filters the result of {@link #getCorrespondingObjects(EObject)} to only include objects
-   * whose {@link EClass} is a subtype of {@code targetType}. This is what the fully qualified
-   * {@code ~} operator uses:
-   *
-   * <pre>
-   * self~model2::Entity  -- only returns corresponding Entity instances
-   * </pre>
-   *
    * @param source the source object to look up correspondences for
    * @param targetType the EClass to filter corresponding objects by
    * @return set of corresponding objects that are instances of {@code targetType}; empty if none
@@ -213,7 +210,7 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
   public Set<EObject> getCorrespondingObjects(EObject source, EClass targetType) {
     return correspondenceModel.getCorrespondingEObjects(source).stream()
         .filter(obj -> targetType.isSuperTypeOf(obj.eClass()))
-        .collect(java.util.stream.Collectors.toSet());
+        .collect(Collectors.toSet());
   }
 
   // ---------------------------------------------------------------------------
@@ -225,5 +222,43 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
     result.add(root);
     root.eAllContents().forEachRemaining(result::add);
     return result;
+  }
+
+  @Override
+  public String getSourceFileForInstance(EObject instance) {
+    if (instance == null) {
+      return null;
+    }
+    Resource resource = instance.eResource();
+    if (resource == null || resource.getURI() == null) {
+      return null;
+    }
+    return resource.getURI().lastSegment();
+  }
+
+  @Override
+  public EObject getContextObjectByIndex(int index) {
+    List<EObject> roots = getAllRootObjects();
+    if (index < 0 || index >= roots.size()) {
+      return null;
+    }
+    return roots.get(index);
+  }
+
+  @Override
+  public EClass resolveEClassByShortName(String shortName) {
+    for (EPackage ePackage : metamodelRegistry.values()) {
+      EClassifier classifier = ePackage.getEClassifier(shortName);
+      if (classifier instanceof EClass eClass) {
+        return eClass;
+      }
+      for (EPackage subPkg : ePackage.getESubpackages()) {
+        EClassifier subClassifier = subPkg.getEClassifier(shortName);
+        if (subClassifier instanceof EClass eClass) {
+          return eClass;
+        }
+      }
+    }
+    return null;
   }
 }

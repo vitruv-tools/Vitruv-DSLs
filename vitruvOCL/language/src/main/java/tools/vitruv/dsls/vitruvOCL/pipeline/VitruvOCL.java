@@ -18,9 +18,11 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EStructuralFeature;
 import tools.vitruv.dsls.vitruvOCL.common.CompileError;
 import tools.vitruv.dsls.vitruvOCL.common.ErrorSeverity;
-import tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement;
+import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
 import tools.vitruv.framework.vsum.VirtualModel;
 
@@ -66,7 +68,7 @@ import tools.vitruv.framework.vsum.VirtualModel;
  * VitruvOCL constraints must begin with {@code context} keyword:
  *
  * <pre>
- * context MetamodelName::ClassName inv:
+ * context MetamodelName::ClassName inv constraintName:
  *   expression
  * </pre>
  *
@@ -79,17 +81,14 @@ import tools.vitruv.framework.vsum.VirtualModel;
  *   <li>All values are collections (singletons like {@code [5]} or empty {@code []})
  * </ul>
  *
- * <h2>Result Interpretation</h2>
+ * <h2>Violation Reporting</h2>
  *
- * {@link ConstraintResult} provides multiple status indicators:
+ * <p>When a constraint is violated, one {@link Warning} of type {@code CONSTRAINT_VIOLATION} is
+ * emitted per violating instance, in the format:
  *
- * <ul>
- *   <li>{@code isSuccess()} - No file loading or compilation errors occurred
- *   <li>{@code isSatisfied()} - Constraint evaluated to true for all instances
- *   <li>{@code getCompilerErrors()} - Syntax or type checking errors
- *   <li>{@code getFileErrors()} - Metamodel or instance loading failures
- *   <li>{@code getWarnings()} - Non-fatal issues (violations, duplicates, unused metamodels)
- * </ul>
+ * <pre>
+ * [VIOLATION] constraintName @ filename :: ClassName(attr1="val1", attr2="val2")
+ * </pre>
  *
  * @see ConstraintResult for single constraint evaluation results
  * @see BatchValidationResult for multi-constraint validation results
@@ -179,19 +178,11 @@ public class VitruvOCL {
   }
 
   // ---------------------------------------------------------------------------
-  // File-path-based evaluation (original API, unchanged)
+  // File-path-based evaluation
   // ---------------------------------------------------------------------------
 
   /**
    * Evaluates single constraint against provided models.
-   *
-   * <p>Performs three-pass compilation pipeline:
-   *
-   * <ol>
-   *   <li>Smart metamodel loading (only loads metamodels referenced in constraint)
-   *   <li>Symbol table construction and type checking
-   *   <li>Runtime evaluation against model instances
-   * </ol>
    *
    * @param constraint OCL constraint expression (must start with {@code context})
    * @param ecoreFiles Metamodel definition files (.ecore)
@@ -211,6 +202,14 @@ public class VitruvOCL {
     return compileAndEvaluate(constraint, loadResult.wrapper, loadResult.warnings);
   }
 
+  /**
+   * Evaluates multiple constraints against provided models.
+   *
+   * @param constraints List of constraint expressions
+   * @param ecoreFiles Metamodel definition files
+   * @param xmiFiles Model instance files
+   * @return Aggregated batch validation result
+   */
   public static BatchValidationResult evaluateConstraints(
       List<String> constraints, Path[] ecoreFiles, Path[] xmiFiles) {
     if (constraints.isEmpty()) {
@@ -254,22 +253,24 @@ public class VitruvOCL {
    *
    * <pre>
    * projectDir/
-   *   constraints.ocl       - Constraint definitions
-   *   metamodels/           - All .ecore files
-   *   instances/            - All model instance files
+   *   model/src/main/
+   *     constraints.ocl    - Constraint definitions
+   *     ecore/             - All .ecore files
+   *     instances/         - All model instance files
    * </pre>
    *
-   * @param projectDir Root directory containing conventional structure
+   * @param projectDir Root directory of the project
    * @return Batch validation result for all constraints
    * @throws IOException If files cannot be read or required directories don't exist
    */
   public static BatchValidationResult evaluateProject(Path projectDir) throws IOException {
-    Path constraintsFile = projectDir.resolve("constraints.ocl");
-    Path metamodelsDir = projectDir.resolve("metamodels");
-    Path instancesDir = projectDir.resolve("instances");
+    Path mainDir = projectDir.resolve("model/src/main");
+    Path constraintsFile = mainDir.resolve("constraints.ocl");
+    Path ecoreDir = mainDir.resolve("ecore");
+    Path instancesDir = mainDir.resolve("instances");
 
-    Path[] ecoreFiles = collectFiles(metamodelsDir, ".ecore");
-    Path[] xmiFiles = collectFiles(instancesDir, ".xmi", ".spacemission", ".satellitesystem");
+    Path[] ecoreFiles = collectFiles(ecoreDir, ".ecore");
+    Path[] xmiFiles = collectAllFiles(instancesDir);
 
     return evaluateConstraints(constraintsFile, ecoreFiles, xmiFiles);
   }
@@ -278,17 +279,18 @@ public class VitruvOCL {
    * Evaluates project with custom constraint file location.
    *
    * @param constraintsFile Path to constraints file
-   * @param resourcesDir Directory containing metamodels/ and instances/ subdirectories
+   * @param resourcesDir Root directory containing model/src/main/ecore and model/src/main/instances
    * @return Batch validation result
    * @throws IOException If files cannot be read
    */
   public static BatchValidationResult evaluateProject(Path constraintsFile, Path resourcesDir)
       throws IOException {
-    Path metamodelsDir = resourcesDir.resolve("metamodels");
-    Path instancesDir = resourcesDir.resolve("instances");
+    Path mainDir = resourcesDir.resolve("model/src/main");
+    Path ecoreDir = mainDir.resolve("ecore");
+    Path instancesDir = mainDir.resolve("instances");
 
-    Path[] ecoreFiles = collectFiles(metamodelsDir, ".ecore");
-    Path[] xmiFiles = collectFiles(instancesDir, ".xmi", ".spacemission", ".satellitesystem");
+    Path[] ecoreFiles = collectFiles(ecoreDir, ".ecore");
+    Path[] xmiFiles = collectAllFiles(instancesDir);
 
     return evaluateConstraints(constraintsFile, ecoreFiles, xmiFiles);
   }
@@ -297,30 +299,22 @@ public class VitruvOCL {
   // Shared compile + evaluate logic
   // ---------------------------------------------------------------------------
 
-  /**
-   * Runs the compiler pipeline and evaluates the constraint against the given wrapper.
-   *
-   * <p>Single entry point for both the file-path path (wrapper built by {@link SmartLoader}) and
-   * the VSUM path (wrapper is a {@link VSUMWrapper}).
-   *
-   * @param constraint OCL constraint expression
-   * @param wrapper Metamodel and instance access
-   * @return Evaluation result
-   */
   private static ConstraintResult compileAndEvaluate(
       String constraint, MetamodelWrapperInterface wrapper, List<Warning> loaderWarnings) {
     VitruvOCLCompiler compiler = new VitruvOCLCompiler(wrapper, null);
     Value result = compiler.compile(constraint);
 
     if (result == null) {
-      return new ConstraintResult(
-          constraint,
-          false,
-          List.of(
-              new CompileError(
-                  1, 0, "Syntax error in constraint", ErrorSeverity.ERROR, constraint)),
-          List.of(),
-          loaderWarnings);
+      List<CompileError> passErrors =
+          compiler.hasErrors() ? compiler.getErrors().getErrors() : List.of();
+
+      if (passErrors.isEmpty()) {
+        passErrors =
+            List.of(
+                new CompileError(
+                    1, 0, "Syntax error in constraint", ErrorSeverity.ERROR, constraint));
+      }
+      return new ConstraintResult(constraint, false, passErrors, List.of(), loaderWarnings);
     }
 
     List<CompileError> compilerErrors =
@@ -330,33 +324,23 @@ public class VitruvOCL {
       return new ConstraintResult(constraint, false, compilerErrors, List.of(), loaderWarnings);
     }
 
-    boolean satisfied = true;
-    List<Integer> violatingIndices = new ArrayList<>();
-
-    for (int i = 0; i < result.size(); i++) {
-      OCLElement elem = result.getElements().get(i);
-      if (elem instanceof OCLElement.BoolValue boolVal) {
-        if (!boolVal.value()) {
-          satisfied = false;
-          violatingIndices.add(i);
-        }
-      } else {
-        satisfied = false;
-        violatingIndices.add(i);
-      }
-    }
-
     List<Warning> warnings = new ArrayList<>(loaderWarnings);
-    if (!violatingIndices.isEmpty()) {
-      List<String> instanceNames = new ArrayList<>();
-      for (int idx : violatingIndices) {
-        String name = wrapper.getInstanceNameByIndex(idx);
-        instanceNames.add(name != null ? name : "index_" + idx);
-      }
+
+    EvaluationVisitor evaluator = compiler.getLastEvaluator();
+    List<EObject> violatingInstances =
+        evaluator != null ? evaluator.getViolatingInstances() : List.of();
+
+    boolean satisfied = violatingInstances.isEmpty();
+
+    for (EObject instance : violatingInstances) {
+      String sourceFile = wrapper.getSourceFileForInstance(instance);
+      String filename = sourceFile != null ? sourceFile : "unknown";
+      String instanceLabel = describeInstance(instance);
+      String constraintName = extractConstraintName(constraint);
       warnings.add(
           new Warning(
               Warning.WarningType.CONSTRAINT_VIOLATION,
-              "Constraint violated for instances: " + instanceNames));
+              "[VIOLATION] " + constraintName + " @ " + filename + " :: " + instanceLabel));
     }
 
     return new ConstraintResult(constraint, satisfied, compilerErrors, List.of(), warnings);
@@ -384,7 +368,6 @@ public class VitruvOCL {
   // Helpers
   // ---------------------------------------------------------------------------
 
-  /** Returns the VSUM wrapper, throwing if no VSUM is registered. */
   private static synchronized VSUMWrapper getVsumWrapper() {
     if (vsumWrapper == null) {
       throw new IllegalStateException(
@@ -394,7 +377,6 @@ public class VitruvOCL {
     return vsumWrapper;
   }
 
-  /** Creates a {@link ConstraintResult} representing a duplicate constraint warning. */
   private static ConstraintResult duplicateResult(String constraint) {
     return new ConstraintResult(
         constraint,
@@ -406,13 +388,31 @@ public class VitruvOCL {
                 Warning.WarningType.DUPLICATE_CONSTRAINT, "Constraint specified multiple times")));
   }
 
-  /**
-   * Parses a constraint file into individual constraint strings.
-   *
-   * @param file Constraint file to parse
-   * @return List of constraint expressions, each starting with {@code context}
-   * @throws IOException If file cannot be read
-   */
+  private static String describeInstance(EObject instance) {
+    StringBuilder sb = new StringBuilder(instance.eClass().getName()).append("(");
+    List<String> parts = new ArrayList<>();
+    for (EStructuralFeature feature : instance.eClass().getEAllStructuralFeatures()) {
+      if (feature.isMany()) {
+        continue;
+      }
+      Object value = instance.eGet(feature);
+      if (value instanceof String || value instanceof Integer || value instanceof Boolean) {
+        parts.add(feature.getName() + "=\"" + value + "\"");
+      }
+      if (parts.size() >= 3) {
+        break;
+      }
+    }
+    sb.append(String.join(", ", parts)).append(")");
+    return sb.toString();
+  }
+
+  private static String extractConstraintName(String constraint) {
+    java.util.regex.Matcher m =
+        java.util.regex.Pattern.compile("inv\\s+(\\w+)\\s*:").matcher(constraint);
+    return m.find() ? m.group(1) : "unnamed";
+  }
+
   private static List<String> parseConstraintsFile(Path file) throws IOException {
     String content = Files.readString(file);
     List<String> constraints = new ArrayList<>();
@@ -437,14 +437,6 @@ public class VitruvOCL {
     return constraints;
   }
 
-  /**
-   * Recursively collects files with given extensions from directory.
-   *
-   * @param directory Directory to search recursively
-   * @param extensions File extensions to match (e.g., ".ecore", ".xmi")
-   * @return Array of matching file paths, empty if directory doesn't exist
-   * @throws IOException If directory traversal fails
-   */
   private static Path[] collectFiles(Path directory, String... extensions) throws IOException {
     if (!Files.exists(directory) || !Files.isDirectory(directory)) {
       return new Path[0];
@@ -458,13 +450,25 @@ public class VitruvOCL {
                   p -> {
                     String name = p.getFileName().toString().toLowerCase();
                     for (String ext : extensions) {
-                      if (name.endsWith(ext)) return true;
+                      if (name.endsWith(ext)) {
+                        return true;
+                      }
                     }
                     return false;
                   })
               .collect(Collectors.toList());
 
       return files.toArray(new Path[0]);
+    }
+  }
+
+  private static Path[] collectAllFiles(Path directory) throws IOException {
+    if (!Files.exists(directory) || !Files.isDirectory(directory)) {
+      return new Path[0];
+    }
+
+    try (Stream<Path> stream = Files.walk(directory)) {
+      return stream.filter(Files::isRegularFile).collect(Collectors.toList()).toArray(new Path[0]);
     }
   }
 }

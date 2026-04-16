@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="ASCII"?>
+<cad:CAD_Model xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cad="http://vitruv.tools/cad/model">
+  <namespaces id="id3_front_brake_disc" name="id3_front_brake_disc_namespace" description="Namespace for parameters related to the CAD model of the ID3 front brake disc">
+    <parameters xsi:type="cad:Coordinate" id="center_backside" name="center_backside_disc" description="Position of the center of the brake disc backside (showing towards the axle)"/>
+    <parameters xsi:type="cad:Coordinate" id="center_frontside" name="center_frontside_disc" description="Position of the center of the brake disc frotnside (showing towards the axle). Only the level of the brake surface, not the mounting bolts." z="23.0"/>
+    <parameters xsi:type="cad:NumericParameter" id="diameter_disc" name="Diameter" description="Diameter of the brake disc." value="330.0"/>
+  </namespaces>
+  <namespaces id="id3_front_left_caliper" name="id3_front_left_caliper_namespace" description="Namespace for parameters related to the CAD model of the ID3 front left brake caliper">
+    <parameters xsi:type="cad:Coordinate" id="bridge_block_p1" name="Bridge Block Point 1" description="A coordinate describing one edge point of a block bridging the caliper across the brake disc." x="165.0" y="-45.0" z="-10.0"/>
+    <parameters xsi:type="cad:Coordinate" id="bridge_block_p2" name="Bridge Block Point 2" description="A coordinate describing one edge point of a block bridging the caliper across the brake disc." x="175.0" y="-45.0" z="-10.0"/>
+    <parameters xsi:type="cad:Coordinate" id="bridge_block_p3" name="Bridge Block Point 3" description="A coordinate describing one edge point of a block bridging the caliper across the brake disc." x="165.0" y="-45.0" z="33.0"/>
+    <parameters xsi:type="cad:Coordinate" id="bridge_block_p4" name="Bridge Block Point 4" description="A coordinate describing one edge point of a block bridging the caliper across the brake disc." x="175.0" y="-45.0" z="33.0"/>
+    <parameters xsi:type="cad:NumericParameter" id="bridge_block_length" name="Bridge Block length" description="Bridge Block length. The side of the bridging block across the caliper, that is parallel to the brake disc. Positive and negative values indicate the direction of extrusion." value="-90.0"/>
+  </namespaces>
+</cad:CAD_Model>

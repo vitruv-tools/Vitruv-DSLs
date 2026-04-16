@@ -66,8 +66,29 @@ public interface MetamodelWrapperInterface {
   List<EObject> getAllRootObjects();
 
   /**
-   * Returns all objects corresponding to the given source object. Returns empty set if no
-   * correspondence model is available (file-path mode).
+   * Returns the context EObject at the given evaluation index.
+   *
+   * @param index The evaluation index (0-based, one per root context object)
+   * @return The EObject at that index, or null if out of bounds
    */
-  Set<EObject> getCorrespondingObjects(EObject source);
+  EObject getContextObjectByIndex(int index);
+
+  /**
+   * Resolves an EClass by its unqualified short name, searching across all loaded metamodels.
+   *
+   * <p>Used as a fallback when a type annotation in an OCL constraint uses only the class name
+   * without the metamodel qualifier (e.g., {@code Coordinate} instead of {@code cad::Coordinate}).
+   * The first match across all registered packages is returned; if the same short name exists in
+   * multiple metamodels, the result is unspecified and a qualified name should be used instead.
+   *
+   * @param shortName unqualified class name (e.g., {@code "Coordinate"})
+   * @return the matching EClass, or {@code null} if not found in any loaded metamodel
+   */
+  EClass resolveEClassByShortName(String shortName);
+
+  /**
+   * Returns the source filename for a specific EObject instance (by identity). More reliable than
+   * index-based lookup.
+   */
+  public String getSourceFileForInstance(EObject instance);
 }
