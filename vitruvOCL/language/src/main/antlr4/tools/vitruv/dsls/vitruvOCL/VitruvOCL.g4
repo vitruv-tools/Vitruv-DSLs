@@ -271,14 +271,34 @@ collectionOpCS
 
 iteratorOpCS
 :
-    'select' '(' '~' ')'                                            # selectCorrespondence
-    | 'reject' '(' '~' ')'                                          # rejectCorrespondence
-    | 'exists' '(' '~' ')'                                          # existsCorrespondence 
-    | 'select' '(' iteratorVars=iteratorVarList '|' body=expCS ')'  # selectOp
-    | 'reject' '(' iteratorVars=iteratorVarList '|' body=expCS ')'  # rejectOp                                  
-    | 'collect' '(' iteratorVars=iteratorVarList '|' body=expCS ')' # collectOp
-    | 'forAll' '(' iteratorVars=iteratorVarList '|' body=expCS ')'  # forAllOp
-    | 'exists' '(' iteratorVars=iteratorVarList '|' body=expCS ')'  # existsOp
+    'select' '(' corrFilter=correspondenceFilterCS ')'                               # selectCorrespondence
+    | 'reject' '(' corrFilter=correspondenceFilterCS ')'                             # rejectCorrespondence
+    | 'exists' '(' corrFilter=correspondenceFilterCS ')'                             # existsCorrespondence
+    | 'select' '(' iteratorVars=iteratorVarList '|' body=expCS ')'                  # selectOp
+    | 'reject' '(' iteratorVars=iteratorVarList '|' body=expCS ')'                  # rejectOp
+    | 'collect' '(' iteratorVars=iteratorVarList '|' body=expCS ')'                 # collectOp
+    | 'forAll' '(' iteratorVars=iteratorVarList '|' body=expCS ')'                  # forAllOp
+    | 'exists' '(' iteratorVars=iteratorVarList '|' body=expCS ')'                  # existsOp
+;
+
+// ============================================================================
+// CORRESPONDENCE FILTER
+// ============================================================================
+
+correspondenceFilterCS
+:
+    '~' (',' correspondenceOptions)?
+;
+
+correspondenceOptions
+:
+    correspondenceOption (',' correspondenceOption)*
+;
+
+correspondenceOption
+:
+    'Type' '=' type=typeExpCS    # corrTypeFilter
+    | 'Tag' '='  tag=STRING      # corrTagFilter
 ;
 
 iteratorVarList

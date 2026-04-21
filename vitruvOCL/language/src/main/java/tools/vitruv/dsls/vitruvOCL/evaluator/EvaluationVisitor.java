@@ -3181,28 +3181,32 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   }
 
   /**
-   * Evaluates select(~) shorthand for correspondence filtering.
+   * Evaluates select(~) / select(~, Type=T, Tag='x') shorthand.
    *
-   * <p>Desugars to: {@code select(x | self ~ x)}
+   * <p>Desugars to: {@code select(x | self ~ x)} with optional Tag/Type filters. Elements are kept
+   * only if:
    *
-   * <p>Filters the receiver collection to keep only elements that correspond to 'self' according to
-   * the loaded Correspondence model instances.
+   * <ol>
+   *   <li>A correspondence exists between 'self' and the element
+   *   <li>The correspondence's tag matches the Tag filter (if present)
+   *   <li>The element is an instance of the Type filter class (if present)
+   * </ol>
    *
-   * <p><b>Example:</b>
+   * <p><b>Examples:</b>
    *
    * <pre>{@code
-   * context Spacecraft inv:
-   *   Satellite.allInstances().select(~).notEmpty()
+   * Satellite.allInstances().select(~)
+   * Satellite.allInstances().select(~, Tag = 'Brother')
+   * Satellite.allInstances().select(~, Type = MM::Person, Tag = 'Sibling')
    * }</pre>
    *
-   * @param ctx The select(~) operation node
-   * @return Filtered collection containing only elements corresponding to 'self'
+   * @param ctx The selectCorrespondence node
+   * @return Filtered collection, or Type.ERROR on failure
    */
   @Override
   public Value visitSelectCorrespondence(VitruvOCLParser.SelectCorrespondenceContext ctx) {
     Value receiver = receiverStack.peek();
 
-    // Get 'self' from symbol table
     VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
     if (selfSymbol == null) {
       return error("'self' not defined in current context", ctx);
@@ -3218,11 +3222,15 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return error("select(~) requires 'self' to be an object instance", ctx);
     }
 
-    // Filter receiver collection by correspondence
+    // Extract optional filters from the correspondence filter node
+    String requiredTag = extractCorrespondenceTag(ctx.corrFilter);
+    EClass requiredClass = extractCorrespondenceTargetClass(ctx.corrFilter);
+
     List<OCLElement> results = new ArrayList<>();
     for (OCLElement elem : receiver.getElements()) {
       EObject elemObject = elem.tryGetInstance();
-      if (elemObject != null && checkCorrespondence(selfObject, elemObject)) {
+      if (elemObject != null
+          && checkCorrespondenceFiltered(selfObject, elemObject, requiredTag, requiredClass)) {
         results.add(elem);
       }
     }
@@ -3230,29 +3238,160 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return Value.of(results, receiver.getRuntimeType());
   }
 
+  // ==================== Correspondence Filter Helpers ====================
+
   /**
-   * Evaluates reject(~) shorthand for inverse correspondence filtering.
+   * Extracts the optional tag string from a correspondence filter.
    *
-   * <p>Desugars to: {@code reject(x | self ~ x)}
+   * <p>Returns null if no Tag filter is present.
    *
-   * <p>Filters the receiver collection to keep only elements that do NOT correspond to 'self'
-   * according to the loaded Correspondence model instances.
+   * @param filterCtx The correspondence filter node
+   * @return The tag string (without quotes), or null if absent
+   */
+  private String extractCorrespondenceTag(VitruvOCLParser.CorrespondenceFilterCSContext filterCtx) {
+    if (filterCtx == null || filterCtx.correspondenceOptions() == null) {
+      return null;
+    }
+    for (VitruvOCLParser.CorrespondenceOptionContext option :
+        filterCtx.correspondenceOptions().correspondenceOption()) {
+      if (option instanceof VitruvOCLParser.CorrTagFilterContext tagCtx) {
+        String raw = tagCtx.tag.getText();
+        // Strip surrounding quotes from the STRING token
+        return raw.substring(1, raw.length() - 1);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Extracts the optional target EClass from a correspondence filter.
+   *
+   * <p>Uses the pre-computed nodeTypes entry written by TypeCheckVisitor for the corrTypeFilter
+   * node. Returns null if no Type filter is present.
+   *
+   * @param filterCtx The correspondence filter node
+   * @return The target EClass, or null if absent
+   */
+  private EClass extractCorrespondenceTargetClass(
+      VitruvOCLParser.CorrespondenceFilterCSContext filterCtx) {
+    if (filterCtx == null || filterCtx.correspondenceOptions() == null) {
+      return null;
+    }
+    for (VitruvOCLParser.CorrespondenceOptionContext option :
+        filterCtx.correspondenceOptions().correspondenceOption()) {
+      if (option instanceof VitruvOCLParser.CorrTypeFilterContext typeCtx) {
+        Type targetType = nodeTypes.get(typeCtx);
+        if (targetType != null && targetType.isMetaclassType()) {
+          return targetType.getEClass();
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Checks if a Correspondence object matches an optional tag filter.
+   *
+   * <p>If tag is null, every correspondence passes the filter (no restriction).
+   *
+   * @param correspondence The Correspondence EObject
+   * @param tag Required tag value, or null to accept any
+   * @return true if the correspondence's tag attribute equals the required tag (or no tag required)
+   */
+  private boolean correspondenceMatchesTag(EObject correspondence, String tag) {
+    if (tag == null) {
+      return true; // no tag filter — accept all
+    }
+    EStructuralFeature tagFeature = correspondence.eClass().getEStructuralFeature("tag");
+    if (tagFeature == null) {
+      return false;
+    }
+    Object tagValue = correspondence.eGet(tagFeature);
+    return tag.equals(tagValue);
+  }
+
+  /**
+   * Checks if a Correspondence relates obj1 and obj2, subject to optional tag and type filters.
+   *
+   * <p>Extends {@link #checkCorrespondence} with:
+   *
+   * <ul>
+   *   <li>Tag filter — only correspondences whose {@code tag} attribute matches
+   *   <li>Type filter — the candidate element (on the other side from self) must be an instance of
+   *       the specified EClass
+   * </ul>
+   *
+   * @param obj1 First object (typically 'self')
+   * @param obj2 Second object (the candidate from the receiver collection)
+   * @param requiredTag Required tag value, or null to accept any tag
+   * @param requiredClass Required EClass for obj2, or null to accept any type
+   * @return true if a qualifying correspondence exists between obj1 and obj2
+   */
+  private boolean checkCorrespondenceFiltered(
+      EObject obj1, EObject obj2, String requiredTag, EClass requiredClass) {
+
+    // If a type filter is present, obj2 must be an instance of requiredClass
+    if (requiredClass != null) {
+      EClass obj2Class = obj2.eClass();
+      if (!requiredClass.isSuperTypeOf(obj2Class) && !obj2Class.equals(requiredClass)) {
+        return false;
+      }
+    }
+
+    List<EObject> allRoots = specification.getAllRootObjects();
+
+    for (EObject root : allRoots) {
+      if (!root.eClass().getName().equals("Correspondences")) {
+        continue;
+      }
+
+      EStructuralFeature correspondencesFeature =
+          root.eClass().getEStructuralFeature("correspondences");
+      if (correspondencesFeature == null) {
+        continue;
+      }
+
+      Object value = root.eGet(correspondencesFeature);
+      if (!(value instanceof List)) {
+        continue;
+      }
+
+      @SuppressWarnings("unchecked")
+      List<EObject> correspondences = (List<EObject>) value;
+
+      for (EObject correspondence : correspondences) {
+        // Tag filter
+        if (!correspondenceMatchesTag(correspondence, requiredTag)) {
+          continue;
+        }
+        if (correspondenceContainsBoth(correspondence, obj1, obj2)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Evaluates reject(~) / reject(~, Type=T, Tag='x') shorthand.
+   *
+   * <p>Desugars to: {@code reject(x | self ~ x)} with optional Tag/Type filters. Elements are kept
+   * only if NO qualifying correspondence exists.
    *
    * <p><b>Example:</b>
    *
    * <pre>{@code
-   * context Satellite inv:
-   *   Spacecraft.allInstances().reject(~).isEmpty()
+   * Spacecraft.allInstances().reject(~, Tag = 'Enemy')
    * }</pre>
    *
-   * @param ctx The reject(~) operation node
-   * @return Filtered collection containing only elements NOT corresponding to 'self'
+   * @param ctx The rejectCorrespondence node
+   * @return Filtered collection containing elements WITHOUT a matching correspondence
    */
   @Override
   public Value visitRejectCorrespondence(VitruvOCLParser.RejectCorrespondenceContext ctx) {
     Value receiver = receiverStack.peek();
 
-    // Get 'self' from symbol table
     VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
     if (selfSymbol == null) {
       return error("'self' not defined in current context", ctx);
@@ -3268,11 +3407,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return error("reject(~) requires 'self' to be an object instance", ctx);
     }
 
-    // Filter OUT corresponding objects (inverse of select)
+    String requiredTag = extractCorrespondenceTag(ctx.corrFilter);
+    EClass requiredClass = extractCorrespondenceTargetClass(ctx.corrFilter);
+
     List<OCLElement> results = new ArrayList<>();
     for (OCLElement elem : receiver.getElements()) {
       EObject elemObject = elem.tryGetInstance();
-      if (elemObject != null && !checkCorrespondence(selfObject, elemObject)) {
+      if (elemObject != null
+          && !checkCorrespondenceFiltered(selfObject, elemObject, requiredTag, requiredClass)) {
         results.add(elem);
       }
     }
@@ -3281,28 +3423,24 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   }
 
   /**
-   * Evaluates exists(~) shorthand for correspondence existence check.
+   * Evaluates exists(~) / exists(~, Type=T, Tag='x') shorthand.
    *
-   * <p>Desugars to: {@code exists(x | self ~ x)}
-   *
-   * <p>Returns true if at least one element in the receiver collection corresponds to 'self'
-   * according to the loaded Correspondence model instances. Short-circuits on first match.
+   * <p>Returns true if at least one element in the receiver has a qualifying correspondence with
+   * 'self'. Short-circuits on first match.
    *
    * <p><b>Example:</b>
    *
    * <pre>{@code
-   * context Spacecraft inv:
-   *   Satellite.allInstances().exists(~)
+   * Satellite.allInstances().exists(~, Type = MM::Person)
    * }</pre>
    *
-   * @param ctx The exists(~) operation node
-   * @return Singleton Boolean: true if any element corresponds to 'self', false otherwise
+   * @param ctx The existsCorrespondence node
+   * @return Singleton Boolean
    */
   @Override
   public Value visitExistsCorrespondence(VitruvOCLParser.ExistsCorrespondenceContext ctx) {
     Value receiver = receiverStack.peek();
 
-    // Get 'self' from symbol table
     VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
     if (selfSymbol == null) {
       return error("'self' not defined in current context", ctx);
@@ -3318,11 +3456,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return error("exists(~) requires 'self' to be an object instance", ctx);
     }
 
-    // Check if ANY element corresponds (short-circuit on first match)
+    String requiredTag = extractCorrespondenceTag(ctx.corrFilter);
+    EClass requiredClass = extractCorrespondenceTargetClass(ctx.corrFilter);
+
     for (OCLElement elem : receiver.getElements()) {
       EObject elemObject = elem.tryGetInstance();
-      if (elemObject != null && checkCorrespondence(selfObject, elemObject)) {
-        return Value.boolValue(true);
+      if (elemObject != null
+          && checkCorrespondenceFiltered(selfObject, elemObject, requiredTag, requiredClass)) {
+        return Value.boolValue(true); // short-circuit
       }
     }
 

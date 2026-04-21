@@ -3519,32 +3519,16 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   }
 
   /**
-   * Type checks select(~) shorthand for correspondence filtering.
+   * Type checks select(~) / select(~, Type=T, Tag='x') shorthand.
    *
-   * <p>Desugars to: {@code select(x | self ~ x)}
+   * <p>Without a Type filter: returns the receiver collection type unchanged. With a Type filter:
+   * returns a collection of that metaclass type (same collection kind, narrowed element type).
    *
-   * <p>Validates that:
-   *
-   * <ul>
-   *   <li>'self' is bound in the current scope
-   *   <li>'self' is an object type (not primitive)
-   *   <li>Receiver collection contains object types (not primitives)
-   * </ul>
-   *
-   * <p><b>Example:</b>
-   *
-   * <pre>{@code
-   * context Spacecraft inv:
-   *   Satellite.allInstances().select(~).notEmpty()
-   * }</pre>
-   *
-   * @param ctx The select(~) operation node
-   * @return Collection type matching the receiver's type, or Type.ERROR if validation fails
+   * @param ctx The selectCorrespondence node
+   * @return Refined or unchanged receiver collection type, or Type.ERROR
    */
   @Override
   public Type visitSelectCorrespondence(VitruvOCLParser.SelectCorrespondenceContext ctx) {
-    // The receiver was already pushed onto receiverTypeStack by visitPrimaryWithNav
-    // Get it from the stack (same approach as visitSelectOp uses)
     Type receiverType = receiverStack.peek();
 
     if (receiverType == null || receiverType == Type.ERROR) {
@@ -3557,7 +3541,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    // Check that 'self' is bound
     VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
     if (selfSymbol == null) {
       errors.add(
@@ -3569,12 +3552,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    Type selfType = selfSymbol.getType();
+    Type baseSelfType = selfSymbol.getType();
+    if (baseSelfType.isSingleton()) baseSelfType = baseSelfType.getElementType();
 
-    // Unwrap singleton if needed
-    Type baseSelfType = selfType.isSingleton() ? selfType.getElementType() : selfType;
-
-    // Self must be object type (not primitive)
     if (!baseSelfType.isMetaclassType() && baseSelfType != Type.ANY) {
       errors.add(
           ctx.start.getLine(),
@@ -3585,10 +3565,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    // Get element type from receiver collection
     Type elemType = receiverType.getElementType();
-
-    // Elements must be object types (not primitives)
     if (!elemType.isMetaclassType() && elemType != Type.ANY) {
       errors.add(
           ctx.start.getLine(),
@@ -3599,39 +3576,30 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    // Result is same collection type as receiver
-    Type resultType = receiverType;
+    // Visit filter to check options and extract optional Type refinement
+    Type filterType = visit(ctx.corrFilter);
+
+    // If a Type filter was given, narrow the result collection element type
+    Type resultType =
+        (filterType != Type.ANY && filterType != Type.ERROR)
+            ? preserveCollectionKind(receiverType, filterType)
+            : receiverType;
+
     nodeTypes.put(ctx, resultType);
     return resultType;
   }
 
   /**
-   * Type checks reject(~) shorthand for inverse correspondence filtering.
+   * Type checks reject(~) / reject(~, Type=T, Tag='x') shorthand.
    *
-   * <p>Desugars to: {@code reject(x | self ~ x)}
+   * <p>Type filter narrows the element type of the returned collection.
    *
-   * <p>Validates that:
-   *
-   * <ul>
-   *   <li>'self' is bound in the current scope
-   *   <li>'self' is an object type (not primitive)
-   *   <li>Receiver collection contains object types (not primitives)
-   * </ul>
-   *
-   * <p><b>Example:</b>
-   *
-   * <pre>{@code
-   * context Satellite inv:
-   *   Spacecraft.allInstances().reject(~).isEmpty()
-   * }</pre>
-   *
-   * @param ctx The reject(~) operation node
-   * @return Collection type matching the receiver's type, or Type.ERROR if validation fails
+   * @param ctx The rejectCorrespondence node
+   * @return Refined or unchanged receiver collection type, or Type.ERROR
    */
   @Override
   public Type visitRejectCorrespondence(VitruvOCLParser.RejectCorrespondenceContext ctx) {
     Type receiverType = receiverStack.peek();
-    ;
 
     if (receiverType == null || receiverType == Type.ERROR) {
       errors.add(
@@ -3654,8 +3622,8 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    Type selfType = selfSymbol.getType();
-    Type baseSelfType = selfType.isSingleton() ? selfType.getElementType() : selfType;
+    Type baseSelfType = selfSymbol.getType();
+    if (baseSelfType.isSingleton()) baseSelfType = baseSelfType.getElementType();
 
     if (!baseSelfType.isMetaclassType() && baseSelfType != Type.ANY) {
       errors.add(
@@ -3668,7 +3636,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     Type elemType = receiverType.getElementType();
-
     if (!elemType.isMetaclassType() && elemType != Type.ANY) {
       errors.add(
           ctx.start.getLine(),
@@ -3679,32 +3646,23 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    Type resultType = receiverType;
+    Type filterType = visit(ctx.corrFilter);
+
+    Type resultType =
+        (filterType != Type.ANY && filterType != Type.ERROR)
+            ? preserveCollectionKind(receiverType, filterType)
+            : receiverType;
+
     nodeTypes.put(ctx, resultType);
     return resultType;
   }
 
   /**
-   * Type checks exists(~) shorthand for correspondence existence check.
+   * Type checks exists(~) / exists(~, Type=T, Tag='x') shorthand.
    *
-   * <p>Desugars to: {@code exists(x | self ~ x)}
+   * <p>Always returns Boolean. Type/Tag filters are validated but don't change the return type.
    *
-   * <p>Validates that:
-   *
-   * <ul>
-   *   <li>'self' is bound in the current scope
-   *   <li>'self' is an object type (not primitive)
-   *   <li>Receiver collection contains object types (not primitives)
-   * </ul>
-   *
-   * <p><b>Example:</b>
-   *
-   * <pre>{@code
-   * context Spacecraft inv:
-   *   Satellite.allInstances().exists(~)
-   * }</pre>
-   *
-   * @param ctx The exists(~) operation node
+   * @param ctx The existsCorrespondence node
    * @return Type.BOOLEAN if validation succeeds, Type.ERROR otherwise
    */
   @Override
@@ -3732,8 +3690,8 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    Type selfType = selfSymbol.getType();
-    Type baseSelfType = selfType.isSingleton() ? selfType.getElementType() : selfType;
+    Type baseSelfType = selfSymbol.getType();
+    if (baseSelfType.isSingleton()) baseSelfType = baseSelfType.getElementType();
 
     if (!baseSelfType.isMetaclassType() && baseSelfType != Type.ANY) {
       errors.add(
@@ -3746,7 +3704,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     Type elemType = receiverType.getElementType();
-
     if (!elemType.isMetaclassType() && elemType != Type.ANY) {
       errors.add(
           ctx.start.getLine(),
@@ -3757,10 +3714,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    // Result is always Boolean for exists
-    Type resultType = Type.BOOLEAN;
-    nodeTypes.put(ctx, resultType);
-    return resultType;
+    // Validate filter options (type-checks the Type= expression if present)
+    visit(ctx.corrFilter);
+
+    nodeTypes.put(ctx, Type.BOOLEAN);
+    return Type.BOOLEAN;
   }
 
   /** Placeholder for message operator (^). */
@@ -3927,6 +3885,125 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
     nodeTypes.put(ctx, resultType);
     return resultType;
+  }
+
+  // ==================== Correspondence Filter ====================
+
+  /**
+   * Type checks a correspondence filter expression.
+   *
+   * <p>A correspondence filter consists of the '~' marker and optional Type/Tag options. This
+   * method validates the options and returns the target metaclass type if a Type filter is present,
+   * or Type.ANY otherwise.
+   *
+   * <p><b>Examples:</b>
+   *
+   * <pre>
+   *   ~                                    // no filter
+   *   ~, Tag = 'Brother'                  // tag filter only
+   *   ~, Type = MM::Person               // type filter only
+   *   ~, Type = MM::Person, Tag = 'Sibling'  // both
+   * </pre>
+   *
+   * @param ctx The correspondence filter node
+   * @return The resolved target metaclass type, or Type.ANY if no Type filter
+   */
+  @Override
+  public Type visitCorrespondenceFilterCS(VitruvOCLParser.CorrespondenceFilterCSContext ctx) {
+    if (ctx.correspondenceOptions() == null) {
+      nodeTypes.put(ctx, Type.ANY);
+      return Type.ANY;
+    }
+    Type result = visit(ctx.correspondenceOptions());
+    nodeTypes.put(ctx, result);
+    return result;
+  }
+
+  /**
+   * Type checks the list of correspondence filter options.
+   *
+   * <p>Iterates all options, visits each one, and returns the metaclass type found in a Type filter
+   * (if any). Tag filters return Type.ANY. If multiple Type filters are present the last one wins
+   * (grammar does not forbid it; a warning is issued).
+   *
+   * @param ctx The correspondence options node
+   * @return The resolved target metaclass type, or Type.ANY if only Tag options present
+   */
+  @Override
+  public Type visitCorrespondenceOptions(VitruvOCLParser.CorrespondenceOptionsContext ctx) {
+    Type resolvedType = Type.ANY;
+    boolean hadTypeFilter = false;
+
+    for (VitruvOCLParser.CorrespondenceOptionContext option : ctx.correspondenceOption()) {
+      Type optType = visit(option);
+      if (optType != Type.ANY) {
+        if (hadTypeFilter) {
+          errors.add(
+              option.getStart().getLine(),
+              option.getStart().getCharPositionInLine(),
+              "Duplicate Type filter in correspondence — only one Type filter allowed",
+              ErrorSeverity.WARNING,
+              "type-checker");
+        }
+        resolvedType = optType;
+        hadTypeFilter = true;
+      }
+    }
+
+    nodeTypes.put(ctx, resolvedType);
+    return resolvedType;
+  }
+
+  /**
+   * Type checks a 'Type = ...' correspondence filter option.
+   *
+   * <p>Resolves the given type expression to a metaclass type and validates that it is indeed a
+   * metaclass (not a primitive). Returns the resolved metaclass type so the evaluator can use it
+   * for instanceof filtering.
+   *
+   * @param ctx The corrTypeFilter node
+   * @return The resolved metaclass type, or Type.ERROR if invalid
+   */
+  @Override
+  public Type visitCorrTypeFilter(VitruvOCLParser.CorrTypeFilterContext ctx) {
+    Type targetType = visit(ctx.type);
+
+    if (targetType == Type.ERROR) {
+      return Type.ERROR;
+    }
+
+    // Unwrap singleton if needed (e.g. !Person! → Person)
+    Type baseType = targetType.isSingleton() ? targetType.getElementType() : targetType;
+
+    if (!baseType.isMetaclassType() && baseType != Type.ANY) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Type filter in correspondence must be a metaclass type, got: " + baseType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    nodeTypes.put(ctx, baseType);
+    return baseType;
+  }
+
+  /**
+   * Type checks a 'Tag = ...' correspondence filter option.
+   *
+   * <p>Tags are plain string literals — no further type validation needed. Returns Type.ANY to
+   * signal to the caller that no metaclass type was produced.
+   *
+   * @param ctx The corrTagFilter node
+   * @return Type.ANY (tag carries no type information)
+   */
+  @Override
+  public Type visitCorrTagFilter(VitruvOCLParser.CorrTagFilterContext ctx) {
+    // Tag is a STRING token — nothing to type-check beyond confirming it exists.
+    // Return ANY to indicate no metaclass refinement.
+    nodeTypes.put(ctx, Type.ANY);
+    return Type.ANY;
   }
 
   /**
