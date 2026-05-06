@@ -32,7 +32,7 @@ public class PersistenceHelper {
       return URI.createPlatformResourceURI(srcFolderPath, true);
     } else if (elementUri.isFile()) {
       val elementPath = Path.of(elementUri.toFileString());
-      return createFileURI(getProjectRootFolder(elementPath).toFile());
+      return createFileURI(getProjectRootFolder(elementPath).get().toFile());
     } else {
       throw new UnsupportedOperationException(
           "Other URI types than file and platform are currently not supported");
