@@ -486,3 +486,4 @@ public sealed interface OCLElement
     return 7;
   }
 }
+

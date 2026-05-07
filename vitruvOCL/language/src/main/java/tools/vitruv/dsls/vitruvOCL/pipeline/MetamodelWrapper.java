@@ -20,11 +20,12 @@ import org.eclipse.emf.ecore.*;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 
 /**
- * Manages metamodel and model instance loading for VitruvOCL constraint evaluation.
+ * Manages metamodel and model instance loading for OCL constraint evaluation.
  *
  * <p>Provides metamodel-to-instance mapping required for constraint evaluation, supporting:
  *
@@ -121,6 +122,56 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
     if (ePackage.getNsURI() != null) {
       EPackage.Registry.INSTANCE.put(ePackage.getNsURI(), ePackage);
     }
+  }
+
+  /**
+   * Reloads a previously loaded metamodel from disk, replacing the old version in the registry.
+   *
+   * <p>If the file was not previously loaded this behaves identically to {@link
+   * #loadMetamodel(Path)}. Call this when the {@code .ecore} file has been modified on disk (e.g.
+   * triggered by a {@code workspace/didChangeWatchedFiles} event from the language client).
+   *
+   * @param ecoreFile path to the modified {@code .ecore} file
+   * @throws IOException if the file cannot be read or is empty after modification
+   */
+  public void reloadMetamodel(Path ecoreFile) throws IOException {
+    unloadMetamodel(ecoreFile);
+    loadMetamodel(ecoreFile);
+  }
+
+  /**
+   * Removes a previously loaded metamodel from the registry and the EMF resource set.
+   *
+   * <p>The package is also removed from {@link EPackage.Registry#INSTANCE} so that subsequent loads
+   * start from a clean state. No-op if the file was never loaded.
+   *
+   * @param ecoreFile path to the {@code .ecore} file to remove
+   */
+  public void unloadMetamodel(Path ecoreFile) {
+    String targetUri = URI.createFileURI(ecoreFile.toAbsolutePath().toString()).toString();
+
+    // Find the cached Resource in the ResourceSet by URI.
+    Resource toRemove = null;
+    for (Resource res : new ArrayList<>(resourceSet.getResources())) {
+      if (res.getURI().toString().equals(targetUri)) {
+        toRemove = res;
+        break;
+      }
+    }
+
+    if (toRemove == null) return; // file was never loaded — nothing to do
+
+    // Remove the EPackage from our registry and from the global EMF registry.
+    if (!toRemove.getContents().isEmpty()
+        && toRemove.getContents().get(0) instanceof EPackage pkg) {
+      metamodelRegistry.remove(pkg.getName());
+      if (pkg.getNsURI() != null) {
+        EPackage.Registry.INSTANCE.remove(pkg.getNsURI());
+      }
+    }
+
+    toRemove.unload();
+    resourceSet.getResources().remove(toRemove);
   }
 
   /**
@@ -324,6 +375,63 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   }
 
   /**
+   * Resolves an {@link EEnum} by name across all registered metamodel packages.
+   *
+   * <p>Searches each {@link EPackage} in the metamodel registry in iteration order, delegating to
+   * {@link #resolveEEnumInPackage} for each package. Returns the first match found, or {@code null}
+   * if no {@code EEnum} with the given name exists in any registered package.
+   *
+   * @param enumName the simple name of the {@code EEnum} to resolve
+   * @return the first matching {@link EEnum}, or {@code null} if not found
+   */
+  @Override
+  public EEnum resolveEEnum(String enumName) {
+    for (EPackage ePackage : metamodelRegistry.values()) {
+      EEnum found = resolveEEnumInPackage(ePackage, enumName);
+      if (found != null) {
+        return found;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Resolves an {@link EEnum} by name within an {@link EPackage} and its subpackages.
+   *
+   * <p>Searches the package's classifiers for an {@code EEnum} with the given name, then recurses
+   * into subpackages if no match is found.
+   *
+   * @param ePackage the root package to search in
+   * @param enumName the name of the enum to resolve
+   * @return the matching {@link EEnum}, or {@code null} if not found
+   */
+  private EEnum resolveEEnumInPackage(EPackage ePackage, String enumName) {
+    for (EClassifier classifier : ePackage.getEClassifiers()) {
+      if (classifier instanceof EEnum eEnum && eEnum.getName().equals(enumName)) {
+        return eEnum;
+      }
+    }
+    for (EPackage subPackage : ePackage.getESubpackages()) {
+      EEnum found = resolveEEnumInPackage(subPackage, enumName);
+      if (found != null) return found;
+    }
+    return null;
+  }
+
+  /**
+   * Returns the EPackage registered under the given metamodel name.
+   *
+   * <p>Used by the language server completion provider to enumerate all EClass names within a
+   * package (e.g., for {@code JavaMM::} prefix completion).
+   *
+   * @param metamodelName the package name (e.g., {@code "JavaMM"})
+   * @return the registered {@link EPackage}, or {@code null} if not found
+   */
+  public EPackage getEPackage(String metamodelName) {
+    return metamodelRegistry.get(metamodelName);
+  }
+
+  /**
    * Searches {@code ePackage} and its direct subpackages for an {@link EClass} with the given short
    * name.
    *
@@ -346,4 +454,120 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
     }
     return null;
   }
+
+  /**
+   * Returns all EObjects corresponding to the given source object.
+   *
+   * <p>Searches all loaded Correspondence objects in the resource set. A Correspondence relates
+   * obj1 to obj2 if obj1 appears in leftEObjects and obj2 in rightEObjects, or vice versa
+   * (bidirectional).
+   *
+   * @param source the source object to look up correspondences for
+   * @return set of all corresponding objects; empty if none exist
+   */
+  @Override
+  public Set<EObject> getCorrespondingObjects(EObject source) {
+    Set<EObject> result = new LinkedHashSet<>();
+    for (EObject corrObj : getCorrespondenceObjects()) {
+      @SuppressWarnings("unchecked")
+      List<EObject> lefts = resolveAll((List<EObject>) safeGet(corrObj, "leftEObjects"));
+      @SuppressWarnings("unchecked")
+      List<EObject> rights = resolveAll((List<EObject>) safeGet(corrObj, "rightEObjects"));
+      if (lefts == null || rights == null) continue;
+      if (lefts.contains(source)) result.addAll(rights);
+      if (rights.contains(source)) result.addAll(lefts);
+    }
+    System.err.println(
+        "getCorrespondingObjects(" + source.eClass().getName() + ") -> " + result.size());
+    return result;
+  }
+
+  @Override
+  public boolean correspondenceHasTag(EObject obj1, EObject obj2, String tag) {
+    for (EObject corrObj : getCorrespondenceObjects()) {
+      @SuppressWarnings("unchecked")
+      List<EObject> lefts = resolveAll((List<EObject>) safeGet(corrObj, "leftEObjects"));
+      @SuppressWarnings("unchecked")
+      List<EObject> rights = resolveAll((List<EObject>) safeGet(corrObj, "rightEObjects"));
+      String corrTag = (String) safeGet(corrObj, "tag");
+      if (lefts == null || rights == null) continue;
+      boolean matches =
+          (lefts.contains(obj1) && rights.contains(obj2))
+              || (lefts.contains(obj2) && rights.contains(obj1));
+      if (matches && tag.equals(corrTag)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Resolves all proxy EObjects in the list using the resource set. Returns a new list with
+   * resolved objects; unresolvable proxies are dropped.
+   */
+  private List<EObject> resolveAll(List<EObject> proxies) {
+    if (proxies == null) return null;
+    List<EObject> resolved = new ArrayList<>(proxies.size());
+    for (EObject obj : proxies) {
+      EObject r = EcoreUtil.resolve(obj, resourceSet);
+      if (r != null && !r.eIsProxy()) {
+        resolved.add(r);
+      }
+    }
+    return resolved;
+  }
+
+  /**
+   * Collects all Correspondence objects from all loaded resources.
+   *
+   * <p>A Correspondence object is any EObject whose EClass name is "Correspondence" or a subtype
+   * (e.g., "ManualCorrespondence"). The container "Correspondences" root object is traversed via
+   * its "correspondences" reference.
+   *
+   * @return flat list of all Correspondence EObjects across all loaded resources
+   */
+  private List<EObject> getCorrespondenceObjects() {
+    List<EObject> result = new ArrayList<>();
+    for (Resource resource : resourceSet.getResources()) {
+
+      for (EObject root : resource.getContents()) {
+
+        EStructuralFeature corrFeature = root.eClass().getEStructuralFeature("correspondences");
+        if (corrFeature != null) {
+          @SuppressWarnings("unchecked")
+          List<EObject> corrs = (List<EObject>) root.eGet(corrFeature);
+
+          if (corrs != null) {
+            for (EObject corr : corrs) {
+              EStructuralFeature tagFeature = corr.eClass().getEStructuralFeature("tag");
+              EStructuralFeature leftFeature = corr.eClass().getEStructuralFeature("leftEObjects");
+              EStructuralFeature rightFeature =
+                  corr.eClass().getEStructuralFeature("rightEObjects");
+
+              @SuppressWarnings("unchecked")
+              List<EObject> lefts =
+                  leftFeature != null ? (List<EObject>) corr.eGet(leftFeature) : null;
+              @SuppressWarnings("unchecked")
+              List<EObject> rights =
+                  rightFeature != null ? (List<EObject>) corr.eGet(rightFeature) : null;
+            }
+            result.addAll(corrs);
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Safely retrieves a structural feature value from an EObject by feature name.
+   *
+   * @param obj the EObject to read from
+   * @param featureName the feature name
+   * @return the feature value, or null if the feature does not exist
+   */
+  private Object safeGet(EObject obj, String featureName) {
+    EStructuralFeature feature = obj.eClass().getEStructuralFeature(featureName);
+    if (feature == null) return null;
+    return obj.eGet(feature);
+  }
 }
+

@@ -62,3 +62,4 @@ public class TypeSymbol extends Symbol {
     return qualifiedName;
   }
 }
+

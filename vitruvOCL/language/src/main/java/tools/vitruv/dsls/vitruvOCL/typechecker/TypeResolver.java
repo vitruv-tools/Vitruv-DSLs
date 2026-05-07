@@ -467,3 +467,4 @@ public class TypeResolver {
     return resolveObjectOperation(sourceType, operationName) != Type.ERROR;
   }
 }
+

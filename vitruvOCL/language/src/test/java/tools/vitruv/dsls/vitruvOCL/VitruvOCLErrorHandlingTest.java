@@ -474,7 +474,7 @@ public class VitruvOCLErrorHandlingTest {
   /** Tests project-based evaluation using convention-over-configuration directory structure. */
   @Test
   public void testEvaluateProject() throws IOException {
-    Path projectDir = Path.of("src/test/resources/test-project/");
+    Path projectDir = Path.of("src/test/resources/test-project");
 
     BatchValidationResult result = VitruvOCL.evaluateProject(projectDir);
 

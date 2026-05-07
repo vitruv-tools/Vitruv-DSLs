@@ -11,6 +11,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EEnum;
 import org.eclipse.emf.ecore.EObject;
 import tools.vitruv.dsls.vitruvOCL.common.CompileError;
 import tools.vitruv.dsls.vitruvOCL.common.ErrorCollector;
@@ -58,53 +59,7 @@ public abstract class DummyTestSpecification {
   protected Value compile(String input) {
     ParseTree tree = parse(input);
 
-    MetamodelWrapperInterface dummySpec =
-        new MetamodelWrapperInterface() {
-          @Override
-          public EClass resolveEClass(String metamodel, String className) {
-            return null;
-          }
-
-          @Override
-          public EClass resolveEClassByShortName(String s) {
-            return null;
-          }
-
-          @Override
-          public List<EObject> getAllInstances(EClass eClass) {
-            return List.of();
-          }
-
-          @Override
-          public Set<String> getAvailableMetamodels() {
-            return Set.of();
-          }
-
-          @Override
-          public String getInstanceNameByIndex(int index) {
-            throw new UnsupportedOperationException(
-                "Unimplemented method 'getInstanceNameByIndex'");
-          }
-
-          @Override
-          public List<EObject> getAllRootObjects() {
-            throw new UnsupportedOperationException("Unimplemented method 'getAllRootObjects'");
-          }
-
-          @Override
-          public EObject getContextObjectByIndex(int index) {
-            throw new UnsupportedOperationException(
-                "Unimplemented method 'getContextObjectByIndex'");
-          }
-
-          @Override
-          public String getSourceFileForInstance(EObject instance) {
-            // TODO Auto-generated method stub
-            throw new UnsupportedOperationException(
-                "Unimplemented method 'getSourceFileForInstance'");
-          }
-        };
-
+    MetamodelWrapperInterface dummySpec = buildDummySpec();
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
     ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
     ErrorCollector errors = new ErrorCollector();
@@ -122,6 +77,9 @@ public abstract class DummyTestSpecification {
     typeChecker.visit(tree);
 
     if (typeChecker.hasErrors()) {
+      for (CompileError s : typeChecker.getErrorCollector().getErrors()) {
+        System.err.println("Type check error: " + s.getColumn() + ": " + s.getMessage());
+      }
       fail("Pass 2 (Type checking) failed: " + typeChecker.getErrorCollector().getErrors());
     }
 
@@ -319,9 +277,26 @@ public abstract class DummyTestSpecification {
       }
 
       @Override
+      public EEnum resolveEEnum(String enumName) {
+        return null;
+      }
+
+      @Override
       public String getSourceFileForInstance(EObject instance) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'getSourceFileForInstance'");
+      }
+
+      @Override
+      public Set<EObject> getCorrespondingObjects(EObject source) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getCorrespondingObjects'");
+      }
+
+      @Override
+      public boolean correspondenceHasTag(EObject obj1, EObject obj2, String tag) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'correspondenceHasTag'");
       }
     };
   }

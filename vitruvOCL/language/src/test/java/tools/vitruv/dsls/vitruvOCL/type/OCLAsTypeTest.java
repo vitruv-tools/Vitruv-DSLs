@@ -1,0 +1,256 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Max Oesterle
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *    Max Oesterle - initial API and implementation
+ *******************************************************************************/
+package tools.vitruv.dsls.vitruvOCL.type;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.nio.file.Path;
+import java.util.List;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import tools.vitruv.dsls.vitruvOCL.DummyTestSpecification;
+import tools.vitruv.dsls.vitruvOCL.VitruvOCLLexer;
+import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser;
+import tools.vitruv.dsls.vitruvOCL.common.ErrorCollector;
+import tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement;
+import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
+import tools.vitruv.dsls.vitruvOCL.pipeline.ConstraintResult;
+import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapper;
+import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapperInterface;
+import tools.vitruv.dsls.vitruvOCL.pipeline.VitruvOCL;
+import tools.vitruv.dsls.vitruvOCL.symboltable.ScopeAnnotator;
+import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTable;
+import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableBuilder;
+import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableImpl;
+import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
+import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
+
+/**
+ * Comprehensive test suite for the {@code oclAsType} cast operation in VitruvOCL.
+ *
+ * <p>Unlike {@code oclIsKindOf}/{@code oclIsTypeOf}, {@code oclAsType} casts elements to a target
+ * type, preserving the collection structure but changing the element type annotation.
+ *
+ * @see Value Runtime collection representation
+ * @see tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor Evaluates oclAsType operations
+ * @see tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor Type checks oclAsType expressions
+ */
+public class OCLAsTypeTest extends DummyTestSpecification {
+
+  private static final Path SPACEMISSION_ECORE =
+      Path.of("src/test/resources/test-metamodels/spaceMission.ecore");
+  private static final Path SATELLITE_ECORE =
+      Path.of("src/test/resources/test-metamodels/satelliteSystem.ecore");
+
+  private static final Path SPACECRAFT_VOYAGER = Path.of("spacecraft-voyager.spacemission");
+  private static final Path SPACECRAFT_ATLAS = Path.of("spacecraft-atlas.spacemission");
+  private static final Path SATELLITE_VOYAGER = Path.of("satellite-voyager.satellitesystem");
+
+  @BeforeAll
+  public static void setupPaths() {
+    MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
+  }
+
+  /** Tests casting Integer collection to Integer → same elements preserved. */
+  @Test
+  public void testIntegerAsTypeInteger() {
+    Value result = compile("Set{5}.oclAsType(Integer)");
+    assertSize(result, 1);
+    assertEquals(5, ((OCLElement.IntValue) result.getElements().get(0)).value());
+  }
+
+  /** Tests casting multiple Integers to Integer → all elements preserved. */
+  @Test
+  public void testMultipleIntegersAsTypeInteger() {
+    Value result = compile("Set{1, 2, 3}.oclAsType(Integer)");
+    assertSize(result, 3);
+  }
+
+  // ==================== String Cast ====================
+
+  /** Tests casting String collection to String → same elements preserved. */
+  @Test
+  public void testStringAsTypeString() {
+    Value result = compile("Set{\"hello\"}.oclAsType(String)");
+    assertSize(result, 1);
+    assertEquals("hello", ((OCLElement.StringValue) result.getElements().get(0)).value());
+  }
+
+  /** Tests casting multiple Strings to String → all elements preserved. */
+  @Test
+  public void testMultipleStringsAsTypeString() {
+    Value result = compile("Set{\"a\", \"b\", \"c\"}.oclAsType(String)");
+    assertSize(result, 3);
+  }
+
+  // ==================== Boolean Cast ====================
+
+  /** Tests casting Boolean collection to Boolean → same elements preserved. */
+  @Test
+  public void testBooleanAsTypeBoolean() {
+    Value result = compile("Set{true}.oclAsType(Boolean)");
+    assertSize(result, 1);
+    assertTrue(((OCLElement.BoolValue) result.getElements().get(0)).value());
+  }
+
+  // ==================== Empty Collection ====================
+
+  /** Tests casting empty collection → empty result. */
+  @Test
+  public void testEmptyCollectionAsType() {
+    assertSize(compile("Set{}.oclAsType(Integer)"), 0);
+  }
+
+  // ==================== Sequence Preservation ====================
+
+  /** Tests Sequence order preserved after cast. */
+  @Test
+  public void testSequencePreservesOrder() {
+    Value result = compile("Sequence{1, 2, 3}.oclAsType(Integer)");
+    assertSize(result, 3);
+    List<OCLElement> elements = result.getElements();
+    assertEquals(1, ((OCLElement.IntValue) elements.get(0)).value());
+    assertEquals(2, ((OCLElement.IntValue) elements.get(1)).value());
+    assertEquals(3, ((OCLElement.IntValue) elements.get(2)).value());
+  }
+
+  // ==================== Type Checking ====================
+
+  /** Tests type checker infers Collection(Integer) as result type. */
+  @Test
+  public void testTypeCheckReturnsInteger() {
+    ParseTree tree = parse("Set{5}.oclAsType(Integer)");
+    MetamodelWrapperInterface dummySpec = buildDummySpec();
+    SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
+    ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
+    ErrorCollector errors = new ErrorCollector();
+
+    new SymbolTableBuilder(symbolTable, dummySpec, errors, scopeAnnotator).visit(tree);
+    assertFalse(errors.hasErrors(), "Pass 1 should not have errors");
+
+    TypeCheckVisitor typeChecker =
+        new TypeCheckVisitor(symbolTable, dummySpec, errors, scopeAnnotator);
+    Type resultType = typeChecker.visit(tree);
+
+    assertFalse(typeChecker.hasErrors());
+    assertTrue(resultType.isCollection());
+    assertEquals(Type.INTEGER, resultType.getElementType());
+  }
+
+  /** Tests type checker preserves Sequence collection kind. */
+  @Test
+  public void testTypeCheckPreservesCollectionKind() {
+    ParseTree tree = parse("Sequence{1, 2}.oclAsType(Integer)");
+    MetamodelWrapperInterface dummySpec = buildDummySpec();
+    SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
+    ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
+    ErrorCollector errors = new ErrorCollector();
+
+    new SymbolTableBuilder(symbolTable, dummySpec, errors, scopeAnnotator).visit(tree);
+    assertFalse(errors.hasErrors(), "Pass 1 should not have errors");
+
+    TypeCheckVisitor typeChecker =
+        new TypeCheckVisitor(symbolTable, dummySpec, errors, scopeAnnotator);
+    Type resultType = typeChecker.visit(tree);
+
+    assertFalse(typeChecker.hasErrors());
+    assertTrue(resultType.isCollection());
+    assertTrue(resultType.isOrdered());
+    assertEquals(Type.INTEGER, resultType.getElementType());
+  }
+
+  // ==================== Pipeline: select + oclAsType ====================
+
+  /**
+   * Tests oclIsKindOf filter followed by oclAsType cast. Mirrors the typical use pattern: filter by
+   * type, then cast for property access.
+   */
+  @Test
+  public void testSelectKindOfThenAsType() {
+    Value result =
+        compile("Sequence{1, \"hello\", 2}.select(p | p.oclIsKindOf(Integer)).oclAsType(Integer)");
+    assertSize(result, 2);
+    List<OCLElement> elements = result.getElements();
+    assertEquals(1, ((OCLElement.IntValue) elements.get(0)).value());
+    assertEquals(2, ((OCLElement.IntValue) elements.get(1)).value());
+  }
+
+  /** Tests oclAsType used inside collect iterator. */
+  @Test
+  public void testOclAsTypeInsideCollect() {
+    Value result = compile("Sequence{1, 2, 3}.collect(p | p.oclAsType(Integer))");
+    assertSize(result, 3);
+  }
+
+  // ==================== Metamodel Type Checking ====================
+
+  /** Tests casting Spacecraft collection to Spacecraft → same instances preserved. */
+  @Test
+  public void testSpacecraftAsTypeSpacecraft() throws Exception {
+    String constraint =
+        """
+context spaceMission::Spacecraft inv asTypeSpacecraft:
+  spaceMission::Spacecraft.allInstances().oclAsType(spaceMission::Spacecraft).size() == spaceMission::Spacecraft.allInstances().size()
+""";
+
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint,
+            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
+
+    result
+        .getCompilerErrors()
+        .forEach(error -> System.err.println("Compiler error: " + error.getMessage()));
+    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
+    assertTrue(result.isSatisfied(), "Cast should preserve all Spacecraft instances");
+  }
+
+  /** Tests oclAsType used after select in metamodel context. */
+  @Test
+  public void testSelectThenAsTypeInMetamodel() throws Exception {
+    String constraint =
+        """
+context spaceMission::Spacecraft inv selectThenAsType:
+  spaceMission::Spacecraft.allInstances()
+    .select(sc | sc.oclIsKindOf(spaceMission::Spacecraft))
+    .oclAsType(spaceMission::Spacecraft)
+    .size() > 0
+""";
+
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint,
+            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            new Path[] {SPACECRAFT_VOYAGER, SPACECRAFT_ATLAS, SATELLITE_VOYAGER});
+
+    result
+        .getCompilerErrors()
+        .forEach(error -> System.err.println("Compiler error: " + error.getMessage()));
+    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
+    assertTrue(result.isSatisfied(), "Filtered and cast collection should be non-empty");
+  }
+
+  // ==================== Entry Point Override ====================
+
+  /** Overrides parse entry point to use {@code infixedExpCS()} for oclAsType expressions. */
+  @Override
+  protected ParseTree parse(String input) {
+    CommonTokenStream tokens =
+        new CommonTokenStream(new VitruvOCLLexer(CharStreams.fromString(input)));
+    return new VitruvOCLParser(tokens).infixedExpCS();
+  }
+}

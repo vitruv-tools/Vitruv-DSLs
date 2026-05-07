@@ -108,3 +108,4 @@ public abstract class Symbol {
     return definingScope;
   }
 }
+

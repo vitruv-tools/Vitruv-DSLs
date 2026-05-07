@@ -12,11 +12,12 @@
 
     <groupId>tools.vitruv.dsls</groupId> 
     <artifactId>vitruvOCL</artifactId>
-    <version>0.1.0-SNAPSHOT</version> <!-- WICHTIG -->
+    <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
         <module>language</module>
+        <module>vitruvOCL-language-server</module>
     </modules>
 
     <build>

@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.eclipse.emf.ecore.EClass;
@@ -324,7 +323,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       Type specType = visit(spec);
 
       // Check Boolean conformance (handles both Boolean and !Boolean!)
-      if (!specType.isConformantTo(Type.BOOLEAN) && !specType.equals(Type.ERROR)) {
+      Type checkType =
+          specType.isSingleton() || specType.isCollection() ? specType.getElementType() : specType;
+      if (!checkType.isConformantTo(Type.BOOLEAN) && !specType.equals(Type.ERROR)) {
         errors.add(
             ctx.getStart().getLine(),
             ctx.getStart().getCharPositionInLine(),
@@ -684,6 +685,14 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return resultType;
   }
 
+  private boolean areOrderable(Type t1, Type t2) {
+    Type e1 = t1.isSingleton() ? t1.getElementType() : t1;
+    Type e2 = t2.isSingleton() ? t2.getElementType() : t2;
+    if (e1 == Type.ERROR || e2 == Type.ERROR) return true;
+    if (e1 == Type.ANY || e2 == Type.ANY) return true;
+    return TypeResolver.isNumeric(e1) && TypeResolver.isNumeric(e2);
+  }
+
   /**
    * Type checks less-than comparison (&lt;).
    *
@@ -699,18 +708,18 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type leftType = visit(ctx.left);
     Type rightType = visit(ctx.right);
     Type resultType = Type.BOOLEAN;
-
-    // Check if types are comparable
-    if (!areComparable(leftType, rightType)) {
+    if (!areOrderable(leftType, rightType)) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "Cannot compare incompatible types: " + leftType + " and " + rightType,
+          "Ordering comparison requires numeric or String types, got: "
+              + leftType
+              + " and "
+              + rightType,
           ErrorSeverity.ERROR,
           "type-checker");
       resultType = Type.ERROR;
     }
-
     nodeTypes.put(ctx, resultType);
     return resultType;
   }
@@ -730,18 +739,18 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type leftType = visit(ctx.left);
     Type rightType = visit(ctx.right);
     Type resultType = Type.BOOLEAN;
-
-    // Check if types are comparable
-    if (!areComparable(leftType, rightType)) {
+    if (!areOrderable(leftType, rightType)) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "Cannot compare incompatible types: " + leftType + " and " + rightType,
+          "Ordering comparison requires numeric or String types, got: "
+              + leftType
+              + " and "
+              + rightType,
           ErrorSeverity.ERROR,
           "type-checker");
       resultType = Type.ERROR;
     }
-
     nodeTypes.put(ctx, resultType);
     return resultType;
   }
@@ -761,18 +770,18 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type leftType = visit(ctx.left);
     Type rightType = visit(ctx.right);
     Type resultType = Type.BOOLEAN;
-
-    // Check if types are comparable
-    if (!areComparable(leftType, rightType)) {
+    if (!areOrderable(leftType, rightType)) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "Cannot compare incompatible types: " + leftType + " and " + rightType,
+          "Ordering comparison requires numeric or String types, got: "
+              + leftType
+              + " and "
+              + rightType,
           ErrorSeverity.ERROR,
           "type-checker");
       resultType = Type.ERROR;
     }
-
     nodeTypes.put(ctx, resultType);
     return resultType;
   }
@@ -793,18 +802,18 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type leftType = visit(ctx.left);
     Type rightType = visit(ctx.right);
     Type resultType = Type.BOOLEAN;
-
-    // Check if types are comparable
-    if (!areComparable(leftType, rightType)) {
+    if (!areOrderable(leftType, rightType)) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "Cannot compare incompatible types: " + leftType + " and " + rightType,
+          "Ordering comparison requires numeric or String types, got: "
+              + leftType
+              + " and "
+              + rightType,
           ErrorSeverity.ERROR,
           "type-checker");
       resultType = Type.ERROR;
     }
-
     nodeTypes.put(ctx, resultType);
     return resultType;
   }
@@ -825,19 +834,21 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    * @return true if types are comparable
    */
   private boolean areComparable(Type t1, Type t2) {
-    if (t1 == Type.ERROR || t2 == Type.ERROR) {
-      return true;
-    }
-    if (t1.equals(t2)) {
-      return true;
-    }
-    if (t1.isConformantTo(t2) || t2.isConformantTo(t1)) {
+    if (t1 == Type.ERROR || t2 == Type.ERROR) return true;
+    if (t1.equals(t2)) return true;
+    if (t1.isConformantTo(t2) || t2.isConformantTo(t1)) return true;
+
+    // Optional ANY (?Any?) is comparable to anything — represents null
+    if ((t1.isOptional() && t1.getElementType() == Type.ANY)
+        || (t2.isOptional() && t2.getElementType() == Type.ANY)) {
       return true;
     }
 
-    // Unwrap collections and compare element types
-    Type e1 = t1.isCollection() ? t1.getElementType() : t1;
-    Type e2 = t2.isCollection() ? t2.getElementType() : t2;
+    // Unwrap singletons for comparison
+    Type e1 =
+        t1.isSingleton() ? t1.getElementType() : (t1.isCollection() ? t1.getElementType() : t1);
+    Type e2 =
+        t2.isSingleton() ? t2.getElementType() : (t2.isCollection() ? t2.getElementType() : t2);
     if (!e1.equals(t1) || !e2.equals(t2)) {
       return areComparable(e1, e2);
     }
@@ -1113,10 +1124,17 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitUnaryMinus(VitruvOCLParser.UnaryMinusContext ctx) {
     Type operandType = visit(ctx.operand);
 
-    // Unwrap one level for collections / singletons
-    Type baseType = operandType;
-    if (baseType.isSingleton() || baseType.isCollection()) {
-      baseType = baseType.getElementType();
+    // Only unwrap singletons ¡T!, not collections
+    Type baseType = operandType.isSingleton() ? operandType.getElementType() : operandType;
+
+    if (baseType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Unary minus requires numeric type, got " + operandType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
     }
 
     if (!TypeResolver.isNumeric(baseType) && baseType != Type.ERROR) {
@@ -1155,10 +1173,17 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitLogicalNot(VitruvOCLParser.LogicalNotContext ctx) {
     Type operandType = visit(ctx.operand);
 
-    // Unwrap one level only
-    Type baseType = operandType;
-    if (baseType.isSingleton() || baseType.isCollection()) {
-      baseType = baseType.getElementType();
+    // Only unwrap singletons ¡T!, not collections
+    Type baseType = operandType.isSingleton() ? operandType.getElementType() : operandType;
+
+    if (baseType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Logical not requires Boolean type, got " + operandType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
     }
 
     if (baseType != Type.BOOLEAN && baseType != Type.ERROR) {
@@ -1193,36 +1218,43 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     String metamodel = ctx.metamodel.getText();
     String className = ctx.className.getText();
 
+    // First try: EClass (metamodel::ClassName)
     EClass eClass = specification.resolveEClass(metamodel, className);
-    if (eClass == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Cannot resolve " + metamodel + "::" + className,
-          ErrorSeverity.ERROR,
-          "type-checker");
-      return Type.ERROR;
+    if (eClass != null) {
+      Type metaclassType = Type.metaclassType(eClass);
+      nodeTypes.put(ctx, metaclassType);
+      receiverStack.push(metaclassType);
+      Type currentType = metaclassType;
+      for (VitruvOCLParser.NavigationChainCSContext nav : ctx.navigationChainCS()) {
+        currentType = visit(nav);
+        nodeTypes.put(nav, currentType);
+        receiverStack.pop();
+        receiverStack.push(currentType);
+      }
+      if (!ctx.navigationChainCS().isEmpty()) {
+        receiverStack.pop();
+      }
+      return currentType;
     }
 
-    Type metaclassType = Type.metaclassType(eClass);
-
-    // Store the base type BEFORE navigation
-    nodeTypes.put(ctx, metaclassType);
-
-    // Process navigation chain (e.g., .allInstances())
-    receiverStack.push(metaclassType);
-    Type currentType = metaclassType;
-    for (VitruvOCLParser.NavigationChainCSContext nav : ctx.navigationChainCS()) {
-      currentType = visit(nav);
-      nodeTypes.put(nav, currentType);
-      receiverStack.pop();
-      receiverStack.push(currentType);
-    }
-    if (!ctx.navigationChainCS().isEmpty()) {
-      receiverStack.pop();
+    // Second try: Enum literal (EnumName::LiteralName)
+    org.eclipse.emf.ecore.EEnum eEnum = specification.resolveEEnum(metamodel);
+    if (eEnum != null) {
+      org.eclipse.emf.ecore.EEnumLiteral literal = eEnum.getEEnumLiteral(className);
+      if (literal != null) {
+        Type enumType = Type.enumType(eEnum);
+        nodeTypes.put(ctx, enumType);
+        return enumType;
+      }
     }
 
-    return currentType;
+    errors.add(
+        ctx.getStart().getLine(),
+        ctx.getStart().getCharPositionInLine(),
+        "Cannot resolve " + metamodel + "::" + className,
+        ErrorSeverity.ERROR,
+        "type-checker");
+    return Type.ERROR;
   }
 
   // ==================== Navigation ====================
@@ -1455,8 +1487,17 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitIfExpCS(VitruvOCLParser.IfExpCSContext ctx) {
     List<VitruvOCLParser.ExpCSContext> allExps = ctx.expCS();
 
-    int thenIndex = findKeywordIndex(ctx, "then");
-    int elseIndex = findKeywordIndex(ctx, "else");
+    int thenIndex = -1;
+    int elseIndex = -1;
+    for (int i = 0; i < ctx.getChildCount(); i++) {
+      String text = ctx.getChild(i).getText();
+      if ("then".equals(text) && thenIndex == -1) {
+        thenIndex = ctx.getChild(i).getSourceInterval().a;
+      }
+      if ("else".equals(text) && elseIndex == -1) {
+        elseIndex = ctx.getChild(i).getSourceInterval().a;
+      }
+    }
 
     List<VitruvOCLParser.ExpCSContext> condExps = new ArrayList<>();
     List<VitruvOCLParser.ExpCSContext> thenExps = new ArrayList<>();
@@ -1464,7 +1505,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
     for (VitruvOCLParser.ExpCSContext exp : allExps) {
       int expIndex = exp.getStart().getTokenIndex();
-
       if (expIndex < thenIndex) {
         condExps.add(exp);
       } else if (expIndex < elseIndex) {
@@ -1479,15 +1519,16 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     for (VitruvOCLParser.ExpCSContext exp : condExps) {
       condType = visit(exp);
     }
-    if (condType != null
-        && condType.getElementType() != Type.BOOLEAN
-        && !condType.isConformantTo(Type.BOOLEAN)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "If condition must be Boolean",
-          ErrorSeverity.ERROR,
-          "type-checker");
+    if (condType != null && condType != Type.ERROR) {
+      Type condCheck = condType.isSingleton() ? condType.getElementType() : condType;
+      if (condCheck.isCollection() || !condCheck.isConformantTo(Type.BOOLEAN)) {
+        errors.add(
+            ctx.getStart().getLine(),
+            ctx.getStart().getCharPositionInLine(),
+            "If condition must be Boolean, got " + condType,
+            ErrorSeverity.ERROR,
+            "type-checker");
+      }
     }
 
     // Type-check then-branch
@@ -1506,8 +1547,36 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
+    // Branches must have compatible types — mixing collection and scalar is an error
+    boolean thenIsCollection = thenType.isCollection() && !thenType.isSingleton();
+    boolean elseIsCollection = elseType.isCollection() && !elseType.isSingleton();
+    if (thenIsCollection != elseIsCollection) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Incompatible branch types: " + thenType + " and " + elseType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+      nodeTypes.put(ctx, Type.ERROR);
+      return Type.ERROR;
+    }
+
+    // Both collections must have same kind (ordered/unique)
+    if (thenIsCollection && elseIsCollection) {
+      if (thenType.isOrdered() != elseType.isOrdered()
+          || thenType.isUnique() != elseType.isUnique()) {
+        errors.add(
+            ctx.getStart().getLine(),
+            ctx.getStart().getCharPositionInLine(),
+            "Incompatible branch types: " + thenType + " and " + elseType,
+            ErrorSeverity.ERROR,
+            "type-checker");
+        nodeTypes.put(ctx, Type.ERROR);
+        return Type.ERROR;
+      }
+    }
+
     // Determine result type
-    // Determine result type (common supertype of branches)
     Type resultType;
     if (thenType.equals(elseType)) {
       resultType = thenType;
@@ -1517,8 +1586,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       resultType = thenType;
     } else {
       resultType = Type.commonSuperType(thenType, elseType);
-      // ADD THIS CHECK:
-      if (resultType == Type.ANY || resultType == null) {
+      if (resultType == null || resultType == Type.ANY) {
         errors.add(
             ctx.getStart().getLine(),
             ctx.getStart().getCharPositionInLine(),
@@ -1531,83 +1599,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
     nodeTypes.put(ctx, resultType);
     return resultType;
-  }
-
-  /**
-   * Helper method to find keyword token index in if-expression.
-   *
-   * @param ctx The if-expression context
-   * @param keyword The keyword to find ("then" or "else")
-   * @return The token index, or Integer.MAX_VALUE if not found
-   */
-  private int findKeywordIndex(ParserRuleContext ctx, String keyword) {
-    for (int i = 0; i < ctx.getChildCount(); i++) {
-      ParseTree child = ctx.getChild(i);
-      if (child instanceof TerminalNode) {
-        if (child.getText().equals(keyword)) {
-          return ((TerminalNode) child).getSymbol().getTokenIndex();
-        }
-      }
-    }
-    return Integer.MAX_VALUE;
-  }
-
-  /**
-   * Type checks let-expressions with variable bindings.
-   *
-   * <p>Creates a new scope, defines variables, and type-checks the body expression.
-   *
-   * <p><b>Example:</b>
-   *
-   * <pre>{@code
-   * let x = 5, y = 'hello' in x + y.size()  // → Integer
-   * }</pre>
-   *
-   * @param ctx The let-expression node
-   * @return The type of the body expression
-   */
-  @Override
-  public Type visitLetExpCS(VitruvOCLParser.LetExpCSContext ctx) {
-    // Enter scope created by Pass 1 - variables already defined
-    Scope letScope = scopeAnnotator.getScope(ctx);
-    if (letScope == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Internal error: No scope annotation from Pass 1",
-          ErrorSeverity.ERROR,
-          "type-checker");
-      return Type.ERROR;
-    }
-
-    symbolTable.enterScope(letScope);
-
-    try {
-      // Type-check variable declarations (validates type conformance only)
-      visit(ctx.variableDeclarations());
-
-      // Type-check body expressions
-      List<VitruvOCLParser.ExpCSContext> allExps = ctx.expCS();
-      Type bodyType = null;
-      for (VitruvOCLParser.ExpCSContext exp : allExps) {
-        bodyType = visit(exp);
-      }
-
-      if (bodyType == null) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "Let body empty",
-            ErrorSeverity.ERROR,
-            "type-checker");
-        bodyType = Type.ERROR;
-      }
-
-      nodeTypes.put(ctx, bodyType);
-      return bodyType;
-    } finally {
-      symbolTable.exitScope();
-    }
   }
 
   /**
@@ -1950,10 +1941,14 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   // ==================== Collection Operations ====================
 
   /**
-   * Type checks the {@code first()} operation.
+   * Type-checks the {@code first()} operation on a collection receiver.
    *
-   * @param ctx The first operation node
-   * @return Optional of element type
+   * <p>Verifies that the receiver is a collection type, then registers and returns a singleton of
+   * the receiver's element type as the result type.
+   *
+   * @param ctx the parse tree node for the {@code first()} operation
+   * @return a singleton of the receiver's element type; or {@link Type#ERROR} if the receiver is
+   *     not a collection type
    */
   @Override
   public Type visitFirstOp(VitruvOCLParser.FirstOpContext ctx) {
@@ -1973,10 +1968,14 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   }
 
   /**
-   * Type checks the {@code last()} operation.
+   * Type-checks the {@code last()} operation on a collection receiver.
    *
-   * @param ctx The last operation node
-   * @return Optional of element type
+   * <p>Verifies that the receiver is a collection type, then registers and returns a singleton of
+   * the receiver's element type as the result type.
+   *
+   * @param ctx the parse tree node for the {@code last()} operation
+   * @return a singleton of the receiver's element type; or {@link Type#ERROR} if the receiver is
+   *     not a collection type
    */
   @Override
   public Type visitLastOp(VitruvOCLParser.LastOpContext ctx) {
@@ -1990,7 +1989,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
           "type-checker");
       return Type.ERROR;
     }
-    // Return singleton collection instead of optional
     Type resultType = Type.singleton(receiverType.getElementType());
     nodeTypes.put(ctx, resultType);
     return resultType;
@@ -2326,38 +2324,31 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitAppendOp(VitruvOCLParser.AppendOpContext ctx) {
-    // Same logic as union
     Type receiverType = receiverStack.peek();
     Type argType = visit(ctx.arg);
 
-    if (!receiverType.isCollection() || !argType.isCollection()) {
+    if (!receiverType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "'append' requires collection operands",
+          "'append' requires a collection receiver",
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
     }
 
-    Type commonElemType =
-        Type.commonSuperType(receiverType.getElementType(), argType.getElementType());
-    boolean bothUnique = receiverType.isUnique() && argType.isUnique();
-    boolean anyOrdered = receiverType.isOrdered() || argType.isOrdered();
-
-    Type resultType;
-    if (bothUnique && anyOrdered) {
-      resultType = Type.orderedSet(commonElemType);
-    } else if (bothUnique) {
-      resultType = Type.set(commonElemType);
-    } else if (anyOrdered) {
-      resultType = Type.sequence(commonElemType);
-    } else {
-      resultType = Type.bag(commonElemType);
+    if (argType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'append' argument must be a singleton, not a collection",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
     }
 
-    nodeTypes.put(ctx, resultType);
-    return resultType;
+    nodeTypes.put(ctx, receiverType);
+    return receiverType;
   }
 
   // ==================== Aggregate Operations ====================
@@ -2511,22 +2502,18 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   private Type visitAggregateOp(ParserRuleContext ctx, String opName) {
     Type receiverType = receiverStack.peek();
 
-    // Unwrap singleton ¡T! to treat it like a single-element collection
-    Type effectiveType =
-        receiverType.isSingleton() ? Type.set(receiverType.getElementType()) : receiverType;
-
-    if (!effectiveType.isCollection()) {
+    // Reject singletons — max/min/avg require a collection, not a scalar
+    if (receiverType.isSingleton() || !receiverType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "'" + opName + "' requires collection",
+          "'" + opName + "' requires collection receiver",
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
     }
 
-    Type elemType = effectiveType.getElementType();
-    // Unwrap nested singleton element type (e.g. Set{¡Float!} → Float)
+    Type elemType = receiverType.getElementType();
     if (elemType.isSingleton()) {
       elemType = elemType.getElementType();
     }
@@ -2546,19 +2533,45 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   }
 
   /**
-   * Type checks the {@code size()} operation.
+   * Type-checks the {@code length()} operation on a String receiver.
    *
-   * <p>Accepts both collections and singletons — a singleton ¡T! has size 1.
+   * <p>Verifies that the receiver type is conformant to {@link Type#STRING}, then registers and
+   * returns {@link Type#INTEGER} as the result type.
    *
-   * @param ctx The size operation node
-   * @return Type.INTEGER
+   * @param ctx the parse tree node for the {@code length()} operation
+   * @return {@link Type#INTEGER}; or {@link Type#ERROR} if the receiver is not conformant to {@code
+   *     STRING}
+   */
+  @Override
+  public Type visitLengthOp(VitruvOCLParser.LengthOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isConformantTo(Type.STRING)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'length' requires String receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    nodeTypes.put(ctx, Type.INTEGER);
+    return Type.INTEGER;
+  }
+
+  /**
+   * Type-checks the {@code size()} operation on a collection receiver.
+   *
+   * <p>Verifies that the receiver is a collection type, then registers and returns {@link
+   * Type#INTEGER} as the result type.
+   *
+   * @param ctx the parse tree node for the {@code size()} operation
+   * @return {@link Type#INTEGER}; or {@link Type#ERROR} if the receiver is not a collection type
    */
   @Override
   public Type visitSizeOp(VitruvOCLParser.SizeOpContext ctx) {
     Type receiverType = receiverStack.peek();
 
-    // Accept singleton ¡T! — size of a singleton is always 1
-    if (!receiverType.isCollection() && !receiverType.isSingleton()) {
+    if (!receiverType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
@@ -2586,29 +2599,20 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   private Type visitNumericOp(ParserRuleContext ctx, String opName) {
     Type receiverType = receiverStack.peek();
 
-    // Unwrap singleton ¡T! to get the element type for validation
     Type checkType = receiverType.isSingleton() ? receiverType.getElementType() : receiverType;
 
-    // Bare numeric type (e.g. Float, Double, Integer) — also valid
-    if (TypeResolver.isNumeric(checkType)) {
-      nodeTypes.put(ctx, receiverType);
-      return receiverType;
+    // Reject collections — abs/floor/ceil/round require scalar receiver
+    if (checkType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'" + opName + "' requires scalar numeric receiver, not a collection",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
     }
 
-    if (checkType.isCollection()) {
-      Type elemType = checkType.getElementType();
-      // Unwrap nested singleton element (e.g. {¡Float!})
-      if (elemType.isSingleton()) {
-        elemType = elemType.getElementType();
-      }
-      if (elemType != Type.ANY && !TypeResolver.isNumeric(elemType)) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "'" + opName + "' requires numeric collection",
-            ErrorSeverity.ERROR,
-            "type-checker");
-      }
+    if (TypeResolver.isNumeric(checkType)) {
       nodeTypes.put(ctx, receiverType);
       return receiverType;
     }
@@ -2617,7 +2621,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "'" + opName + "' requires collection",
+          "'" + opName + "' requires numeric receiver",
           ErrorSeverity.ERROR,
           "type-checker");
     }
@@ -3783,6 +3787,60 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   }
 
   /**
+   * Type-checks a {@code let} expression.
+   *
+   * <p>Retrieves the {@link Scope} pre-annotated by Pass 1, enters it, then type-checks all
+   * variable declarations in order before type-checking each body expression in sequence. The type
+   * of the last body expression is registered as the result type of the {@code let} expression.
+   *
+   * @param ctx the parse tree node for the {@code let} expression, containing the variable
+   *     declaration list and one or more body expressions
+   * @return the type of the last body expression; or {@link Type#ERROR} if no scope annotation is
+   *     found, or the body contains no expressions
+   */
+  @Override
+  public Type visitLetExpCS(VitruvOCLParser.LetExpCSContext ctx) {
+    Scope letScope = scopeAnnotator.getScope(ctx);
+    if (letScope == null) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Internal error: No scope annotation from Pass 1",
+          ErrorSeverity.ERROR,
+          "type-checker");
+
+      return Type.ERROR;
+    }
+
+    symbolTable.enterScope(letScope);
+
+    try {
+      visit(ctx.variableDeclarations());
+
+      List<VitruvOCLParser.ExpCSContext> allExps = ctx.expCS();
+      Type bodyType = null;
+      for (VitruvOCLParser.ExpCSContext exp : allExps) {
+        bodyType = visit(exp);
+      }
+
+      if (bodyType == null) {
+        errors.add(
+            ctx.getStart().getLine(),
+            ctx.getStart().getCharPositionInLine(),
+            "Let body empty",
+            ErrorSeverity.ERROR,
+            "type-checker");
+        bodyType = Type.ERROR;
+      }
+
+      nodeTypes.put(ctx, bodyType);
+      return bodyType;
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
+  /**
    * Visits a collection literal node in the AST.
    *
    * <p>Delegates type checking to the underlying collection literal expression.
@@ -3917,6 +3975,1095 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type result = visit(ctx.correspondenceOptions());
     nodeTypes.put(ctx, result);
     return result;
+  }
+
+  // ==================== New Iterator Operations ====================
+
+  /**
+   * Type checks the {@code one()} iterator.
+   *
+   * <p>Returns true iff exactly one element satisfies the predicate.
+   *
+   * @param ctx The one operation node
+   * @return Type.BOOLEAN
+   */
+  @Override
+  public Type visitOneOp(VitruvOCLParser.OneOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'one' requires collection",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    List<String> iterVars = new ArrayList<>();
+    for (TerminalNode id : ctx.iteratorVarList().ID()) {
+      iterVars.add(id.getText());
+    }
+
+    Type iterVarType = normalizeToSingleton(receiverType.getElementType());
+    Scope iterScope = scopeAnnotator.getScope(ctx);
+    if (iterScope == null) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Internal error: No scope annotation from Pass 1",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    symbolTable.enterScope(iterScope);
+    try {
+      for (String iterVar : iterVars) {
+        VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
+        if (symbol != null && symbol.getType() == Type.ANY) symbol.setType(iterVarType);
+      }
+      Type bodyType = visit(ctx.body);
+      Type checkType = bodyType.isCollection() ? bodyType.getElementType() : bodyType;
+      if (!checkType.isConformantTo(Type.BOOLEAN)) {
+        errors.add(
+            ctx.getStart().getLine(),
+            ctx.getStart().getCharPositionInLine(),
+            "one() predicate must return Boolean",
+            ErrorSeverity.ERROR,
+            "type-checker");
+      }
+      nodeTypes.put(ctx, Type.BOOLEAN);
+      return Type.BOOLEAN;
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
+  /**
+   * Type checks the {@code any()} iterator.
+   *
+   * <p>Returns an arbitrary element satisfying the predicate — result is a singleton of the element
+   * type.
+   *
+   * @param ctx The any operation node
+   * @return Singleton of element type
+   */
+  @Override
+  public Type visitAnyOp(VitruvOCLParser.AnyOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'any' requires collection",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    List<String> iterVars = new ArrayList<>();
+    for (TerminalNode id : ctx.iteratorVarList().ID()) {
+      iterVars.add(id.getText());
+    }
+
+    Type iterVarType = normalizeToSingleton(receiverType.getElementType());
+    Scope iterScope = scopeAnnotator.getScope(ctx);
+    if (iterScope == null) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Internal error: No scope annotation from Pass 1",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    symbolTable.enterScope(iterScope);
+    try {
+      for (String iterVar : iterVars) {
+        VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
+        if (symbol != null && symbol.getType() == Type.ANY) symbol.setType(iterVarType);
+      }
+      Type bodyType = visit(ctx.body);
+      Type checkType = bodyType.isCollection() ? bodyType.getElementType() : bodyType;
+      if (!checkType.isConformantTo(Type.BOOLEAN)) {
+        errors.add(
+            ctx.getStart().getLine(),
+            ctx.getStart().getCharPositionInLine(),
+            "any() predicate must return Boolean",
+            ErrorSeverity.ERROR,
+            "type-checker");
+      }
+      // any() returns one element — singleton of the element type
+      Type resultType = Type.singleton(receiverType.getElementType());
+      nodeTypes.put(ctx, resultType);
+      return resultType;
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
+  /**
+   * Type checks the {@code isUnique()} iterator.
+   *
+   * <p>Returns true iff all body results are distinct.
+   *
+   * @param ctx The isUnique operation node
+   * @return Type.BOOLEAN
+   */
+  @Override
+  public Type visitIsUniqueOp(VitruvOCLParser.IsUniqueOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'isUnique' requires collection",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    List<String> iterVars = new ArrayList<>();
+    for (TerminalNode id : ctx.iteratorVarList().ID()) {
+      iterVars.add(id.getText());
+    }
+
+    Type iterVarType = normalizeToSingleton(receiverType.getElementType());
+    Scope iterScope = scopeAnnotator.getScope(ctx);
+    if (iterScope == null) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Internal error: No scope annotation from Pass 1",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    symbolTable.enterScope(iterScope);
+    try {
+      for (String iterVar : iterVars) {
+        VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
+        if (symbol != null && symbol.getType() == Type.ANY) symbol.setType(iterVarType);
+      }
+      visit(ctx.body); // body type unconstrained — just check it parses
+      nodeTypes.put(ctx, Type.BOOLEAN);
+      return Type.BOOLEAN;
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
+  /**
+   * Type checks the {@code sortedBy()} iterator.
+   *
+   * <p>Body must return a comparable type. Result is an OrderedSet of the element type.
+   *
+   * @param ctx The sortedBy operation node
+   * @return OrderedSet of element type
+   */
+  @Override
+  public Type visitSortedByOp(VitruvOCLParser.SortedByOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'sortedBy' requires collection",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    List<String> iterVars = new ArrayList<>();
+    for (TerminalNode id : ctx.iteratorVarList().ID()) {
+      iterVars.add(id.getText());
+    }
+
+    Type iterVarType = normalizeToSingleton(receiverType.getElementType());
+    Scope iterScope = scopeAnnotator.getScope(ctx);
+    if (iterScope == null) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Internal error: No scope annotation from Pass 1",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    symbolTable.enterScope(iterScope);
+    try {
+      for (String iterVar : iterVars) {
+        VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
+        if (symbol != null && symbol.getType() == Type.ANY) symbol.setType(iterVarType);
+      }
+      Type bodyType = visit(ctx.body);
+      // body should return something comparable (numeric or string)
+      Type checkType = bodyType.isSingleton() ? bodyType.getElementType() : bodyType;
+      if (checkType != Type.ANY
+          && !TypeResolver.isNumeric(checkType)
+          && !checkType.isConformantTo(Type.STRING)
+          && !checkType.isEnumType()
+          && checkType != Type.ERROR) {
+        errors.add(
+            ctx.getStart().getLine(),
+            ctx.getStart().getCharPositionInLine(),
+            "sortedBy() body must return a comparable type (numeric or String), got: " + checkType,
+            ErrorSeverity.ERROR,
+            "type-checker");
+      }
+      // result is always OrderedSet of the original element type
+      Type resultType = Type.orderedSet(receiverType.getElementType());
+      nodeTypes.put(ctx, resultType);
+      return resultType;
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
+  /**
+   * Type checks the {@code collectNested()} iterator.
+   *
+   * <p>Like collect() but does NOT flatten — returns a collection of collections.
+   *
+   * @param ctx The collectNested operation node
+   * @return Collection of body types (not flattened)
+   */
+  @Override
+  public Type visitCollectNestedOp(VitruvOCLParser.CollectNestedOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'collectNested' requires collection",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    List<String> iterVars = new ArrayList<>();
+    for (TerminalNode id : ctx.iteratorVarList().ID()) {
+      iterVars.add(id.getText());
+    }
+
+    Type iterVarType = normalizeToSingleton(receiverType.getElementType());
+    Scope iterScope = scopeAnnotator.getScope(ctx);
+    if (iterScope == null) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Internal error: No scope annotation from Pass 1",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    symbolTable.enterScope(iterScope);
+    try {
+      for (String iterVar : iterVars) {
+        VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
+        if (symbol != null && symbol.getType() == Type.ANY) symbol.setType(iterVarType);
+      }
+      Type bodyType = visit(ctx.body);
+      if (bodyType == Type.ERROR) return Type.ERROR;
+      // collectNested: preserve receiver kind, element type is the raw body type (no unwrap)
+      Type resultType = preserveCollectionKind(receiverType, bodyType);
+      nodeTypes.put(ctx, resultType);
+      return resultType;
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
+  /**
+   * Type checks the {@code iterate()} operation.
+   *
+   * <p>Syntax: {@code coll.iterate(elem; acc : T = init | body)} The accumulator type is the result
+   * type.
+   *
+   * @param ctx The iterate operation node
+   * @return The accumulator type
+   */
+  @Override
+  public Type visitIterateOp(VitruvOCLParser.IterateOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'iterate' requires collection",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    Scope iterScope = scopeAnnotator.getScope(ctx);
+    if (iterScope == null) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Internal error: No scope annotation from Pass 1",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    symbolTable.enterScope(iterScope);
+    try {
+      VitruvOCLParser.IterateVarSpecContext spec = ctx.iterateVarSpec();
+
+      // Iterator variable — gets element type of receiver
+      String iterVarName = spec.iterVar.getText();
+      Type iterVarType = normalizeToSingleton(receiverType.getElementType());
+      VariableSymbol iterSym = symbolTable.resolveVariable(iterVarName);
+      if (iterSym != null && iterSym.getType() == Type.ANY) iterSym.setType(iterVarType);
+
+      // Accumulator type — either explicit or inferred from init expression
+      Type accType;
+      if (spec.accType != null) {
+        accType = visit(spec.accType);
+      } else {
+        accType = visit(spec.accInit);
+      }
+      String accVarName = spec.accVar.getText();
+      VariableSymbol accSym = symbolTable.resolveVariable(accVarName);
+      if (accSym != null && accSym.getType() == Type.ANY) accSym.setType(accType);
+
+      // Init expression must conform to accumulator type
+      Type initType = visit(spec.accInit);
+      if (!initType.isConformantTo(accType) && !conformsWithUnwrapping(initType, accType)) {
+        errors.add(
+            spec.getStart().getLine(),
+            spec.getStart().getCharPositionInLine(),
+            "iterate() accumulator init type "
+                + initType
+                + " does not conform to declared type "
+                + accType,
+            ErrorSeverity.ERROR,
+            "type-checker");
+      }
+
+      // Body must conform to accumulator type
+      Type bodyType = visit(ctx.body);
+      if (!bodyType.isConformantTo(accType)
+          && !conformsWithUnwrapping(bodyType, accType)
+          && bodyType != Type.ERROR) {
+        errors.add(
+            ctx.getStart().getLine(),
+            ctx.getStart().getCharPositionInLine(),
+            "iterate() body type " + bodyType + " does not conform to accumulator type " + accType,
+            ErrorSeverity.ERROR,
+            "type-checker");
+      }
+
+      nodeTypes.put(ctx, accType);
+      return accType;
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
+  // ==================== New Collection Conversion Operations ====================
+
+  /**
+   * Type checks the {@code asSet()} operation.
+   *
+   * @param ctx The asSet operation node
+   * @return Set of element type
+   */
+  @Override
+  public Type visitAsSetOp(VitruvOCLParser.AsSetOpContext ctx) {
+    return visitCollectionConversionOp(ctx, "asSet", Type::set);
+  }
+
+  /**
+   * Type checks the {@code asBag()} operation.
+   *
+   * @param ctx The asBag operation node
+   * @return Bag of element type
+   */
+  @Override
+  public Type visitAsBagOp(VitruvOCLParser.AsBagOpContext ctx) {
+    return visitCollectionConversionOp(ctx, "asBag", Type::bag);
+  }
+
+  /**
+   * Type checks the {@code asSequence()} operation.
+   *
+   * @param ctx The asSequence operation node
+   * @return Sequence of element type
+   */
+  @Override
+  public Type visitAsSequenceOp(VitruvOCLParser.AsSequenceOpContext ctx) {
+    return visitCollectionConversionOp(ctx, "asSequence", Type::sequence);
+  }
+
+  /**
+   * Type checks the {@code asOrderedSet()} operation.
+   *
+   * @param ctx The asOrderedSet operation node
+   * @return OrderedSet of element type
+   */
+  @Override
+  public Type visitAsOrderedSetOp(VitruvOCLParser.AsOrderedSetOpContext ctx) {
+    return visitCollectionConversionOp(ctx, "asOrderedSet", Type::orderedSet);
+  }
+
+  /** Helper for asSet/asBag/asSequence/asOrderedSet — all follow the same pattern. */
+  private Type visitCollectionConversionOp(
+      ParserRuleContext ctx, String opName, java.util.function.Function<Type, Type> factory) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'" + opName + "' requires collection receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    Type resultType = factory.apply(receiverType.getElementType());
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  // ==================== New Collection Operations ====================
+
+  /**
+   * Type checks the {@code includesAll()} operation.
+   *
+   * @param ctx The includesAll operation node
+   * @return Type.BOOLEAN
+   */
+  @Override
+  public Type visitIncludesAllOp(VitruvOCLParser.IncludesAllOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    Type argType = visit(ctx.arg);
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'includesAll' requires collection receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    if (!argType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'includesAll' argument must be a collection",
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    nodeTypes.put(ctx, Type.BOOLEAN);
+    return Type.BOOLEAN;
+  }
+
+  /**
+   * Type checks the {@code excludesAll()} operation.
+   *
+   * @param ctx The excludesAll operation node
+   * @return Type.BOOLEAN
+   */
+  @Override
+  public Type visitExcludesAllOp(VitruvOCLParser.ExcludesAllOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    Type argType = visit(ctx.arg);
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'excludesAll' requires collection receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    if (!argType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'excludesAll' argument must be a collection",
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    nodeTypes.put(ctx, Type.BOOLEAN);
+    return Type.BOOLEAN;
+  }
+
+  /**
+   * Type checks the {@code count()} operation.
+   *
+   * <p>Returns how many times an element occurs in the collection.
+   *
+   * @param ctx The count operation node
+   * @return Type.INTEGER
+   */
+  @Override
+  public Type visitCountOp(VitruvOCLParser.CountOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'count' requires collection receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    Type argType = visit(ctx.arg);
+    Type elemType = receiverType.getElementType();
+    if (!argType.isConformantTo(elemType)
+        && !conformsWithUnwrapping(argType, elemType)
+        && argType != Type.ERROR) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "count() argument type "
+              + argType
+              + " incompatible with collection element type "
+              + elemType,
+          ErrorSeverity.WARNING,
+          "type-checker");
+    }
+    nodeTypes.put(ctx, Type.INTEGER);
+    return Type.INTEGER;
+  }
+
+  /**
+   * Type checks the {@code intersection()} operation.
+   *
+   * <p>Both operands must be collections with compatible element types. Result preserves the more
+   * restrictive kind (Set beats Bag, OrderedSet beats Sequence).
+   *
+   * @param ctx The intersection operation node
+   * @return Collection of common element type
+   */
+  @Override
+  public Type visitIntersectionOp(VitruvOCLParser.IntersectionOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    Type argType = visit(ctx.arg);
+    if (!receiverType.isCollection() || !argType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'intersection' requires collection operands",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    Type commonElem = Type.commonSuperType(receiverType.getElementType(), argType.getElementType());
+    // intersection result: unique if either operand is unique; ordered only if both are ordered
+    boolean eitherUnique = receiverType.isUnique() || argType.isUnique();
+    boolean bothOrdered = receiverType.isOrdered() && argType.isOrdered();
+    Type resultType;
+    if (eitherUnique && bothOrdered) {
+      resultType = Type.orderedSet(commonElem);
+    } else if (eitherUnique) {
+      resultType = Type.set(commonElem);
+    } else if (bothOrdered) {
+      resultType = Type.sequence(commonElem);
+    } else {
+      resultType = Type.bag(commonElem);
+    }
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks the {@code symmetricDifference()} operation.
+   *
+   * <p>Both operands must be Sets. Result is a Set of common element type.
+   *
+   * @param ctx The symmetricDifference operation node
+   * @return Set of element type
+   */
+  @Override
+  public Type visitSymmetricDifferenceOp(VitruvOCLParser.SymmetricDifferenceOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    Type argType = visit(ctx.arg);
+    if (!receiverType.isCollection() || !argType.isCollection()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'symmetricDifference' requires collection operands",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    if (!receiverType.isUnique() || !argType.isUnique()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'symmetricDifference' requires Set operands (unique collections)",
+          ErrorSeverity.ERROR, // WARNING → ERROR
+          "type-checker");
+      return Type.ERROR;
+    }
+
+    Type commonElem = Type.commonSuperType(receiverType.getElementType(), argType.getElementType());
+    Type resultType = Type.set(commonElem);
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks the {@code prepend()} operation.
+   *
+   * <p>Requires Sequence or OrderedSet receiver. Returns same collection type.
+   *
+   * @param ctx The prepend operation node
+   * @return Same ordered collection type
+   */
+  @Override
+  public Type visitPrependOp(VitruvOCLParser.PrependOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isCollection() || !receiverType.isOrdered()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'prepend' requires ordered collection (Sequence or OrderedSet)",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    Type argType = visit(ctx.arg);
+    Type elemType = receiverType.getElementType();
+    if (!argType.isConformantTo(elemType)
+        && !conformsWithUnwrapping(argType, elemType)
+        && argType != Type.ERROR) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "prepend() argument type " + argType + " incompatible with element type " + elemType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    nodeTypes.put(ctx, receiverType);
+    return receiverType;
+  }
+
+  /**
+   * Type checks the {@code insertAt()} operation.
+   *
+   * <p>Requires ordered collection. Index must be Integer.
+   *
+   * @param ctx The insertAt operation node
+   * @return Same ordered collection type
+   */
+  @Override
+  public Type visitInsertAtOp(VitruvOCLParser.InsertAtOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isCollection() || !receiverType.isOrdered()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'insertAt' requires ordered collection (Sequence or OrderedSet)",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    Type indexType = visit(ctx.index);
+    if (!indexType.isConformantTo(Type.INTEGER)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "insertAt() index must be Integer, got " + indexType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    Type argType = visit(ctx.arg);
+    Type elemType = receiverType.getElementType();
+    if (!argType.isConformantTo(elemType)
+        && !conformsWithUnwrapping(argType, elemType)
+        && argType != Type.ERROR) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "insertAt() element type "
+              + argType
+              + " incompatible with collection element type "
+              + elemType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    nodeTypes.put(ctx, receiverType);
+    return receiverType;
+  }
+
+  /**
+   * Type checks the {@code subSequence()} operation.
+   *
+   * <p>Requires ordered collection. Both bounds must be Integer.
+   *
+   * @param ctx The subSequence operation node
+   * @return Same ordered collection type
+   */
+  @Override
+  public Type visitSubSequenceOp(VitruvOCLParser.SubSequenceOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isCollection() || !receiverType.isOrdered()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'subSequence' requires ordered collection (Sequence or OrderedSet)",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    Type startType = visit(ctx.start);
+    Type endType = visit(ctx.end);
+    if (!startType.isConformantTo(Type.INTEGER)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "subSequence() start index must be Integer, got " + startType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    if (!endType.isConformantTo(Type.INTEGER)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "subSequence() end index must be Integer, got " + endType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    nodeTypes.put(ctx, receiverType);
+    return receiverType;
+  }
+
+  /**
+   * Type checks the {@code at()} operation.
+   *
+   * <p>Requires ordered collection. Index must be Integer. Returns singleton of element type.
+   *
+   * @param ctx The at operation node
+   * @return Singleton of element type
+   */
+  @Override
+  public Type visitAtOp(VitruvOCLParser.AtOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    // at() also valid on String (returns a character as String)
+    if (receiverType.isConformantTo(Type.STRING)) {
+      Type indexType = visit(ctx.index);
+      if (!indexType.isConformantTo(Type.INTEGER)) {
+        errors.add(
+            ctx.getStart().getLine(),
+            ctx.getStart().getCharPositionInLine(),
+            "at() index must be Integer, got " + indexType,
+            ErrorSeverity.ERROR,
+            "type-checker");
+      }
+      nodeTypes.put(ctx, Type.STRING);
+      return Type.STRING;
+    }
+    if (!receiverType.isCollection() || !receiverType.isOrdered()) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'at' requires ordered collection or String receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    Type indexType = visit(ctx.index);
+    if (!indexType.isConformantTo(Type.INTEGER)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "at() index must be Integer, got " + indexType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    Type resultType = Type.singleton(receiverType.getElementType());
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks the {@code ceiling()} operation (alias for ceil).
+   *
+   * @param ctx The ceiling operation node
+   * @return Receiver type unchanged
+   */
+  @Override
+  public Type visitCeilingOp(VitruvOCLParser.CeilingOpContext ctx) {
+    return visitNumericOp(ctx, "ceiling");
+  }
+
+  /**
+   * Type checks the {@code div()} operation (integer division).
+   *
+   * <p>Both receiver and argument must be Integer.
+   *
+   * @param ctx The div operation node
+   * @return Type.INTEGER
+   */
+  @Override
+  public Type visitDivOp(VitruvOCLParser.DivOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    Type argType = visit(ctx.arg);
+
+    Type baseReceiver = receiverType.isSingleton() ? receiverType.getElementType() : receiverType;
+    Type baseArg = argType.isSingleton() ? argType.getElementType() : argType;
+
+    if (baseReceiver != Type.INTEGER && baseReceiver != Type.ERROR) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "div() requires Integer receiver, got " + receiverType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    if (baseArg != Type.INTEGER && baseArg != Type.ERROR) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "div() requires Integer argument, got " + argType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    nodeTypes.put(ctx, Type.INTEGER);
+    return Type.INTEGER;
+  }
+
+  /**
+   * Type checks the {@code mod()} operation (integer remainder).
+   *
+   * <p>Both receiver and argument must be Integer.
+   *
+   * @param ctx The mod operation node
+   * @return Type.INTEGER
+   */
+  @Override
+  public Type visitModOp(VitruvOCLParser.ModOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    Type argType = visit(ctx.arg);
+
+    Type baseReceiver = receiverType.isSingleton() ? receiverType.getElementType() : receiverType;
+    Type baseArg = argType.isSingleton() ? argType.getElementType() : argType;
+
+    if (baseReceiver != Type.INTEGER && baseReceiver != Type.ERROR) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "mod() requires Integer receiver, got " + receiverType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    if (baseArg != Type.INTEGER && baseArg != Type.ERROR) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "mod() requires Integer argument, got " + argType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    nodeTypes.put(ctx, Type.INTEGER);
+    return Type.INTEGER;
+  }
+
+  // ==================== New String Operations ====================
+
+  /**
+   * Type checks the {@code toInteger()} operation.
+   *
+   * @param ctx The toInteger operation node
+   * @return Type.INTEGER
+   */
+  @Override
+  public Type visitToIntegerOp(VitruvOCLParser.ToIntegerOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isConformantTo(Type.STRING)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'toInteger' requires String receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    nodeTypes.put(ctx, Type.INTEGER);
+    return Type.INTEGER;
+  }
+
+  /**
+   * Type checks the {@code toReal()} operation.
+   *
+   * @param ctx The toReal operation node
+   * @return Type.DOUBLE
+   */
+  @Override
+  public Type visitToRealOp(VitruvOCLParser.ToRealOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isConformantTo(Type.STRING)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'toReal' requires String receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    nodeTypes.put(ctx, Type.DOUBLE);
+    return Type.DOUBLE;
+  }
+
+  /**
+   * Type checks the {@code characters()} operation.
+   *
+   * <p>Splits a String into a Sequence of single-character Strings.
+   *
+   * @param ctx The characters operation node
+   * @return Sequence(String)
+   */
+  @Override
+  public Type visitCharactersOp(VitruvOCLParser.CharactersOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isConformantTo(Type.STRING)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'characters' requires String receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    Type resultType = Type.sequence(Type.STRING);
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks the {@code matches()} operation.
+   *
+   * <p>Tests whether the receiver matches a regex pattern.
+   *
+   * @param ctx The matches operation node
+   * @return Type.BOOLEAN
+   */
+  @Override
+  public Type visitMatchesOp(VitruvOCLParser.MatchesOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isConformantTo(Type.STRING)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'matches' requires String receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    Type argType = visit(ctx.arg);
+    if (!argType.isConformantTo(Type.STRING)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "matches() pattern argument must be String, got " + argType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    nodeTypes.put(ctx, Type.BOOLEAN);
+    return Type.BOOLEAN;
+  }
+
+  /**
+   * Type checks the {@code substituteAll()} operation.
+   *
+   * @param ctx The substituteAll operation node
+   * @return Type.STRING
+   */
+  @Override
+  public Type visitSubstituteAllOp(VitruvOCLParser.SubstituteAllOpContext ctx) {
+    return visitSubstituteOp(ctx, ctx.pattern, ctx.replacement, "substituteAll");
+  }
+
+  /**
+   * Type checks the {@code substituteFirst()} operation.
+   *
+   * @param ctx The substituteFirst operation node
+   * @return Type.STRING
+   */
+  @Override
+  public Type visitSubstituteFirstOp(VitruvOCLParser.SubstituteFirstOpContext ctx) {
+    return visitSubstituteOp(ctx, ctx.pattern, ctx.replacement, "substituteFirst");
+  }
+
+  /** Helper for substituteAll / substituteFirst — identical type rules. */
+  private Type visitSubstituteOp(
+      ParserRuleContext ctx,
+      VitruvOCLParser.ExpCSContext patternCtx,
+      VitruvOCLParser.ExpCSContext replacementCtx,
+      String opName) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isConformantTo(Type.STRING)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'" + opName + "' requires String receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    Type patternType = visit(patternCtx);
+    if (!patternType.isConformantTo(Type.STRING)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          opName + "() pattern must be String, got " + patternType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    Type replacementType = visit(replacementCtx);
+    if (!replacementType.isConformantTo(Type.STRING)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          opName + "() replacement must be String, got " + replacementType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    nodeTypes.put(ctx, Type.STRING);
+    return Type.STRING;
+  }
+
+  /**
+   * Type checks the {@code tokenize()} operation.
+   *
+   * <p>Splits the receiver String by a delimiter, returning a Sequence of Strings.
+   *
+   * @param ctx The tokenize operation node
+   * @return Sequence(String)
+   */
+  @Override
+  public Type visitTokenizeOp(VitruvOCLParser.TokenizeOpContext ctx) {
+    Type receiverType = receiverStack.peek();
+    if (!receiverType.isConformantTo(Type.STRING)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'tokenize' requires String receiver",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return Type.ERROR;
+    }
+    Type argType = visit(ctx.arg);
+    if (!argType.isConformantTo(Type.STRING)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "tokenize() delimiter must be String, got " + argType,
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    Type resultType = Type.sequence(Type.STRING);
+    nodeTypes.put(ctx, resultType);
+    return resultType;
   }
 
   /**
@@ -4189,3 +5336,4 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return false;
   }
 }
+

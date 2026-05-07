@@ -31,6 +31,12 @@ public class CompileError {
   /** Column number where the error occurred (0-based) */
   private final int column;
 
+  /** End line of the erroneous range (1-based); -1 when unknown. */
+  private final int endLine;
+
+  /** Exclusive end column of the erroneous range (0-based); -1 when unknown. */
+  private final int endColumn;
+
   /** Human-readable error description */
   private final String message;
 
@@ -53,19 +59,9 @@ public class CompileError {
    * @param source Source file or context identifier
    */
   public CompileError(int line, int column, String message, ErrorSeverity severity, String source) {
-    this(line, column, message, severity, source, null);
+    this(line, column, -1, -1, message, severity, source, null);
   }
 
-  /**
-   * Creates a compile error with full details including error code.
-   *
-   * @param line Line number (1-based)
-   * @param column Column number (0-based)
-   * @param message Error description
-   * @param severity Error severity level
-   * @param source Source file or context identifier
-   * @param errorCode Optional error code for categorization (may be null)
-   */
   public CompileError(
       int line,
       int column,
@@ -73,8 +69,34 @@ public class CompileError {
       ErrorSeverity severity,
       String source,
       String errorCode) {
+    this(line, column, -1, -1, message, severity, source, errorCode);
+  }
+
+  /**
+   * Creates a compile error with full span (start + end position) and optional error code.
+   *
+   * @param line Start line (1-based)
+   * @param column Start column (0-based)
+   * @param endLine End line (1-based); pass -1 when unknown
+   * @param endColumn Exclusive end column (0-based); pass -1 when unknown
+   * @param message Error description
+   * @param severity Error severity level
+   * @param source Source file or context identifier
+   * @param errorCode Optional error code (may be null)
+   */
+  public CompileError(
+      int line,
+      int column,
+      int endLine,
+      int endColumn,
+      String message,
+      ErrorSeverity severity,
+      String source,
+      String errorCode) {
     this.line = line;
     this.column = column;
+    this.endLine = endLine;
+    this.endColumn = endColumn;
     this.message = message;
     this.severity = severity;
     this.source = source;
@@ -93,6 +115,16 @@ public class CompileError {
    */
   public int getColumn() {
     return column;
+  }
+
+  /** End line of the erroneous range (1-based); -1 when not set. */
+  public int getEndLine() {
+    return endLine;
+  }
+
+  /** Exclusive end column of the erroneous range (0-based); -1 when not set. */
+  public int getEndColumn() {
+    return endColumn;
   }
 
   /**

@@ -20,3 +20,4 @@ public enum ErrorSeverity {
   /** warning - only potential problem */
   WARNING,
 }
+

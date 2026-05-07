@@ -22,6 +22,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import tools.vitruv.dsls.vitruvOCL.parser.VitruvOCLParserTestUtils;
+
 /**
  * Test suite for parsing VitruvOCL constraint files from the filesystem.
  *
@@ -54,8 +56,8 @@ import org.junit.jupiter.params.provider.ValueSource;
  * </ul>
  *
  * @see VitruvLLexer ANTLR-generated lexer
- * @see OCLParser ANTLR-generated parser
- * @see OCLParserTestUtils Parse tree visualization utilities
+ * @see VitruvOCLParser ANTLR-generated parser
+ * @see VitruvOCLParserTestUtils Parse tree visualization utilities
  */
 public class VitruvOCLFileParsingTest {
 
@@ -149,10 +151,10 @@ public class VitruvOCLFileParsingTest {
    *
    * <pre>{@code
    * // Verify context declaration exists
-   * assertTrue(tree.getChild(0) instanceof OCLParser.ContextDeclCSContext);
+   * assertTrue(tree.getChild(0) instanceof VitruvOCLParser.ContextDeclCSContext);
    *
    * // Check invariant name
-   * OCLParser.InvariantCSContext inv = ...;
+   * VitruvOCLParser.InvariantCSContext inv = ...;
    * assertEquals("validMass", inv.ID().getText());
    * }</pre>
    *

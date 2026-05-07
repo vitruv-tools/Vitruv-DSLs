@@ -15,6 +15,7 @@ package tools.vitruv.dsls.vitruvOCL.pipeline;
 import java.util.List;
 import java.util.Set;
 import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EEnum;
 import org.eclipse.emf.ecore.EObject;
 
 /**
@@ -39,6 +40,14 @@ public interface MetamodelWrapperInterface {
    * @return List of all instances
    */
   List<EObject> getAllInstances(EClass eClass);
+
+  /**
+   * * Resolves an EEnum by qualified name.
+   *
+   * @param enumName The qualified name of the enum (e.g., "UML.VisibilityKind")
+   * @return The resolved EEnum, or null if not found
+   */
+  public EEnum resolveEEnum(String enumName);
 
   /**
    * Returns names of all available metamodels.
@@ -86,9 +95,23 @@ public interface MetamodelWrapperInterface {
    */
   EClass resolveEClassByShortName(String shortName);
 
+  String getSourceFileForInstance(EObject instance);
+
   /**
-   * Returns the source filename for a specific EObject instance (by identity). More reliable than
-   * index-based lookup.
+   * Returns all objects corresponding to the given source object.
+   *
+   * @param source the source object
+   * @return set of all corresponding objects; empty if none
    */
-  public String getSourceFileForInstance(EObject instance);
+  Set<EObject> getCorrespondingObjects(EObject source);
+
+  /**
+   * Checks whether a correspondence between obj1 and obj2 carries the given tag.
+   *
+   * @param obj1 one side of the correspondence
+   * @param obj2 other side of the correspondence
+   * @param tag the required tag value
+   * @return true if a correspondence with that tag exists between obj1 and obj2
+   */
+  boolean correspondenceHasTag(EObject obj1, EObject obj2, String tag);
 }

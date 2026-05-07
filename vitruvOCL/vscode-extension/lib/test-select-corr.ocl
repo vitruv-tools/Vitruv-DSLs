@@ -1,2 +1,0 @@
-context spaceMission::Spacecraft inv correspondenceSelect:
-    satelliteSystem::Satellite.allInstances().select(~).size() >= 1

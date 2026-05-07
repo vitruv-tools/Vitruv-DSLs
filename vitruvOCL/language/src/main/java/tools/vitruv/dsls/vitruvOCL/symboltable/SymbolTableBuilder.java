@@ -28,7 +28,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * Phase 1 visitor that constructs the symbol table by collecting variable declarations and building
  * scope hierarchies.
  *
- * <p>This is the first pass in the VitruvOCL compiler's 3-pass architecture, executed before type
+ * <p>This is the first pass in the OCL compiler's 3-pass architecture, executed before type
  * checking (Pass 2) and evaluation (Pass 3). It walks the ANTLR parse tree to populate the symbol
  * table with all variable bindings and their declared types.
  *
@@ -385,6 +385,21 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
   }
 
   /**
+   * Type-checks the {@code length()} operation.
+   *
+   * <p>No additional type-checking is required beyond what the receiver resolution already
+   * enforces; the result type is unconditionally registered as {@code INTEGER} singleton by the
+   * surrounding infrastructure.
+   *
+   * @param ctx the parse tree node for the {@code length()} operation
+   * @return {@code null} (visitor return convention)
+   */
+  @Override
+  public Void visitLengthOp(VitruvOCLParser.LengthOpContext ctx) {
+    return null;
+  }
+
+  /**
    * Defines a let-bound variable in the current scope.
    *
    * <p>Handles both explicitly typed and untyped variable declarations:
@@ -531,7 +546,7 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
   /**
    * Resolves a primitive type literal.
    *
-   * <p>Maps OCL primitive type names to VitruvOCL Type constants:
+   * <p>Maps OCL primitive type names to OCL Type constants:
    *
    * <ul>
    *   <li>Boolean → Type.BOOLEAN
@@ -649,6 +664,120 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
   @Override
   public Void visitExistsOp(VitruvOCLParser.ExistsOpContext ctx) {
     return visitIteratorOp(ctx, ctx.iteratorVars, ctx.body);
+  }
+
+  /**
+   * Type-checks the {@code one()} iterator operation.
+   *
+   * <p>Delegates to {@link #visitIteratorOp} with the iterator variable list and body expression.
+   * The result type is unconditionally {@code BOOLEAN} singleton, registered by {@code
+   * visitIteratorOp} based on the operation kind.
+   *
+   * @param ctx the parse tree node for the {@code one()} operation, including the iterator variable
+   *     list and body expression
+   * @return {@code null} (visitor return convention)
+   */
+  @Override
+  public Void visitOneOp(VitruvOCLParser.OneOpContext ctx) {
+    return visitIteratorOp(ctx, ctx.iteratorVars, ctx.body);
+  }
+
+  /**
+   * Type-checks the {@code any()} iterator operation.
+   *
+   * <p>Delegates to {@link #visitIteratorOp} with the iterator variable list and body expression.
+   * The result type is an {@code Optional} of the receiver's element type, registered by {@code
+   * visitIteratorOp} based on the operation kind.
+   *
+   * @param ctx the parse tree node for the {@code any()} operation, including the iterator variable
+   *     list and body expression
+   * @return {@code null} (visitor return convention)
+   */
+  @Override
+  public Void visitAnyOp(VitruvOCLParser.AnyOpContext ctx) {
+    return visitIteratorOp(ctx, ctx.iteratorVars, ctx.body);
+  }
+
+  /**
+   * Type-checks the {@code isUnique()} iterator operation.
+   *
+   * <p>Delegates to {@link #visitIteratorOp} with the iterator variable list and body expression.
+   * The result type is unconditionally {@code BOOLEAN} singleton, registered by {@code
+   * visitIteratorOp} based on the operation kind.
+   *
+   * @param ctx the parse tree node for the {@code isUnique()} operation, including the iterator
+   *     variable list and body expression
+   * @return {@code null} (visitor return convention)
+   */
+  @Override
+  public Void visitIsUniqueOp(VitruvOCLParser.IsUniqueOpContext ctx) {
+    return visitIteratorOp(ctx, ctx.iteratorVars, ctx.body);
+  }
+
+  /**
+   * Type-checks the {@code sortedBy()} iterator operation.
+   *
+   * <p>Delegates to {@link #visitIteratorOp} with the iterator variable list and body expression.
+   * The result type is an {@code OrderedSet} of the receiver's element type, registered by {@code
+   * visitIteratorOp} based on the operation kind.
+   *
+   * @param ctx the parse tree node for the {@code sortedBy()} operation, including the iterator
+   *     variable list and body expression
+   * @return {@code null} (visitor return convention)
+   */
+  @Override
+  public Void visitSortedByOp(VitruvOCLParser.SortedByOpContext ctx) {
+    return visitIteratorOp(ctx, ctx.iteratorVars, ctx.body);
+  }
+
+  /**
+   * Type-checks the {@code collectNested()} iterator operation.
+   *
+   * <p>Delegates to {@link #visitIteratorOp} with the iterator variable list and body expression.
+   * The result type is a {@code Bag} of the receiver's element type, registered by {@code
+   * visitIteratorOp} based on the operation kind.
+   *
+   * @param ctx the parse tree node for the {@code collectNested()} operation, including the
+   *     iterator variable list and body expression
+   * @return {@code null} (visitor return convention)
+   */
+  @Override
+  public Void visitCollectNestedOp(VitruvOCLParser.CollectNestedOpContext ctx) {
+    return visitIteratorOp(ctx, ctx.iteratorVars, ctx.body);
+  }
+
+  /**
+   * Type-checks the {@code iterate()} operation.
+   *
+   * <p>Opens a fresh {@link LocalScope}, annotates the node with it, and registers both the
+   * iterator variable and the accumulator variable (each typed as {@code ANY} as placeholders)
+   * before visiting the accumulator initializer and the body expression. The scope is exited in a
+   * {@code finally} block to ensure cleanup on error.
+   *
+   * @param ctx the parse tree node for the {@code iterate()} operation, including the {@link
+   *     VitruvOCLParser.IterateVarSpecContext} with iterator variable, accumulator variable,
+   *     initializer expression, and body
+   * @return {@code null} (visitor return convention)
+   */
+  @Override
+  public Void visitIterateOp(VitruvOCLParser.IterateOpContext ctx) {
+    VitruvOCLParser.IterateVarSpecContext varSpec = ctx.iterateVarSpec();
+
+    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    symbolTable.enterScope(iterScope);
+    scopeAnnotator.annotate(ctx, iterScope);
+
+    try {
+      symbolTable.defineVariable(
+          new VariableSymbol(varSpec.iterVar.getText(), Type.ANY, iterScope, true));
+      symbolTable.defineVariable(
+          new VariableSymbol(varSpec.accVar.getText(), Type.ANY, iterScope, false));
+      visit(varSpec.accInit);
+      visit(ctx.body);
+      return null;
+    } finally {
+      symbolTable.exitScope();
+    }
   }
 
   /**
@@ -838,7 +967,7 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
   }
 
   /**
-   * Visits a less-than comparison operation (<).
+   * Visits a less-than comparison operation (&lt;).
    *
    * @param ctx The less-than comparison parse tree node
    * @return null (void visitor)
@@ -851,7 +980,7 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
   }
 
   /**
-   * Visits a less-than-or-equal comparison operation (<=).
+   * Visits a less-than-or-equal comparison operation (&lt;=).
    *
    * @param ctx The less-than-or-equal comparison parse tree node
    * @return null (void visitor)
@@ -864,7 +993,7 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
   }
 
   /**
-   * Visits a greater-than comparison operation (>).
+   * Visits a greater-than comparison operation (&gt;).
    *
    * @param ctx The greater-than comparison parse tree node
    * @return null (void visitor)
@@ -877,7 +1006,7 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
   }
 
   /**
-   * Visits a greater-than-or-equal comparison operation (>=).
+   * Visits a greater-than-or-equal comparison operation (&gt;=).
    *
    * @param ctx The greater-than-or-equal comparison parse tree node
    * @return null (void visitor)
@@ -1807,3 +1936,4 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
     return null;
   }
 }
+

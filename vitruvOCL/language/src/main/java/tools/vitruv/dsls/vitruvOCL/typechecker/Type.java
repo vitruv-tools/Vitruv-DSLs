@@ -358,10 +358,11 @@ public abstract class Type {
         return true;
       }
 
+      /*
       if (other.getElementType() == INTEGER) {
         return true;
       }
-
+      */
       return false;
     }
 
@@ -787,6 +788,43 @@ public abstract class Type {
     }
 
     return ANY;
+  }
+
+  // Neue innere Klasse nach MetaclassType:
+  private static class EnumType extends Type {
+    private final org.eclipse.emf.ecore.EEnum eEnum;
+
+    private EnumType(org.eclipse.emf.ecore.EEnum eEnum) {
+      this.eEnum = eEnum;
+    }
+
+    public org.eclipse.emf.ecore.EEnum getEEnum() {
+      return eEnum;
+    }
+
+    @Override
+    public boolean isConformantTo(Type other) {
+      if (other == ERROR || other == ANY) return true;
+      if (other instanceof EnumType otherEnum) {
+        return this.eEnum.equals(otherEnum.eEnum);
+      }
+      return false;
+    }
+
+    @Override
+    public String getTypeName() {
+      return eEnum.getName();
+    }
+  }
+
+  // Factory-Methode:
+  public static Type enumType(org.eclipse.emf.ecore.EEnum eEnum) {
+    return new EnumType(eEnum);
+  }
+
+  // Hilfsmethode:
+  public boolean isEnumType() {
+    return this instanceof EnumType;
   }
 
   /**

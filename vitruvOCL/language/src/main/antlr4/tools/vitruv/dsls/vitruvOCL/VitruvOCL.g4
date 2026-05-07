@@ -11,7 +11,7 @@
  * Contributors:
  *    Ralph Gerbig - initial API and implementation and initial documentation
  *    Arne Lange - ocl2 implementation
- *    Max Oesterle - VitruvOCL implementation, extensive refactoring and extensions
+ *    Max Oesterle - OCL implementation, extensive refactoring and extensions
  *******************************************************************************/
 grammar VitruvOCL;
 
@@ -77,6 +77,7 @@ typeNameExpCS
     metamodel=ID COLONCOLON className=ID
     | unqualified=ID
 ;
+
 // ============================================================================
 // EXPRESSIONS
 // ============================================================================
@@ -117,7 +118,7 @@ prefixedExpCS
     base=primaryExpCS navigation=navigationChainCS*                         # primaryWithNav
     | '-' operand=prefixedExpCS                                             # unaryMinus
     | 'not' operand=prefixedExpCS                                           # logicalNot
-    | metamodel=ID '::' className=ID navigation=navigationChainCS+         # prefixedQualified
+    | metamodel=ID '::' className=ID navigation=navigationChainCS*         # prefixedQualified
 ;
 
 navigationChainCS
@@ -240,29 +241,45 @@ operationCall
 
 collectionOpCS
 :
-    'including' '(' arg=expCS ')'      # includingOp
-    | 'excluding' '(' arg=expCS ')'    # excludingOp
-    | 'includes' '(' arg=expCS ')'     # includesOp
-    | 'excludes' '(' arg=expCS ')'     # excludesOp
-    | 'flatten' '(' ')'                # flattenOp
-    | 'union' '(' arg=expCS ')'        # unionOp
-    | 'append' '(' arg=expCS ')'       # appendOp
-    | 'sum' '(' ')'                    # sumOp
-    | 'max' '(' ')'                    # maxOp
-    | 'min' '(' ')'                    # minOp
-    | 'avg' '(' ')'                    # avgOp
-    | 'abs' '(' ')'                    # absOp
-    | 'floor' '(' ')'                  # floorOp
-    | 'ceil' '(' ')'                   # ceilOp
-    | 'round' '(' ')'                  # roundOp
-    | 'lift' '(' ')'                   # liftOp
-    | 'size' '(' ')'                   # sizeOp
-    | 'isEmpty' '(' ')'                # isEmptyOp
-    | 'notEmpty' '(' ')'               # notEmptyOp
-    | 'first' '(' ')'                  # firstOp
-    | 'last' '(' ')'                   # lastOp
-    | 'reverse' '(' ')'                # reverseOp
-    | 'allInstances' '(' ')'           # allInstancesOp
+    'including' '(' arg=expCS ')'                                          # includingOp
+    | 'excluding' '(' arg=expCS ')'                                        # excludingOp
+    | 'includes' '(' arg=expCS ')'                                         # includesOp
+    | 'excludes' '(' arg=expCS ')'                                         # excludesOp
+    | 'includesAll' '(' arg=expCS ')'                                      # includesAllOp
+    | 'excludesAll' '(' arg=expCS ')'                                      # excludesAllOp
+    | 'count' '(' arg=expCS ')'                                            # countOp
+    | 'flatten' '(' ')'                                                    # flattenOp
+    | 'union' '(' arg=expCS ')'                                            # unionOp
+    | 'intersection' '(' arg=expCS ')'                                     # intersectionOp
+    | 'symmetricDifference' '(' arg=expCS ')'                              # symmetricDifferenceOp
+    | 'append' '(' arg=expCS ')'                                           # appendOp
+    | 'prepend' '(' arg=expCS ')'                                          # prependOp
+    | 'insertAt' '(' index=expCS ',' arg=expCS ')'                        # insertAtOp
+    | 'subSequence' '(' start=expCS ',' end=expCS ')'                     # subSequenceOp
+    | 'at' '(' index=expCS ')'                                             # atOp
+    | 'sum' '(' ')'                                                        # sumOp
+    | 'max' '(' ')'                                                        # maxOp
+    | 'min' '(' ')'                                                        # minOp
+    | 'avg' '(' ')'                                                        # avgOp
+    | 'abs' '(' ')'                                                        # absOp
+    | 'floor' '(' ')'                                                      # floorOp
+    | 'ceil' '(' ')'                                                       # ceilOp
+    | 'ceiling' '(' ')'                                                    # ceilingOp
+    | 'round' '(' ')'                                                      # roundOp
+    | 'div' '(' arg=expCS ')'                                              # divOp
+    | 'mod' '(' arg=expCS ')'                                              # modOp
+    | 'lift' '(' ')'                                                       # liftOp
+    | 'size' '(' ')'                                                       # sizeOp
+    | 'isEmpty' '(' ')'                                                    # isEmptyOp
+    | 'notEmpty' '(' ')'                                                   # notEmptyOp
+    | 'first' '(' ')'                                                      # firstOp
+    | 'last' '(' ')'                                                       # lastOp
+    | 'reverse' '(' ')'                                                    # reverseOp
+    | 'allInstances' '(' ')'                                               # allInstancesOp
+    | 'asSet' '(' ')'                                                      # asSetOp
+    | 'asBag' '(' ')'                                                      # asBagOp
+    | 'asSequence' '(' ')'                                                 # asSequenceOp
+    | 'asOrderedSet' '(' ')'                                               # asOrderedSetOp
 ;
 
 // ============================================================================
@@ -279,6 +296,18 @@ iteratorOpCS
     | 'collect' '(' iteratorVars=iteratorVarList '|' body=expCS ')'                 # collectOp
     | 'forAll' '(' iteratorVars=iteratorVarList '|' body=expCS ')'                  # forAllOp
     | 'exists' '(' iteratorVars=iteratorVarList '|' body=expCS ')'                  # existsOp
+    | 'one' '(' iteratorVars=iteratorVarList '|' body=expCS ')'                     # oneOp
+    | 'any' '(' iteratorVars=iteratorVarList '|' body=expCS ')'                     # anyOp
+    | 'isUnique' '(' iteratorVars=iteratorVarList '|' body=expCS ')'                # isUniqueOp
+    | 'sortedBy' '(' iteratorVars=iteratorVarList '|' body=expCS ')'                # sortedByOp
+    | 'collectNested' '(' iteratorVars=iteratorVarList '|' body=expCS ')'           # collectNestedOp
+    | 'iterate' '(' iterateVarSpec '|' body=expCS ')'                               # iterateOp
+;
+
+// iterate(elem; acc : Type = initExpr | body)
+iterateVarSpec
+:
+    iterVar=ID ';' accVar=ID (':' accType=typeExpCS)? '=' accInit=expCS
 ;
 
 // ============================================================================
@@ -312,12 +341,20 @@ iteratorVarList
 
 stringOpCS
 :
-    'concat' '(' arg=expCS ')'                              # concatOp
-    | 'substring' '(' start=expCS ',' end=expCS ')'        # substringOp
-    | 'toUpper' '(' ')'                                     # toUpperOp
-    | 'toLower' '(' ')'                                     # toLowerOp
-    | 'indexOf' '(' arg=expCS ')'                          # indexOfOp
-    | 'equalsIgnoreCase' '(' arg=expCS ')'                 # equalsIgnoreCaseOp
+    'concat' '(' arg=expCS ')'                                             # concatOp
+    | 'length' '(' ')'   # lengthOp
+    | 'substring' '(' start=expCS ',' end=expCS ')'                       # substringOp
+    | 'toUpper' '(' ')'                                                    # toUpperOp
+    | 'toLower' '(' ')'                                                    # toLowerOp
+    | 'indexOf' '(' arg=expCS ')'                                          # indexOfOp
+    | 'equalsIgnoreCase' '(' arg=expCS ')'                                 # equalsIgnoreCaseOp
+    | 'toInteger' '(' ')'                                                  # toIntegerOp
+    | 'toReal' '(' ')'                                                     # toRealOp
+    | 'characters' '(' ')'                                                 # charactersOp
+    | 'matches' '(' arg=expCS ')'                                          # matchesOp
+    | 'substituteAll' '(' pattern=expCS ',' replacement=expCS ')'         # substituteAllOp
+    | 'substituteFirst' '(' pattern=expCS ',' replacement=expCS ')'       # substituteFirstOp
+    | 'tokenize' '(' arg=expCS ')'                                         # tokenizeOp
 ;
 
 // ============================================================================

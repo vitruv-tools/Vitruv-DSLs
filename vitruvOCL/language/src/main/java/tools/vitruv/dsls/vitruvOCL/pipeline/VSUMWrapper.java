@@ -129,14 +129,14 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
                 .flatMap(root -> getAllContentsRecursive(root).stream())
                 .filter(obj -> eClass.isSuperTypeOf(obj.eClass()))
                 .toList();
-    System.out.println(
+    System.err.println(
         "getAllInstances(" + eClass.getName() + ") -> " + result.size() + " objects");
     result.forEach(
         obj -> {
-          System.out.println("  " + obj.eClass().getName());
+          System.err.println("  " + obj.eClass().getName());
           var nameFeature = obj.eClass().getEStructuralFeature("name");
           if (nameFeature != null) {
-            System.out.println("    name=" + obj.eGet(nameFeature));
+            System.err.println("    name=" + obj.eGet(nameFeature));
           }
         });
     return result;
@@ -208,9 +208,13 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
    * @return set of corresponding objects that are instances of {@code targetType}; empty if none
    */
   public Set<EObject> getCorrespondingObjects(EObject source, EClass targetType) {
-    return correspondenceModel.getCorrespondingEObjects(source).stream()
-        .filter(obj -> targetType.isSuperTypeOf(obj.eClass()))
-        .collect(Collectors.toSet());
+    Set<EObject> result =
+        correspondenceModel.getCorrespondingEObjects(source).stream()
+            .filter(obj -> targetType.isSuperTypeOf(obj.eClass()))
+            .collect(Collectors.toSet());
+    System.err.println(
+        "getCorrespondingObjects(" + source.eClass().getName() + ") -> " + result.size());
+    return result;
   }
 
   // ---------------------------------------------------------------------------
@@ -260,5 +264,73 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
       }
     }
     return null;
+  }
+
+  /**
+   * Resolves an {@link EEnum} by name across all registered metamodel packages.
+   *
+   * <p>Searches each {@link EPackage} in the metamodel registry in iteration order, delegating to
+   * {@link #resolveEEnumInPackage} for each package. Returns the first match found, or {@code null}
+   * if no {@code EEnum} with the given name exists in any registered package.
+   *
+   * @param enumName the simple name of the {@code EEnum} to resolve
+   * @return the first matching {@link EEnum}, or {@code null} if not found
+   */
+  @Override
+  public EEnum resolveEEnum(String enumName) {
+    for (EPackage ePackage : metamodelRegistry.values()) {
+      EEnum found = resolveEEnumInPackage(ePackage, enumName);
+      if (found != null) {
+        return found;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Resolves an {@link EEnum} by name within an {@link EPackage} and its subpackages.
+   *
+   * <p>Searches the package's classifiers for an {@code EEnum} with the given name, then recurses
+   * into subpackages if no match is found.
+   *
+   * @param ePackage the root package to search in
+   * @param enumName the name of the enum to resolve
+   * @return the matching {@link EEnum}, or {@code null} if not found
+   */
+  private EEnum resolveEEnumInPackage(EPackage ePackage, String enumName) {
+    for (EClassifier classifier : ePackage.getEClassifiers()) {
+      if (classifier instanceof EEnum eEnum && eEnum.getName().equals(enumName)) {
+        return eEnum;
+      }
+    }
+    for (EPackage subPackage : ePackage.getESubpackages()) {
+      EEnum found = resolveEEnumInPackage(subPackage, enumName);
+      if (found != null) return found;
+    }
+    return null;
+  }
+
+  /**
+   * Checks whether a correspondence between obj1 and obj2 carries the given tag.
+   *
+   * <p>The Vitruvius CorrespondenceModelView does not expose tags directly — tags are an internal
+   * attribute of the underlying Correspondence EMF objects. We therefore iterate the raw
+   * correspondences via the correspondence model's internal stream.
+   *
+   * <p>Bidirectional: obj1 may appear in leftEObjects or rightEObjects.
+   *
+   * @param obj1 one side of the correspondence
+   * @param obj2 other side of the correspondence
+   * @param tag the required tag value
+   * @return true if a tagged correspondence with that value relates obj1 and obj2
+   */
+  @Override
+  public boolean correspondenceHasTag(EObject obj1, EObject obj2, String tag) {
+    // getCorrespondingEObjects(obj1, tag) returns only objects linked via a
+    // correspondence that carries exactly that tag
+    Set<EObject> taggedCorrespondents = correspondenceModel.getCorrespondingEObjects(obj1, tag);
+    if (taggedCorrespondents.contains(obj2)) return true;
+    // bidirectional
+    return correspondenceModel.getCorrespondingEObjects(obj2, tag).contains(obj1);
   }
 }

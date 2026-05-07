@@ -541,3 +541,4 @@ public class Value {
     return singleton(new OCLElement.FloatValue(value), Type.FLOAT);
   }
 }
+

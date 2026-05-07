@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiFunction;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -39,9 +40,9 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
 /**
  * Phase 3 visitor that evaluates OCL expressions and produces runtime values.
  *
- * <p>This visitor implements the <b>evaluation phase</b> of the VitruvOCL compiler pipeline,
- * operating after symbol table construction (Phase 1) and type checking (Phase 2). It traverses the
- * parse tree and computes concrete runtime values ({@link Value} objects) for OCL expressions.
+ * <p>This visitor implements the <b>evaluation phase</b> of the OCL compiler pipeline, operating
+ * after symbol table construction (Phase 1) and type checking (Phase 2). It traverses the parse
+ * tree and computes concrete runtime values ({@link Value} objects) for OCL expressions.
  *
  * <h2>Architecture</h2>
  *
@@ -79,6 +80,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    * invariant evaluated to false. Used by callers to produce precise violation messages.
    */
   private final List<EObject> violatingInstances = new ArrayList<>();
+
+  /* Cache for allInstances() results to avoid redundant metamodel queries during evaluation. */
+  private final java.util.Map<EClass, Value> allInstancesCache = new java.util.HashMap<>();
 
   /** Token stream for potential future use (e.g., accessing comments or whitespace). */
   private org.antlr.v4.runtime.TokenStream tokens;
@@ -440,6 +444,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitSizeOp(VitruvOCLParser.SizeOpContext ctx) {
     Value receiver = receiverStack.peek();
+    // String.size() returns string length — but only for actual String values, not EnumValues
+    if (receiver.size() == 1) {
+      OCLElement elem = receiver.getElements().get(0);
+      if (elem instanceof OCLElement.StringValue sv) {
+        return Value.intValue(sv.value().length());
+      }
+    }
+
     return Value.intValue(receiver.size());
   }
 
@@ -634,27 +646,31 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     if (receiver.isEmpty()) {
       return Value.empty(Type.INTEGER);
     }
-    boolean hasReal = receiver.getElements().stream().anyMatch(e -> e.tryGetDouble() != null);
-    if (hasReal) {
-      double max = Double.NEGATIVE_INFINITY;
-      for (OCLElement elem : receiver.getElements()) {
-        Double val = elem.tryGetDouble();
-        if (val == null) {
-          return error("max() requires numeric elements", ctx);
-        }
-        if (val > max) max = val;
-      }
-      return Value.doubleValue(max);
-    }
-    int max = Integer.MIN_VALUE;
-    for (OCLElement elem : receiver.getElements()) {
-      Integer val = elem.tryGetInt();
-      if (val == null) {
+
+    // Unwrap nested collections/singletons to get primitive values
+    List<OCLElement> elements =
+        receiver.getElements().stream()
+            .map(
+                e ->
+                    e instanceof OCLElement.NestedCollection nc
+                        ? (nc.value().getElements().isEmpty() ? e : nc.value().getElements().get(0))
+                        : e)
+            .toList();
+
+    boolean hasReal =
+        elements.stream()
+            .anyMatch(
+                e -> e instanceof OCLElement.DoubleValue || e instanceof OCLElement.FloatValue);
+    double max = Double.NEGATIVE_INFINITY;
+    for (OCLElement elem : elements) {
+      if (!OCLElement.isNumeric(elem)) {
         return error("max() requires numeric elements", ctx);
       }
+      double val = elem.toDoubleValue();
       if (val > max) max = val;
     }
-    return Value.intValue(max);
+    boolean allInt = elements.stream().allMatch(e -> e instanceof OCLElement.IntValue);
+    return allInt ? Value.intValue((int) max) : Value.doubleValue(max);
   }
 
   /**
@@ -673,31 +689,33 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     if (receiver.isEmpty()) {
       return Value.empty(Type.INTEGER);
     }
-    boolean hasReal = receiver.getElements().stream().anyMatch(e -> e.tryGetDouble() != null);
-    if (hasReal) {
-      double min = Double.POSITIVE_INFINITY;
-      for (OCLElement elem : receiver.getElements()) {
-        Double val = elem.tryGetDouble();
-        if (val == null) {
-          return error("min() requires numeric elements", ctx);
-        }
-        if (val < min) {
-          min = val;
-        }
-      }
-      return Value.doubleValue(min);
-    }
-    int min = Integer.MAX_VALUE;
-    for (OCLElement elem : receiver.getElements()) {
-      Integer val = elem.tryGetInt();
-      if (val == null) {
+
+    // Unwrap nested collections/singletons to get primitive values
+    List<OCLElement> elements =
+        receiver.getElements().stream()
+            .map(
+                e ->
+                    e instanceof OCLElement.NestedCollection nc
+                        ? (nc.value().getElements().isEmpty() ? e : nc.value().getElements().get(0))
+                        : e)
+            .toList();
+
+    boolean hasReal =
+        elements.stream()
+            .anyMatch(
+                e -> e instanceof OCLElement.DoubleValue || e instanceof OCLElement.FloatValue);
+
+    double min = Double.POSITIVE_INFINITY;
+    for (OCLElement elem : elements) {
+      if (!OCLElement.isNumeric(elem)) {
         return error("min() requires numeric elements", ctx);
       }
-      if (val < min) {
-        min = val;
-      }
+      double val = elem.toDoubleValue();
+      if (val < min) min = val;
     }
-    return Value.intValue(min);
+
+    boolean allInt = elements.stream().allMatch(e -> e instanceof OCLElement.IntValue);
+    return allInt ? Value.intValue((int) min) : Value.doubleValue(min);
   }
 
   /**
@@ -841,6 +859,28 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   }
 
   // ==================== String Operations ====================
+
+  /**
+   * Evaluates the {@code length()} operation on a String receiver.
+   *
+   * <p>Expects a singleton receiver containing a {@code String} value. Returns the number of
+   * characters in the string as an {@code INTEGER} singleton.
+   *
+   * @param ctx the parse tree node for the {@code length()} operation
+   * @return a singleton {@code INTEGER} value representing the string length, or an error value if
+   *     the receiver is not a singleton {@code String}
+   */
+  @Override
+  public Value visitLengthOp(VitruvOCLParser.LengthOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    if (receiver.size() == 1) {
+      String str = receiver.getElements().get(0).tryGetString();
+      if (str != null) {
+        return Value.intValue(str.length());
+      }
+    }
+    return error("length() requires String receiver", ctx);
+  }
 
   /**
    * Evaluates the {@code concat()} operation.
@@ -1080,6 +1120,308 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
 
     return error("select supports at most 2 iterator variables", ctx);
+  }
+
+  /**
+   * Evaluates the {@code one()} iterator operation on a collection receiver.
+   *
+   * <p>Iterates over all elements of the receiver collection, binding each element to the iterator
+   * variable in a fresh local scope, and evaluates the body expression. Returns {@code true} if and
+   * only if exactly one element satisfies the condition.
+   *
+   * <p>Example: {@code employees->one(e | e.age > 60)}
+   *
+   * @param ctx the parse tree node for the {@code one()} operation, including the iterator variable
+   *     list and body expression
+   * @return a singleton {@code BOOLEAN} value — {@code true} if exactly one element satisfies the
+   *     body condition, {@code false} otherwise; or an error value if no iterator variable is
+   *     declared
+   */
+  @Override
+  public Value visitOneOp(VitruvOCLParser.OneOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    List<String> iterVars = new ArrayList<>();
+    for (TerminalNode id : ctx.iteratorVarList().ID()) {
+      iterVars.add(id.getText());
+    }
+    if (iterVars.isEmpty()) return error("one requires iterator variable", ctx);
+
+    Type elemType = receiver.getRuntimeType().getElementType();
+    Type iterVarType = Type.singleton(elemType);
+    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    symbolTable.enterScope(iterScope);
+    try {
+      int count = 0;
+      for (OCLElement elem : receiver.getElements()) {
+        VariableSymbol iterSymbol =
+            new VariableSymbol(iterVars.get(0), iterVarType, iterScope, true);
+        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
+        symbolTable.defineVariable(iterSymbol);
+        Value bodyResult = visit(ctx.body);
+        Boolean condition = bodyResult.getElements().get(0).tryGetBool();
+        if (condition != null && condition) count++;
+      }
+      return Value.boolValue(count == 1);
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
+  /**
+   * Evaluates the {@code any()} iterator operation on a collection receiver.
+   *
+   * <p>Iterates over the elements of the receiver collection, binding each element to the iterator
+   * variable in a fresh local scope, and evaluates the body expression. Returns the first element
+   * that satisfies the condition as an {@code Optional} singleton, or an empty value if no element
+   * matches.
+   *
+   * <p>Example: {@code employees->any(e | e.age > 60)}
+   *
+   * @param ctx the parse tree node for the {@code any()} operation, including the iterator variable
+   *     list and body expression
+   * @return an {@code Optional} singleton containing the first matching element, or an empty {@code
+   *     Optional} if no element satisfies the body condition; or an error value if no iterator
+   *     variable is declared
+   */
+  @Override
+  public Value visitAnyOp(VitruvOCLParser.AnyOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    List<String> iterVars = new ArrayList<>();
+    for (TerminalNode id : ctx.iteratorVarList().ID()) {
+      iterVars.add(id.getText());
+    }
+    if (iterVars.isEmpty()) return error("any requires iterator variable", ctx);
+
+    Type elemType = receiver.getRuntimeType().getElementType();
+    Type iterVarType = Type.singleton(elemType);
+    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    symbolTable.enterScope(iterScope);
+    try {
+      for (OCLElement elem : receiver.getElements()) {
+        VariableSymbol iterSymbol =
+            new VariableSymbol(iterVars.get(0), iterVarType, iterScope, true);
+        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
+        symbolTable.defineVariable(iterSymbol);
+        Value bodyResult = visit(ctx.body);
+        Boolean condition = bodyResult.getElements().get(0).tryGetBool();
+        if (condition != null && condition) {
+          return new Value(List.of(elem), Type.optional(elemType));
+        }
+      }
+      return Value.empty(Type.singleton(elemType));
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
+  /**
+   * Evaluates the {@code isUnique()} iterator operation on a collection receiver.
+   *
+   * <p>Iterates over all elements of the receiver collection, binding each element to the iterator
+   * variable in a fresh local scope, and evaluates the body expression. Returns {@code true} if and
+   * only if all body results are mutually distinct, using {@link OCLElement#semanticEquals} for
+   * value equality.
+   *
+   * <p>Example: {@code employees->isUnique(e | e.employeeId)}
+   *
+   * @param ctx the parse tree node for the {@code isUnique()} operation, including the iterator
+   *     variable list and body expression
+   * @return a singleton {@code BOOLEAN} value — {@code true} if all projected values are distinct,
+   *     {@code false} as soon as a duplicate is detected; or an error value if no iterator variable
+   *     is declared
+   */
+  @Override
+  public Value visitIsUniqueOp(VitruvOCLParser.IsUniqueOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    List<String> iterVars = new ArrayList<>();
+    for (TerminalNode id : ctx.iteratorVarList().ID()) {
+      iterVars.add(id.getText());
+    }
+    if (iterVars.isEmpty()) return error("isUnique requires iterator variable", ctx);
+
+    Type elemType = receiver.getRuntimeType().getElementType();
+    Type iterVarType = Type.singleton(elemType);
+    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    symbolTable.enterScope(iterScope);
+    try {
+      List<Value> seen = new ArrayList<>();
+      for (OCLElement elem : receiver.getElements()) {
+        VariableSymbol iterSymbol =
+            new VariableSymbol(iterVars.get(0), iterVarType, iterScope, true);
+        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
+        symbolTable.defineVariable(iterSymbol);
+        Value bodyResult = visit(ctx.body);
+        for (Value s : seen) {
+          if (s.getElements().size() == bodyResult.getElements().size()) {
+            boolean allEqual = true;
+            for (int i = 0; i < s.getElements().size(); i++) {
+              if (!OCLElement.semanticEquals(
+                  s.getElements().get(i), bodyResult.getElements().get(i))) {
+                allEqual = false;
+                break;
+              }
+            }
+            if (allEqual) return Value.boolValue(false);
+          }
+        }
+        seen.add(bodyResult);
+      }
+      return Value.boolValue(true);
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
+  /**
+   * Evaluates the {@code sortedBy()} iterator operation on a collection receiver.
+   *
+   * <p>Projects each element of the receiver collection through the body expression to obtain a
+   * sort key, then returns the elements in ascending key order. Key comparison uses {@link
+   * OCLElement#compare}. The result is always an {@code OrderedSet} regardless of the receiver's
+   * collection kind.
+   *
+   * <p>Example: {@code employees->sortedBy(e | e.lastName)}
+   *
+   * @param ctx the parse tree node for the {@code sortedBy()} operation, including the iterator
+   *     variable list and body expression
+   * @return an {@code OrderedSet} containing all receiver elements sorted in ascending order of
+   *     their projected key values; or an error value if no iterator variable is declared
+   */
+  @Override
+  public Value visitSortedByOp(VitruvOCLParser.SortedByOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    List<String> iterVars = new ArrayList<>();
+    for (TerminalNode id : ctx.iteratorVarList().ID()) {
+      iterVars.add(id.getText());
+    }
+    if (iterVars.isEmpty()) return error("sortedBy requires iterator variable", ctx);
+
+    Type elemType = receiver.getRuntimeType().getElementType();
+    Type iterVarType = Type.singleton(elemType);
+
+    List<OCLElement> elements = new ArrayList<>(receiver.getElements());
+    List<Value> keys = new ArrayList<>();
+
+    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    symbolTable.enterScope(iterScope);
+    try {
+      for (OCLElement elem : elements) {
+        VariableSymbol iterSymbol =
+            new VariableSymbol(iterVars.get(0), iterVarType, iterScope, true);
+        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
+        symbolTable.defineVariable(iterSymbol);
+        keys.add(visit(ctx.body));
+      }
+    } finally {
+      symbolTable.exitScope();
+    }
+
+    List<Integer> indices = new ArrayList<>();
+    for (int i = 0; i < elements.size(); i++) indices.add(i);
+    indices.sort(
+        (a, b) -> {
+          OCLElement ka = keys.get(a).getElements().get(0);
+          OCLElement kb = keys.get(b).getElements().get(0);
+          return OCLElement.compare(ka, kb);
+        });
+
+    List<OCLElement> sorted = new ArrayList<>();
+    for (int i : indices) sorted.add(elements.get(i));
+    return Value.of(sorted, Type.orderedSet(elemType));
+  }
+
+  /**
+   * Evaluates the {@code collectNested()} iterator operation on a collection receiver.
+   *
+   * <p>Projects each element of the receiver collection through the body expression and wraps each
+   * result as a {@link OCLElement.NestedCollection}, preserving the collection structure of each
+   * projected value rather than flattening it. This distinguishes {@code collectNested()} from
+   * {@code collect()}, which flattens one level. The result is always a {@code Bag}.
+   *
+   * <p>Example: {@code teams->collectNested(t | t.members)}
+   *
+   * @param ctx the parse tree node for the {@code collectNested()} operation, including the
+   *     iterator variable list and body expression
+   * @return a {@code Bag} of {@link OCLElement.NestedCollection} wrappers, one per receiver
+   *     element, each holding the unevaluated collection produced by the body expression; or an
+   *     error value if no iterator variable is declared
+   */
+  @Override
+  public Value visitCollectNestedOp(VitruvOCLParser.CollectNestedOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    List<String> iterVars = new ArrayList<>();
+    for (TerminalNode id : ctx.iteratorVarList().ID()) {
+      iterVars.add(id.getText());
+    }
+    if (iterVars.isEmpty()) return error("collectNested requires iterator variable", ctx);
+
+    Type elemType = receiver.getRuntimeType().getElementType();
+    Type iterVarType = Type.singleton(elemType);
+    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    symbolTable.enterScope(iterScope);
+    try {
+      List<OCLElement> results = new ArrayList<>();
+      for (OCLElement elem : receiver.getElements()) {
+        VariableSymbol iterSymbol =
+            new VariableSymbol(iterVars.get(0), iterVarType, iterScope, true);
+        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
+        symbolTable.defineVariable(iterSymbol);
+        Value bodyResult = visit(ctx.body);
+        results.add(new OCLElement.NestedCollection(bodyResult));
+      }
+      return Value.of(results, Type.bag(elemType));
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
+  /**
+   * Evaluates the {@code iterate()} operation on a collection receiver.
+   *
+   * <p>The most general collection iterator, from which all other iterator operations can be
+   * derived. Initializes an accumulator variable to a given seed value, then iterates over each
+   * element of the receiver collection, binding it to the iterator variable and evaluating the body
+   * expression. The body result becomes the new accumulator value after each step. Returns the
+   * final accumulator value.
+   *
+   * <p>Example: {@code numbers->iterate(n; acc : Integer = 0 | acc + n)}
+   *
+   * @param ctx the parse tree node for the {@code iterate()} operation, including the {@link
+   *     VitruvOCLParser.IterateVarSpecContext} with iterator variable, accumulator variable,
+   *     initializer expression, and body
+   * @return the final value of the accumulator after all elements have been processed
+   */
+  @Override
+  public Value visitIterateOp(VitruvOCLParser.IterateOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    VitruvOCLParser.IterateVarSpecContext varSpec = ctx.iterateVarSpec();
+
+    Type elemType = receiver.getRuntimeType().getElementType();
+    Type iterVarType = Type.singleton(elemType);
+
+    Value accValue = visit(varSpec.accInit);
+
+    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    symbolTable.enterScope(iterScope);
+    try {
+      VariableSymbol accSymbol =
+          new VariableSymbol(varSpec.accVar.getText(), accValue.getRuntimeType(), iterScope, false);
+      accSymbol.setValue(accValue);
+      symbolTable.defineVariable(accSymbol);
+
+      for (OCLElement elem : receiver.getElements()) {
+        VariableSymbol iterSymbol =
+            new VariableSymbol(varSpec.iterVar.getText(), iterVarType, iterScope, true);
+        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
+        symbolTable.defineVariable(iterSymbol);
+
+        Value bodyResult = visit(ctx.body);
+        accSymbol.setValue(bodyResult);
+      }
+      return accSymbol.getValue();
+    } finally {
+      symbolTable.exitScope();
+    }
   }
 
   /**
@@ -1468,6 +1810,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
     try {
       List<OCLElement> results = new ArrayList<>();
+      for (OCLElement elem : receiver.getElements()) {}
       for (OCLElement elem : receiver.getElements()) {
         // Bind current element as singleton ¡T!
         VariableSymbol iterSymbol = new VariableSymbol(iterVar, iterVarType, iterScope, true);
@@ -1480,6 +1823,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         }
 
         Boolean condition = bodyResult.getElements().get(0).tryGetBool();
+
         if (condition == null) {
           return error("select predicate must return Boolean", ctx);
         }
@@ -1544,6 +1888,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         }
       }
       return Value.of(results, receiver.getRuntimeType());
+
     } finally {
       symbolTable.exitScope();
     }
@@ -1834,6 +2179,269 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   // ==================== Arithmetic Operations ====================
 
   /**
+   * Evaluates the {@code includesAll()} operation on a collection receiver.
+   *
+   * <p>Checks whether the receiver collection contains every element of the argument collection,
+   * using {@link Value#includes} for element membership tests.
+   *
+   * <p>Example: {@code bag->includesAll(Set{1, 2, 3})}
+   *
+   * @param ctx the parse tree node for the {@code includesAll()} operation, including the argument
+   *     expression
+   * @return a singleton {@code BOOLEAN} value — {@code true} if every element of the argument
+   *     collection is contained in the receiver, {@code false} as soon as any element is missing
+   */
+  @Override
+  public Value visitIncludesAllOp(VitruvOCLParser.IncludesAllOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    Value arg = visit(ctx.arg);
+    for (OCLElement elem : arg.getElements()) {
+      if (!receiver.includes(elem)) {
+        return Value.boolValue(false);
+      }
+    }
+    return Value.boolValue(true);
+  }
+
+  /**
+   * Evaluates the {@code excludesAll()} operation on a collection receiver.
+   *
+   * <p>Checks whether the receiver collection contains none of the elements of the argument
+   * collection, using {@link Value#includes} for membership tests.
+   *
+   * <p>Example: {@code bag->excludesAll(Set{1, 2, 3})}
+   *
+   * @param ctx the parse tree node for the {@code excludesAll()} operation, including the argument
+   *     expression
+   * @return a singleton {@code BOOLEAN} value — {@code true} if none of the argument's elements are
+   *     contained in the receiver, {@code false} as soon as any argument element is found in the
+   *     receiver
+   */
+  @Override
+  public Value visitExcludesAllOp(VitruvOCLParser.ExcludesAllOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    Value arg = visit(ctx.arg);
+    for (OCLElement elem : arg.getElements()) {
+      if (receiver.includes(elem)) {
+        return Value.boolValue(false);
+      }
+    }
+    return Value.boolValue(true);
+  }
+
+  /**
+   * Evaluates the {@code count()} operation on a collection receiver.
+   *
+   * <p>Counts how many times the given singleton argument occurs in the receiver collection, using
+   * {@link OCLElement#semanticEquals} for element equality.
+   *
+   * <p>Example: {@code Bag{1, 2, 2, 3}->count(2)}
+   *
+   * @param ctx the parse tree node for the {@code count()} operation, including the argument
+   *     expression
+   * @return a singleton {@code INTEGER} value representing the number of occurrences of the
+   *     argument in the receiver collection; or an error value if the argument is not a singleton
+   */
+  @Override
+  public Value visitCountOp(VitruvOCLParser.CountOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    Value arg = visit(ctx.arg);
+    if (arg.size() != 1) {
+      return error("count() requires singleton argument", ctx);
+    }
+    OCLElement searchElem = arg.getElements().get(0);
+    int count = 0;
+    for (OCLElement elem : receiver.getElements()) {
+      if (OCLElement.semanticEquals(elem, searchElem)) {
+        count++;
+      }
+    }
+    return Value.intValue(count);
+  }
+
+  /**
+   * Evaluates the {@code prepend()} operation on a sequence receiver.
+   *
+   * <p>Inserts the given singleton argument at the front of the receiver collection. The result
+   * type is taken from the type-checker annotation on the node if available, falling back to the
+   * receiver's runtime type. If the result type enforces uniqueness (e.g. {@code OrderedSet}),
+   * duplicates are removed after insertion.
+   *
+   * <p>Example: {@code Sequence{2, 3}->prepend(1)} yields {@code Sequence{1, 2, 3}}
+   *
+   * @param ctx the parse tree node for the {@code prepend()} operation, including the argument
+   *     expression
+   * @return a collection of the same kind as the receiver with the argument prepended as the first
+   *     element, deduplicated if the type requires uniqueness; or an error value if the argument is
+   *     not a singleton
+   */
+  @Override
+  public Value visitPrependOp(VitruvOCLParser.PrependOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    Value arg = visit(ctx.arg);
+    if (arg.size() != 1) {
+      return error("prepend() requires singleton argument", ctx);
+    }
+    List<OCLElement> elements = new ArrayList<>();
+    elements.add(arg.getElements().get(0));
+    elements.addAll(receiver.getElements());
+    Type resultType = nodeTypes.get(ctx);
+    Value result = Value.of(elements, resultType != null ? resultType : receiver.getRuntimeType());
+    if (result.getRuntimeType().isUnique()) {
+      result = result.removeDuplicates();
+    }
+    return result;
+  }
+
+  /**
+   * Evaluates the {@code insertAt()} operation on a sequence receiver.
+   *
+   * <p>Inserts the given singleton element at the specified 1-based index position into the
+   * receiver collection. Valid index range is {@code [1, size+1]}. The result type is taken from
+   * the type-checker annotation on the node if available, falling back to the receiver's runtime
+   * type. If the result type enforces uniqueness (e.g. {@code OrderedSet}), duplicates are removed
+   * after insertion.
+   *
+   * <p>Example: {@code Sequence{1, 3}->insertAt(2, 2)} yields {@code Sequence{1, 2, 3}}
+   *
+   * @param ctx the parse tree node for the {@code insertAt()} operation, including the index
+   *     expression and the element argument expression
+   * @return a collection of the same kind as the receiver with the argument inserted at the given
+   *     position, deduplicated if the type requires uniqueness; or an error value if the index or
+   *     argument is not a singleton, the index is not an {@code Integer}, or the index is out of
+   *     bounds
+   */
+  @Override
+  public Value visitInsertAtOp(VitruvOCLParser.InsertAtOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    Value indexVal = visit(ctx.index);
+    Value arg = visit(ctx.arg);
+    if (indexVal.size() != 1) {
+      return error("insertAt() requires singleton index", ctx);
+    }
+    Integer index = indexVal.getElements().get(0).tryGetInt();
+    if (index == null) {
+      return error("insertAt() index must be Integer", ctx);
+    }
+    if (arg.size() != 1) {
+      return error("insertAt() requires singleton element", ctx);
+    }
+    if (index < 1 || index > receiver.size() + 1) {
+      return error("insertAt() index out of bounds", ctx);
+    }
+    List<OCLElement> elements = new ArrayList<>(receiver.getElements());
+    elements.add(index - 1, arg.getElements().get(0));
+    Type resultType = nodeTypes.get(ctx);
+    Value result = Value.of(elements, resultType != null ? resultType : receiver.getRuntimeType());
+    if (result.getRuntimeType().isUnique()) {
+      result = result.removeDuplicates();
+    }
+    return result;
+  }
+
+  /**
+   * Evaluates the {@code symmetricDifference()} operation on a collection receiver.
+   *
+   * <p>Returns a collection containing all elements that are in either the receiver or the argument
+   * collection, but not in both — i.e. the set-theoretic symmetric difference. Membership is tested
+   * via {@link Value#includes}. The result type is taken from the type-checker annotation on the
+   * node if available, falling back to the receiver's runtime type. If the result type enforces
+   * uniqueness (e.g. {@code Set}), duplicates are removed after construction.
+   *
+   * <p>Example: {@code Set{1, 2, 3}->symmetricDifference(Set{2, 3, 4})} yields {@code Set{1, 4}}
+   *
+   * @param ctx the parse tree node for the {@code symmetricDifference()} operation, including the
+   *     argument expression
+   * @return a collection containing all elements exclusive to either operand, deduplicated if the
+   *     result type requires uniqueness
+   */
+  @Override
+  public Value visitSymmetricDifferenceOp(VitruvOCLParser.SymmetricDifferenceOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    Value arg = visit(ctx.arg);
+    List<OCLElement> results = new ArrayList<>();
+    for (OCLElement elem : receiver.getElements()) {
+      if (!arg.includes(elem)) {
+        results.add(elem);
+      }
+    }
+    for (OCLElement elem : arg.getElements()) {
+      if (!receiver.includes(elem)) {
+        results.add(elem);
+      }
+    }
+    Type resultType = nodeTypes.get(ctx);
+    Value result = Value.of(results, resultType != null ? resultType : receiver.getRuntimeType());
+    if (result.getRuntimeType().isUnique()) {
+      result = result.removeDuplicates();
+    }
+    return result;
+  }
+
+  /**
+   * Evaluates the {@code div()} integer division operation.
+   *
+   * <p>Performs truncating integer division of the receiver by the argument. Both operands must be
+   * singleton {@code INTEGER} values and the divisor must be non-zero.
+   *
+   * <p>Example: {@code 7->div(2)} yields {@code 3}
+   *
+   * @param ctx the parse tree node for the {@code div()} operation, including the argument
+   *     expression
+   * @return a singleton {@code INTEGER} value representing the truncated quotient; or an error
+   *     value if either operand is not a singleton {@code Integer}, or the divisor is zero
+   */
+  @Override
+  public Value visitDivOp(VitruvOCLParser.DivOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    Value arg = visit(ctx.arg);
+    if (receiver.size() != 1 || arg.size() != 1) {
+      return error("div() requires singleton operands", ctx);
+    }
+    Integer left = receiver.getElements().get(0).tryGetInt();
+    Integer right = arg.getElements().get(0).tryGetInt();
+    if (left == null || right == null) {
+      return error("div() requires Integer operands", ctx);
+    }
+    if (right == 0) {
+      return error("div() by zero", ctx);
+    }
+    return Value.intValue(left / right);
+  }
+
+  /**
+   * Evaluates the {@code mod()} integer remainder operation.
+   *
+   * <p>Computes the remainder of dividing the receiver by the argument using Java's {@code %}
+   * operator. Both operands must be singleton {@code INTEGER} values. Division by zero yields
+   * {@code 0} rather than an error, consistent with a null-free evaluation strategy.
+   *
+   * <p>Example: {@code 7->mod(3)} yields {@code 1}
+   *
+   * @param ctx the parse tree node for the {@code mod()} operation, including the argument
+   *     expression
+   * @return a singleton {@code INTEGER} value representing the remainder; {@code 0} if the divisor
+   *     is zero; or an error value if either operand is not a singleton {@code Integer}
+   */
+  @Override
+  public Value visitModOp(VitruvOCLParser.ModOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    Value arg = visit(ctx.arg);
+    if (receiver.size() != 1 || arg.size() != 1) {
+      return error("mod() requires singleton operands", ctx);
+    }
+    Integer left = receiver.getElements().get(0).tryGetInt();
+    Integer right = arg.getElements().get(0).tryGetInt();
+    if (left == null || right == null) {
+      return error("mod() requires Integer operands", ctx);
+    }
+    if (right == 0) {
+      return Value.intValue(0);
+    }
+    return Value.intValue(left % right);
+  }
+
+  /**
    * Evaluates multiplicative operations ({@code *} and {@code /}).
    *
    * <p>Numeric promotion (INTEGER ⊂ FLOAT ⊂ DOUBLE):
@@ -2054,6 +2662,11 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
     Value leftValue = visit(leftCtx);
     Value rightValue = visit(rightCtx);
+
+    // Vacuously true if either operand is empty (no instances)
+    if (leftValue.isEmpty() || rightValue.isEmpty()) {
+      return Value.boolValue(true);
+    }
 
     if (leftValue.size() != 1 || rightValue.size() != 1) {
       return error("Comparison requires singleton operands", errorCtx);
@@ -2370,7 +2983,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitAllInstancesOp(VitruvOCLParser.AllInstancesOpContext ctx) {
     // Navigate up parse tree to find receiver type
-    ParseTree nav = ctx.getParent().getParent().getParent(); // NavigationChainCS
+    ParseTree nav = ctx.getParent().getParent().getParent();
     Type receiverType = nodeTypes.get(nav);
 
     if (receiverType == null) {
@@ -2387,14 +3000,23 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return error("allInstances() requires metaclass receiver", ctx);
     }
 
-    // Get all instances from metamodel
     EClass eClass = receiverType.getEClass();
+
+    // Cache lookup
+    if (allInstancesCache.containsKey(eClass)) {
+      return allInstancesCache.get(eClass);
+    }
+
     List<EObject> instances = specification.getAllInstances(eClass);
     List<OCLElement> elements =
         instances.stream().map(obj -> (OCLElement) new OCLElement.MetaclassValue(obj)).toList();
 
     Type resultType = nodeTypes.get(ctx);
-    return Value.of(elements, resultType != null ? resultType : Type.set(receiverType));
+    Value result = Value.of(elements, resultType != null ? resultType : Type.set(receiverType));
+
+    // Cache result
+    allInstancesCache.put(eClass, result);
+    return result;
   }
 
   /**
@@ -2419,13 +3041,15 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     String propertyName = ctx.propertyName.getText();
 
     if (receiver.isEmpty()) {
-      return error("Property access requires metaclass receiver", ctx);
+      Type resultType = nodeTypes.get(ctx);
+      return Value.empty(resultType != null ? resultType : Type.optional(Type.ANY));
     }
 
     // Validate that receiver contains metaclass instances
     EObject firstInstance = receiver.getElements().get(0).tryGetInstance();
     if (firstInstance == null) {
-      return error("Property access requires metaclass receiver", ctx);
+      Type resultType = nodeTypes.get(ctx);
+      return Value.empty(resultType != null ? resultType : Type.optional(Type.ANY));
     }
 
     // Collect property values from all instances in receiver
@@ -2679,21 +3303,29 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   @Override
   public Value visitPrefixedQualified(VitruvOCLParser.PrefixedQualifiedContext ctx) {
-    String qualifiedName = ctx.metamodel.getText() + "::" + ctx.className.getText();
-    Type metaclassType = symbolTable.lookupType(qualifiedName);
+    String metamodel = ctx.metamodel.getText();
+    String className = ctx.className.getText();
+    String qualifiedName = metamodel + "::" + className;
 
+    // First try: enum literal (EnumName::LiteralName)
+    org.eclipse.emf.ecore.EEnum eEnum = specification.resolveEEnum(metamodel);
+    if (eEnum != null) {
+      org.eclipse.emf.ecore.EEnumLiteral literal = eEnum.getEEnumLiteral(className);
+      if (literal != null) {
+        return new Value(List.of(new OCLElement.EnumValue(literal)), Type.enumType(eEnum));
+      }
+    }
+
+    // Second try: metaclass type (metamodel::ClassName)
+    Type metaclassType = symbolTable.lookupType(qualifiedName);
     if (metaclassType == null || metaclassType == Type.ERROR) {
       return error("Invalid metamodel type: " + qualifiedName, ctx);
     }
 
-    // Start with empty collection of the metaclass type
     Value currentValue = Value.of(List.of(), metaclassType);
-
-    // Process navigation chain (typically .allInstances())
     for (VitruvOCLParser.NavigationChainCSContext nav : ctx.navigationChainCS()) {
       currentValue = visitNavigationWithReceiver(nav, currentValue);
     }
-
     return currentValue;
   }
 
@@ -2751,10 +3383,50 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
     for (VitruvOCLParser.CollectionLiteralPartCSContext partCtx : ctx.collectionLiteralPartCS()) {
       Value partValue = visit(partCtx);
-      elements.addAll(partValue.getElements());
+      // Range syntax (1..5) always flattens
+      if (partCtx.expCS().size() == 2) {
+        elements.addAll(partValue.getElements());
+      } else if (partValue.getRuntimeType().isCollection()) {
+        // Nested collection literal — keep as single element
+        elements.add(new OCLElement.NestedCollection(partValue));
+      } else {
+        elements.addAll(partValue.getElements());
+      }
     }
 
     return new Value(elements, Type.ANY);
+  }
+
+  /**
+   * Evaluates the {@code ceiling()} operation on a numeric receiver.
+   *
+   * <p>Applies {@link Math#ceil} element-wise to the receiver collection. {@code INTEGER} elements
+   * are returned unchanged; {@code FLOAT} and {@code DOUBLE} elements are rounded up to the nearest
+   * integer value and returned as {@code DOUBLE}. The result preserves the receiver's collection
+   * kind and multiplicity.
+   *
+   * <p>Example: {@code 2.3->ceiling()} yields {@code 3.0}
+   *
+   * @param ctx the parse tree node for the {@code ceiling()} operation
+   * @return a collection of the same kind as the receiver with each element rounded up to the
+   *     nearest integer value; or an error value if any element is not numeric
+   */
+  @Override
+  public Value visitCeilingOp(VitruvOCLParser.CeilingOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    List<OCLElement> results = new ArrayList<>();
+    for (OCLElement elem : receiver.getElements()) {
+      if (elem.tryGetInt() != null) {
+        results.add(elem);
+      } else if (elem.tryGetFloat() != null) {
+        results.add(new OCLElement.DoubleValue(Math.ceil(elem.tryGetFloat())));
+      } else if (elem.tryGetDouble() != null) {
+        results.add(new OCLElement.DoubleValue(Math.ceil(elem.tryGetDouble())));
+      } else {
+        return error("ceiling() requires a numeric value", ctx);
+      }
+    }
+    return Value.of(results, receiver.getRuntimeType());
   }
 
   /**
@@ -3010,6 +3682,44 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return visit(ctx.ifExpCS());
   }
 
+  /**
+   * Evaluates a {@code let} expression, binding local variables before evaluating the body.
+   *
+   * <p>Opens a fresh {@link LocalScope}, evaluates all variable declarations in order (each binding
+   * is immediately visible to subsequent declarations and the body), then evaluates each body
+   * expression in sequence. The value of the last body expression is returned as the result of the
+   * {@code let} expression.
+   *
+   * <p>Example: {@code let x : Integer = 5, y : Integer = x * 2 in x + y}
+   *
+   * @param ctx the parse tree node for the {@code let} expression, containing the variable
+   *     declaration list and one or more body expressions
+   * @return the value of the last body expression evaluated within the let scope; or an error value
+   *     if the body contains no expressions
+   */
+  @Override
+  public Value visitLetExpCS(VitruvOCLParser.LetExpCSContext ctx) {
+    LocalScope letScope = new LocalScope(symbolTable.getCurrentScope());
+    symbolTable.enterScope(letScope);
+    try {
+      // Evaluate and bind each variable declaration
+      visit(ctx.variableDeclarations());
+
+      // Evaluate body, return last expression
+      Value result = null;
+      for (VitruvOCLParser.ExpCSContext exp : ctx.expCS()) {
+        result = visit(exp);
+      }
+
+      if (result == null) {
+        return error("Let body is empty", ctx);
+      }
+      return result;
+    } finally {
+      symbolTable.exitScope();
+    }
+  }
+
   /** Delegates to letExpCS. */
   @Override
   public Value visitLetBinding(VitruvOCLParser.LetBindingContext ctx) {
@@ -3101,31 +3811,15 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    * @return true if a Correspondence relates obj1 and obj2, false otherwise
    */
   private boolean checkCorrespondence(EObject obj1, EObject obj2) {
-    List<EObject> allRoots = specification.getAllRootObjects();
-
-    for (EObject root : allRoots) {
-      if (root.eClass().getName().equals("Correspondences")) {
-
-        EStructuralFeature correspondencesFeature =
-            root.eClass().getEStructuralFeature("correspondences");
-
-        if (correspondencesFeature != null) {
-          Object value = root.eGet(correspondencesFeature);
-          if (value instanceof List) {
-            @SuppressWarnings("unchecked")
-            List<EObject> correspondences = (List<EObject>) value;
-
-            for (EObject correspondence : correspondences) {
-              if (correspondenceContainsBoth(correspondence, obj1, obj2)) {
-                return true;
-              }
-            }
-          }
-        }
-      }
+    // VSUM-Pfad: über MetamodelWrapperInterface (funktioniert sowohl mit
+    // VSUMWrapper als auch mit MetamodelWrapper falls getCorrespondingObjects
+    // dort implementiert ist)
+    Set<EObject> correspondents = specification.getCorrespondingObjects(obj1);
+    if (correspondents.contains(obj2)) {
+      return true;
     }
-
-    return false;
+    // bidirektional
+    return specification.getCorrespondingObjects(obj2).contains(obj1);
   }
 
   /**
@@ -3178,296 +3872,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     boolean reverseMatch = resolvedLeft.contains(obj2) && resolvedRight.contains(obj1);
 
     return forwardMatch || reverseMatch;
-  }
-
-  /**
-   * Evaluates select(~) / select(~, Type=T, Tag='x') shorthand.
-   *
-   * <p>Desugars to: {@code select(x | self ~ x)} with optional Tag/Type filters. Elements are kept
-   * only if:
-   *
-   * <ol>
-   *   <li>A correspondence exists between 'self' and the element
-   *   <li>The correspondence's tag matches the Tag filter (if present)
-   *   <li>The element is an instance of the Type filter class (if present)
-   * </ol>
-   *
-   * <p><b>Examples:</b>
-   *
-   * <pre>{@code
-   * Satellite.allInstances().select(~)
-   * Satellite.allInstances().select(~, Tag = 'Brother')
-   * Satellite.allInstances().select(~, Type = MM::Person, Tag = 'Sibling')
-   * }</pre>
-   *
-   * @param ctx The selectCorrespondence node
-   * @return Filtered collection, or Type.ERROR on failure
-   */
-  @Override
-  public Value visitSelectCorrespondence(VitruvOCLParser.SelectCorrespondenceContext ctx) {
-    Value receiver = receiverStack.peek();
-
-    VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
-    if (selfSymbol == null) {
-      return error("'self' not defined in current context", ctx);
-    }
-
-    Value selfValue = selfSymbol.getValue();
-    if (selfValue.size() != 1) {
-      return error("select(~) requires singleton 'self'", ctx);
-    }
-
-    EObject selfObject = selfValue.getElements().get(0).tryGetInstance();
-    if (selfObject == null) {
-      return error("select(~) requires 'self' to be an object instance", ctx);
-    }
-
-    // Extract optional filters from the correspondence filter node
-    String requiredTag = extractCorrespondenceTag(ctx.corrFilter);
-    EClass requiredClass = extractCorrespondenceTargetClass(ctx.corrFilter);
-
-    List<OCLElement> results = new ArrayList<>();
-    for (OCLElement elem : receiver.getElements()) {
-      EObject elemObject = elem.tryGetInstance();
-      if (elemObject != null
-          && checkCorrespondenceFiltered(selfObject, elemObject, requiredTag, requiredClass)) {
-        results.add(elem);
-      }
-    }
-
-    return Value.of(results, receiver.getRuntimeType());
-  }
-
-  // ==================== Correspondence Filter Helpers ====================
-
-  /**
-   * Extracts the optional tag string from a correspondence filter.
-   *
-   * <p>Returns null if no Tag filter is present.
-   *
-   * @param filterCtx The correspondence filter node
-   * @return The tag string (without quotes), or null if absent
-   */
-  private String extractCorrespondenceTag(VitruvOCLParser.CorrespondenceFilterCSContext filterCtx) {
-    if (filterCtx == null || filterCtx.correspondenceOptions() == null) {
-      return null;
-    }
-    for (VitruvOCLParser.CorrespondenceOptionContext option :
-        filterCtx.correspondenceOptions().correspondenceOption()) {
-      if (option instanceof VitruvOCLParser.CorrTagFilterContext tagCtx) {
-        String raw = tagCtx.tag.getText();
-        // Strip surrounding quotes from the STRING token
-        return raw.substring(1, raw.length() - 1);
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Extracts the optional target EClass from a correspondence filter.
-   *
-   * <p>Uses the pre-computed nodeTypes entry written by TypeCheckVisitor for the corrTypeFilter
-   * node. Returns null if no Type filter is present.
-   *
-   * @param filterCtx The correspondence filter node
-   * @return The target EClass, or null if absent
-   */
-  private EClass extractCorrespondenceTargetClass(
-      VitruvOCLParser.CorrespondenceFilterCSContext filterCtx) {
-    if (filterCtx == null || filterCtx.correspondenceOptions() == null) {
-      return null;
-    }
-    for (VitruvOCLParser.CorrespondenceOptionContext option :
-        filterCtx.correspondenceOptions().correspondenceOption()) {
-      if (option instanceof VitruvOCLParser.CorrTypeFilterContext typeCtx) {
-        Type targetType = nodeTypes.get(typeCtx);
-        if (targetType != null && targetType.isMetaclassType()) {
-          return targetType.getEClass();
-        }
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Checks if a Correspondence object matches an optional tag filter.
-   *
-   * <p>If tag is null, every correspondence passes the filter (no restriction).
-   *
-   * @param correspondence The Correspondence EObject
-   * @param tag Required tag value, or null to accept any
-   * @return true if the correspondence's tag attribute equals the required tag (or no tag required)
-   */
-  private boolean correspondenceMatchesTag(EObject correspondence, String tag) {
-    if (tag == null) {
-      return true; // no tag filter — accept all
-    }
-    EStructuralFeature tagFeature = correspondence.eClass().getEStructuralFeature("tag");
-    if (tagFeature == null) {
-      return false;
-    }
-    Object tagValue = correspondence.eGet(tagFeature);
-    return tag.equals(tagValue);
-  }
-
-  /**
-   * Checks if a Correspondence relates obj1 and obj2, subject to optional tag and type filters.
-   *
-   * <p>Extends {@link #checkCorrespondence} with:
-   *
-   * <ul>
-   *   <li>Tag filter — only correspondences whose {@code tag} attribute matches
-   *   <li>Type filter — the candidate element (on the other side from self) must be an instance of
-   *       the specified EClass
-   * </ul>
-   *
-   * @param obj1 First object (typically 'self')
-   * @param obj2 Second object (the candidate from the receiver collection)
-   * @param requiredTag Required tag value, or null to accept any tag
-   * @param requiredClass Required EClass for obj2, or null to accept any type
-   * @return true if a qualifying correspondence exists between obj1 and obj2
-   */
-  private boolean checkCorrespondenceFiltered(
-      EObject obj1, EObject obj2, String requiredTag, EClass requiredClass) {
-
-    // If a type filter is present, obj2 must be an instance of requiredClass
-    if (requiredClass != null) {
-      EClass obj2Class = obj2.eClass();
-      if (!requiredClass.isSuperTypeOf(obj2Class) && !obj2Class.equals(requiredClass)) {
-        return false;
-      }
-    }
-
-    List<EObject> allRoots = specification.getAllRootObjects();
-
-    for (EObject root : allRoots) {
-      if (!root.eClass().getName().equals("Correspondences")) {
-        continue;
-      }
-
-      EStructuralFeature correspondencesFeature =
-          root.eClass().getEStructuralFeature("correspondences");
-      if (correspondencesFeature == null) {
-        continue;
-      }
-
-      Object value = root.eGet(correspondencesFeature);
-      if (!(value instanceof List)) {
-        continue;
-      }
-
-      @SuppressWarnings("unchecked")
-      List<EObject> correspondences = (List<EObject>) value;
-
-      for (EObject correspondence : correspondences) {
-        // Tag filter
-        if (!correspondenceMatchesTag(correspondence, requiredTag)) {
-          continue;
-        }
-        if (correspondenceContainsBoth(correspondence, obj1, obj2)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  /**
-   * Evaluates reject(~) / reject(~, Type=T, Tag='x') shorthand.
-   *
-   * <p>Desugars to: {@code reject(x | self ~ x)} with optional Tag/Type filters. Elements are kept
-   * only if NO qualifying correspondence exists.
-   *
-   * <p><b>Example:</b>
-   *
-   * <pre>{@code
-   * Spacecraft.allInstances().reject(~, Tag = 'Enemy')
-   * }</pre>
-   *
-   * @param ctx The rejectCorrespondence node
-   * @return Filtered collection containing elements WITHOUT a matching correspondence
-   */
-  @Override
-  public Value visitRejectCorrespondence(VitruvOCLParser.RejectCorrespondenceContext ctx) {
-    Value receiver = receiverStack.peek();
-
-    VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
-    if (selfSymbol == null) {
-      return error("'self' not defined in current context", ctx);
-    }
-
-    Value selfValue = selfSymbol.getValue();
-    if (selfValue.size() != 1) {
-      return error("reject(~) requires singleton 'self'", ctx);
-    }
-
-    EObject selfObject = selfValue.getElements().get(0).tryGetInstance();
-    if (selfObject == null) {
-      return error("reject(~) requires 'self' to be an object instance", ctx);
-    }
-
-    String requiredTag = extractCorrespondenceTag(ctx.corrFilter);
-    EClass requiredClass = extractCorrespondenceTargetClass(ctx.corrFilter);
-
-    List<OCLElement> results = new ArrayList<>();
-    for (OCLElement elem : receiver.getElements()) {
-      EObject elemObject = elem.tryGetInstance();
-      if (elemObject != null
-          && !checkCorrespondenceFiltered(selfObject, elemObject, requiredTag, requiredClass)) {
-        results.add(elem);
-      }
-    }
-
-    return Value.of(results, receiver.getRuntimeType());
-  }
-
-  /**
-   * Evaluates exists(~) / exists(~, Type=T, Tag='x') shorthand.
-   *
-   * <p>Returns true if at least one element in the receiver has a qualifying correspondence with
-   * 'self'. Short-circuits on first match.
-   *
-   * <p><b>Example:</b>
-   *
-   * <pre>{@code
-   * Satellite.allInstances().exists(~, Type = MM::Person)
-   * }</pre>
-   *
-   * @param ctx The existsCorrespondence node
-   * @return Singleton Boolean
-   */
-  @Override
-  public Value visitExistsCorrespondence(VitruvOCLParser.ExistsCorrespondenceContext ctx) {
-    Value receiver = receiverStack.peek();
-
-    VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
-    if (selfSymbol == null) {
-      return error("'self' not defined in current context", ctx);
-    }
-
-    Value selfValue = selfSymbol.getValue();
-    if (selfValue.size() != 1) {
-      return error("exists(~) requires singleton 'self'", ctx);
-    }
-
-    EObject selfObject = selfValue.getElements().get(0).tryGetInstance();
-    if (selfObject == null) {
-      return error("exists(~) requires 'self' to be an object instance", ctx);
-    }
-
-    String requiredTag = extractCorrespondenceTag(ctx.corrFilter);
-    EClass requiredClass = extractCorrespondenceTargetClass(ctx.corrFilter);
-
-    for (OCLElement elem : receiver.getElements()) {
-      EObject elemObject = elem.tryGetInstance();
-      if (elemObject != null
-          && checkCorrespondenceFiltered(selfObject, elemObject, requiredTag, requiredClass)) {
-        return Value.boolValue(true); // short-circuit
-      }
-    }
-
-    return Value.boolValue(false);
   }
 
   // ==================== Not Yet Implemented Features ====================
@@ -3655,4 +4059,606 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
     return t; // bare type — already scalar
   }
+
+  /**
+   * Evaluates the {@code asSet()} conversion operation on a collection receiver.
+   *
+   * <p>Converts the receiver collection to a {@code Set} by wrapping its elements in a new {@code
+   * Set}-typed value and removing duplicates via {@link Value#removeDuplicates()}. The element type
+   * is preserved.
+   *
+   * <p>Example: {@code Sequence{1, 2, 2, 3}->asSet()} yields {@code Set{1, 2, 3}}
+   *
+   * @param ctx the parse tree node for the {@code asSet()} operation
+   * @return a {@code Set} containing the receiver's elements with duplicates removed
+   */
+  @Override
+  public Value visitAsSetOp(VitruvOCLParser.AsSetOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    List<OCLElement> elements = new ArrayList<>(receiver.getElements());
+    Type elemType = receiver.getRuntimeType().getElementType();
+    Value result = Value.of(elements, Type.set(elemType));
+    return result.removeDuplicates();
+  }
+
+  /**
+   * Evaluates the {@code asBag()} conversion operation on a collection receiver.
+   *
+   * <p>Converts the receiver collection to a {@code Bag} by wrapping its elements in a new {@code
+   * Bag}-typed value. All elements including duplicates are preserved; no deduplication is
+   * performed. The element type is preserved.
+   *
+   * <p>Example: {@code Set{1, 2, 3}->asBag()} yields {@code Bag{1, 2, 3}}
+   *
+   * @param ctx the parse tree node for the {@code asBag()} operation
+   * @return a {@code Bag} containing all elements of the receiver, including duplicates
+   */
+  @Override
+  public Value visitAsBagOp(VitruvOCLParser.AsBagOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    List<OCLElement> elements = new ArrayList<>(receiver.getElements());
+    Type elemType = receiver.getRuntimeType().getElementType();
+    return Value.of(elements, Type.bag(elemType));
+  }
+
+  /**
+   * Evaluates the {@code asSequence()} conversion operation on a collection receiver.
+   *
+   * <p>Converts the receiver collection to a {@code Sequence} by wrapping its elements in a new
+   * {@code Sequence}-typed value. Element order and duplicates are preserved as-is from the
+   * receiver. The element type is preserved.
+   *
+   * <p>Example: {@code Set{3, 1, 2}->asSequence()} yields {@code Sequence{3, 1, 2}}
+   *
+   * @param ctx the parse tree node for the {@code asSequence()} operation
+   * @return a {@code Sequence} containing all elements of the receiver in their current order,
+   *     including any duplicates
+   */
+  @Override
+  public Value visitAsSequenceOp(VitruvOCLParser.AsSequenceOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    List<OCLElement> elements = new ArrayList<>(receiver.getElements());
+    Type elemType = receiver.getRuntimeType().getElementType();
+    return Value.of(elements, Type.sequence(elemType));
+  }
+
+  /**
+   * Evaluates the {@code asOrderedSet()} conversion operation on a collection receiver.
+   *
+   * <p>Converts the receiver collection to an {@code OrderedSet} by wrapping its elements in a new
+   * {@code OrderedSet}-typed value and removing duplicates via {@link Value#removeDuplicates()},
+   * preserving the relative order of first occurrences. The element type is preserved.
+   *
+   * <p>Example: {@code Sequence{3, 1, 2, 1}->asOrderedSet()} yields {@code OrderedSet{3, 1, 2}}
+   *
+   * @param ctx the parse tree node for the {@code asOrderedSet()} operation
+   * @return an {@code OrderedSet} containing the receiver's elements in their original order with
+   *     duplicates removed
+   */
+  @Override
+  public Value visitAsOrderedSetOp(VitruvOCLParser.AsOrderedSetOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    List<OCLElement> elements = new ArrayList<>(receiver.getElements());
+    Type elemType = receiver.getRuntimeType().getElementType();
+    Value result = Value.of(elements, Type.orderedSet(elemType));
+    return result.removeDuplicates();
+  }
+
+  /**
+   * Evaluates the {@code at()} operation on a String or ordered collection receiver.
+   *
+   * <p>Retrieves the element at the given 1-based index. Two receiver kinds are supported:
+   *
+   * <ul>
+   *   <li><b>String</b> — returns the character at position {@code index} as a singleton {@code
+   *       STRING}. Valid range: {@code [1, length]}.
+   *   <li><b>Ordered collection</b> — returns the element at position {@code index} as a singleton
+   *       of the collection's element type. Valid range: {@code [1, size]}.
+   * </ul>
+   *
+   * <p>Example: {@code Sequence{10, 20, 30}->at(2)} yields {@code 20}<br>
+   * Example: {@code 'hello'->at(1)} yields {@code 'h'}
+   *
+   * @param ctx the parse tree node for the {@code at()} operation, including the index argument
+   *     expression
+   * @return a singleton value containing the element or character at the given position; or an
+   *     error value if the index is not a singleton {@code Integer}, or the index is out of bounds
+   *     for the receiver
+   */
+  @Override
+  public Value visitAtOp(VitruvOCLParser.AtOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    Value indexVal = visit(ctx.index);
+
+    if (indexVal.size() != 1) {
+      return error("at() requires singleton index", ctx);
+    }
+
+    Integer index = indexVal.getElements().get(0).tryGetInt();
+    if (index == null) {
+      return error("at() index must be Integer", ctx);
+    }
+
+    // String case
+    String str = receiver.isEmpty() ? null : receiver.getElements().get(0).tryGetString();
+    if (str != null) {
+      if (index < 1 || index > str.length()) {
+        return error("at() index out of bounds for String", ctx);
+      }
+      return Value.stringValue(String.valueOf(str.charAt(index - 1)));
+    }
+
+    // Collection case (1-based)
+    if (index < 1 || index > receiver.size()) {
+      return error("at() index out of bounds", ctx);
+    }
+    OCLElement elem = receiver.getElements().get(index - 1);
+    Type elemType = receiver.getRuntimeType().getElementType();
+    return new Value(List.of(elem), Type.singleton(elemType));
+  }
+
+  /**
+   * Evaluates the {@code subSequence()} operation on an ordered collection receiver.
+   *
+   * <p>Returns a contiguous sub-collection from the receiver using 1-based, inclusive bounds {@code
+   * [start, end]}. The result preserves the receiver's collection kind and element type.
+   *
+   * <p>Example: {@code Sequence{10, 20, 30, 40}->subSequence(2, 3)} yields {@code Sequence{20, 30}}
+   *
+   * @param ctx the parse tree node for the {@code subSequence()} operation, including the start and
+   *     end bound expressions
+   * @return a collection of the same kind as the receiver containing the elements at positions
+   *     {@code start} through {@code end} inclusive; or an error value if either bound is not a
+   *     singleton {@code Integer}, or the bounds are out of range ({@code start < 1}, {@code end >
+   *     size}, or {@code start > end})
+   */
+  @Override
+  public Value visitSubSequenceOp(VitruvOCLParser.SubSequenceOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    Value startVal = visit(ctx.start);
+    Value endVal = visit(ctx.end);
+
+    if (startVal.size() != 1 || endVal.size() != 1) {
+      return error("subSequence() requires singleton bounds", ctx);
+    }
+
+    Integer start = startVal.getElements().get(0).tryGetInt();
+    Integer end = endVal.getElements().get(0).tryGetInt();
+
+    if (start == null || end == null) {
+      return error("subSequence() bounds must be Integer", ctx);
+    }
+
+    if (start < 1 || end > receiver.size() || start > end) {
+      return error("subSequence() bounds out of range", ctx);
+    }
+
+    // 1-based, inclusive on both ends
+    List<OCLElement> sub = receiver.getElements().subList(start - 1, end);
+    return Value.of(new ArrayList<>(sub), receiver.getRuntimeType());
+  }
+
+  /**
+   * Evaluates the {@code characters()} operation on a String receiver.
+   *
+   * <p>Splits the receiver string into its individual characters and returns them as a {@code
+   * Sequence<String>}, preserving order and allowing duplicates.
+   *
+   * <p>Example: {@code 'hello'->characters()} yields {@code Sequence{'h','e','l','l','o'}}
+   *
+   * @param ctx the parse tree node for the {@code characters()} operation
+   * @return a {@code Sequence<String>} of single-character strings in source order; or an error
+   *     value if the receiver is not a singleton {@code String}
+   */
+  @Override
+  public Value visitCharactersOp(VitruvOCLParser.CharactersOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    if (receiver.size() != 1) {
+      return error("characters() requires singleton String receiver", ctx);
+    }
+    String str = receiver.getElements().get(0).tryGetString();
+    if (str == null) {
+      return error("characters() requires String receiver", ctx);
+    }
+    List<OCLElement> chars = new ArrayList<>();
+    for (char c : str.toCharArray()) {
+      chars.add(new OCLElement.StringValue(String.valueOf(c)));
+    }
+    return Value.of(chars, Type.sequence(Type.STRING));
+  }
+
+  /**
+   * Evaluates the {@code tokenize()} operation on a String receiver.
+   *
+   * <p>Splits the receiver string on each literal occurrence of the delimiter string, returning the
+   * resulting tokens as a {@code Sequence<String>}. The delimiter is treated as a plain substring
+   * (not a regex) via {@link java.util.regex.Pattern#quote}. Trailing empty tokens are preserved
+   * ({@code limit = -1}). If the delimiter is empty, the receiver string is returned as a
+   * single-element sequence.
+   *
+   * <p>Example: {@code 'a,b,,c'->tokenize(',')} yields {@code Sequence{'a','b','','c'}}
+   *
+   * @param ctx the parse tree node for the {@code tokenize()} operation, including the delimiter
+   *     argument expression
+   * @return a {@code Sequence<String>} of tokens produced by splitting on the delimiter; or an
+   *     error value if the receiver or delimiter is not a singleton {@code String}
+   */
+  @Override
+  public Value visitTokenizeOp(VitruvOCLParser.TokenizeOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    if (receiver.size() != 1) {
+      return error("tokenize() requires singleton String receiver", ctx);
+    }
+    String str = receiver.getElements().get(0).tryGetString();
+    if (str == null) {
+      return error("tokenize() requires String receiver", ctx);
+    }
+    Value argVal = visit(ctx.arg);
+    if (argVal.size() != 1) {
+      return error("tokenize() requires singleton String delimiter", ctx);
+    }
+    String delimiter = argVal.getElements().get(0).tryGetString();
+    if (delimiter == null) {
+      return error("tokenize() delimiter must be String", ctx);
+    }
+    List<OCLElement> tokens = new ArrayList<>();
+    if (delimiter.isEmpty()) {
+      tokens.add(new OCLElement.StringValue(str));
+    } else {
+      for (String token : str.split(java.util.regex.Pattern.quote(delimiter), -1)) {
+        tokens.add(new OCLElement.StringValue(token));
+      }
+    }
+    return Value.of(tokens, Type.sequence(Type.STRING));
+  }
+
+  /**
+   * Evaluates the {@code intersection()} operation on a collection receiver.
+   *
+   * <p>Returns a collection containing only those elements of the receiver that are also present in
+   * the argument collection, tested via {@link Value#includes}. The result type is taken from the
+   * type-checker annotation on the node if available, falling back to the receiver's runtime type.
+   * If the result type enforces uniqueness (e.g. {@code Set}), duplicates are removed after
+   * construction.
+   *
+   * <p>Example: {@code Set{1, 2, 3}->intersection(Set{2, 3, 4})} yields {@code Set{2, 3}}
+   *
+   * @param ctx the parse tree node for the {@code intersection()} operation, including the argument
+   *     expression
+   * @return a collection containing all elements present in both the receiver and the argument,
+   *     deduplicated if the result type requires uniqueness
+   */
+  @Override
+  public Value visitIntersectionOp(VitruvOCLParser.IntersectionOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    Value arg = visit(ctx.arg);
+
+    List<OCLElement> results = new ArrayList<>();
+    for (OCLElement elem : receiver.getElements()) {
+      if (arg.includes(elem)) {
+        results.add(elem);
+      }
+    }
+
+    Type resultType = nodeTypes.get(ctx);
+    Value result = Value.of(results, resultType != null ? resultType : receiver.getRuntimeType());
+
+    // Remove duplicates if result is unique
+    if (result.getRuntimeType().isUnique()) {
+      result = result.removeDuplicates();
+    }
+    return result;
+  }
+
+  /**
+   * Evaluates the {@code toInteger()} conversion operation on a String receiver.
+   *
+   * <p>Parses the receiver string as a decimal integer using {@link Integer#parseInt}, trimming
+   * leading and trailing whitespace before parsing. The result is returned as an {@code INTEGER}
+   * singleton.
+   *
+   * <p>Example: {@code ' 42 '->toInteger()} yields {@code 42}
+   *
+   * @param ctx the parse tree node for the {@code toInteger()} operation
+   * @return a singleton {@code INTEGER} value parsed from the receiver string; or an error value if
+   *     the receiver is not a singleton {@code String} or the string cannot be parsed as a decimal
+   *     integer
+   */
+  @Override
+  public Value visitToIntegerOp(VitruvOCLParser.ToIntegerOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    String str = receiver.getElements().get(0).tryGetString();
+    if (str == null) return error("toInteger() requires String receiver", ctx);
+    try {
+      return Value.intValue(Integer.parseInt(str.trim()));
+    } catch (NumberFormatException e) {
+      return error("toInteger() cannot parse: " + str, ctx);
+    }
+  }
+
+  /**
+   * Evaluates the {@code toReal()} conversion operation on a String receiver.
+   *
+   * <p>Parses the receiver string as a floating-point number using {@link Double#parseDouble},
+   * trimming leading and trailing whitespace before parsing. The result is returned as a {@code
+   * DOUBLE} singleton.
+   *
+   * <p>Example: {@code ' 3.14 '->toReal()} yields {@code 3.14}
+   *
+   * @param ctx the parse tree node for the {@code toReal()} operation
+   * @return a singleton {@code DOUBLE} value parsed from the receiver string; or an error value if
+   *     the receiver is not a singleton {@code String} or the string cannot be parsed as a
+   *     floating-point number
+   */
+  @Override
+  public Value visitToRealOp(VitruvOCLParser.ToRealOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    String str = receiver.getElements().get(0).tryGetString();
+    if (str == null) return error("toReal() requires String receiver", ctx);
+    try {
+      return Value.doubleValue(Double.parseDouble(str.trim()));
+    } catch (NumberFormatException e) {
+      return error("toReal() cannot parse: " + str, ctx);
+    }
+  }
+
+  /**
+   * Evaluates the {@code substituteAll()} operation on a String receiver.
+   *
+   * <p>Replaces every literal occurrence of the pattern string within the receiver with the
+   * replacement string using {@link String#replace}. No regex interpretation is applied — the
+   * pattern is matched as a plain substring. If the pattern is not found, the receiver string is
+   * returned unchanged.
+   *
+   * <p>Example: {@code 'abcabc'->substituteAll('b', 'X')} yields {@code 'aXcaXc'}
+   *
+   * @param ctx the parse tree node for the {@code substituteAll()} operation, including the pattern
+   *     and replacement argument expressions
+   * @return a singleton {@code STRING} value with all occurrences of the pattern replaced, or the
+   *     original string if the pattern is not found; or an error value if the receiver, pattern, or
+   *     replacement is not a singleton {@code String}
+   */
+  @Override
+  public Value visitSubstituteAllOp(VitruvOCLParser.SubstituteAllOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    String str = receiver.getElements().get(0).tryGetString();
+    if (str == null) return error("substituteAll() requires String receiver", ctx);
+    Value patternVal = visit(ctx.pattern);
+    Value replacementVal = visit(ctx.replacement);
+    String pattern = patternVal.getElements().get(0).tryGetString();
+    String replacement = replacementVal.getElements().get(0).tryGetString();
+    if (pattern == null || replacement == null)
+      return error("substituteAll() requires String arguments", ctx);
+    return Value.stringValue(str.replace(pattern, replacement));
+  }
+
+  /**
+   * Evaluates the {@code substituteFirst()} operation on a String receiver.
+   *
+   * <p>Replaces the first literal occurrence of the pattern string within the receiver with the
+   * replacement string. Unlike {@code replaceAll()}, no regex interpretation is applied — the
+   * pattern is matched as a plain substring via {@link String#indexOf}. If the pattern is not
+   * found, the receiver string is returned unchanged.
+   *
+   * <p>Example: {@code 'abcabc'->substituteFirst('b', 'X')} yields {@code 'aXcabc'}
+   *
+   * @param ctx the parse tree node for the {@code substituteFirst()} operation, including the
+   *     pattern and replacement argument expressions
+   * @return a singleton {@code STRING} value with the first occurrence of the pattern replaced, or
+   *     the original string if the pattern is not found; or an error value if the receiver,
+   *     pattern, or replacement is not a singleton {@code String}
+   */
+  @Override
+  public Value visitSubstituteFirstOp(VitruvOCLParser.SubstituteFirstOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    String str = receiver.getElements().get(0).tryGetString();
+    if (str == null) return error("substituteFirst() requires String receiver", ctx);
+    Value patternVal = visit(ctx.pattern);
+    Value replacementVal = visit(ctx.replacement);
+    String pattern = patternVal.getElements().get(0).tryGetString();
+    String replacement = replacementVal.getElements().get(0).tryGetString();
+    if (pattern == null || replacement == null)
+      return error("substituteFirst() requires String arguments", ctx);
+    int idx = str.indexOf(pattern);
+    if (idx == -1) return Value.stringValue(str);
+    return Value.stringValue(
+        str.substring(0, idx) + replacement + str.substring(idx + pattern.length()));
+  }
+
+  /**
+   * Evaluates the {@code matches()} operation on a String receiver.
+   *
+   * <p>Tests whether the receiver string matches the given regular expression pattern using {@link
+   * String#matches}, which requires the pattern to match the entire string. Both the receiver and
+   * the argument must be singleton {@code String} values.
+   *
+   * <p>Example: {@code 'hello123'->matches('[a-z]+\\d+')} yields {@code true}
+   *
+   * @param ctx the parse tree node for the {@code matches()} operation, including the pattern
+   *     argument expression
+   * @return a singleton {@code BOOLEAN} value — {@code true} if the receiver string matches the
+   *     entire pattern, {@code false} otherwise; or an error value if the receiver or argument is
+   *     not a singleton {@code String}
+   */
+  @Override
+  public Value visitMatchesOp(VitruvOCLParser.MatchesOpContext ctx) {
+    Value receiver = receiverStack.peek();
+    String str = receiver.getElements().get(0).tryGetString();
+    if (str == null) return error("matches() requires String receiver", ctx);
+    Value argVal = visit(ctx.arg);
+    String pattern = argVal.getElements().get(0).tryGetString();
+    if (pattern == null) return error("matches() requires String pattern", ctx);
+    return Value.boolValue(str.matches(pattern));
+  }
+
+  @Override
+  public Value visitSelectCorrespondence(VitruvOCLParser.SelectCorrespondenceContext ctx) {
+
+    Value receiver = receiverStack.peek();
+
+    VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
+    if (selfSymbol == null) {
+      return error("'self' not defined in current context", ctx);
+    }
+    Value selfValue = selfSymbol.getValue();
+    if (selfValue.size() != 1) {
+      return error("select(~) requires singleton 'self'", ctx);
+    }
+    EObject selfObject = selfValue.getElements().get(0).tryGetInstance();
+    if (selfObject == null) {
+      return error("select(~) requires 'self' to be an object instance", ctx);
+    }
+
+    String tagFilter = extractTagFilter(ctx.corrFilter);
+    EClass typeFilter = extractTypeFilter(ctx.corrFilter);
+
+    List<OCLElement> results = new ArrayList<>();
+    for (OCLElement elem : receiver.getElements()) {
+      EObject elemObject = elem.tryGetInstance();
+
+      boolean passes =
+          elemObject != null
+              && passesCorrespondenceFilter(selfObject, elemObject, tagFilter, typeFilter);
+
+      if (passes) {
+        results.add(elem);
+      }
+    }
+
+    return Value.of(results, receiver.getRuntimeType());
+  }
+
+  @Override
+  public Value visitRejectCorrespondence(VitruvOCLParser.RejectCorrespondenceContext ctx) {
+
+    Value receiver = receiverStack.peek();
+
+    VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
+    if (selfSymbol == null) {
+      return error("'self' not defined in current context", ctx);
+    }
+    Value selfValue = selfSymbol.getValue();
+    if (selfValue.size() != 1) {
+      return error("reject(~) requires singleton 'self'", ctx);
+    }
+    EObject selfObject = selfValue.getElements().get(0).tryGetInstance();
+    if (selfObject == null) {
+      return error("reject(~) requires 'self' to be an object instance", ctx);
+    }
+
+    String tagFilter = extractTagFilter(ctx.corrFilter);
+    EClass typeFilter = extractTypeFilter(ctx.corrFilter);
+
+    List<OCLElement> results = new ArrayList<>();
+    for (OCLElement elem : receiver.getElements()) {
+      EObject elemObject = elem.tryGetInstance();
+
+      boolean passes =
+          elemObject != null
+              && passesCorrespondenceFilter(selfObject, elemObject, tagFilter, typeFilter);
+
+      if (!passes) {
+        results.add(elem);
+      }
+    }
+
+    return Value.of(results, receiver.getRuntimeType());
+  }
+
+  @Override
+  public Value visitExistsCorrespondence(VitruvOCLParser.ExistsCorrespondenceContext ctx) {
+
+    Value receiver = receiverStack.peek();
+
+    VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
+    if (selfSymbol == null) {
+      return error("'self' not defined in current context", ctx);
+    }
+    Value selfValue = selfSymbol.getValue();
+    if (selfValue.size() != 1) {
+      return error("exists(~) requires singleton 'self'", ctx);
+    }
+    EObject selfObject = selfValue.getElements().get(0).tryGetInstance();
+    if (selfObject == null) {
+      return error("exists(~) requires 'self' to be an object instance", ctx);
+    }
+
+    String tagFilter = extractTagFilter(ctx.corrFilter);
+    EClass typeFilter = extractTypeFilter(ctx.corrFilter);
+
+    for (OCLElement elem : receiver.getElements()) {
+      EObject elemObject = elem.tryGetInstance();
+
+      boolean passes =
+          elemObject != null
+              && passesCorrespondenceFilter(selfObject, elemObject, tagFilter, typeFilter);
+
+      if (passes) {
+        return Value.boolValue(true);
+      }
+    }
+
+    return Value.boolValue(false);
+  }
+
+  /** Extracts the Tag filter value from a correspondenceFilterCS, or null if none specified. */
+  private String extractTagFilter(VitruvOCLParser.CorrespondenceFilterCSContext corrFilter) {
+    if (corrFilter.correspondenceOptions() == null) {
+      return null;
+    }
+    for (VitruvOCLParser.CorrespondenceOptionContext opt :
+        corrFilter.correspondenceOptions().correspondenceOption()) {
+      if (opt instanceof VitruvOCLParser.CorrTagFilterContext tag) {
+        String raw = tag.tag.getText();
+        // Strip surrounding double-quotes
+        return raw.substring(1, raw.length() - 1);
+      }
+    }
+    return null;
+  }
+
+  /** Extracts the Type filter EClass from a correspondenceFilterCS, or null if none specified. */
+  private EClass extractTypeFilter(VitruvOCLParser.CorrespondenceFilterCSContext corrFilter) {
+    if (corrFilter.correspondenceOptions() == null) {
+      return null;
+    }
+    for (VitruvOCLParser.CorrespondenceOptionContext opt :
+        corrFilter.correspondenceOptions().correspondenceOption()) {
+      if (opt instanceof VitruvOCLParser.CorrTypeFilterContext typeCtx) {
+        VitruvOCLParser.TypeExpCSContext typeExp = typeCtx.type;
+        if (typeExp.typeNameExpCS() != null) {
+          VitruvOCLParser.TypeNameExpCSContext typeName = typeExp.typeNameExpCS();
+          if (typeName.metamodel != null) {
+            return specification.resolveEClass(
+                typeName.metamodel.getText(), typeName.className.getText());
+          } else {
+            return specification.resolveEClassByShortName(typeName.unqualified.getText());
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Returns true if elemObject passes both the type and tag filter relative to selfObject.
+   *
+   * <p>Type filter is a pure EMF instanceof check (cheap). Tag filter delegates to {@code
+   * specification.correspondenceHasTag} which searches the correspondence model. When no filter is
+   * set the plain {@code checkCorrespondence} result is returned.
+   */
+  private boolean passesCorrespondenceFilter(
+      EObject selfObject, EObject elemObject, String tagFilter, EClass typeFilter) {
+    // Type filter: elemObject must be an instance of typeFilter
+    if (typeFilter != null && !typeFilter.isInstance(elemObject)) {
+      return false;
+    }
+    // Tag filter: correspondence must carry the required tag
+    if (tagFilter != null) {
+      return specification.correspondenceHasTag(selfObject, elemObject, tagFilter);
+    }
+    // No filter: plain bidirectional correspondence check
+    return checkCorrespondence(selfObject, elemObject);
+  }
 }
+
