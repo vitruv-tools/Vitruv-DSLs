@@ -110,6 +110,7 @@ infixedExpCS
     | left=infixedExpCS op='or' right=infixedExpCS                         # logicalOr
     | left=infixedExpCS op='xor' right=infixedExpCS                        # logicalXor
     | left=infixedExpCS op='implies' right=infixedExpCS                    # implication
+    | left=infixedExpCS op=ID right=infixedExpCS                           # unknownBinaryOp
 ;
 
 // Prefix operations and navigation
@@ -233,6 +234,14 @@ operationCall
     | stringOpCS     # stringOperation
     | iteratorOpCS   # iteratorOperation
     | typeOpCS       # typeOperation
+    | unknownOpCS    # unknownOperation
+;
+
+// Catch-all for unknown operation calls — produces a precise "Unknown operation" diagnostic
+// instead of a cryptic syntax error on the closing parenthesis.
+unknownOpCS
+:
+    opName=ID '(' (args+=expCS (',' args+=expCS)*)? ')'
 ;
 
 // ============================================================================

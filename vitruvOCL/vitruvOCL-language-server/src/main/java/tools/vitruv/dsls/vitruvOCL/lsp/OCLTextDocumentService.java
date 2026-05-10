@@ -40,7 +40,6 @@ import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.TextDocumentService;
-
 import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapper;
 
 /**
@@ -259,5 +258,3 @@ public class OCLTextDocumentService implements TextDocumentService {
     debouncer.shutdownNow();
   }
 }
-
-

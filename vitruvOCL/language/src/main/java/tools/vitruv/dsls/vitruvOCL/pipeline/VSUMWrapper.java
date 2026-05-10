@@ -129,15 +129,9 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
                 .flatMap(root -> getAllContentsRecursive(root).stream())
                 .filter(obj -> eClass.isSuperTypeOf(obj.eClass()))
                 .toList();
-    System.err.println(
-        "getAllInstances(" + eClass.getName() + ") -> " + result.size() + " objects");
     result.forEach(
         obj -> {
-          System.err.println("  " + obj.eClass().getName());
           var nameFeature = obj.eClass().getEStructuralFeature("name");
-          if (nameFeature != null) {
-            System.err.println("    name=" + obj.eGet(nameFeature));
-          }
         });
     return result;
   }
@@ -212,8 +206,6 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
         correspondenceModel.getCorrespondingEObjects(source).stream()
             .filter(obj -> targetType.isSuperTypeOf(obj.eClass()))
             .collect(Collectors.toSet());
-    System.err.println(
-        "getCorrespondingObjects(" + source.eClass().getName() + ") -> " + result.size());
     return result;
   }
 

@@ -15,6 +15,7 @@ package tools.vitruv.dsls.vitruvOCL.symboltable;
 import java.util.ArrayList;
 import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvOCL.common.AbstractPhaseVisitor;
@@ -250,12 +251,22 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
     }
 
     if (contextType == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Unknown context type",
-          ErrorSeverity.ERROR,
-          "symbol-table-builder");
+      if (ctx.metamodel != null && ctx.className != null) {
+        String mmName = ctx.metamodel.getText();
+        String clsName = ctx.className.getText();
+        if (!specification.getAvailableMetamodels().contains(mmName)) {
+          errors.add(ctx.metamodel, "Unknown metamodel '" + mmName + "'",
+              ErrorSeverity.ERROR, "symbol-table-builder");
+        } else {
+          errors.add(ctx.className,
+              "Unknown class '" + clsName + "' in metamodel '" + mmName + "'",
+              ErrorSeverity.ERROR, "symbol-table-builder");
+        }
+      } else if (ctx.contextName != null) {
+        errors.add(ctx.contextName,
+            "Unknown context type '" + ctx.contextName.getText() + "'",
+            ErrorSeverity.ERROR, "symbol-table-builder");
+      }
       return null;
     }
 

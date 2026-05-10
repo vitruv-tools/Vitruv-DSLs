@@ -41,13 +41,6 @@ public class VitruvOCL {
       throw new IllegalArgumentException("VSUM must not be null");
     }
     vsumWrapper = new VSUMWrapper(vsum);
-    System.err.println("ViewSourceModels: " + ((ViewSource) vsum).getViewSourceModels().size());
-    ((ViewSource) vsum)
-        .getViewSourceModels()
-        .forEach(
-            r ->
-                System.err.println(
-                    "  Resource: " + r.getURI() + " contents: " + r.getContents().size()));
   }
 
   /**
@@ -63,7 +56,6 @@ public class VitruvOCL {
       throw new IllegalArgumentException("Wrapper must not be null");
     }
     directWrapper = wrapper;
-    System.err.println("[VitruvOCL] registerDirectWrapper: " + wrapper.getClass().getSimpleName());
   }
 
   public static synchronized void clearVSUM() {
@@ -83,8 +75,40 @@ public class VitruvOCL {
     return compileAndEvaluate(constraint, getVsumWrapper(), List.of());
   }
 
-  public static BatchValidationResult evaluateConstraints(Path constraintsFile) throws IOException {
-    List<String> constraints = parseConstraintsFile(constraintsFile);
+  /**
+   * Evaluates all constraints in the given file against the registered VSUM.
+   *
+   * <p>If the constraints file cannot be read, a {@link BatchValidationResult} with a single error
+   * entry is returned instead of throwing an exception. This allows callers to handle
+   * file-not-found or I/O errors uniformly via the result object without checked exceptions.
+   *
+   * @param constraintsFile path to the {@code .ocl} constraints file
+   * @return the validation result; never {@code null}
+   */
+  public static BatchValidationResult evaluateConstraints(Path constraintsFile) {
+    List<String> constraints;
+    try {
+      constraints = parseConstraintsFile(constraintsFile);
+    } catch (IOException e) {
+      return new BatchValidationResult(
+          List.of(
+              new ConstraintResult(
+                  constraintsFile.toString(),
+                  false,
+                  List.of(
+                      new CompileError(
+                          1,
+                          0,
+                          "Could not read constraints file: "
+                              + constraintsFile.getFileName()
+                              + " ("
+                              + e.getMessage()
+                              + ")",
+                          ErrorSeverity.ERROR,
+                          constraintsFile.toString())),
+                  List.of(),
+                  List.of())));
+    }
     return evaluateConstraints(constraints, getVsumWrapper());
   }
 
@@ -154,8 +178,6 @@ public class VitruvOCL {
 
   private static ConstraintResult compileAndEvaluate(
       String constraint, MetamodelWrapperInterface wrapper, List<Warning> loaderWarnings) {
-    System.err.println(
-        "[VitruvOCL] compileAndEvaluate with wrapper: " + wrapper.getClass().getSimpleName());
     VitruvOCLCompiler compiler = new VitruvOCLCompiler(wrapper, null);
     Value result = compiler.compile(constraint);
 
@@ -218,13 +240,9 @@ public class VitruvOCL {
 
   private static synchronized MetamodelWrapperInterface getVsumWrapper() {
     if (directWrapper != null) {
-      System.err.println(
-          "[VitruvOCL] getVsumWrapper -> directWrapper: "
-              + directWrapper.getClass().getSimpleName());
       return directWrapper;
     }
     if (vsumWrapper != null) {
-      System.err.println("[VitruvOCL] getVsumWrapper -> vsumWrapper");
       return vsumWrapper;
     }
     throw new IllegalStateException(

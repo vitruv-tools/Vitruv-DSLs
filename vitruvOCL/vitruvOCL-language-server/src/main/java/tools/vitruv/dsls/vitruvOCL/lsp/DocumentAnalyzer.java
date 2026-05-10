@@ -184,12 +184,28 @@ public class DocumentAnalyzer {
 
       if (firstErrLine == Integer.MAX_VALUE) continue;
 
-      // All invCS children that start after the syntax error are orphaned.
       for (VitruvOCLParser.InvCSContext inv : ctx.invCS()) {
         if (inv.getStart() == null) continue;
         int invStart = inv.getStart().getLine() - 1; // 0-based
+        int invStop = inv.getStop() != null ? inv.getStop().getLine() - 1 : invStart;
+
+        // Case 1: invCS that starts after the first syntax error in this context.
         if (invStart > firstErrLine) {
-          int invStop = inv.getStop() != null ? inv.getStop().getLine() - 1 : invStart;
+          orphaned.add(new int[] {invStart, invStop});
+          continue;
+        }
+
+        // Case 2: invCS that directly contains a syntax error — type-checker errors inside
+        // would be unreliable cascade diagnostics, so suppress them too.
+        boolean invHasSyntaxError = false;
+        for (Diagnostic d : syntaxDiags) {
+          int l = d.getRange().getStart().getLine(); // already 0-based
+          if (l >= invStart && l <= invStop) {
+            invHasSyntaxError = true;
+            break;
+          }
+        }
+        if (invHasSyntaxError) {
           orphaned.add(new int[] {invStart, invStop});
         }
       }
@@ -226,5 +242,3 @@ public class DocumentAnalyzer {
         "vitruvOCL");
   }
 }
-
-

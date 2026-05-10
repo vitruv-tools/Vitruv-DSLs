@@ -29,14 +29,15 @@ bin/
 grammars/
 
 # VSCode Extension
-vscode-extension/node_modules/
-vscode-extension/out/
-vscode-extension/*.vsix
-vscode-extension/.vscode-test/
-vscode-extension/npm-debug.log*
-vscode-extension/yarn-debug.log*
-vscode-extension/yarn-error.log*
+vitruvocl-vscode-extension/node_modules/
+vitruvocl-vscode-extension/.vscode-test/
+vitruvocl-vscode-extension/npm-debug.log*
+vitruvocl-vscode-extension/yarn-debug.log*
+vitruvocl-vscode-extension/yarn-error.log*
+vitruvocl-vscode-extension/.DS_Store
+vitruvocl-vscode-extension/Thumbs.db
 
-# VSCode Extension - Development
-vscode-extension/.DS_Store
-vscode-extension/Thumbs.db
+# Keep deployable artifacts tracked (VSIX + bundled JARs + compiled extension)
+!vitruvocl-vscode-extension/vitruvocl-0.0.1.vsix
+!vitruvocl-vscode-extension/lib/
+!vitruvocl-vscode-extension/out/

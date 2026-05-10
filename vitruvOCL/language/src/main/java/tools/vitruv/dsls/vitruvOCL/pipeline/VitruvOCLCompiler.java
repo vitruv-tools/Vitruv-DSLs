@@ -188,11 +188,6 @@ public class VitruvOCLCompiler {
     symbolTableBuilder.visit(tree);
 
     if (errors.hasErrors()) {
-      System.err.println("Errors After Pass 1 (Symbol Table): " + errors.getErrorCount());
-      errors
-          .getErrors()
-          .forEach(
-              err -> System.err.println("  " + err.getMessage() + " at line " + err.getLine()));
       return null;
     }
 
@@ -202,11 +197,6 @@ public class VitruvOCLCompiler {
     typeChecker.visit(tree);
 
     if (errors.hasErrors()) {
-      System.err.println("Errors After Pass 2 (Type Checking): " + errors.getErrorCount());
-      errors
-          .getErrors()
-          .forEach(
-              err -> System.err.println("  " + err.getMessage() + " at line " + err.getLine()));
       return null;
     }
 
@@ -217,11 +207,6 @@ public class VitruvOCLCompiler {
     Value result = evaluator.visit(tree);
 
     if (errors.hasErrors()) {
-      System.err.println("Errors After Pass 3 (Evaluation): " + errors.getErrorCount());
-      errors
-          .getErrors()
-          .forEach(
-              err -> System.err.println("  " + err.getMessage() + " at line " + err.getLine()));
       return null;
     }
 

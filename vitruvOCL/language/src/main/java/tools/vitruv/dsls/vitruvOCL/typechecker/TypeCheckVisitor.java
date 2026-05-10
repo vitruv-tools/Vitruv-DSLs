@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ErrorNode;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.eclipse.emf.ecore.EClass;
@@ -262,13 +265,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     if (contextType == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Unknown context type",
-          ErrorSeverity.ERROR,
-          "type-checker");
-      return Type.ERROR;
+      return Type.ERROR; // Pass 1 already reported a precise error for this token
     }
 
     nodeTypes.put(ctx, contextType);
@@ -276,13 +273,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     // Enter scope created by Pass 1 - scope already contains 'self' variable
     Scope contextScope = scopeAnnotator.getScope(ctx);
     if (contextScope == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Internal error: No scope annotation from Pass 1",
-          ErrorSeverity.ERROR,
-          "type-checker");
-      return Type.ERROR;
+      return Type.ERROR; // Pass 1 failed for this context — bail out silently
     }
 
     symbolTable.enterScope(contextScope);
@@ -320,12 +311,18 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type resultType = Type.BOOLEAN;
 
     for (VitruvOCLParser.SpecificationCSContext spec : specs) {
+      int errorsBefore = errors.getErrors().size();
       Type specType = visit(spec);
+      boolean newErrorsInSpec = errors.getErrors().size() > errorsBefore;
+
+      // If the spec already has errors, an error node, or produced new errors, skip the
+      // Boolean-conformance check — it would only produce misleading follow-up diagnostics.
+      if (specType.equals(Type.ERROR) || hasErrorNode(spec) || newErrorsInSpec) continue;
 
       // Check Boolean conformance (handles both Boolean and !Boolean!)
       Type checkType =
           specType.isSingleton() || specType.isCollection() ? specType.getElementType() : specType;
-      if (!checkType.isConformantTo(Type.BOOLEAN) && !specType.equals(Type.ERROR)) {
+      if (!checkType.isConformantTo(Type.BOOLEAN)) {
         errors.add(
             ctx.getStart().getLine(),
             ctx.getStart().getCharPositionInLine(),
@@ -602,10 +599,17 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     Type resultType = null;
+    boolean hasError = false;
     for (VitruvOCLParser.ExpCSContext exp : ctx.expCS()) {
-      resultType = visit(exp);
+      Type t = visit(exp);
+      if (t != null && t.equals(Type.ERROR)) hasError = true;
+      resultType = t;
     }
 
+    if (hasError) {
+      nodeTypes.put(ctx, Type.ERROR);
+      return Type.ERROR;
+    }
     nodeTypes.put(ctx, resultType);
     return resultType;
   }
@@ -1248,12 +1252,14 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       }
     }
 
-    errors.add(
-        ctx.getStart().getLine(),
-        ctx.getStart().getCharPositionInLine(),
-        "Cannot resolve " + metamodel + "::" + className,
-        ErrorSeverity.ERROR,
-        "type-checker");
+    if (!specification.getAvailableMetamodels().contains(metamodel)) {
+      errors.add(ctx.metamodel, "Unknown metamodel '" + metamodel + "'",
+          ErrorSeverity.ERROR, "type-checker");
+    } else {
+      errors.add(ctx.className, "Unknown class '" + className
+          + "' in metamodel '" + metamodel + "'",
+          ErrorSeverity.ERROR, "type-checker");
+    }
     return Type.ERROR;
   }
 
@@ -1291,7 +1297,8 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     String propertyName = ctx.propertyAccess().propertyName.getText();
-    Type resultType = typeCheckPropertyAccess(receiverType, propertyName, ctx);
+    Type resultType = typeCheckPropertyAccess(
+        receiverType, propertyName, ctx.propertyAccess().propertyName);
     nodeTypes.put(ctx, resultType);
     return resultType;
   }
@@ -1325,15 +1332,15 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    * @param ctx The parse tree context for error reporting
    * @return The property type (may be wrapped in collection)
    */
-  private Type typeCheckPropertyAccess(Type receiverType, String propName, ParserRuleContext ctx) {
+  private Type typeCheckPropertyAccess(
+      Type receiverType, String propName, Token propertyNameToken) {
     // Implicit collect for collections
     if (receiverType.isCollection()) {
       Type elemType = receiverType.getElementType();
 
       if (!elemType.isMetaclassType()) {
         errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
+            propertyNameToken,
             "Cannot navigate on non-object type",
             ErrorSeverity.ERROR,
             "type-checker");
@@ -1344,12 +1351,8 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       EStructuralFeature feature = eClass.getEStructuralFeature(propName);
 
       if (feature == null) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "Unknown property: " + propName,
-            ErrorSeverity.ERROR,
-            "type-checker");
+        errors.add(propertyNameToken, "Unknown property: " + propName,
+            ErrorSeverity.ERROR, "type-checker");
         return Type.ERROR;
       }
 
@@ -1363,24 +1366,16 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       EStructuralFeature feature = eClass.getEStructuralFeature(propName);
 
       if (feature == null) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "Unknown property: " + propName,
-            ErrorSeverity.ERROR,
-            "type-checker");
+        errors.add(propertyNameToken, "Unknown property: " + propName,
+            ErrorSeverity.ERROR, "type-checker");
         return Type.ERROR;
       }
 
       return mapFeatureToType(feature);
     }
 
-    errors.add(
-        ctx.getStart().getLine(),
-        ctx.getStart().getCharPositionInLine(),
-        "Cannot access property on " + receiverType,
-        ErrorSeverity.ERROR,
-        "type-checker");
+    errors.add(propertyNameToken, "Cannot access property on " + receiverType,
+        ErrorSeverity.ERROR, "type-checker");
     return Type.ERROR;
   }
 
@@ -5180,7 +5175,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitPropertyAccess(VitruvOCLParser.PropertyAccessContext ctx) {
     Type receiverType = receiverStack.peek();
     String propertyName = ctx.propertyName.getText();
-    Type resultType = typeCheckPropertyAccess(receiverType, propertyName, ctx);
+    Type resultType = typeCheckPropertyAccess(receiverType, propertyName, ctx.propertyName);
     nodeTypes.put(ctx, resultType);
     return resultType;
   }
@@ -5235,6 +5230,43 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitTypeOperation(VitruvOCLParser.TypeOperationContext ctx) {
     return visit(ctx.typeOpCS());
+  }
+
+  // ==================== Unknown Operator Catch-All ====================
+
+  @Override
+  public Type visitUnknownBinaryOp(VitruvOCLParser.UnknownBinaryOpContext ctx) {
+    visit(ctx.left);
+    visit(ctx.right);
+    errors.add(ctx.op, "Unknown operator '" + ctx.op.getText() + "'",
+        ErrorSeverity.ERROR, "type-checker");
+    nodeTypes.put(ctx, Type.ERROR);
+    return Type.ERROR;
+  }
+
+  @Override
+  public Type visitUnknownOperation(VitruvOCLParser.UnknownOperationContext ctx) {
+    return visit(ctx.unknownOpCS());
+  }
+
+  @Override
+  public Type visitUnknownOpCS(VitruvOCLParser.UnknownOpCSContext ctx) {
+    for (VitruvOCLParser.ExpCSContext arg : ctx.args) {
+      visit(arg);
+    }
+    errors.add(ctx.opName, "Unknown operation '" + ctx.opName.getText() + "'",
+        ErrorSeverity.ERROR, "type-checker");
+    nodeTypes.put(ctx, Type.ERROR);
+    return Type.ERROR;
+  }
+
+  /** Recursively checks whether any node in the subtree is an ANTLR {@link ErrorNode}. */
+  private static boolean hasErrorNode(ParseTree tree) {
+    if (tree instanceof ErrorNode) return true;
+    for (int i = 0; i < tree.getChildCount(); i++) {
+      if (hasErrorNode(tree.getChild(i))) return true;
+    }
+    return false;
   }
 
   /**

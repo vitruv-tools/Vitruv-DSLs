@@ -1,78 +1,301 @@
-context spaceMission::Spacecraft inv serialNumberMatch:
-  satelliteSystem::Satellite.allInstances().exists(sat |
-    sat.serialNumber == self.serialNumber
-  )
 
+context family::Member inv selectTildenotEmptyForFather:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~).notEmpty()
 
-context spaceMission::Spacecraft inv massConsistency:
-  satelliteSystem::Satellite.allInstances().forAll(sat |
-    sat.massKg == self.mass implies sat.active == self.operational
-  )
+context family::Member inv selectTildesizeOneForFather:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~).size() == 1
 
+context family::Member inv selectTildeemptyForDaughter:
+  self.firstName == "Lisa" implies
+    persons::Person.allInstances().select(~).isEmpty()
 
-context spaceMission::Spacecraft inv minSatelliteCount:
-  satelliteSystem::Satellite.allInstances().size() >= 2
+context family::Member inv selectTildesizeZeroForDaughter:
+  self.firstName == "Lisa" implies
+    persons::Person.allInstances().select(~).size() == 0
 
+-- ============================================================
+-- 2. select(~, Tag='x')
+-- ============================================================
 
-context spaceMission::Spacecraft inv totalMass:
-  satelliteSystem::Satellite.allInstances().collect(sat |
-    sat.massKg
-  ).sum() > 0
+context family::Member inv selectTildeTagHusbandnotEmpty:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Tag = "Husband").notEmpty()
 
-context spaceMission::Spacecraft inv averageMass:
-  satelliteSystem::Satellite.allInstances().collect(sat |
-    sat.massKg
-  ).avg() > 0
+context family::Member inv selectTildeTagHusbandsizeOne:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Tag = "Husband").size() == 1
 
+context family::Member inv selectTildeTagWifeemptyForFather:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Tag = "Wife").isEmpty()
 
-context spaceMission::Spacecraft inv serialInclusion:
-  satelliteSystem::Satellite.allInstances().collect(sat |
-    sat.serialNumber
-  ).includes(self.serialNumber)
+context family::Member inv selectTildeTagSonsizeOne:
+  self.firstName == "Bart" implies
+    persons::Person.allInstances().select(~, Tag = "Son").size() == 1
 
+context family::Member inv selectTildeTagNonExistentempty:
+  persons::Person.allInstances().select(~, Tag = "NoSuchTag").isEmpty()
 
-context spaceMission::Spacecraft inv andLogic:
-  satelliteSystem::Satellite.allInstances().exists(sat |
-    sat.serialNumber == self.serialNumber
-  ) and self.operational
+context family::Member inv selectTildeTagWifenotEmptyforMother:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances().select(~, Tag = "Wife").notEmpty()
 
+-- ============================================================
+-- 3. select(~, Type=T)
+-- ============================================================
 
-context spaceMission::Spacecraft inv nestedExists:
-  satelliteSystem::Satellite.allInstances().exists(sat |
-    spaceMission::Spacecraft.allInstances().exists(sc |
-      sc.serialNumber == sat.serialNumber and sc.operational
-    )
-  )
+context family::Member inv selectTildeTypeMalesizeOneForFather:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Type = persons::Male).size() == 1
 
-context spaceMission::Spacecraft inv arithmeticComparison:
-  satelliteSystem::Satellite.allInstances().exists(sat |
-    (sat.massKg * 2) > self.mass
-  )
+context family::Member inv selectTildeTypeFemaleemptyForFather:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Type = persons::Female).isEmpty()
 
-context spaceMission::Spacecraft inv letBinding:
-  let satellites = satelliteSystem::Satellite.allInstances() in
-    satellites.size() >= 0
+context family::Member inv selectTildeTypeFemalesizeOneForMother:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances().select(~, Type = persons::Female).size() == 1
 
-context spaceMission::Spacecraft inv conditional:
-  if satelliteSystem::Satellite.allInstances().size() > 2
-  then self.operationalP
-  else self.mass > 0
-  endif
+context family::Member inv selectTildeTypeMaleemptyForMother:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances().select(~, Type = persons::Male).isEmpty()
 
-context spaceMission::Spacecraft inv satellitesNotEmpty:
-  satelliteSystem::Satellite.allInstances().notEmpty()
+context family::Member inv selectTildeTypePersonsizeOne:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Type = persons::Person).size() == 1
 
-context spaceMission::Spacecraft inv nonExistentEmpty:
-  satelliteSystem::Satellite.allInstances().select(sat |
-    sat.serialNumber == "NONEXISTENT-999"
-  ).isEmpty()
-  
+-- ============================================================
+-- 4. select(~, Type=T, Tag='x')
+-- ============================================================
 
-context satelliteSystem::Satellite inv selectWithTwoVariables:
-    satelliteSystem::Satellite.allInstances().select(s1, s2 |
-      s1.serialNumber != s2.serialNumber
-  ).size() > 0
+context family::Member inv selectTildeTypeMaleTagHusbandsizeOneForFather:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances()
+      .select(~, Type = persons::Male, Tag = "Husband").size() == 1
 
-context spaceMission::Spacecraft inv correspondence:
-          self.operational and
-          satelliteSystem::Satellite.allInstances().exists(~)
+context family::Member inv selectTildeTypeFemaleTagHusbandempty:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances()
+      .select(~, Type = persons::Female, Tag = "Husband").isEmpty()
+
+context family::Member inv selectTildeTypeMaleTagWifeempty:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances()
+      .select(~, Type = persons::Male, Tag = "Wife").isEmpty()
+
+context family::Member inv selectTildeTagFirsttypeSecond:
+  self.firstName == "Bart" implies
+    persons::Person.allInstances()
+      .select(~, Tag = "Son", Type = persons::Male).size() == 1
+
+context family::Member inv selectTildeTypeFemaleTagWifesizeOneForMother:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances()
+      .select(~, Type = persons::Female, Tag = "Wife").size() == 1
+
+-- ============================================================
+-- 5. reject(~) — no filter
+-- ============================================================
+
+context family::Member inv rejectTildesizeThree:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().reject(~).size() == 3
+
+context family::Member inv rejectTildenotEmpty:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().reject(~).notEmpty()
+
+context family::Member inv rejectTildesizeFourForDaughter:
+  self.firstName == "Lisa" implies
+    persons::Person.allInstances().reject(~).size() == 4
+
+-- ============================================================
+-- 6. reject(~, Tag='x')
+-- ============================================================
+
+context family::Member inv rejectTildeTagHusbandsizeThree:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().reject(~, Tag = "Husband").size() == 3
+
+context family::Member inv rejectTildeTagWifesizeFourForFather:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().reject(~, Tag = "Wife").size() == 4
+
+context family::Member inv rejectTildeTagWifesizeThreeForMother:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances().reject(~, Tag = "Wife").size() == 3
+
+-- ============================================================
+-- 7. reject(~, Type=T)
+-- ============================================================
+
+context family::Member inv rejectTildeTypeMalesizeThreeForFather:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().reject(~, Type = persons::Male).size() == 3
+
+context family::Member inv rejectTildeTypeFemalesizeFourForFather:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().reject(~, Type = persons::Female).size() == 4
+
+context family::Member inv rejectTildeTypeFemalesizeThreeForMother:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances().reject(~, Type = persons::Female).size() == 3
+
+-- ============================================================
+-- 8. reject(~, Type=T, Tag='x')
+-- ============================================================
+
+context family::Member inv rejectTildeTypeMaleTagHusbandsizeThreeForFather:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances()
+      .reject(~, Type = persons::Male, Tag = "Husband").size() == 3
+
+context family::Member inv rejectTildeTypeFemaleTagHusbandsizeFourForFather:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances()
+      .reject(~, Type = persons::Female, Tag = "Husband").size() == 4
+
+context family::Member inv rejectTildeTypeMaleTagWifesizeFourForFather:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances()
+      .reject(~, Type = persons::Male, Tag = "Wife").size() == 4
+
+-- ============================================================
+-- 9. exists(~) — no filter
+-- ============================================================
+
+context family::Member inv existsTildetrueForFather:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().exists(~)
+
+context family::Member inv existsTildefalseForDaughter:
+  self.firstName == "Lisa" implies
+    not persons::Person.allInstances().exists(~)
+
+-- ============================================================
+-- 10. exists(~, Tag='x')
+-- ============================================================
+
+context family::Member inv existsTildeTagHusbandtrueForFather:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().exists(~, Tag = "Husband")
+
+context family::Member inv existsTildeTagWifefalseForFather:
+  self.firstName == "Homer" implies
+    not persons::Person.allInstances().exists(~, Tag = "Wife")
+
+context family::Member inv existsTildeTagSontrueForSon:
+  self.firstName == "Bart" implies
+    persons::Person.allInstances().exists(~, Tag = "Son")
+
+context family::Member inv existsTildeTagNonExistentfalse:
+  not persons::Person.allInstances().exists(~, Tag = "NoSuchTag")
+
+context family::Member inv existsTildeTagWifetrueForMother:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances().exists(~, Tag = "Wife")
+
+-- ============================================================
+-- 11. exists(~, Type=T)
+-- ============================================================
+
+context family::Member inv existsTildeTypeMaletrueForFather:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().exists(~, Type = persons::Male)
+
+context family::Member inv existsTildeTypeFemalefalseForFather:
+  self.firstName == "Homer" implies
+    not persons::Person.allInstances().exists(~, Type = persons::Female)
+
+context family::Member inv existsTildeTypeFemaletrueForMother:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances().exists(~, Type = persons::Female)
+
+context family::Member inv existsTildeTypeMalefalseForMother:
+  self.firstName == "Marge" implies
+    not persons::Person.allInstances().exists(~, Type = persons::Male)
+
+-- ============================================================
+-- 12. exists(~, Type=T, Tag='x')
+-- ============================================================
+
+context family::Member inv existsTildeTypeMaleTagHusbandtrueForFather:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances()
+      .exists(~, Type = persons::Male, Tag = "Husband")
+
+context family::Member inv existsTildeTypeFemaleTagHusbandfalse:
+  self.firstName == "Homer" implies
+    not persons::Person.allInstances()
+      .exists(~, Type = persons::Female, Tag = "Husband")
+
+context family::Member inv existsTildeTypeMaleTagWifefalse:
+  self.firstName == "Homer" implies
+    not persons::Person.allInstances()
+      .exists(~, Type = persons::Male, Tag = "Wife")
+
+context family::Member inv existsTildeTypeFemaleTagWifetrueForMother:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances()
+      .exists(~, Type = persons::Female, Tag = "Wife")
+
+-- ============================================================
+-- 13-14. Chaining: select(~) / reject(~)
+-- ============================================================
+
+context family::Member inv selectTildeTagthenSize:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Tag = "Husband").size() == 1
+
+context family::Member inv selectTildeTypethenNotEmpty:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Type = persons::Male).notEmpty()
+
+context family::Member inv rejectTildeTagthenSize:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().reject(~, Tag = "Husband").size() == 3
+
+-- ============================================================
+-- 15. exists(~) in logical expressions
+-- ============================================================
+
+context family::Member inv existsTildeimpliesselectNotEmpty:
+  persons::Person.allInstances().exists(~)
+    implies
+  persons::Person.allInstances().select(~).notEmpty()
+
+context family::Member inv existsTildeTagandselectTildeTagSize:
+  self.firstName == "Homer" implies
+    (persons::Person.allInstances().exists(~, Tag = "Husband")
+      and
+    persons::Person.allInstances().select(~, Tag = "Husband").size() == 1)
+
+context family::Member inv selectTildethenCollect:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~).collect(p | p.fullName).notEmpty()
+
+-- ============================================================
+-- 16. Cross-operation consistency
+-- ============================================================
+
+context family::Member inv selectAndRejectSizeSumToTotal:
+  persons::Person.allInstances().select(~).size()
+    + persons::Person.allInstances().reject(~).size()
+    == persons::Person.allInstances().size()
+
+context family::Member inv existsEqualsSelectNotEmpty:
+  persons::Person.allInstances().exists(~)
+    == persons::Person.allInstances().select(~).notEmpty()
+
+context family::Member inv selectTagSizeconsistentWithExistsTag:
+  self.firstName == "Homer" implies
+    (persons::Person.allInstances().select(~, Tag = "Husband").size() == 1
+      and
+    persons::Person.allInstances().exists(~, Tag = "Husband"))
+
+context family::Member inv selectAndRejectTagSumToTotal:
+  persons::Person.allInstances().select(~, Tag = "Husband").size()
+    + persons::Person.allInstances().reject(~, Tag = "Husband").size()
+    == persons::Person.allInstances().size()

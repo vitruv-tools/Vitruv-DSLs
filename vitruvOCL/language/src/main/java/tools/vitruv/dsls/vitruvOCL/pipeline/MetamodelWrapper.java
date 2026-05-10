@@ -256,7 +256,6 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   public EClass resolveEClass(String metamodelName, String className) {
     EPackage ePackage = metamodelRegistry.get(metamodelName);
     if (ePackage == null) {
-      System.err.println("MetaModelRegistry: " + metamodelRegistry);
       return null;
     }
 
@@ -477,8 +476,6 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
       if (lefts.contains(source)) result.addAll(rights);
       if (rights.contains(source)) result.addAll(lefts);
     }
-    System.err.println(
-        "getCorrespondingObjects(" + source.eClass().getName() + ") -> " + result.size());
     return result;
   }
 

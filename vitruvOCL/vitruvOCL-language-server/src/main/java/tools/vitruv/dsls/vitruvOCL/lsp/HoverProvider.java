@@ -25,7 +25,6 @@ import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
-
 import tools.vitruv.dsls.vitruvOCL.lsp.OclOperationDocs.OperationDoc;
 import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
 
@@ -291,5 +290,3 @@ public class HoverProvider {
     return new Hover(content);
   }
 }
-
-

@@ -122,7 +122,7 @@ public class VitruvOCLErrorHandlingTest {
 
   // ==================== Warning Tests ====================
 
-  /** Tests that duplicate metamodel files generate warnings but don't prevent evaluation. */
+  /** Tests that duplicate metamodel files are silently deduplicated and evaluation succeeds. */
   @Test
   public void testDuplicateMetamodelWarning() {
     ConstraintResult result =
@@ -132,16 +132,13 @@ public class VitruvOCLErrorHandlingTest {
             new Path[] {SPACECRAFT_VOYAGER});
 
     assertTrue(result.isSuccess(), "Should succeed despite duplicate");
-    assertTrue(result.hasWarnings(), "Should have warnings");
-    assertTrue(
+    assertFalse(
         result.getWarnings().stream()
             .anyMatch(w -> w.getType() == Warning.WarningType.DUPLICATE_METAMODEL),
-        "Should warn about duplicate metamodel");
+        "Should not warn about duplicate metamodel");
   }
 
-  /**
-   * Tests that metamodels provided but not referenced in the constraint generate unused warnings.
-   */
+  /** Tests that unreferenced metamodels are silently ignored and evaluation succeeds. */
   @Test
   public void testUnusedMetamodelWarning() {
     ConstraintResult result =
@@ -151,14 +148,10 @@ public class VitruvOCLErrorHandlingTest {
             new Path[] {SPACECRAFT_VOYAGER});
 
     assertTrue(result.isSuccess());
-    assertTrue(result.hasWarnings());
-    assertTrue(
+    assertFalse(
         result.getWarnings().stream()
-            .anyMatch(
-                w ->
-                    w.getType() == Warning.WarningType.UNUSED_METAMODEL
-                        && w.getMessage().contains("satelliteSystem")),
-        "Should warn about unused satelliteSystem metamodel");
+            .anyMatch(w -> w.getType() == Warning.WarningType.UNUSED_METAMODEL),
+        "Should not warn about unused metamodel");
   }
 
   /** Tests that constraints evaluated without model instances generate warnings. */
@@ -326,7 +319,7 @@ public class VitruvOCLErrorHandlingTest {
         result.getCompilerErrors().isEmpty(), "Should not attempt compilation with file errors");
   }
 
-  /** Tests that successful evaluation can still produce warnings (e.g., for unused resources). */
+  /** Tests that successful evaluation with extra metamodels produces no warnings. */
   @Test
   public void testWarningsWithSuccessfulEvaluation() {
     ConstraintResult result =
@@ -337,7 +330,7 @@ public class VitruvOCLErrorHandlingTest {
 
     assertTrue(result.isSuccess());
     assertTrue(result.isSatisfied());
-    assertTrue(result.hasWarnings(), "Should have warnings about unused metamodel");
+    assertFalse(result.hasWarnings(), "Should have no warnings about unused metamodel");
   }
 
   // ==================== Error Message Quality Tests ====================

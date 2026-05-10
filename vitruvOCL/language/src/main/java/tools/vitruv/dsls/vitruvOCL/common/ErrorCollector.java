@@ -14,6 +14,7 @@ package tools.vitruv.dsls.vitruvOCL.common;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.antlr.v4.runtime.Token;
 
 /**
  * Collects compilation errors across all compiler passes without halting execution.
@@ -51,6 +52,24 @@ public class ErrorCollector {
    */
   public void add(int line, int column, String message, ErrorSeverity severity, String source) {
     errors.add(new CompileError(line, column, message, severity, source));
+  }
+
+  /**
+   * Adds an error whose span is derived from the given ANTLR token.
+   *
+   * <p>Uses {@code token.getText().length()} as the end column so the underline covers the entire
+   * token text rather than just its first character.
+   *
+   * @param token The ANTLR token to underline
+   * @param message Human-readable error description
+   * @param severity Error severity level
+   * @param source Source file or context identifier
+   */
+  public void add(Token token, String message, ErrorSeverity severity, String source) {
+    int line = token.getLine();
+    int col = token.getCharPositionInLine();
+    int endCol = col + token.getText().length();
+    errors.add(new CompileError(line, col, line, endCol, message, severity, source, null));
   }
 
   /**

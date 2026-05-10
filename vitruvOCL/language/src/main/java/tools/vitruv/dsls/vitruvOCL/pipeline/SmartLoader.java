@@ -108,13 +108,7 @@ public class SmartLoader {
     for (Path ecore : resolvedEcores) {
       try {
         String packageName = FileValidator.extractPackageNameFromEcore(ecore);
-        if (availableEcores.containsKey(packageName)) {
-          warnings.add(
-              new Warning(
-                  Warning.WarningType.DUPLICATE_METAMODEL,
-                  "Metamodel '" + packageName + "' defined multiple times",
-                  ecore));
-        } else {
+        if (!availableEcores.containsKey(packageName)) {
           availableEcores.put(packageName, ecore);
         }
       } catch (IOException e) {
@@ -178,17 +172,6 @@ public class SmartLoader {
           warnings.add(
               new Warning(Warning.WarningType.UNUSED_MODEL, "No instances for '" + pkg + "'"));
         }
-      }
-    }
-
-    // Warn about unused files
-    for (String pkg : availableEcores.keySet()) {
-      if (!requiredPackages.contains(pkg)) {
-        warnings.add(
-            new Warning(
-                Warning.WarningType.UNUSED_METAMODEL,
-                "Metamodel '" + pkg + "' not used",
-                availableEcores.get(pkg)));
       }
     }
 
