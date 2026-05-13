@@ -9,31 +9,54 @@ VitruvOCL implements OCL# semantics for type-safe constraint evaluation across m
 **Key Features:**
 - **OCL# Semantics**: Null-safe
 - **Cross-Metamodel Constraints**: Reference entities across different metamodels
-- **Smart Loading**: Automatically loads only required metamodels
 - **Type Safety**: Full static type checking before evaluation
 - **EMF Integration**: Native support for Ecore metamodels and XMI instances
+- **Vitruvius Framework Integration**: Native support for Ecore metamodels and XMI instances
 
 Based on: Steinmann, F., Clarisó, R., Gogolla, M. (2025). ["Meet OCL{^\sharp }, a relational object constraint language"](https://link.springer.com/article/10.1007/s10270-025-01286-1).
+Uses: [Vitruvius Framweork](https://github.com/vitruv-tools)
 
 ## Quick Start
 
 ### Download
 
-//TODO
+VitruvOCL consists of a Java-based language engine and a VS Code extension for development support.
 
-### Project Structure Convention
-```
-your-project/
-  constraints.ocl       # Constraint definitions
-  metamodels/
-    model1.ecore
-    model2.ecore
-  instances/
-    instance1.xmi
-    instance2.model1
-```
+### VS Code Extension (Recommended)
+The extension provides syntax highlighting, real-time error reporting, and Language Server support.
 
-### Example Usage
+1. Navigate to the `vitruvocl-vscode-extension/` folder in the repository.
+2. Locate the latest `.vsix` file.
+3. In VS Code, go to the **Extensions** view (`Ctrl+Shift+X`).
+4. Click the three dots (···) in the top right and select **Install from VSIX...**.
+5. Select the downloaded `.vsix` file.
+
+### Java Library (API)
+To use VitruvOCL in your own Java project (e.g., to integrate it with a VSUM), you need to install the library to your local Maven repository:
+
+1. Clone the repository:
+   ```bash
+   git clone [https://github.com/vitruv-tools/Vitruv-DSLs.git](https://github.com/vitruv-tools/Vitruv-DSLs.git)
+Navigate to the language engine:
+
+Bash
+cd Vitruv-DSLs/vitruvOCL/language
+Build and install locally:
+
+Bash
+mvn clean install
+
+
+You can then add it to your `pom.xml`:
+```xml
+<dependency>
+      <groupId>tools.vitruv</groupId>
+      <artifactId>vitruvOCL</artifactId>
+      <version>1.0.0</version>
+</dependency>
+
+
+### Example Constraints
 
 **constraints.ocl:**
 ```ocl
@@ -65,15 +88,7 @@ public class Main {
     }
 }
 ```
-
-**Run:**
-```bash
-javac -cp "lib/vitruvOCL-0.1.0.jar" Main.java
-java -cp ".;lib/vitruvOCL-0.1.0.jar" Main  # Windows
-java -cp ".:lib/vitruvOCL-0.1.0.jar" Main  # Linux/Mac
-```
-
-See [examples/](examples/) for complete working examples.
+See [Methodologist-Template](https://github.com/vitruv-tools/Methodologist-Template/tree/vitruviusOCL) for complete working examples.
 
 ## Syntax
 
@@ -129,6 +144,7 @@ context MetamodelName::ClassName inv:
 - `substring(start, end)`
 - `indexOf(substring)`
 - `equalsIgnoreCase(string)`
+- `length()`
 
 **Control Flow:**
 - `if condition then expr1 else expr2 endif`
@@ -140,9 +156,38 @@ context MetamodelName::ClassName inv:
 - `oclIsTypeOf(Type)` - Check exact type
 - `oclAsType(Type)` - Cast to type
 
-**Cross-Metamodel:**
-- `~` (squiggle) - Correspondence operator (planned)
-- `^` (caret) - Message operator (planned)
+**Correspondence Operator (`~`):**
+
+The `~` operator checks whether two objects are related by a Vitruvius correspondence. It is used as a shorthand predicate inside collection operations — it always refers to `self` on one side:
+
+| Syntax | Meaning |
+|--------|---------|
+| `Collection.select(~)` | Keep elements that correspond to `self` |
+| `Collection.reject(~)` | Remove elements that correspond to `self` |
+| `Collection.exists(~)` | True if any element corresponds to `self` |
+| `Collection.select(~, Tag = "x")` | Filter by correspondence tag |
+| `Collection.select(~, Type = pkg::Class)` | Filter by concrete type of the corresponding object |
+| `Collection.select(~, Tag = "x", Type = pkg::Class)` | Combined tag + type filter |
+
+Requires a `correspondence.ecore` metamodel and at least one `.correspondence` instance file to be loaded alongside the domain metamodels.
+
+**Example:**
+```ocl
+-- Homer has exactly one corresponding Person
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~).size() == 1
+
+-- Only Husband correspondences
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Tag = "Husband").notEmpty()
+
+-- Filter by type and tag
+context family::Member inv:
+  persons::Person.allInstances()
+    .select(~, Type = persons::Male, Tag = "Husband").size() == 1
+```
 
 ## Architecture
 
@@ -166,7 +211,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed design documentation.
 mvn clean package
 ```
 
-JAR will be in `language/target/vitruvOCL-0.1.0-SNAPSHOT.jar`
+JAR will be in `language/target/vitruvOCL.jar`
 
 ### Run Tests
 ```bash
@@ -204,15 +249,6 @@ BatchValidationResult evaluateConstraints(
 )
 ```
 
-## Examples
-
-- [/exampleproject](examples/exampleproject) - Basic constraint evaluation examples
-
-
-## Contributing
-
-This project was developed as part of a Master's thesis at KIT. Contributions are welcome after the initial release.
-
 ## License
 
 This project is licensed under the Eclipse Public License 2.0 - see [LICENSE](LICENSE) file for details.
@@ -225,4 +261,4 @@ See [NOTICE](NOTICE) for information about third-party dependencies and their li
 ## Acknowledgments
 
 - Grammar derived from DeepOCL implementation by Ralph Gerbig and Arne Lange (University of Mannheim)
-- Based on OCL# semantics by Gogolla et al.
+- Based on OCL# semantics by Steinmann, F., Clarisó, R., Gogolla, M.

@@ -37,7 +37,17 @@
 **Value System**: Value wraps List<OCLElement>, everything is a collection
 **Smart Loading**: Only loads metamodels referenced in constraints
 
+## Correspondence Operator
+
+The `~` operator is resolved during Pass 3 (Evaluation) via `MetamodelWrapper.getCorrespondingObjects()`. It reads loaded `.correspondence` XMI files and matches `leftEObjects`/`rightEObjects` references to determine if two objects are in the same correspondence.
+
+Supported forms in collection operations (`select`, `reject`, `exists`):
+- `select(~)` — objects corresponding to `self` (any tag/type)
+- `select(~, Tag = "x")` — filter by `tag` attribute on the correspondence
+- `select(~, Type = pkg::Class)` — filter by concrete EClass of the corresponding object
+- `select(~, Tag = "x", Type = pkg::Class)` — combined filter
+
 ## External Integration
 - **ANTLR4**: Parser generation
 - **EMF**: Metamodel and instance handling (EPackage, EObject)
-- **Vitruvius**: VSUM integration (planned)
+- **Vitruvius VSUM**: Integration via `VSUMWrapper` — wraps a `VirtualModel` and exposes its view-source models as `MetamodelWrapperInterface`; registered via `VitruvOCL.registerVSUM()`
