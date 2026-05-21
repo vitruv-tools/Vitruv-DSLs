@@ -90,7 +90,7 @@ jobs:
 
     - name: Package extension
       working-directory: reactions/vscode-plugin
-      run: npx @vscode/vsce package
+      run: npx --ignore-scripts --no-install vsce package
 
     - name: Stage build results
       run: mkdir staging-${{ matrix.os }} && cp reactions/vscode-plugin/*.vsix staging-${{ matrix.os }}/;
