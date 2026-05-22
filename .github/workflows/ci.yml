@@ -90,7 +90,7 @@ jobs:
 
     - name: Package extension
       working-directory: reactions/vscode-plugin
-      run: npx @vscode/vsce package
+      run: npx --yes --ignore-scripts @vscode/vsce@3.9.1 package
 
     - name: Stage build results
       run: mkdir staging-${{ matrix.os }} && cp reactions/vscode-plugin/*.vsix staging-${{ matrix.os }}/;
@@ -168,7 +168,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
       - name: Run checkstyle
-        uses: dbelyaev/action-checkstyle@v3.9.0
+        uses: dbelyaev/action-checkstyle@v3.10.0
         with:
           github_token: ${{ secrets.github_token }}
           reporter: github-pr-review
