@@ -1,26 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
   <!-- Build Parent -->
   <parent>
     <groupId>tools.vitruv</groupId>
     <artifactId>parent</artifactId>
-    <version>3.3.2</version>
+    <version>3.3.3-SNAPSHOT</version>
   </parent>
-
   <!-- Project Information -->
   <artifactId>tools.vitruv.dsls</artifactId>
   <version>3.2.4-SNAPSHOT</version>
   <packaging>pom</packaging>
-
   <name>Vitruv Consistency DSLs</name>
   <description>Domain specific languages for specifying consistency preservation rules in the Vitruv framework</description>
   <url>https://github.com/vitruv-tools/Vitruv-DSLs</url>
-
   <!-- Organizational Information -->
   <licenses>
     <license>
@@ -28,13 +23,11 @@
       <url>https://www.eclipse.org/org/documents/epl-v10.php</url>
     </license>
   </licenses>
-
   <scm>
     <connection>scm:git:git://github.com/vitruv-tools/Vitruv-DSLs.git</connection>
     <developerConnection>scm:git:https://github.com/vitruv-tools/Vitruv-DSLs.git</developerConnection>
     <url>https://github.com/vitruv-tools/Vitruv-DSLs/tree/main</url>
   </scm>
-
   <!-- Modules -->
   <modules>
     <module>common</module>
@@ -43,7 +36,6 @@
     <module>testutils</module>
     <module>p2wrappers</module>
   </modules>
-
   <properties>
     <vitruv-change.version>3.2.4-SNAPSHOT</vitruv-change.version>
     <!-- SonarQube configuration -->
@@ -51,7 +43,6 @@
     <sonar.organization>vitruv-tools</sonar.organization>
     <sonar.projectKey>vitruv-tools_Vitruv-DSLs</sonar.projectKey>
   </properties>
-
   <!-- Dependency Management -->
   <dependencyManagement>
     <dependencies>
@@ -101,7 +92,6 @@
         <artifactId>tools.vitruv.change.utils</artifactId>
         <version>${vitruv-change.version}</version>
       </dependency>
-
       <!-- external dependencies -->
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -174,49 +164,49 @@
         <version>3.20.300</version>
       </dependency>
       <dependency>
-        <groupId>org.eclipse.xtend</groupId>
+        <groupId>org.eclipse.xtext</groupId>
         <artifactId>org.eclipse.xtend.lib</artifactId>
-        <version>2.42.0</version>
+        <version>2.43.0</version>
       </dependency>
       <dependency>
-        <groupId>org.eclipse.xtend</groupId>
+        <groupId>org.eclipse.xtext</groupId>
         <artifactId>org.eclipse.xtend.lib.macro</artifactId>
-        <version>2.42.0</version>
+        <version>2.43.0</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.xtext</groupId>
         <artifactId>org.eclipse.xtext</artifactId>
-        <version>2.42.0</version>
+        <version>2.43.0</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.xtext</groupId>
         <artifactId>org.eclipse.xtext.testing</artifactId>
-        <version>2.42.0</version>
+        <version>2.43.0</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.xtext</groupId>
         <artifactId>org.eclipse.xtext.common.types</artifactId>
-        <version>2.42.0</version>
+        <version>2.43.0</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.xtext</groupId>
         <artifactId>org.eclipse.xtext.util</artifactId>
-        <version>2.42.0</version>
+        <version>2.43.0</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.xtext</groupId>
         <artifactId>org.eclipse.xtext.xbase</artifactId>
-        <version>2.42.0</version>
+        <version>2.43.0</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.xtext</groupId>
         <artifactId>org.eclipse.xtext.xbase.lib</artifactId>
-        <version>2.42.0</version>
+        <version>2.43.0</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.xtext</groupId>
         <artifactId>org.eclipse.xtext.xbase.testing</artifactId>
-        <version>2.42.0</version>
+        <version>2.43.0</version>
       </dependency>
       <dependency>
         <groupId>org.hamcrest</groupId>
@@ -235,7 +225,6 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-
   <repositories>
     <!-- allow snapshots -->
     <repository>

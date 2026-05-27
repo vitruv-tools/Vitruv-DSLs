@@ -1,21 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
   <parent>
     <groupId>tools.vitruv</groupId>
     <artifactId>tools.vitruv.dsls.reactions</artifactId>
     <version>3.2.4-SNAPSHOT</version>
   </parent>
-
   <artifactId>tools.vitruv.dsls.reactions.runtime</artifactId>
-
   <name>Vitruv Reactions Language Runtime</name>
   <description>Runtime components to execute Reactions as Consistency Preservation Rules on Model Repositories.</description>
-
   <build>
     <plugins>
       <plugin>
@@ -27,7 +22,7 @@
         <artifactId>exec-maven-plugin</artifactId>
       </plugin>
       <plugin>
-        <groupId>org.eclipse.xtend</groupId>
+        <groupId>org.eclipse.xtext</groupId>
         <artifactId>xtend-maven-plugin</artifactId>
       </plugin>
       <plugin>
@@ -40,7 +35,6 @@
       </plugin>
     </plugins>
   </build>
-
   <dependencies>
     <!-- Vitruvius compile dependencies -->
     <dependency>
@@ -67,7 +61,6 @@
       <groupId>tools.vitruv</groupId>
       <artifactId>tools.vitruv.change.utils</artifactId>
     </dependency>
-
     <!-- external compile dependencies -->
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -94,14 +87,13 @@
       <artifactId>org.eclipse.equinox.common</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.eclipse.xtend</groupId>
+      <groupId>org.eclipse.xtext</groupId>
       <artifactId>org.eclipse.xtend.lib</artifactId>
     </dependency>
     <dependency>
       <groupId>org.eclipse.xtext</groupId>
       <artifactId>org.eclipse.xtext.xbase.lib</artifactId>
     </dependency>
-
     <!-- p2 compile dependencies -->
     <dependency>
       <groupId>${project.groupId}</groupId>

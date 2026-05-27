@@ -41,7 +41,7 @@ class ReactionsLanguageFormatter extends XbaseFormatter {
 		reactionsFile.namespaceImports?.append[newLines = 2]
 		reactionsFile.metamodelImports.forEach[it.format(document)]
 		reactionsFile.metamodelImports.tail.forEach[prepend [newLine]]
-		reactionsFile.metamodelImports.last?.append[newLines = 2]
+		reactionsFile.metamodelImports.lastOrNull.append[newLines = 2]
 		reactionsFile.reactionsSegments.forEach[it.format(document)]
 		reactionsFile.reactionsSegments.tail.forEach[prepend [newLines = 2]]
 	}
@@ -75,7 +75,7 @@ class ReactionsLanguageFormatter extends XbaseFormatter {
 		segment.regionFor.keyword('minimal').surround[oneSpace]
 		segment.reactionsImports.head?.prepend[highPriority; newLines = 2]
 		segment.reactionsImports.forEach[it.format(document)]
-		segment.reactionsImports.last?.append[newLines = 2]
+		segment.reactionsImports.lastOrNull.append[newLines = 2]
 		segment.reactions.forEach[it.format(document)]
 		segment.routines.forEach[it.format(document)]
 	}
