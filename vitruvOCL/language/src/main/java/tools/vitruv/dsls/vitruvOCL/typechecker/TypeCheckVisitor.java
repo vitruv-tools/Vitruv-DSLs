@@ -3294,10 +3294,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   /**
    * Type checks the {@code oclIsKindOf()} operation.
    *
-   * <p>Returns collection of Boolean values, one per element.
+   * <p>For a singleton {@code !T!} or bare metaclass receiver, returns {@code !Boolean!}. For a
+   * multi-valued collection receiver, returns a collection of Boolean with the same kind.
    *
    * @param ctx The oclIsKindOf operation node
-   * @return Collection(Boolean) with same kind as receiver
+   * @return {@code !Boolean!} for singleton/bare receivers; {@code Collection(Boolean)} for
+   *     multi-valued receivers
    */
   @Override
   public Type visitOclIsKindOfOp(VitruvOCLParser.OclIsKindOfOpContext ctx) {
@@ -3308,12 +3310,17 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       targetType = resolveTypeExpression(ctx.type);
     }
 
-    if (!receiverType.isCollection()) {
-      receiverType = Type.set(receiverType);
+    // Mirror the logic of visitOclAsTypeOp: Singleton !T! must not be wrapped in Set first,
+    // otherwise preserveCollectionKind would return Set{Boolean} = {Boolean} instead of !Boolean!
+    Type resultType;
+    if (receiverType.isCollection() && !receiverType.isSingleton()) {
+      // Multi-valued collection: one Boolean per element, preserve collection kind
+      resultType = preserveCollectionKind(receiverType, Type.BOOLEAN);
+    } else {
+      // Singleton !T! or bare metaclass T → oclIsKindOf returns a single !Boolean!
+      resultType = Type.singleton(Type.BOOLEAN);
     }
 
-    // Preserve collection kind from receiver
-    Type resultType = preserveCollectionKind(receiverType, Type.BOOLEAN);
     nodeTypes.put(ctx, resultType);
     nodeTypes.put(ctx.type, targetType);
     return resultType;
@@ -3355,12 +3362,15 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       targetType = resolveTypeExpression(ctx.type);
     }
 
-    // Wrap singleton/metaclass in collection for oclIsTypeOf
-    if (!receiverType.isCollection()) {
-      receiverType = Type.set(receiverType);
+    // Mirror visitOclIsKindOfOp: Singleton !T! must not be wrapped in Set first
+    Type resultType;
+    if (receiverType.isCollection() && !receiverType.isSingleton()) {
+      // Multi-valued collection: one Boolean per element, preserve collection kind
+      resultType = preserveCollectionKind(receiverType, Type.BOOLEAN);
+    } else {
+      // Singleton !T! or bare metaclass T → oclIsTypeOf returns a single !Boolean!
+      resultType = Type.singleton(Type.BOOLEAN);
     }
-
-    Type resultType = preserveCollectionKind(receiverType, Type.BOOLEAN);
     nodeTypes.put(ctx, resultType);
     nodeTypes.put(ctx.type, targetType);
     return resultType;

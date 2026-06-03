@@ -1,0 +1,368 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "vitruvocl",
+    "scopeName": "source.vitruvocl",
+    "patterns": [
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#package-block"
+        },
+        {
+            "include": "#context-block"
+        },
+        {
+            "include": "#let-expression"
+        },
+        {
+            "include": "#collection-literals"
+        },
+        {
+            "include": "#iterator-ops"
+        },
+        {
+            "include": "#type-annotations"
+        },
+        {
+            "include": "#correspondence-operator"
+        },
+        {
+            "include": "#enum-literal"
+        },
+        {
+            "include": "#metamodel-reference"
+        },
+        {
+            "include": "#ocl-operations"
+        },
+        {
+            "include": "#keywords"
+        },
+        {
+            "include": "#constants"
+        },
+        {
+            "include": "#strings"
+        },
+        {
+            "include": "#numbers"
+        },
+        {
+            "include": "#operators"
+        },
+        {
+            "include": "#multiplicity-brackets"
+        },
+        {
+            "include": "#punctuation"
+        }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.block.vitruvocl",
+                    "begin": "/\\*",
+                    "end": "\\*/",
+                    "captures": {
+                        "0": {
+                            "name": "punctuation.definition.comment.vitruvocl"
+                        }
+                    }
+                },
+                {
+                    "name": "comment.line.double-dash.vitruvocl",
+                    "match": "--.*$"
+                }
+            ]
+        },
+        "package-block": {
+            "patterns": [
+                {
+                    "name": "keyword.other.package.vitruvocl",
+                    "match": "\\b(package|endpackage)\\b"
+                }
+            ]
+        },
+        "context-block": {
+            "patterns": [
+                {
+                    "match": "\\b(context)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:::([A-Za-z_][A-Za-z0-9_]*))?",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.control.context.vitruvocl"
+                        },
+                        "2": {
+                            "name": "entity.name.type.class.vitruvocl"
+                        },
+                        "3": {
+                            "name": "entity.name.function.vitruvocl"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b(inv|pre|post|body|def)\\b(\\s+([A-Za-z_][A-Za-z0-9_]*))?",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.other.constraint.vitruvocl"
+                        },
+                        "3": {
+                            "name": "entity.name.label.vitruvocl"
+                        }
+                    }
+                }
+            ]
+        },
+        "let-expression": {
+            "patterns": [
+                {
+                    "match": "\\b(let)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.control.let.vitruvocl"
+                        },
+                        "2": {
+                            "name": "variable.other.let.vitruvocl"
+                        }
+                    }
+                },
+                {
+                    "name": "keyword.control.in.vitruvocl",
+                    "match": "\\bin\\b"
+                }
+            ]
+        },
+        "collection-literals": {
+            "patterns": [
+                {
+                    "begin": "\\b(Set|Sequence|Bag|OrderedSet)\\s*(\\{)",
+                    "end": "(\\})",
+                    "beginCaptures": {
+                        "1": {
+                            "name": "entity.name.type.collection.vitruvocl"
+                        },
+                        "2": {
+                            "name": "punctuation.definition.collection.begin.vitruvocl"
+                        }
+                    },
+                    "endCaptures": {
+                        "1": {
+                            "name": "punctuation.definition.collection.end.vitruvocl"
+                        }
+                    },
+                    "patterns": [
+                        {
+                            "include": "$self"
+                        }
+                    ]
+                }
+            ]
+        },
+        "iterator-ops": {
+            "patterns": [
+                {
+                    "name": "support.function.iterator.vitruvocl",
+                    "match": "\\b(select|reject|collect|collectNested|forAll|exists|any|one|isUnique|sortedBy|iterate)\\b"
+                }
+            ]
+        },
+        "type-annotations": {
+            "patterns": [
+                {
+                    "name": "entity.name.type.collection.vitruvocl",
+                    "match": "\\b(Set|Sequence|Bag|OrderedSet|Optional|Singleton|Collection)(?=\\s*[({<]|\\b)"
+                },
+                {
+                    "name": "entity.name.type.primitive.vitruvocl",
+                    "match": "\\b(Integer|Real|String|Boolean|UnlimitedNatural|OclAny|OclVoid|INTEGER|DOUBLE|FLOAT|BOOLEAN|STRING|ANY|ERROR)\\b"
+                }
+            ]
+        },
+        "correspondence-operator": {
+            "patterns": [
+                {
+                    "name": "keyword.operator.correspondence.vitruvocl",
+                    "match": "~"
+                }
+            ]
+        },
+        "enum-literal": {
+            "match": "\\b([A-Z][A-Za-z0-9_]*)::([A-Z][A-Z0-9_]+)\\b",
+            "captures": {
+                "1": {
+                    "name": "entity.name.type.enum.vitruvocl"
+                },
+                "2": {
+                    "name": "variable.other.enum-member.vitruvocl"
+                }
+            }
+        },
+        "metamodel-reference": {
+            "name": "entity.name.type.metamodel-reference.vitruvocl",
+            "match": "\\b[A-Z][A-Za-z0-9_]*::[A-Z][A-Za-z0-9_]+\\b"
+        },
+        "ocl-operations": {
+            "patterns": [
+                {
+                    "name": "support.function.string.vitruvocl",
+                    "match": "\\b(concat|substring|size|indexOf|toUpperCase|toLowerCase|toInteger|toReal|trim|matches|tokenize|substituteAll|substituteFirst|characters|equalsIgnoreCase|startsWith|endsWith)\\b"
+                },
+                {
+                    "name": "support.function.collection.vitruvocl",
+                    "match": "\\b(isEmpty|notEmpty|includes|excludes|includesAll|excludesAll|sum|count|min|max|first|last|at|union|intersection|append|prepend|insertAt|subSequence|flatten|asSet|asOrderedSet|asSequence|asBag|reverse)\\b"
+                },
+                {
+                    "name": "support.function.ocl.vitruvocl",
+                    "match": "\\b(allInstances|oclIsKindOf|oclIsTypeOf|oclAsType|oclIsNew|oclIsUndefined|oclIsInvalid)\\b"
+                },
+                {
+                    "name": "support.function.numeric.vitruvocl",
+                    "match": "\\b(abs|floor|ceiling|round|sqrt|log|exp|mod|div)\\b"
+                }
+            ]
+        },
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.control.vitruvocl",
+                    "match": "\\b(if|then|else|endif)\\b"
+                },
+                {
+                    "name": "keyword.operator.logical.vitruvocl",
+                    "match": "\\b(and|or|not|implies|xor)\\b"
+                }
+            ]
+        },
+        "constants": {
+            "patterns": [
+                {
+                    "name": "constant.language.self.vitruvocl",
+                    "match": "\\bself\\b"
+                },
+                {
+                    "name": "constant.language.result.vitruvocl",
+                    "match": "\\bresult\\b"
+                },
+                {
+                    "name": "constant.language.boolean.vitruvocl",
+                    "match": "\\b(true|false)\\b"
+                },
+                {
+                    "name": "constant.language.null.vitruvocl",
+                    "match": "\\b(null|invalid|OclUndefined)\\b"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.single.vitruvocl",
+                    "begin": "'",
+                    "end": "'",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.vitruvocl",
+                            "match": "\\\\."
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.double.vitruvocl",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.vitruvocl",
+                            "match": "\\\\."
+                        }
+                    ]
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.float.vitruvocl",
+                    "match": "\\b\\d+\\.\\d+([eE][+-]?\\d+)?[fF]?\\b"
+                },
+                {
+                    "name": "constant.numeric.integer.vitruvocl",
+                    "match": "\\b\\d+\\b"
+                }
+            ]
+        },
+        "operators": {
+            "patterns": [
+                {
+                    "name": "keyword.operator.comparison.vitruvocl",
+                    "match": "(=|<>|!=|<=|>=|<|>)"
+                },
+                {
+                    "name": "keyword.operator.arithmetic.vitruvocl",
+                    "match": "(\\+|-|\\*|/)"
+                },
+                {
+                    "name": "keyword.operator.range.vitruvocl",
+                    "match": "\\.\\."
+                },
+                {
+                    "name": "keyword.operator.navigation.vitruvocl",
+                    "match": "\\.(?!\\.)"
+                },
+                {
+                    "name": "keyword.operator.type-cast.vitruvocl",
+                    "match": "::"
+                },
+                {
+                    "name": "keyword.operator.colon.vitruvocl",
+                    "match": ":"
+                },
+                {
+                    "name": "keyword.operator.pipe.vitruvocl",
+                    "match": "\\|"
+                }
+            ]
+        },
+        "multiplicity-brackets": {
+            "patterns": [
+                {
+                    "name": "punctuation.definition.type.singleton.vitruvocl",
+                    "match": "[¡!]"
+                },
+                {
+                    "name": "punctuation.definition.type.optional.vitruvocl",
+                    "match": "[¿?]"
+                }
+            ]
+        },
+        "punctuation": {
+            "patterns": [
+                {
+                    "name": "punctuation.section.parens.begin.vitruvocl",
+                    "match": "\\("
+                },
+                {
+                    "name": "punctuation.section.parens.end.vitruvocl",
+                    "match": "\\)"
+                },
+                {
+                    "name": "punctuation.section.braces.begin.vitruvocl",
+                    "match": "\\{"
+                },
+                {
+                    "name": "punctuation.section.braces.end.vitruvocl",
+                    "match": "\\}"
+                },
+                {
+                    "name": "punctuation.section.bracket.begin.vitruvocl",
+                    "match": "\\["
+                },
+                {
+                    "name": "punctuation.section.bracket.end.vitruvocl",
+                    "match": "\\]"
+                }
+            ]
+        }
+    }
+}
