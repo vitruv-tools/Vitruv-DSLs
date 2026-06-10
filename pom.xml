@@ -161,7 +161,7 @@
       <dependency>
         <groupId>org.eclipse.platform</groupId>
         <artifactId>org.eclipse.core.resources</artifactId>
-        <version>3.23.200</version>
+        <version>3.24.0</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.platform</groupId>
