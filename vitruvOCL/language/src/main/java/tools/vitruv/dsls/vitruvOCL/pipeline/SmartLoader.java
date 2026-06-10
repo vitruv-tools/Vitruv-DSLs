@@ -121,7 +121,9 @@ public class SmartLoader {
         String packageName = FileValidator.extractPackageNameFromXmi(xmi);
         availableXmis.computeIfAbsent(packageName, k -> new ArrayList<>()).add(xmi);
       } catch (IOException e) {
-        fileErrors.add(new FileError(xmi, FileError.FileErrorType.PARSE_ERROR, e.getMessage()));
+        // Non-XML or unrecognised files (e.g. Vitruvius-internal metadata) are skipped silently.
+        warnings.add(new Warning(Warning.WarningType.UNUSED_MODEL,
+            "Skipping unrecognised instance file: " + xmi.getFileName()));
       }
     }
 
@@ -129,19 +131,25 @@ public class SmartLoader {
       return new LoadResult(wrapper, fileErrors, warnings);
     }
 
-    // ALWAYS load correspondence metamodel if available
-    if (availableEcores.containsKey("correspondence")) {
-      requiredPackages.add("correspondence");
-    }
+    // Always load correspondence instances when present — the ecore is embedded in the JAR
+    // and auto-registered, so no explicit .ecore file is required for it.
+    requiredPackages.add("correspondence");
+
+    System.err.println("[DBG-SL] requiredPackages=" + requiredPackages);
+    System.err.println("[DBG-SL] availableEcores=" + availableEcores.keySet());
+    System.err.println("[DBG-SL] availableXmis=" + availableXmis.keySet());
 
     // Load only required metamodels
     for (String pkg : requiredPackages) {
       if (!availableEcores.containsKey(pkg)) {
-        fileErrors.add(
-            new FileError(
-                null,
-                FileError.FileErrorType.NOT_FOUND,
-                "Required metamodel '" + pkg + "' not found"));
+        // "correspondence" ecore is embedded in the JAR and auto-registered — not an error.
+        if (!pkg.equals("correspondence")) {
+          fileErrors.add(
+              new FileError(
+                  null,
+                  FileError.FileErrorType.NOT_FOUND,
+                  "Required metamodel '" + pkg + "' not found"));
+        }
       } else {
         try {
           wrapper.loadMetamodel(pkg, availableEcores.get(pkg));
@@ -157,13 +165,23 @@ public class SmartLoader {
       if (availableXmis.containsKey(pkg)) {
         for (Path xmi : availableXmis.get(pkg)) {
           try {
+            System.err.println("[DBG-SL] Loading XMI: " + xmi.getFileName());
             wrapper.loadModelInstance(xmi);
+            System.err.println("[DBG-SL] XMI loaded OK: " + xmi.getFileName());
           } catch (IOException e) {
+            System.err.println("[DBG-SL] IOException loading " + xmi.getFileName() + ": " + e.getMessage());
             fileErrors.add(
                 new FileError(
                     xmi,
                     FileError.FileErrorType.PARSE_ERROR,
                     "Failed to load model: " + e.getMessage()));
+          } catch (Exception e) {
+            System.err.println("[DBG-SL] RuntimeException loading " + xmi.getFileName() + ": " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            fileErrors.add(
+                new FileError(
+                    xmi,
+                    FileError.FileErrorType.PARSE_ERROR,
+                    "Failed to load model (runtime error): " + e.getMessage()));
           }
         }
       } else {

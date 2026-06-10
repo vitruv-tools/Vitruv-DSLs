@@ -105,6 +105,11 @@
           "type": "string",
           "default": "",
           "description": "Path to language-server.jar (leave empty for auto-detection from lib/)"
+        },
+        "vitruvocl.vsumPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to your VSUM storage folder (absolute or relative to workspace root). E.g. 'vsumexample' or 'vsum/target/vsumtest'. Leave empty for auto-detection."
         }
       }
     }

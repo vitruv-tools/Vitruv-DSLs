@@ -101,6 +101,9 @@ infixedExpCS
     | left=infixedExpCS op='~' right=infixedExpCS                          # correspondence
     | left=infixedExpCS op='==' right=infixedExpCS                         # equalityComparison
     | left=infixedExpCS op='!=' right=infixedExpCS                         # inequalityComparison
+    | left=infixedExpCS op=INVALID_OP_SEQ right=infixedExpCS              # invalidBinaryOp
+    | left=infixedExpCS op=MULTI_EQ right=infixedExpCS                    # multiEqualsOp
+    | left=infixedExpCS '=' right=infixedExpCS                             # singleEqualsOp
     | left=infixedExpCS op='<' right=infixedExpCS                          # lessThanComparison
     | left=infixedExpCS op='<=' right=infixedExpCS                         # lessThanOrEqualComparison
     | left=infixedExpCS op='>' right=infixedExpCS                          # greaterThanComparison
@@ -234,7 +237,30 @@ operationCall
     | stringOpCS     # stringOperation
     | iteratorOpCS   # iteratorOperation
     | typeOpCS       # typeOperation
+    // Must come before unknownOpCS: catches typos of select/reject/exists with ~ syntax
+    // so the parser never sees '~' as an unexpected expression-start token.
+    | opName=ID '(' corrFilter=correspondenceFilterCS ')' # unknownCorrOp
     | unknownOpCS    # unknownOperation
+    // Fallback: no-arg operation called with arguments — e.g. allInstances(B), size(x)
+    | op=('allInstances'|'size'|'isEmpty'|'notEmpty'|'first'|'last'|'reverse'
+         |'asSet'|'asBag'|'asSequence'|'asOrderedSet'|'lift'
+         |'abs'|'floor'|'ceiling'|'round')
+      '(' args+=expCS (',' args+=expCS)* ')'              # noArgOpWithArgs
+    // Fallback: ANY operation keyword used without parentheses — e.g. .notEmpty, .select, .concat
+    | op=('size'|'isEmpty'|'notEmpty'|'first'|'last'|'reverse'
+         |'asSet'|'asBag'|'asSequence'|'asOrderedSet'|'lift'
+         |'abs'|'floor'|'ceiling'|'round'|'allInstances'
+         |'select'|'reject'|'exists'|'forAll'|'collect'|'collectNested'
+         |'one'|'any'|'isUnique'|'sortedBy'|'iterate'
+         |'oclIsKindOf'|'oclIsTypeOf'|'oclAsType'
+         |'includes'|'excludes'|'includesAll'|'excludesAll'
+         |'including'|'excluding'|'union'|'intersection'|'symmetricDifference'
+         |'indexOf'|'at'|'append'|'prepend'|'insertAt'|'subSequence'
+         |'concat'|'substring'|'length'|'toLower'|'toUpper'
+         |'toInteger'|'toReal'|'matches'|'equalsIgnoreCase'
+         |'substituteAll'|'substituteFirst'|'tokenize'|'characters'
+         |'flatten'|'sum'|'min'|'max'|'avg'|'count'
+         |'div'|'mod'|'indexOf')  # opMissingParens
 ;
 
 // Catch-all for unknown operation calls — produces a precise "Unknown operation" diagnostic
@@ -311,6 +337,8 @@ iteratorOpCS
     | 'sortedBy' '(' iteratorVars=iteratorVarList '|' body=expCS ')'                # sortedByOp
     | 'collectNested' '(' iteratorVars=iteratorVarList '|' body=expCS ')'           # collectNestedOp
     | 'iterate' '(' iterateVarSpec '|' body=expCS ')'                               # iterateOp
+    // Fallback: iterator keyword used without '| body' — caught for better error reporting
+    | op=('select'|'reject'|'exists'|'forAll'|'collect'|'one'|'any'|'isUnique'|'sortedBy'|'collectNested') '(' iteratorVars=iteratorVarList ')'  # iteratorMissingBody
 ;
 
 // iterate(elem; acc : Type = initExpr | body)
@@ -335,8 +363,10 @@ correspondenceOptions
 
 correspondenceOption
 :
-    'Type' '=' type=typeExpCS    # corrTypeFilter
-    | 'Tag' '='  tag=STRING      # corrTagFilter
+    'Type' '=' type=expCS        # corrTypeFilter
+    | 'Tag' '='  tag=expCS       # corrTagFilter
+    | badKey=ID '=' badVal=expCS # unknownFilterOption
+    | badArg=ID                  # invalidFilterArg  // bare ID without '=' — e.g. reject(~, e, ...)
 ;
 
 iteratorVarList
@@ -405,6 +435,20 @@ UnterminatedStringLiteral
 :
     '"' (~["\\\r\n] | '\\' (. | EOF))*
 ;
+
+// Any sequence of 2+ arithmetic/comparison operator characters that is not a
+// valid VitruvOCL operator. Defined as a single lexer token so the parser can
+// produce a precise "Invalid operator" diagnostic instead of a cascading error.
+//
+// OpChar excludes '=' and '!' so that '<=', '>=', '==', '!=' are not consumed.
+// '--' is intentionally excluded: it starts a line comment in OCL.
+// Maximal munch guarantees that '+-+', '++', '**', '<>', ... are all caught.
+INVALID_OP_SEQ : OpChar OpChar+ ;
+fragment OpChar : [+\-*/<>] ;
+
+// Three or more consecutive '=' signs (e.g. ===, ====, =======).
+// Defined before '==' so maximal munch picks this over '==' + '='.
+MULTI_EQ : '==' '='+ ;
 
 fragment DIGIT: [0-9];
 INT: DIGIT+;

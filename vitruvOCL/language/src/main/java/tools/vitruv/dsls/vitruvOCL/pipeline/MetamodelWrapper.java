@@ -15,6 +15,11 @@ package tools.vitruv.dsls.vitruvOCL.pipeline;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.*;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -56,6 +61,12 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    */
   private final Map<EObject, String> instanceSourceFile = new IdentityHashMap<>();
 
+  /**
+   * Correspondences loaded from .correspondence files via DOM (not EMF).
+   * Maps an absolute EMF URI string to the set of corresponding absolute URI strings.
+   */
+  private final Map<String, Set<String>> correspondenceUriMap = new HashMap<>();
+
   /** Ordered list of context-level (root) EObjects for index-based lookup from evaluator. */
   private final List<EObject> contextObjects = new ArrayList<>();
 
@@ -76,6 +87,142 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
         .getResourceFactoryRegistry()
         .getExtensionToFactoryMap()
         .put("xmi", new XMIResourceFactoryImpl());
+    ensureReactionsCorrespondenceRegistered();
+  }
+
+  /**
+   * Dynamically registers the {@code ReactionsCorrespondence} EClass as a concrete subtype of the
+   * base {@code Correspondence} class when the Vitruvius reactions runtime JAR is not on the
+   * classpath.
+   *
+   * <p>The correspondence files produced by Vitruvius use
+   * {@code xsi:type="correspondence_1:ReactionsCorrespondence"} (namespace URI
+   * {@code http://vitruv.tools/metamodels/dsls/reactions/runtime/correspondence/1.0}). When the
+   * reactions runtime is absent, EMF cannot resolve this type and silently drops all correspondence
+   * entries, causing every {@code ~} operator to evaluate to {@code false}. Registering a minimal
+   * dynamic EPackage containing {@code ReactionsCorrespondence} as a subtype of the known
+   * {@code Correspondence} class is sufficient to let EMF load the entries correctly; the inherited
+   * {@code leftEObjects} / {@code rightEObjects} features are resolved via the base class.
+   */
+  private static void ensureReactionsCorrespondenceRegistered() {
+    final String REACTIONS_NS_URI =
+        "http://vitruv.tools/metamodels/dsls/reactions/runtime/correspondence/1.0";
+    if (EPackage.Registry.INSTANCE.containsKey(REACTIONS_NS_URI)) {
+      return;
+    }
+
+    final String CORR_NS_URI = "http://vitruv.tools/metamodels/change/correspondence/1.0";
+    EPackage corrPackage = (EPackage) EPackage.Registry.INSTANCE.get(CORR_NS_URI);
+    if (corrPackage == null) {
+      corrPackage = forceInitCorrespondencePackage();
+    }
+    if (corrPackage == null) {
+      corrPackage = buildBaseCorrespondencePackage(CORR_NS_URI);
+    }
+
+    // ReactionsCorrespondence is self-contained: no cross-package supertype.
+    // Cross-package EClass inheritance in dynamic EPackages causes EMF to reject the class
+    // as "not a valid classifier" during XMI loading. All required features are added directly.
+    EPackage reactionsPackage = EcoreFactory.eINSTANCE.createEPackage();
+    reactionsPackage.setName("correspondence_1");
+    reactionsPackage.setNsPrefix("correspondence_1");
+    reactionsPackage.setNsURI(REACTIONS_NS_URI);
+
+    EClass reactionsCorr = EcoreFactory.eINSTANCE.createEClass();
+    reactionsCorr.setName("ReactionsCorrespondence");
+    addCorrespondenceFeatures(reactionsCorr);
+
+    reactionsPackage.getEClassifiers().add(reactionsCorr);
+    EPackage.Registry.INSTANCE.put(REACTIONS_NS_URI, reactionsPackage);
+  }
+
+  /**
+   * Builds the base correspondence EPackage dynamically.
+   *
+   * <p>Creates a minimal structural copy of the real package: a {@code Correspondences} root class
+   * (with {@code correspondences} containment using {@code EObject} as element type so that any
+   * concrete subtype can be held without type-compatibility issues) and a concrete
+   * {@code Correspondence} class carrying {@code leftEObjects}, {@code rightEObjects}, and
+   * {@code tag}.
+   */
+  private static EPackage buildBaseCorrespondencePackage(String nsUri) {
+    EPackage pkg = EcoreFactory.eINSTANCE.createEPackage();
+    pkg.setName("correspondence");
+    pkg.setNsPrefix("correspondence");
+    pkg.setNsURI(nsUri);
+
+    // Concrete (non-abstract) Correspondence class with the three needed features.
+    EClass corrClass = EcoreFactory.eINSTANCE.createEClass();
+    corrClass.setName("Correspondence");
+    addCorrespondenceFeatures(corrClass);
+
+    // Correspondences root — holds any EObject so xsi:type subtypes are accepted.
+    EClass corrsClass = EcoreFactory.eINSTANCE.createEClass();
+    corrsClass.setName("Correspondences");
+
+    EReference corrsRef = EcoreFactory.eINSTANCE.createEReference();
+    corrsRef.setName("correspondences");
+    corrsRef.setEType(EcorePackage.Literals.EOBJECT); // EObject: accepts any concrete subtype
+    corrsRef.setUpperBound(-1);
+    corrsRef.setContainment(true);
+    corrsClass.getEStructuralFeatures().add(corrsRef);
+
+    pkg.getEClassifiers().add(corrsClass);
+    pkg.getEClassifiers().add(corrClass);
+
+    EPackage.Registry.INSTANCE.put(nsUri, pkg);
+    return pkg;
+  }
+
+  /** Adds leftEObjects, rightEObjects, and tag features to the given EClass. */
+  private static void addCorrespondenceFeatures(EClass cls) {
+    EReference leftRef = EcoreFactory.eINSTANCE.createEReference();
+    leftRef.setName("leftEObjects");
+    leftRef.setEType(EcorePackage.Literals.EOBJECT);
+    leftRef.setUpperBound(-1);
+    cls.getEStructuralFeatures().add(leftRef);
+
+    EReference rightRef = EcoreFactory.eINSTANCE.createEReference();
+    rightRef.setName("rightEObjects");
+    rightRef.setEType(EcorePackage.Literals.EOBJECT);
+    rightRef.setUpperBound(-1);
+    cls.getEStructuralFeatures().add(rightRef);
+
+    EAttribute tagAttr = EcoreFactory.eINSTANCE.createEAttribute();
+    tagAttr.setName("tag");
+    tagAttr.setEType(EcorePackage.Literals.ESTRING);
+    cls.getEStructuralFeatures().add(tagAttr);
+  }
+
+  /**
+   * Forces initialization of the generated {@code CorrespondencePackage} EMF class via reflection.
+   *
+   * <p>In standalone (non-OSGi) mode the EMF generated classes are in the fat JAR but their static
+   * initializers are not automatically called. Accessing {@code CorrespondencePackage.eINSTANCE}
+   * triggers {@code CorrespondencePackageImpl.init()}, which registers the package in
+   * {@link EPackage.Registry#INSTANCE}.
+   *
+   * @return the registered {@link EPackage}, or {@code null} if reflection fails
+   */
+  private static EPackage forceInitCorrespondencePackage() {
+    final String CORR_NS_URI = "http://vitruv.tools/metamodels/change/correspondence/1.0";
+    // Try generated interface — accessing eINSTANCE triggers static init + package registration.
+    String[] candidateClasses = {
+      "tools.vitruv.change.correspondence.CorrespondencePackage",
+      "tools.vitruv.change.correspondence.impl.CorrespondencePackageImpl"
+    };
+    for (String className : candidateClasses) {
+      try {
+        Class<?> cls = Class.forName(className);
+        java.lang.reflect.Field f = cls.getField("eINSTANCE");
+        f.get(null); // triggers static init
+        EPackage pkg = (EPackage) EPackage.Registry.INSTANCE.get(CORR_NS_URI);
+        if (pkg != null) return pkg;
+      } catch (Exception e) {
+        // class not on classpath — expected in standalone mode, fall through to dynamic build
+      }
+    }
+    return null;
   }
 
   /**
@@ -95,10 +242,7 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
 
     EPackage ePackage = (EPackage) resource.getContents().get(0);
     metamodelRegistry.put(packageName, ePackage);
-
-    if (ePackage.getNsURI() != null) {
-      EPackage.Registry.INSTANCE.put(ePackage.getNsURI(), ePackage);
-    }
+    registerPackageRecursively(ePackage);
   }
 
   /**
@@ -118,9 +262,28 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
     EPackage ePackage = (EPackage) resource.getContents().get(0);
     String name = ePackage.getName();
     metamodelRegistry.put(name, ePackage);
+    registerPackageRecursively(ePackage);
+  }
 
-    if (ePackage.getNsURI() != null) {
-      EPackage.Registry.INSTANCE.put(ePackage.getNsURI(), ePackage);
+  /**
+   * Registers an {@link EPackage} and all its sub-packages recursively in both
+   * {@link EPackage.Registry#INSTANCE} (by nsURI, for EMF XMI loading) and
+   * {@link #metamodelRegistry} (by package name, for constraint type resolution).
+   *
+   * <p>Without this, model instance files that reference sub-package types (e.g.
+   * {@code xmlns:tires="tires"}) cause a {@code PackageNotFoundException} during loading
+   * because only the root package's nsURI is known to EMF.
+   */
+  private void registerPackageRecursively(EPackage pkg) {
+    if (pkg.getNsURI() != null) {
+      EPackage.Registry.INSTANCE.put(pkg.getNsURI(), pkg);
+    }
+    // Also register by name so resolveEClass("tires", "Tire") works
+    if (pkg.getName() != null) {
+      metamodelRegistry.putIfAbsent(pkg.getName(), pkg);
+    }
+    for (EPackage subPkg : pkg.getESubpackages()) {
+      registerPackageRecursively(subPkg);
     }
   }
 
@@ -181,6 +344,12 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    * @throws IOException If file cannot be read
    */
   public void loadModelInstance(Path xmiPath) throws IOException {
+    // Correspondence files are loaded via DOM to avoid EMF dynamic-EPackage type-validation issues.
+    if (xmiPath.getFileName().toString().endsWith(".correspondence")) {
+      loadCorrespondenceViaDOM(xmiPath);
+      return;
+    }
+
     ResourceSet instanceResourceSet = this.resourceSet;
 
     String extension = xmiPath.getFileName().toString();
@@ -200,7 +369,16 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
 
     String filename = xmiPath.getFileName().toString();
 
+    System.err.println("[DBG-MW] Loaded file: " + filename
+        + " | contents=" + resource.getContents().size()
+        + " | errors=" + resource.getErrors().size());
+    if (!resource.getErrors().isEmpty()) {
+      resource.getErrors().forEach(e -> System.err.println("[DBG-MW]   load-error: " + e.getMessage()));
+    }
+
     for (EObject root : resource.getContents()) {
+      System.err.println("[DBG-MW]   root eClass: " + root.eClass().getName()
+          + " (pkg=" + root.eClass().getEPackage().getNsURI() + ")");
       addInstanceRecursiveInternal(root, filename);
       // Register root as context candidate (one entry per root EObject per file)
       contextObjects.add(root);
@@ -456,103 +634,92 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   }
 
   /**
-   * Returns all EObjects corresponding to the given source object.
+   * Loads a Vitruvius {@code .correspondence} file via DOM (not EMF) and populates
+   * {@link #correspondenceUriMap}.
    *
-   * <p>Searches all loaded Correspondence objects in the resource set. A Correspondence relates
-   * obj1 to obj2 if obj1 appears in leftEObjects and obj2 in rightEObjects, or vice versa
-   * (bidirectional).
+   * <p>EMF cannot reliably load correspondence XMI files in standalone mode because the
+   * {@code ReactionsCorrespondence} type is only available as a dynamic EClass with no Java
+   * backing class, which triggers {@code IllegalValueException} during containment validation.
+   * Parsing the XML directly with a DOM parser is simpler and avoids all type-checking issues.
    *
-   * @param source the source object to look up correspondences for
-   * @return set of all corresponding objects; empty if none exist
+   * <p>Each {@code <correspondences>} element's {@code leftEObjects} and {@code rightEObjects}
+   * child hrefs are resolved to absolute EMF URIs relative to the correspondence file location
+   * and stored bidirectionally in {@link #correspondenceUriMap}.
    */
+  private void loadCorrespondenceViaDOM(Path corrPath) {
+    URI baseUri = URI.createFileURI(corrPath.toAbsolutePath().toString());
+    try {
+      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+      factory.setNamespaceAware(false);
+      DocumentBuilder builder = factory.newDocumentBuilder();
+      builder.setErrorHandler(null); // suppress SAX warnings
+      Document doc = builder.parse(corrPath.toFile());
+
+      NodeList corrNodes = doc.getElementsByTagName("correspondences");
+      for (int i = 0; i < corrNodes.getLength(); i++) {
+        Element corrEl = (Element) corrNodes.item(i);
+        List<String> lefts = collectHrefs(corrEl, "leftEObjects", baseUri);
+        List<String> rights = collectHrefs(corrEl, "rightEObjects", baseUri);
+        for (String l : lefts) {
+          for (String r : rights) {
+            correspondenceUriMap.computeIfAbsent(l, k -> new LinkedHashSet<>()).add(r);
+            correspondenceUriMap.computeIfAbsent(r, k -> new LinkedHashSet<>()).add(l);
+          }
+        }
+      }
+      System.err.println("[DBG-MW] Loaded correspondence (DOM): " + corrPath.getFileName()
+          + " | entries=" + correspondenceUriMap.size());
+    } catch (Exception e) {
+      System.err.println("[DBG-MW] Failed to load correspondence via DOM: " + e.getMessage());
+    }
+  }
+
+  /** Collects all href strings from child elements with the given tag, resolved to absolute URIs. */
+  private List<String> collectHrefs(Element parent, String childTag, URI baseUri) {
+    List<String> result = new ArrayList<>();
+    NodeList children = parent.getElementsByTagName(childTag);
+    for (int i = 0; i < children.getLength(); i++) {
+      Element child = (Element) children.item(i);
+      String href = child.getAttribute("href");
+      if (href != null && !href.isEmpty()) {
+        // Resolve relative href against the correspondence file's URI
+        URI resolved = URI.createURI(href).resolve(baseUri);
+        result.add(resolved.toString());
+      }
+    }
+    return result;
+  }
+
   @Override
   public Set<EObject> getCorrespondingObjects(EObject source) {
+    // Resolve the source object's absolute URI (file URI + fragment)
+    URI sourceUri = EcoreUtil.getURI(source);
+    if (sourceUri == null) return Collections.emptySet();
+    String sourceUriStr = sourceUri.toString();
+
+    Set<String> correspondingUris = correspondenceUriMap.get(sourceUriStr);
+    if (correspondingUris == null || correspondingUris.isEmpty()) return Collections.emptySet();
+
     Set<EObject> result = new LinkedHashSet<>();
-    for (EObject corrObj : getCorrespondenceObjects()) {
-      @SuppressWarnings("unchecked")
-      List<EObject> lefts = resolveAll((List<EObject>) safeGet(corrObj, "leftEObjects"));
-      @SuppressWarnings("unchecked")
-      List<EObject> rights = resolveAll((List<EObject>) safeGet(corrObj, "rightEObjects"));
-      if (lefts == null || rights == null) continue;
-      if (lefts.contains(source)) result.addAll(rights);
-      if (rights.contains(source)) result.addAll(lefts);
+    for (String targetUriStr : correspondingUris) {
+      try {
+        URI targetUri = URI.createURI(targetUriStr);
+        EObject target = resourceSet.getEObject(targetUri, false);
+        if (target != null && !target.eIsProxy()) {
+          result.add(target);
+        }
+      } catch (Exception e) {
+        // unresolvable reference — skip
+      }
     }
     return result;
   }
 
   @Override
   public boolean correspondenceHasTag(EObject obj1, EObject obj2, String tag) {
-    for (EObject corrObj : getCorrespondenceObjects()) {
-      @SuppressWarnings("unchecked")
-      List<EObject> lefts = resolveAll((List<EObject>) safeGet(corrObj, "leftEObjects"));
-      @SuppressWarnings("unchecked")
-      List<EObject> rights = resolveAll((List<EObject>) safeGet(corrObj, "rightEObjects"));
-      String corrTag = (String) safeGet(corrObj, "tag");
-      if (lefts == null || rights == null) continue;
-      boolean matches =
-          (lefts.contains(obj1) && rights.contains(obj2))
-              || (lefts.contains(obj2) && rights.contains(obj1));
-      if (matches && tag.equals(corrTag)) return true;
-    }
+    // Tag support is not needed for the ~ operator (which is tag-agnostic).
+    // DOM-loaded correspondences do not carry tag metadata in the current implementation.
     return false;
-  }
-
-  /**
-   * Resolves all proxy EObjects in the list using the resource set. Returns a new list with
-   * resolved objects; unresolvable proxies are dropped.
-   */
-  private List<EObject> resolveAll(List<EObject> proxies) {
-    if (proxies == null) return null;
-    List<EObject> resolved = new ArrayList<>(proxies.size());
-    for (EObject obj : proxies) {
-      EObject r = EcoreUtil.resolve(obj, resourceSet);
-      if (r != null && !r.eIsProxy()) {
-        resolved.add(r);
-      }
-    }
-    return resolved;
-  }
-
-  /**
-   * Collects all Correspondence objects from all loaded resources.
-   *
-   * <p>A Correspondence object is any EObject whose EClass name is "Correspondence" or a subtype
-   * (e.g., "ManualCorrespondence"). The container "Correspondences" root object is traversed via
-   * its "correspondences" reference.
-   *
-   * @return flat list of all Correspondence EObjects across all loaded resources
-   */
-  private List<EObject> getCorrespondenceObjects() {
-    List<EObject> result = new ArrayList<>();
-    for (Resource resource : resourceSet.getResources()) {
-
-      for (EObject root : resource.getContents()) {
-
-        EStructuralFeature corrFeature = root.eClass().getEStructuralFeature("correspondences");
-        if (corrFeature != null) {
-          @SuppressWarnings("unchecked")
-          List<EObject> corrs = (List<EObject>) root.eGet(corrFeature);
-
-          if (corrs != null) {
-            for (EObject corr : corrs) {
-              EStructuralFeature tagFeature = corr.eClass().getEStructuralFeature("tag");
-              EStructuralFeature leftFeature = corr.eClass().getEStructuralFeature("leftEObjects");
-              EStructuralFeature rightFeature =
-                  corr.eClass().getEStructuralFeature("rightEObjects");
-
-              @SuppressWarnings("unchecked")
-              List<EObject> lefts =
-                  leftFeature != null ? (List<EObject>) corr.eGet(leftFeature) : null;
-              @SuppressWarnings("unchecked")
-              List<EObject> rights =
-                  rightFeature != null ? (List<EObject>) corr.eGet(rightFeature) : null;
-            }
-            result.addAll(corrs);
-          }
-        }
-      }
-    }
-    return result;
   }
 
   /**

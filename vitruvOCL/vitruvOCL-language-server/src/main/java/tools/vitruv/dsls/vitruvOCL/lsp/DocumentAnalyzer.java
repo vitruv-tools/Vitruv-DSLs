@@ -55,10 +55,38 @@ public class DocumentAnalyzer {
    * <p>Never throws — all exceptions are swallowed and reported as an internal-error diagnostic so
    * that the language server remains stable even when the document is in an extreme broken state.
    */
+  /**
+   * Strips {@code import} declaration lines (e.g. {@code import model : '...'}) from the
+   * document text before parsing, preserving line numbers by replacing the content with
+   * a comment so that all line offsets stay identical.
+   */
+  private static String stripImportLines(String text) {
+    StringBuilder sb = new StringBuilder(text.length());
+    for (String line : text.split("\n", -1)) {
+      String trimmed = line.stripLeading();
+      if (trimmed.startsWith("import ")) {
+        // Replace with a blank comment of the same length so line numbers are preserved
+        sb.append("--").append(" ".repeat(Math.max(0, line.length() - 2)));
+      } else {
+        sb.append(line);
+      }
+      sb.append('\n');
+    }
+    // Remove the trailing '\n' added for the last line if original didn't have it
+    if (!text.endsWith("\n") && sb.length() > 0) {
+      sb.deleteCharAt(sb.length() - 1);
+    }
+    return sb.toString();
+  }
+
   public DocumentAnalysis analyze(String documentText) {
     List<Diagnostic> diagnostics = new ArrayList<>();
     VitruvOCLParser.ContextDeclCSContext tree = null;
     ParseTreeProperty<Type> nodeTypes = null;
+
+    // Strip import declarations before parsing — the VitruvOCL grammar has no import rule.
+    // We replace them with blank comments to preserve line numbers for diagnostics.
+    documentText = stripImportLines(documentText);
 
     try {
       // -----------------------------------------------------------------------
@@ -102,6 +130,7 @@ public class DocumentAnalyzer {
       try {
         TypeCheckVisitor typeChecker =
             new TypeCheckVisitor(symbolTable, wrapper, errors, scopeAnnotator);
+        typeChecker.setTokenStream(tokens);
         typeChecker.visit(tree);
         nodeTypes = typeChecker.getNodeTypes();
       } catch (Exception e) {
@@ -235,10 +264,18 @@ public class DocumentAnalyzer {
             ? DiagnosticSeverity.Error
             : DiagnosticSeverity.Warning;
 
-    return new Diagnostic(
+    Diagnostic d = new Diagnostic(
         new Range(new Position(startLine, startCol), new Position(endLine, endCol)),
         error.getMessage(),
         severity,
         "vitruvOCL");
+
+    // Attach the quick-fix suggestion as diagnostic data so the codeAction handler
+    // can build a WorkspaceEdit without re-analysing the document.
+    if (error.getSuggestion() != null) {
+      d.setData(error.getSuggestion());
+    }
+
+    return d;
   }
 }

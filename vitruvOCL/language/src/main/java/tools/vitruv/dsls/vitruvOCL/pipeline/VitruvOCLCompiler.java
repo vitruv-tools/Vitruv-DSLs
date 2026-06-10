@@ -100,6 +100,7 @@ public class VitruvOCLCompiler {
     // PASS 2: Type Checking
     TypeCheckVisitor typeChecker =
         new TypeCheckVisitor(symbolTable, wrapper, errors, scopeAnnotator);
+    typeChecker.setTokenStream(tokens);
     typeChecker.visit(tree);
 
     if (errors.hasErrors()) return null;
@@ -144,6 +145,7 @@ public class VitruvOCLCompiler {
     // PASS 2: Type Checking
     TypeCheckVisitor typeChecker =
         new TypeCheckVisitor(symbolTable, wrapper, errors, scopeAnnotator);
+    typeChecker.setTokenStream(tokens);
     typeChecker.visit(tree);
 
     if (errors.hasErrors()) {
@@ -194,6 +196,7 @@ public class VitruvOCLCompiler {
     // PASS 2: Type Checking
     TypeCheckVisitor typeChecker =
         new TypeCheckVisitor(symbolTable, wrapper, errors, scopeAnnotator);
+    typeChecker.setTokenStream(tokens);
     typeChecker.visit(tree);
 
     if (errors.hasErrors()) {

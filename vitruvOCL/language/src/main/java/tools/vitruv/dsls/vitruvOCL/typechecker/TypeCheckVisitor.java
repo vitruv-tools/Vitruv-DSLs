@@ -16,6 +16,7 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.EcorePackage;
 import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvOCL.common.AbstractPhaseVisitor;
+import tools.vitruv.dsls.vitruvOCL.common.CompileError;
 import tools.vitruv.dsls.vitruvOCL.common.ErrorCollector;
 import tools.vitruv.dsls.vitruvOCL.common.ErrorSeverity;
 import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
@@ -177,16 +178,39 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    *
    * @param name The undefined symbol name
    * @param ctx The parse tree context where the error occurred
-   * @throws UnsupportedOperationException Always (not yet implemented)
    */
-  @Override
+  /** OCL keywords that look like variable names and are commonly mistyped. */
+  private static final java.util.List<String> KEYWORD_LIKE_NAMES =
+      java.util.List.of("self", "null", "true", "false");
+
   protected void handleUndefinedSymbol(String name, ParserRuleContext ctx) {
-    errors.add(
-        ctx.getStart().getLine(),
-        ctx.getStart().getCharPositionInLine(),
-        "Undefined variable: " + name,
-        ErrorSeverity.ERROR,
-        "type-checker");
+    String lower = name.toLowerCase(java.util.Locale.ROOT);
+
+    // Check against keyword-like names first (self, null, true, false)
+    String bestKeyword = KEYWORD_LIKE_NAMES.stream()
+        .min(java.util.Comparator.comparingInt(k ->
+            levenshtein(lower, k.toLowerCase(java.util.Locale.ROOT))))
+        .orElse(null);
+    int kwDist = bestKeyword == null ? Integer.MAX_VALUE
+        : levenshtein(lower, bestKeyword.toLowerCase(java.util.Locale.ROOT));
+
+    int threshold = name.length() <= 3 ? 1 : name.length() <= 6 ? 2 : 3;
+    String message;
+    String suggestion;
+    if (kwDist <= threshold) {
+      message    = "Undefined variable '" + name + "' — did you mean '" + bestKeyword + "'?";
+      suggestion = bestKeyword;
+    } else {
+      message    = "Undefined variable: " + name;
+      suggestion = null;
+    }
+
+    org.antlr.v4.runtime.Token tok = ctx.getStart();
+    int endCol = tok.getCharPositionInLine() + tok.getText().length();
+    errors.add(new CompileError(
+        tok.getLine(), tok.getCharPositionInLine(),
+        tok.getLine(), endCol,
+        message, ErrorSeverity.ERROR, "type-checker", null, suggestion));
   }
 
   // ==================== Context Declaration ====================
@@ -318,6 +342,15 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       // If the spec already has errors, an error node, or produced new errors, skip the
       // Boolean-conformance check — it would only produce misleading follow-up diagnostics.
       if (specType.equals(Type.ERROR) || hasErrorNode(spec) || newErrorsInSpec) continue;
+
+      // Check whether the spec was cut short by a missing operand: if the token immediately
+      // after spec.getStop() is a comparison/arithmetic operator, the right-hand side of an
+      // expression was never parsed — report on that operator instead of cascading to inv.
+      if (reportMissingOperandAfter(spec)) { resultType = Type.ERROR; continue; }
+
+      // Check for a forgotten logical operator between two expressions
+      // e.g.  self.a == "x"  persons::Foo.allInstances()...
+      if (reportMissingOperatorBetweenExpressions(spec, ctx)) { resultType = Type.ERROR; continue; }
 
       // Check Boolean conformance (handles both Boolean and !Boolean!)
       Type checkType =
@@ -598,6 +631,21 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
+    // Multiple expCS children means expressions were written without an operator between them.
+    // e.g.  self.a == "x"  persons::Person.allInstances().exists(...)
+    // Report on the second (unexpected) expression's first token.
+    if (ctx.expCS().size() > 1) {
+      for (int _i = 1; _i < ctx.expCS().size(); _i++) {
+        org.antlr.v4.runtime.Token bad = ctx.expCS().get(_i).getStart();
+        errors.add(new CompileError(
+            bad.getLine(), bad.getCharPositionInLine(),
+            bad.getLine(), bad.getCharPositionInLine() + bad.getText().length(),
+            "Missing logical operator before this expression — did you mean 'and', 'or', or 'implies'?",
+            ErrorSeverity.ERROR, "type-checker", null));
+      }
+      return Type.ERROR;
+    }
+
     Type resultType = null;
     boolean hasError = false;
     for (VitruvOCLParser.ExpCSContext exp : ctx.expCS()) {
@@ -637,20 +685,54 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    * @param ctx The equality comparison operation node
    * @return Type.BOOLEAN if operands are comparable, Type.ERROR otherwise
    */
+  /** Reports a type error spanning the full binary expression [left..right]. */
+  private void addBinaryTypeError(
+      org.antlr.v4.runtime.ParserRuleContext left,
+      org.antlr.v4.runtime.ParserRuleContext right,
+      String message) {
+    org.antlr.v4.runtime.Token s = left.getStart();
+    org.antlr.v4.runtime.Token e = right.getStop() != null ? right.getStop() : left.getStop();
+    int endLine = e != null ? e.getLine() : s.getLine();
+    int endCol  = e != null ? e.getCharPositionInLine() + e.getText().length()
+                            : s.getCharPositionInLine() + s.getText().length();
+    errors.add(new CompileError(s.getLine(), s.getCharPositionInLine(),
+        endLine, endCol, message, ErrorSeverity.ERROR, "type-checker", null));
+  }
+
+  /**
+   * Checks that both operands of a binary comparison are present and parse-error free.
+   * If not, reports the error on the operator token itself (e.g. the {@code ==} sign)
+   * and returns {@code false} so the caller can bail out early with {@code Type.ERROR}.
+   */
+  private boolean checkBinaryOperands(
+      org.antlr.v4.runtime.ParserRuleContext left,
+      org.antlr.v4.runtime.Token op,
+      org.antlr.v4.runtime.ParserRuleContext right) {
+    boolean leftBad  = left  == null || hasErrorNode(left);
+    boolean rightBad = right == null || hasErrorNode(right);
+    if (!leftBad && !rightBad) return true; // both OK
+    String side = leftBad && rightBad ? "both operands are"
+                : leftBad  ? "left-hand operand is"
+                :             "right-hand operand is";
+    errors.add(new CompileError(
+        op.getLine(), op.getCharPositionInLine(),
+        op.getLine(), op.getCharPositionInLine() + op.getText().length(),
+        "Missing or invalid operand for '" + op.getText() + "' — " + side + " missing or invalid",
+        ErrorSeverity.ERROR, "type-checker", null));
+    return false;
+  }
+
   @Override
   public Type visitEqualityComparison(VitruvOCLParser.EqualityComparisonContext ctx) {
+    if (!checkBinaryOperands(ctx.left, ctx.op, ctx.right)) return Type.ERROR;
     Type leftType = visit(ctx.left);
     Type rightType = visit(ctx.right);
     Type resultType = Type.BOOLEAN;
 
     // Check if types are comparable
     if (!areComparable(leftType, rightType)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Cannot compare incompatible types: " + leftType + " and " + rightType,
-          ErrorSeverity.ERROR,
-          "type-checker");
+      addBinaryTypeError(ctx.left, ctx.right,
+          "Cannot compare incompatible types: " + leftType + " and " + rightType);
       resultType = Type.ERROR;
     }
 
@@ -670,23 +752,140 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitInequalityComparison(VitruvOCLParser.InequalityComparisonContext ctx) {
+    if (!checkBinaryOperands(ctx.left, ctx.op, ctx.right)) return Type.ERROR;
     Type leftType = visit(ctx.left);
     Type rightType = visit(ctx.right);
     Type resultType = Type.BOOLEAN;
 
     // Check if types are comparable
     if (!areComparable(leftType, rightType)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Cannot compare incompatible types: " + leftType + " and " + rightType,
-          ErrorSeverity.ERROR,
-          "type-checker");
+      addBinaryTypeError(ctx.left, ctx.right,
+          "Cannot compare incompatible types: " + leftType + " and " + rightType);
       resultType = Type.ERROR;
     }
 
     nodeTypes.put(ctx, resultType);
     return resultType;
+  }
+
+  /**
+   * Reports an unsupported two-character operator sequence.
+   *
+   * <p>Users sometimes write operators from other OCL dialects or from general programming
+   * languages that VitruvOCL does not support as a single operator:
+   *
+   * <ul>
+   *   <li>{@code <>} — OCL standard inequality; use {@code !=} instead
+   *   <li>{@code ><} — invalid; use {@code !=}, {@code >}, or {@code <}
+   *   <li>{@code +-} — invalid; use {@code +} or {@code -} separately
+   *   <li>{@code -+} — invalid; use {@code +} or {@code -} separately
+   * </ul>
+   *
+   * <p>The operands are still visited so that further errors in them are reported, but the result
+   * type is {@code ERROR} so nothing cascades to the surrounding expression.
+   *
+   * @param ctx the invalid binary operator node
+   * @return {@code Type.ERROR}
+   */
+  @Override
+  public Type visitInvalidBinaryOp(VitruvOCLParser.InvalidBinaryOpContext ctx) {
+    // Visit operands so their own errors are reported
+    visit(ctx.left);
+    visit(ctx.right);
+
+    String op = ctx.op.getText();
+    String hint = switch (op) {
+      case "<>" -> " — did you mean `!=`? (OCL standard `<>` is not supported)";
+      case "><" -> " — did you mean `!=` or a comparison?";
+      case "+-" -> " — use `+` or `-` as separate operators";
+      case "-+" -> " — use `-` or `+` as separate operators";
+      default   -> "";
+    };
+
+    org.antlr.v4.runtime.Token tok = ctx.op;
+    int endCol = tok.getCharPositionInLine() + tok.getText().length();
+    errors.add(new CompileError(
+        tok.getLine(), tok.getCharPositionInLine(),
+        tok.getLine(), endCol,
+        "Invalid operator `" + op + "`" + hint,
+        ErrorSeverity.ERROR, "type-checker", null));
+
+    nodeTypes.put(ctx, Type.ERROR);
+    return Type.ERROR;
+  }
+
+  @Override
+  public Type visitSingleEqualsOp(VitruvOCLParser.SingleEqualsOpContext ctx) {
+    visit(ctx.left);
+    visit(ctx.right);
+    org.antlr.v4.runtime.Token tok = ctx.left.getStop();
+    // Point at the '=' sign: it sits right after the left operand's last token.
+    // We approximate its position from the token stream.
+    org.antlr.v4.runtime.Token eq = ctx.getStart(); // fallback
+    // Walk children to find the '=' terminal
+    for (int i = 0; i < ctx.getChildCount(); i++) {
+      org.antlr.v4.runtime.tree.ParseTree child = ctx.getChild(i);
+      if (child instanceof org.antlr.v4.runtime.tree.TerminalNode) {
+        org.antlr.v4.runtime.Token t = ((org.antlr.v4.runtime.tree.TerminalNode) child).getSymbol();
+        if ("=".equals(t.getText())) { eq = t; break; }
+      }
+    }
+    errors.add(new CompileError(
+        eq.getLine(), eq.getCharPositionInLine(),
+        eq.getLine(), eq.getCharPositionInLine() + 1,
+        "Use '==' for equality comparison, not '='",
+        ErrorSeverity.ERROR, "type-checker", null, "=="));
+    nodeTypes.put(ctx, Type.ERROR);
+    return Type.ERROR;
+  }
+
+  @Override
+  public Type visitMultiEqualsOp(VitruvOCLParser.MultiEqualsOpContext ctx) {
+    visit(ctx.left);
+    visit(ctx.right);
+    org.antlr.v4.runtime.Token tok = ctx.op;
+    errors.add(new CompileError(
+        tok.getLine(), tok.getCharPositionInLine(),
+        tok.getLine(), tok.getCharPositionInLine() + tok.getText().length(),
+        "Invalid operator '" + tok.getText() + "' — did you mean '=='?",
+        ErrorSeverity.ERROR, "type-checker", null, "=="));
+    nodeTypes.put(ctx, Type.ERROR);
+    return Type.ERROR;
+  }
+
+  /**
+   * Checks that {@code ctx.body} is non-null (i.e., the user wrote the {@code | body} part).
+   *
+   * <p>When someone writes e.g. {@code exists(A)} instead of {@code exists(A | A.active)}, ANTLR
+   * error-recovery produces a tree where {@code ctx.body == null}. Without this guard the visitor
+   * would NPE or silently cascade a bogus type error to the surrounding {@code implies}.
+   *
+   * @param ctx  the iterator operation context
+   * @param opName operation name for the message (e.g. {@code "exists"})
+   * @return {@code true} if the body is present and valid; {@code false} when an error was reported
+   */
+  private boolean requireBody(ParserRuleContext ctx,
+                              org.antlr.v4.runtime.ParserRuleContext body,
+                              String opName) {
+    // A missing-body situation produces a non-null but empty/invalid context:
+    // ANTLR error recovery leaves ctx.body with 0 children (empty expCS),
+    // or with an exception, or with error nodes.
+    boolean invalid = body == null
+        || body.exception != null
+        || hasErrorNode(body)
+        || body.getChildCount() == 0;
+    if (invalid) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'" + opName + "' requires 'variable | expression' — "
+              + "did you forget the '| body' part? "
+              + "Example: " + opName + "(x | x.active)",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      return false;
+    }
+    return true;
   }
 
   private boolean areOrderable(Type t1, Type t2) {
@@ -709,19 +908,14 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitLessThanComparison(VitruvOCLParser.LessThanComparisonContext ctx) {
+    if (!checkBinaryOperands(ctx.left, ctx.op, ctx.right)) return Type.ERROR;
     Type leftType = visit(ctx.left);
     Type rightType = visit(ctx.right);
     Type resultType = Type.BOOLEAN;
     if (!areOrderable(leftType, rightType)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
+      addBinaryTypeError(ctx.left, ctx.right,
           "Ordering comparison requires numeric or String types, got: "
-              + leftType
-              + " and "
-              + rightType,
-          ErrorSeverity.ERROR,
-          "type-checker");
+              + leftType + " and " + rightType);
       resultType = Type.ERROR;
     }
     nodeTypes.put(ctx, resultType);
@@ -740,19 +934,14 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitLessThanOrEqualComparison(VitruvOCLParser.LessThanOrEqualComparisonContext ctx) {
+    if (!checkBinaryOperands(ctx.left, ctx.op, ctx.right)) return Type.ERROR;
     Type leftType = visit(ctx.left);
     Type rightType = visit(ctx.right);
     Type resultType = Type.BOOLEAN;
     if (!areOrderable(leftType, rightType)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
+      addBinaryTypeError(ctx.left, ctx.right,
           "Ordering comparison requires numeric or String types, got: "
-              + leftType
-              + " and "
-              + rightType,
-          ErrorSeverity.ERROR,
-          "type-checker");
+              + leftType + " and " + rightType);
       resultType = Type.ERROR;
     }
     nodeTypes.put(ctx, resultType);
@@ -771,19 +960,14 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitGreaterThanComparison(VitruvOCLParser.GreaterThanComparisonContext ctx) {
+    if (!checkBinaryOperands(ctx.left, ctx.op, ctx.right)) return Type.ERROR;
     Type leftType = visit(ctx.left);
     Type rightType = visit(ctx.right);
     Type resultType = Type.BOOLEAN;
     if (!areOrderable(leftType, rightType)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
+      addBinaryTypeError(ctx.left, ctx.right,
           "Ordering comparison requires numeric or String types, got: "
-              + leftType
-              + " and "
-              + rightType,
-          ErrorSeverity.ERROR,
-          "type-checker");
+              + leftType + " and " + rightType);
       resultType = Type.ERROR;
     }
     nodeTypes.put(ctx, resultType);
@@ -803,19 +987,14 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitGreaterThanOrEqualComparison(
       VitruvOCLParser.GreaterThanOrEqualComparisonContext ctx) {
+    if (!checkBinaryOperands(ctx.left, ctx.op, ctx.right)) return Type.ERROR;
     Type leftType = visit(ctx.left);
     Type rightType = visit(ctx.right);
     Type resultType = Type.BOOLEAN;
     if (!areOrderable(leftType, rightType)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
+      addBinaryTypeError(ctx.left, ctx.right,
           "Ordering comparison requires numeric or String types, got: "
-              + leftType
-              + " and "
-              + rightType,
-          ErrorSeverity.ERROR,
-          "type-checker");
+              + leftType + " and " + rightType);
       resultType = Type.ERROR;
     }
     nodeTypes.put(ctx, resultType);
@@ -885,7 +1064,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     String operator = ctx.op.getText();
     Type resultType = TypeResolver.resolveBinaryOp(operator, leftType, rightType);
 
-    if (resultType == Type.ERROR) {
+    if (resultType == Type.ERROR && leftType != Type.ERROR && rightType != Type.ERROR) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
@@ -921,7 +1100,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     String operator = ctx.op.getText();
     Type resultType = TypeResolver.resolveBinaryOp(operator, leftType, rightType);
 
-    if (resultType == Type.ERROR) {
+    if (resultType == Type.ERROR && leftType != Type.ERROR && rightType != Type.ERROR) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
@@ -955,7 +1134,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     String operator = "and";
     Type resultType = TypeResolver.resolveBinaryOp(operator, leftType, rightType);
 
-    if (resultType == Type.ERROR) {
+    if (resultType == Type.ERROR && leftType != Type.ERROR && rightType != Type.ERROR) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
@@ -987,7 +1166,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     String operator = "or";
     Type resultType = TypeResolver.resolveBinaryOp(operator, leftType, rightType);
 
-    if (resultType == Type.ERROR) {
+    if (resultType == Type.ERROR && leftType != Type.ERROR && rightType != Type.ERROR) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
@@ -1019,7 +1198,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     String operator = "xor";
     Type resultType = TypeResolver.resolveBinaryOp(operator, leftType, rightType);
 
-    if (resultType == Type.ERROR) {
+    if (resultType == Type.ERROR && leftType != Type.ERROR && rightType != Type.ERROR) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
@@ -1044,25 +1223,52 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitImplication(VitruvOCLParser.ImplicationContext ctx) {
+    int errsBefore = errors.getErrors().size();
     Type leftType = visit(ctx.left);
+    int errsAfterLeft = errors.getErrors().size();
     Type rightType = visit(ctx.right);
+    int errsAfterRight = errors.getErrors().size();
+
+    boolean leftFailed  = leftType  == Type.ERROR || hasErrorNode(ctx.left)
+                          || errsAfterLeft  > errsBefore;
+    boolean rightFailed = rightType == Type.ERROR || hasErrorNode(ctx.right)
+                          || errsAfterRight > errsAfterLeft;
+
+    // Swallow cascade when the root cause was already reported in either operand.
+    if (leftFailed || rightFailed) {
+      nodeTypes.put(ctx, Type.BOOLEAN);
+      return Type.BOOLEAN;
+    }
 
     if (!leftType.isConformantTo(Type.BOOLEAN)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
+      org.antlr.v4.runtime.Token ls = ctx.left.getStart();
+      errors.add(new CompileError(
+          ls.getLine(), ls.getCharPositionInLine(),
+          ls.getLine(), ls.getCharPositionInLine() + ls.getText().length(),
           "Left operand of 'implies' must be Boolean, got " + leftType,
-          ErrorSeverity.ERROR,
-          "type-checker");
+          ErrorSeverity.ERROR, "type-checker", null));
     }
 
     if (!rightType.isConformantTo(Type.BOOLEAN)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Right operand of 'implies' must be Boolean, got " + rightType,
-          ErrorSeverity.ERROR,
-          "type-checker");
+      // Try to find the unparsed navigation step right after ctx.right that caused the issue
+      // (e.g. .reject(~, , , ...) that ANTLR couldn't parse due to extra commas).
+      int[] badCallSpan = findUnparsedCorrCallAfter(ctx.right);
+      if (badCallSpan != null) {
+        org.antlr.v4.runtime.Token opTok  = tokens.get(badCallSpan[0]);
+        org.antlr.v4.runtime.Token endTok = tokens.get(badCallSpan[1]);
+        errors.add(new CompileError(
+            opTok.getLine(), opTok.getCharPositionInLine(),
+            endTok.getLine(), endTok.getCharPositionInLine() + endTok.getText().length(),
+            "'" + opTok.getText() + "(~, ...)' has invalid arguments — check for syntax errors inside the parentheses",
+            ErrorSeverity.ERROR, "type-checker", null));
+      } else {
+        org.antlr.v4.runtime.Token rs = ctx.right.getStart();
+        errors.add(new CompileError(
+            rs.getLine(), rs.getCharPositionInLine(),
+            rs.getLine(), rs.getCharPositionInLine() + rs.getText().length(),
+            "Right operand of 'implies' must be Boolean, got " + rightType,
+            ErrorSeverity.ERROR, "type-checker", null));
+      }
     }
 
     nodeTypes.put(ctx, Type.BOOLEAN);
@@ -1100,7 +1306,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     List<VitruvOCLParser.NavigationChainCSContext> navChain = ctx.navigationChainCS();
     receiverStack.push(currentType);
     for (VitruvOCLParser.NavigationChainCSContext nav : navChain) {
+      System.err.println("[DBG] nav target: " + nav.navigationTargetCS().getClass().getSimpleName()
+          + " text='" + nav.getText() + "'");
       Type resultType = visit(nav);
+      System.err.println("[DBG] nav result: " + resultType);
       receiverStack.pop();
       receiverStack.push(resultType);
       currentType = resultType;
@@ -1289,6 +1498,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitPropertyNav(VitruvOCLParser.PropertyNavContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     // Unwrap singleton !T! to T for property access — every iterated
     // element is ¡T!, so unwrapping here is the standard path
@@ -1313,6 +1523,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitOperationNav(VitruvOCLParser.OperationNavContext ctx) {
+    System.err.println("[DBG] visitOperationNav: text='" + ctx.getText()
+        + "' opCall class=" + ctx.operationCall().getClass().getSimpleName()
+        + " children=" + ctx.operationCall().getChildCount());
     return visit(ctx.operationCall());
   }
 
@@ -1449,6 +1662,24 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       default:
         if (EcorePackage.Literals.ECLASS.equals(classifier.eClass())) {
           return Type.metaclassType((EClass) classifier);
+        }
+        // Handle EEnum — enum literals are compared by value in OCL
+        if (classifier instanceof org.eclipse.emf.ecore.EEnum eEnum) {
+          return Type.enumType(eEnum);
+        }
+        // Handle custom EDataType (e.g. autosar::Identifier with instanceClassName="java.lang.String")
+        if (classifier instanceof org.eclipse.emf.ecore.EDataType eDataType) {
+          String instanceClass = eDataType.getInstanceClassName();
+          if (instanceClass != null) {
+            return switch (instanceClass) {
+              case "java.lang.String", "String" -> Type.STRING;
+              case "int", "java.lang.Integer" -> Type.INTEGER;
+              case "boolean", "java.lang.Boolean" -> Type.BOOLEAN;
+              case "float", "java.lang.Float" -> Type.FLOAT;
+              case "double", "java.lang.Double" -> Type.DOUBLE;
+              default -> Type.STRING; // fallback: treat unknown scalar datatypes as String
+            };
+          }
         }
         return Type.ERROR;
     }
@@ -1948,6 +2179,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitFirstOp(VitruvOCLParser.FirstOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
@@ -1975,6 +2207,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitLastOp(VitruvOCLParser.LastOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
@@ -1998,6 +2231,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitReverseOp(VitruvOCLParser.ReverseOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
@@ -2020,6 +2254,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitIsEmptyOp(VitruvOCLParser.IsEmptyOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
@@ -2043,6 +2278,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitNotEmptyOp(VitruvOCLParser.NotEmptyOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
       errors.add(
@@ -2068,6 +2304,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitIncludingOp(VitruvOCLParser.IncludingOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     Type argType = visit(ctx.arg);
 
     if (!receiverType.isCollection()) {
@@ -2115,6 +2352,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitExcludingOp(VitruvOCLParser.ExcludingOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
       errors.add(
@@ -2152,6 +2390,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitIncludesOp(VitruvOCLParser.IncludesOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
       errors.add(
@@ -2189,6 +2428,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitExcludesOp(VitruvOCLParser.ExcludesOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
       errors.add(
@@ -2215,6 +2455,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitFlattenOp(VitruvOCLParser.FlattenOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
       errors.add(
@@ -2255,6 +2496,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitUnionOp(VitruvOCLParser.UnionOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     Type argType = visit(ctx.arg);
 
     if (!receiverType.isCollection() || !argType.isCollection()) {
@@ -2320,6 +2562,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitAppendOp(VitruvOCLParser.AppendOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     Type argType = visit(ctx.arg);
 
     if (!receiverType.isCollection()) {
@@ -2361,6 +2604,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitSumOp(VitruvOCLParser.SumOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
       errors.add(
@@ -2496,6 +2740,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   private Type visitAggregateOp(ParserRuleContext ctx, String opName) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     // Reject singletons — max/min/avg require a collection, not a scalar
     if (receiverType.isSingleton() || !receiverType.isCollection()) {
@@ -2540,6 +2785,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitLengthOp(VitruvOCLParser.LengthOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isConformantTo(Type.STRING)) {
       errors.add(
           ctx.getStart().getLine(),
@@ -2565,6 +2811,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitSizeOp(VitruvOCLParser.SizeOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
       errors.add(
@@ -2593,6 +2840,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   private Type visitNumericOp(ParserRuleContext ctx, String opName) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     Type checkType = receiverType.isSingleton() ? receiverType.getElementType() : receiverType;
 
@@ -2634,6 +2882,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitLiftOp(VitruvOCLParser.LiftOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
       errors.add(
@@ -2664,6 +2913,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitSelectOp(VitruvOCLParser.SelectOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
       errors.add(
@@ -2717,7 +2967,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         }
       }
 
+      if (!requireBody(ctx, ctx.body, "select")) return Type.ERROR;
       Type bodyType = visit(ctx.body);
+      if (bodyType == null || bodyType == Type.ERROR) return Type.ERROR;
       Type checkType = bodyType.isCollection() ? bodyType.getElementType() : bodyType;
 
       if (!checkType.isConformantTo(Type.BOOLEAN)) {
@@ -2747,6 +2999,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitRejectOp(VitruvOCLParser.RejectOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
       errors.add(
@@ -2800,7 +3053,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         }
       }
 
+      if (!requireBody(ctx, ctx.body, "reject")) return Type.ERROR;
       Type bodyType = visit(ctx.body);
+      if (bodyType == null || bodyType == Type.ERROR) return Type.ERROR;
 
       if (!bodyType.getElementType().equals(Type.BOOLEAN)) {
         errors.add(
@@ -2830,6 +3085,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitCollectOp(VitruvOCLParser.CollectOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
       errors.add(
@@ -2883,7 +3139,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         }
       }
 
+      if (!requireBody(ctx, ctx.body, "collect")) return Type.ERROR;
       Type bodyType = visit(ctx.body);
+      if (bodyType == null || bodyType == Type.ERROR) return Type.ERROR;
 
       if (bodyType == Type.ERROR) {
         return Type.ERROR;
@@ -2912,6 +3170,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitForAllOp(VitruvOCLParser.ForAllOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
       errors.add(
@@ -2965,7 +3224,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         }
       }
 
+      if (!requireBody(ctx, ctx.body, "forAll")) return Type.ERROR;
       Type bodyType = visit(ctx.body);
+      if (bodyType == null || bodyType == Type.ERROR) return Type.ERROR;
 
       if (!bodyType.getElementType().equals(Type.BOOLEAN)) {
         errors.add(
@@ -2994,7 +3255,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitExistsOp(VitruvOCLParser.ExistsOpContext ctx) {
+    System.err.println("[DBG] visitExistsOp: iteratorVars=" + ctx.iteratorVars
+        + " body=" + ctx.body
+        + " bodyChildCount=" + (ctx.body == null ? "null" : ctx.body.getChildCount())
+        + " bodyException=" + (ctx.body == null ? "null" : ctx.body.exception));
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
       errors.add(
@@ -3048,7 +3314,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         }
       }
 
+      if (!requireBody(ctx, ctx.body, "exists")) return Type.ERROR;
       Type bodyType = visit(ctx.body);
+      if (bodyType == null || bodyType == Type.ERROR) return Type.ERROR;
 
       if (!bodyType.getElementType().equals(Type.BOOLEAN)) {
         errors.add(
@@ -3067,6 +3335,67 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
   }
 
+  @Override
+  public Type visitIteratorMissingBody(VitruvOCLParser.IteratorMissingBodyContext ctx) {
+    String opName = ctx.op.getText();
+    org.antlr.v4.runtime.Token start = ctx.getStart();
+    org.antlr.v4.runtime.Token stop = ctx.getStop(); // closing ')'
+    int endLine = stop != null ? stop.getLine() : start.getLine();
+    int endCol = stop != null
+        ? stop.getCharPositionInLine() + stop.getText().length()
+        : start.getCharPositionInLine() + ctx.getText().length();
+    errors.add(new CompileError(
+        start.getLine(), start.getCharPositionInLine(),
+        endLine, endCol,
+        "'" + opName + "' requires '| <body>' after the iterator variable(s)",
+        ErrorSeverity.ERROR, "type-checker", null));
+    return Type.ERROR;
+  }
+
+  @Override
+  public Type visitNoArgOpWithArgs(VitruvOCLParser.NoArgOpWithArgsContext ctx) {
+    // Visit args so their own errors surface, then report the operation error.
+    for (VitruvOCLParser.ExpCSContext arg : ctx.args) visit(arg);
+    String opName = ctx.op.getText();
+    org.antlr.v4.runtime.Token start = ctx.getStart();
+    org.antlr.v4.runtime.Token stop = ctx.getStop();
+    int endLine = stop != null ? stop.getLine() : start.getLine();
+    int endCol = stop != null
+        ? stop.getCharPositionInLine() + stop.getText().length()
+        : start.getCharPositionInLine() + ctx.getText().length();
+    errors.add(new CompileError(
+        start.getLine(), start.getCharPositionInLine(),
+        endLine, endCol,
+        "'" + opName + "' takes no arguments",
+        ErrorSeverity.ERROR, "type-checker", null));
+    return Type.ERROR;
+  }
+
+  private static final java.util.Set<String> NO_ARG_OPS = java.util.Set.of(
+      "size", "isEmpty", "notEmpty", "first", "last", "reverse",
+      "asSet", "asBag", "asSequence", "asOrderedSet", "lift",
+      "abs", "floor", "ceiling", "round", "allInstances");
+
+  @Override
+  public Type visitOpMissingParens(VitruvOCLParser.OpMissingParensContext ctx) {
+    org.antlr.v4.runtime.Token op = ctx.op;
+    String name = op.getText();
+    String suggestion;
+    String message;
+    if (NO_ARG_OPS.contains(name)) {
+      suggestion = name + "()";
+      message = "'" + name + "' is an operation — add parentheses: '" + suggestion + "'";
+    } else {
+      suggestion = name + "(...)";
+      message = "'" + name + "' is an operation that requires arguments — use '" + suggestion + "'";
+    }
+    errors.add(new CompileError(
+        op.getLine(), op.getCharPositionInLine(),
+        op.getLine(), op.getCharPositionInLine() + op.getText().length(),
+        message, ErrorSeverity.ERROR, "type-checker", null, suggestion));
+    return Type.ERROR;
+  }
+
   // ==================== String Operations ====================
 
   /**
@@ -3077,6 +3406,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitConcatOp(VitruvOCLParser.ConcatOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     Type argType = visit(ctx.arg);
 
     if (!receiverType.isConformantTo(Type.STRING)) {
@@ -3121,6 +3451,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitSubstringOp(VitruvOCLParser.SubstringOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isConformantTo(Type.STRING)) {
       errors.add(
@@ -3203,6 +3534,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitIndexOfOp(VitruvOCLParser.IndexOfOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isConformantTo(Type.STRING)) {
       errors.add(
@@ -3246,6 +3578,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitEqualsIgnoreCaseOp(VitruvOCLParser.EqualsIgnoreCaseOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isConformantTo(Type.STRING)) {
       errors.add(
@@ -3274,6 +3607,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   /** Helper for string operations with no arguments. */
   private Type visitStringNoArgOp(ParserRuleContext ctx, String opName) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isConformantTo(Type.STRING)) {
       errors.add(
@@ -3304,6 +3638,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitOclIsKindOfOp(VitruvOCLParser.OclIsKindOfOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     Type targetType = visit(ctx.type);
     if (targetType == null && ctx.type != null) {
@@ -3356,6 +3691,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitOclIsTypeOfOp(VitruvOCLParser.OclIsTypeOfOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     Type targetType = visit(ctx.type);
     if (targetType == null && ctx.type != null) {
@@ -3393,6 +3729,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitOclAsTypeOp(VitruvOCLParser.OclAsTypeOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     Type targetType = visit(ctx.type);
     if (targetType == null && ctx.type != null) {
@@ -3429,6 +3766,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitAllInstancesOp(VitruvOCLParser.AllInstancesOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isMetaclassType()) {
       errors.add(
@@ -3539,6 +3877,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitSelectCorrespondence(VitruvOCLParser.SelectCorrespondenceContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (receiverType == null || receiverType == Type.ERROR) {
       errors.add(
@@ -3586,7 +3925,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     // Visit filter to check options and extract optional Type refinement
+    int corrErrsBefore = errors.getErrors().size();
     Type filterType = visit(ctx.corrFilter);
+    if (reportCorrFilterParseError(ctx.corrFilter, ctx, "select", corrErrsBefore))
+      return Type.ERROR;
 
     // If a Type filter was given, narrow the result collection element type
     Type resultType =
@@ -3609,6 +3951,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitRejectCorrespondence(VitruvOCLParser.RejectCorrespondenceContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (receiverType == null || receiverType == Type.ERROR) {
       errors.add(
@@ -3655,7 +3998,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
+    int corrErrsBefore = errors.getErrors().size();
     Type filterType = visit(ctx.corrFilter);
+    if (reportCorrFilterParseError(ctx.corrFilter, ctx, "reject", corrErrsBefore))
+      return Type.ERROR;
 
     Type resultType =
         (filterType != Type.ANY && filterType != Type.ERROR)
@@ -3677,6 +4023,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitExistsCorrespondence(VitruvOCLParser.ExistsCorrespondenceContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (receiverType == null || receiverType == Type.ERROR) {
       errors.add(
@@ -3724,10 +4071,183 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     // Validate filter options (type-checks the Type= expression if present)
+    int corrErrsBefore = errors.getErrors().size();
     visit(ctx.corrFilter);
+    if (reportCorrFilterParseError(ctx.corrFilter, ctx, "exists", corrErrsBefore))
+      return Type.ERROR;
 
     nodeTypes.put(ctx, Type.BOOLEAN);
     return Type.BOOLEAN;
+  }
+
+  /**
+   * Checks whether a correspondenceFilterCS subtree had ANTLR parse errors (silent recovery from
+   * e.g. extra commas like {@code reject(~, , , Type=T)}). When errors are detected and no
+   * TypeChecker error was already reported for the filter, adds a targeted error spanning the full
+   * operation call (e.g. the whole {@code reject(~, , , ...)}) and returns {@code true}.
+   *
+   * @param corrFilter  the parsed correspondenceFilterCS context
+   * @param callCtx     the parent iterator/correspondence call context (for span)
+   * @param opName      operation name for the message (e.g. "reject")
+   * @param errsBefore  error count before visiting the filter
+   * @return {@code true} if a parse error was detected
+   */
+  private boolean reportCorrFilterParseError(
+      org.antlr.v4.runtime.ParserRuleContext corrFilter,
+      org.antlr.v4.runtime.ParserRuleContext callCtx,
+      String opName,
+      int errsBefore) {
+    boolean tcErr = errors.getErrors().size() > errsBefore;
+    boolean parseErr = hasErrorNode(corrFilter) || hasExtraCommasInRange(corrFilter);
+    if (!parseErr && !tcErr) return false;
+    if (!tcErr) {
+      // ANTLR recovered silently — no TypeChecker error was emitted yet → report one
+      org.antlr.v4.runtime.Token start = callCtx.getStart();
+      org.antlr.v4.runtime.Token stop  = callCtx.getStop();
+      int endLine = stop != null ? stop.getLine() : start.getLine();
+      int endCol  = stop != null
+          ? stop.getCharPositionInLine() + stop.getText().length()
+          : start.getCharPositionInLine() + callCtx.getText().length();
+      errors.add(new CompileError(
+          start.getLine(), start.getCharPositionInLine(), endLine, endCol,
+          "'" + opName + "(~, ...)' has invalid arguments — check for extra or misplaced commas",
+          ErrorSeverity.ERROR, "type-checker", null));
+    }
+    return true;
+  }
+
+  /** Tokens that can start a new expression — if one follows a complete spec, an operator is missing. */
+  private static final java.util.Set<String> EXPR_START_KEYWORDS =
+      java.util.Set.of("self", "true", "false", "not", "if", "let");
+
+  /**
+   * Checks whether there are expression-starting tokens immediately after {@code spec.getStop()}
+   * that were silently dropped by ANTLR error recovery. This catches patterns like
+   * {@code self.a == "x"  persons::Foo.allInstances()...} where the user forgot
+   * {@code and}/{@code or}/{@code implies} between two sub-expressions.
+   *
+   * @param spec  the parsed specification context
+   * @param invCtx the enclosing invCS context (used to limit the search range)
+   * @return {@code true} if a missing-operator error was reported
+   */
+  private boolean reportMissingOperatorBetweenExpressions(
+      org.antlr.v4.runtime.ParserRuleContext spec,
+      org.antlr.v4.runtime.ParserRuleContext invCtx) {
+    if (tokens == null || spec.getStop() == null) return false;
+    int idx = nextDefault(spec.getStop().getTokenIndex() + 1);
+    if (idx < 0) return false;
+    org.antlr.v4.runtime.Token next = tokens.get(idx);
+    // Token types that terminate an invCS (not expression starters)
+    String txt = next.getText();
+    if (",".equals(txt) || ")".equals(txt) || "context".equals(txt)
+        || "inv".equals(txt) || "<EOF>".equals(txt)) return false;
+    // Is it an expression-starting token?
+    boolean isExprStart = EXPR_START_KEYWORDS.contains(txt)
+        // ID followed by '::' (qualified name) or '.' (navigation) or '(' (call)
+        || (txt.matches("[a-zA-Z_][a-zA-Z0-9_]*") && isFollowedByNavOrScope(idx))
+        // string literal
+        || (txt.startsWith("\"") || txt.startsWith("'"))
+        // numeric literal
+        || txt.matches("-?[0-9]+(\\.[0-9]+)?");
+    if (!isExprStart) return false;
+    errors.add(new CompileError(
+        next.getLine(), next.getCharPositionInLine(),
+        next.getLine(), next.getCharPositionInLine() + next.getText().length(),
+        "Missing logical operator before this expression — did you mean 'and', 'or', or 'implies'?",
+        ErrorSeverity.ERROR, "type-checker", null));
+    return true;
+  }
+
+  private boolean isFollowedByNavOrScope(int idIdx) {
+    int next = nextDefault(idIdx + 1);
+    if (next < 0) return false;
+    String t = tokens.get(next).getText();
+    return "::".equals(t) || ".".equals(t) || "(".equals(t);
+  }
+
+  private static final java.util.Set<String> COMPARISON_OPS =
+      java.util.Set.of("==", "!=", "<", "<=", ">", ">=");
+
+  /**
+   * Checks whether the token immediately after {@code ctx.getStop()} in the stream is a
+   * comparison or arithmetic operator that implies a missing right-hand operand. If so,
+   * reports the error ON that operator token and returns {@code true}.
+   */
+  private boolean reportMissingOperandAfter(org.antlr.v4.runtime.ParserRuleContext ctx) {
+    if (tokens == null || ctx.getStop() == null) return false;
+    int idx = nextDefault(ctx.getStop().getTokenIndex() + 1);
+    if (idx < 0) return false;
+    org.antlr.v4.runtime.Token opTok = tokens.get(idx);
+    if (!COMPARISON_OPS.contains(opTok.getText())) return false;
+    errors.add(new CompileError(
+        opTok.getLine(), opTok.getCharPositionInLine(),
+        opTok.getLine(), opTok.getCharPositionInLine() + opTok.getText().length(),
+        "Missing right-hand operand for '" + opTok.getText() + "'",
+        ErrorSeverity.ERROR, "type-checker", null));
+    return true;
+  }
+
+  private static final java.util.Set<String> CORR_OPS_SET =
+      java.util.Set.of("reject", "select", "exists");
+
+  /**
+   * Looks in the token stream immediately after {@code parsedExpr.getStop()} for an unparsed
+   * navigation step of the form {@code .reject(~…)/select(~…)/exists(~…)} that ANTLR failed to
+   * match (typically due to extra commas inside the correspondence filter).
+   *
+   * @return [opTokenIndex, closingParenTokenIndex] if found, or null
+   */
+  private int[] findUnparsedCorrCallAfter(org.antlr.v4.runtime.ParserRuleContext parsedExpr) {
+    if (tokens == null || parsedExpr.getStop() == null) return null;
+    int idx = parsedExpr.getStop().getTokenIndex() + 1;
+    idx = nextDefault(idx);
+    if (idx < 0) return null;
+    // expect '.'
+    if (!".".equals(tokens.get(idx).getText())) return null;
+    idx = nextDefault(idx + 1);
+    if (idx < 0) return null;
+    // expect reject / select / exists
+    org.antlr.v4.runtime.Token opTok = tokens.get(idx);
+    if (!CORR_OPS_SET.contains(opTok.getText())) return null;
+    int opIdx = idx;
+    idx = nextDefault(idx + 1);
+    if (idx < 0) return null;
+    // expect '('
+    if (!"(".equals(tokens.get(idx).getText())) return null;
+    // find matching ')'
+    int depth = 0;
+    for (int i = idx; i < tokens.size(); i++) {
+      String txt = tokens.get(i).getText();
+      if ("(".equals(txt)) depth++;
+      else if (")".equals(txt)) { depth--; if (depth == 0) return new int[]{opIdx, i}; }
+    }
+    return null;
+  }
+
+  /** Returns the index of the next token on the default channel at or after {@code from}, or -1. */
+  private int nextDefault(int from) {
+    for (int i = from; i < tokens.size(); i++) {
+      if (tokens.get(i).getChannel() == org.antlr.v4.runtime.Token.DEFAULT_CHANNEL) return i;
+    }
+    return -1;
+  }
+
+  private boolean hasExtraCommasInRange(org.antlr.v4.runtime.ParserRuleContext ctx) {
+    if (tokens == null || ctx.getStart() == null) return false;
+    int from = ctx.getStart().getTokenIndex();
+    int to = ctx.getStop() != null ? ctx.getStop().getTokenIndex() : from;
+    boolean prevWasComma = false;
+    for (int i = from; i <= to; i++) {
+      org.antlr.v4.runtime.Token t = tokens.get(i);
+      if (t.getChannel() != org.antlr.v4.runtime.Token.DEFAULT_CHANNEL) continue;
+      if (",".equals(t.getText())) {
+        if (prevWasComma) return true; // two consecutive commas
+        prevWasComma = true;
+      } else {
+        prevWasComma = false;
+      }
+    }
+    return false;
   }
 
   /** Placeholder for message operator (^). */
@@ -3995,6 +4515,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitOneOp(VitruvOCLParser.OneOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
@@ -4028,7 +4549,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
         if (symbol != null && symbol.getType() == Type.ANY) symbol.setType(iterVarType);
       }
+      if (!requireBody(ctx, ctx.body, "one")) return Type.ERROR;
       Type bodyType = visit(ctx.body);
+      if (bodyType == null || bodyType == Type.ERROR) return Type.ERROR;
       Type checkType = bodyType.isCollection() ? bodyType.getElementType() : bodyType;
       if (!checkType.isConformantTo(Type.BOOLEAN)) {
         errors.add(
@@ -4057,6 +4580,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitAnyOp(VitruvOCLParser.AnyOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
@@ -4090,7 +4614,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
         if (symbol != null && symbol.getType() == Type.ANY) symbol.setType(iterVarType);
       }
+      if (!requireBody(ctx, ctx.body, "any")) return Type.ERROR;
       Type bodyType = visit(ctx.body);
+      if (bodyType == null || bodyType == Type.ERROR) return Type.ERROR;
       Type checkType = bodyType.isCollection() ? bodyType.getElementType() : bodyType;
       if (!checkType.isConformantTo(Type.BOOLEAN)) {
         errors.add(
@@ -4120,6 +4646,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitIsUniqueOp(VitruvOCLParser.IsUniqueOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
@@ -4172,6 +4699,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitSortedByOp(VitruvOCLParser.SortedByOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
@@ -4205,7 +4733,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
         if (symbol != null && symbol.getType() == Type.ANY) symbol.setType(iterVarType);
       }
+      if (!requireBody(ctx, ctx.body, "sortedBy")) return Type.ERROR;
       Type bodyType = visit(ctx.body);
+      if (bodyType == null || bodyType == Type.ERROR) return Type.ERROR;
       // body should return something comparable (numeric or string)
       Type checkType = bodyType.isSingleton() ? bodyType.getElementType() : bodyType;
       if (checkType != Type.ANY
@@ -4240,6 +4770,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitCollectNestedOp(VitruvOCLParser.CollectNestedOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
@@ -4273,7 +4804,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
         if (symbol != null && symbol.getType() == Type.ANY) symbol.setType(iterVarType);
       }
+      if (!requireBody(ctx, ctx.body, "collectNested")) return Type.ERROR;
       Type bodyType = visit(ctx.body);
+      if (bodyType == null || bodyType == Type.ERROR) return Type.ERROR;
       if (bodyType == Type.ERROR) return Type.ERROR;
       // collectNested: preserve receiver kind, element type is the raw body type (no unwrap)
       Type resultType = preserveCollectionKind(receiverType, bodyType);
@@ -4296,6 +4829,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitIterateOp(VitruvOCLParser.IterateOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
@@ -4353,7 +4887,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       }
 
       // Body must conform to accumulator type
+      if (!requireBody(ctx, ctx.body, "iterate")) return Type.ERROR;
       Type bodyType = visit(ctx.body);
+      if (bodyType == null || bodyType == Type.ERROR) return Type.ERROR;
       if (!bodyType.isConformantTo(accType)
           && !conformsWithUnwrapping(bodyType, accType)
           && bodyType != Type.ERROR) {
@@ -4422,6 +4958,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   private Type visitCollectionConversionOp(
       ParserRuleContext ctx, String opName, java.util.function.Function<Type, Type> factory) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
@@ -4447,6 +4984,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitIncludesAllOp(VitruvOCLParser.IncludesAllOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     Type argType = visit(ctx.arg);
     if (!receiverType.isCollection()) {
       errors.add(
@@ -4478,6 +5016,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitExcludesAllOp(VitruvOCLParser.ExcludesAllOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     Type argType = visit(ctx.arg);
     if (!receiverType.isCollection()) {
       errors.add(
@@ -4511,6 +5050,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitCountOp(VitruvOCLParser.CountOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
       errors.add(
           ctx.getStart().getLine(),
@@ -4551,6 +5091,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitIntersectionOp(VitruvOCLParser.IntersectionOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     Type argType = visit(ctx.arg);
     if (!receiverType.isCollection() || !argType.isCollection()) {
       errors.add(
@@ -4590,6 +5131,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitSymmetricDifferenceOp(VitruvOCLParser.SymmetricDifferenceOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     Type argType = visit(ctx.arg);
     if (!receiverType.isCollection() || !argType.isCollection()) {
       errors.add(
@@ -4627,6 +5169,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitPrependOp(VitruvOCLParser.PrependOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection() || !receiverType.isOrdered()) {
       errors.add(
           ctx.getStart().getLine(),
@@ -4663,6 +5206,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitInsertAtOp(VitruvOCLParser.InsertAtOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection() || !receiverType.isOrdered()) {
       errors.add(
           ctx.getStart().getLine(),
@@ -4711,6 +5255,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitSubSequenceOp(VitruvOCLParser.SubSequenceOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection() || !receiverType.isOrdered()) {
       errors.add(
           ctx.getStart().getLine(),
@@ -4753,6 +5298,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitAtOp(VitruvOCLParser.AtOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     // at() also valid on String (returns a character as String)
     if (receiverType.isConformantTo(Type.STRING)) {
       Type indexType = visit(ctx.index);
@@ -4812,6 +5358,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitDivOp(VitruvOCLParser.DivOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     Type argType = visit(ctx.arg);
 
     Type baseReceiver = receiverType.isSingleton() ? receiverType.getElementType() : receiverType;
@@ -4848,6 +5395,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitModOp(VitruvOCLParser.ModOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     Type argType = visit(ctx.arg);
 
     Type baseReceiver = receiverType.isSingleton() ? receiverType.getElementType() : receiverType;
@@ -4884,6 +5432,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitToIntegerOp(VitruvOCLParser.ToIntegerOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isConformantTo(Type.STRING)) {
       errors.add(
           ctx.getStart().getLine(),
@@ -4906,6 +5455,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitToRealOp(VitruvOCLParser.ToRealOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isConformantTo(Type.STRING)) {
       errors.add(
           ctx.getStart().getLine(),
@@ -4930,6 +5480,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitCharactersOp(VitruvOCLParser.CharactersOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isConformantTo(Type.STRING)) {
       errors.add(
           ctx.getStart().getLine(),
@@ -4955,6 +5506,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitMatchesOp(VitruvOCLParser.MatchesOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isConformantTo(Type.STRING)) {
       errors.add(
           ctx.getStart().getLine(),
@@ -5006,6 +5558,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       VitruvOCLParser.ExpCSContext replacementCtx,
       String opName) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isConformantTo(Type.STRING)) {
       errors.add(
           ctx.getStart().getLine(),
@@ -5048,6 +5601,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitTokenizeOp(VitruvOCLParser.TokenizeOpContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isConformantTo(Type.STRING)) {
       errors.add(
           ctx.getStart().getLine(),
@@ -5128,12 +5682,15 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type baseType = targetType.isSingleton() ? targetType.getElementType() : targetType;
 
     if (!baseType.isMetaclassType() && baseType != Type.ANY) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Type filter in correspondence must be a metaclass type, got: " + baseType,
-          ErrorSeverity.ERROR,
-          "type-checker");
+      org.antlr.v4.runtime.Token start = ctx.getStart();
+      org.antlr.v4.runtime.Token stop  = ctx.getStop();
+      int endCol = (stop != null ? stop.getCharPositionInLine() + stop.getText().length()
+                                 : start.getCharPositionInLine() + start.getText().length());
+      errors.add(new CompileError(
+          start.getLine(), start.getCharPositionInLine(),
+          (stop != null ? stop.getLine() : start.getLine()), endCol,
+          "Type filter must be a metaclass (e.g. persons::Person), got: " + baseType,
+          ErrorSeverity.ERROR, "type-checker", null));
       return Type.ERROR;
     }
 
@@ -5151,9 +5708,65 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    * @return Type.ANY (tag carries no type information)
    */
   @Override
+  public Type visitUnknownFilterOption(VitruvOCLParser.UnknownFilterOptionContext ctx) {
+    visit(ctx.badVal); // visit value so its own errors surface
+
+    String typed = ctx.badKey.getText();
+    java.util.List<String> validKeys = java.util.List.of("Tag", "Type");
+
+    String best = validKeys.stream()
+        .min(java.util.Comparator.comparingInt(k ->
+            levenshtein(typed.toLowerCase(java.util.Locale.ROOT),
+                        k.toLowerCase(java.util.Locale.ROOT))))
+        .orElse(null);
+
+    int dist = best == null ? Integer.MAX_VALUE
+        : levenshtein(typed.toLowerCase(java.util.Locale.ROOT),
+                      best.toLowerCase(java.util.Locale.ROOT));
+
+    String message = dist <= 2
+        ? "Unknown filter option '" + typed + "' — did you mean '" + best + "'?"
+        : "Unknown filter option '" + typed + "' — valid options are 'Tag' and 'Type'";
+
+    org.antlr.v4.runtime.Token tok = ctx.badKey;
+    int endCol = tok.getCharPositionInLine() + tok.getText().length();
+    errors.add(new CompileError(
+        tok.getLine(), tok.getCharPositionInLine(),
+        tok.getLine(), endCol,
+        message, ErrorSeverity.ERROR, "type-checker", null, best));
+
+    nodeTypes.put(ctx, Type.ERROR);
+    return Type.ERROR;
+  }
+
+  @Override
+  public Type visitInvalidFilterArg(VitruvOCLParser.InvalidFilterArgContext ctx) {
+    org.antlr.v4.runtime.Token tok = ctx.badArg;
+    int endCol = tok.getCharPositionInLine() + tok.getText().length();
+    errors.add(new CompileError(
+        tok.getLine(), tok.getCharPositionInLine(),
+        tok.getLine(), endCol,
+        "Invalid filter argument '" + tok.getText() + "' — expected 'Type = <type>' or 'Tag = <string>'",
+        ErrorSeverity.ERROR, "type-checker", null));
+    return Type.ERROR;
+  }
+
+  @Override
   public Type visitCorrTagFilter(VitruvOCLParser.CorrTagFilterContext ctx) {
-    // Tag is a STRING token — nothing to type-check beyond confirming it exists.
-    // Return ANY to indicate no metaclass refinement.
+    Type tagType = visit(ctx.tag);
+    // Unwrap singleton wrapper to compare bare primitive type
+    Type bare = (tagType != null && tagType.isSingleton()) ? tagType.getElementType() : tagType;
+    if (bare != null && bare != Type.STRING && bare != Type.ANY && bare != Type.ERROR) {
+      org.antlr.v4.runtime.Token start = ctx.getStart();
+      org.antlr.v4.runtime.Token stop  = ctx.getStop();
+      int endCol = (stop != null ? stop.getCharPositionInLine() + stop.getText().length()
+                                 : start.getCharPositionInLine() + start.getText().length());
+      errors.add(new CompileError(
+          start.getLine(), start.getCharPositionInLine(),
+          (stop != null ? stop.getLine() : start.getLine()), endCol,
+          "Tag filter value must be String, got " + bare,
+          ErrorSeverity.ERROR, "type-checker", null));
+    }
     nodeTypes.put(ctx, Type.ANY);
     return Type.ANY;
   }
@@ -5184,6 +5797,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitPropertyAccess(VitruvOCLParser.PropertyAccessContext ctx) {
     Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     String propertyName = ctx.propertyName.getText();
     Type resultType = typeCheckPropertyAccess(receiverType, propertyName, ctx.propertyName);
     nodeTypes.put(ctx, resultType);
@@ -5244,12 +5858,89 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
   // ==================== Unknown Operator Catch-All ====================
 
+  /** Correspondence iterator operations — candidates for unknownCorrOp suggestions. */
+  private static final java.util.List<String> CORR_OPS =
+      java.util.List.of("select", "reject", "exists");
+
+  /**
+   * Reports a precise error when a correspondence-style call like {@code selcft(~, ...)} is used
+   * but the operation name is not one of the known correspondence iterators.
+   *
+   * <p>Without this rule the grammar would try to parse the {@code ~} as an expression argument
+   * inside {@code unknownOpCS} and produce a cryptic "mismatched input '~' expecting {...}"
+   * message. This alternative catches the pattern before that happens.
+   */
+  @Override
+  public Type visitUnknownCorrOp(VitruvOCLParser.UnknownCorrOpContext ctx) {
+    // Still validate the filter so that Tag/Type errors are reported correctly.
+    visit(ctx.corrFilter);
+
+    String typed = ctx.opName.getText();
+    String typedLow = typed.toLowerCase(java.util.Locale.ROOT);
+
+    String best = CORR_OPS.stream()
+        .min(java.util.Comparator.comparingInt(k ->
+            levenshtein(typedLow, k.toLowerCase(java.util.Locale.ROOT))))
+        .orElse(null);
+    int dist = best == null ? Integer.MAX_VALUE
+        : levenshtein(typedLow, best.toLowerCase(java.util.Locale.ROOT));
+
+    int threshold = typed.length() <= 3 ? 1 : typed.length() <= 6 ? 2 : 3;
+    String message = dist <= threshold
+        ? "Unknown operation '" + typed + "' — did you mean '" + best + "'?"
+        : "Unknown operation '" + typed + "' — this operation does not exist"
+          + " (valid correspondence ops: select, reject, exists)";
+
+    org.antlr.v4.runtime.Token tok = ctx.opName;
+    int endCol = tok.getCharPositionInLine() + tok.getText().length();
+    errors.add(new CompileError(
+        tok.getLine(), tok.getCharPositionInLine(),
+        tok.getLine(), endCol,
+        message, ErrorSeverity.ERROR, "type-checker", null, best));
+
+    nodeTypes.put(ctx, Type.ERROR);
+    return Type.ERROR;
+  }
+
+  /** Keyword binary operators — candidates for "did you mean?" suggestions. */
+  private static final java.util.List<String> KNOWN_BINARY_OPS =
+      java.util.List.of("and", "or", "xor", "implies");
+
   @Override
   public Type visitUnknownBinaryOp(VitruvOCLParser.UnknownBinaryOpContext ctx) {
     visit(ctx.left);
     visit(ctx.right);
-    errors.add(ctx.op, "Unknown operator '" + ctx.op.getText() + "'",
-        ErrorSeverity.ERROR, "type-checker");
+
+    String typed = ctx.op.getText();
+    String typedLow = typed.toLowerCase(java.util.Locale.ROOT);
+
+    // Find the closest keyword operator (case-insensitive Levenshtein)
+    String best = KNOWN_BINARY_OPS.stream()
+        .min(java.util.Comparator.comparingInt(k ->
+            levenshtein(typedLow, k.toLowerCase(java.util.Locale.ROOT))))
+        .orElse(null);
+    int dist = best == null ? Integer.MAX_VALUE
+        : levenshtein(typedLow, best.toLowerCase(java.util.Locale.ROOT));
+
+    // Use "did you mean" when the name is close enough; threshold scales with length
+    int threshold = typed.length() <= 3 ? 1 : typed.length() <= 6 ? 2 : 3;
+    String message;
+    String suggestion;
+    if (dist <= threshold) {
+      message    = "Unknown operator '" + typed + "' — did you mean '" + best + "'?";
+      suggestion = best;
+    } else {
+      message    = "Unknown operator '" + typed + "' — this operator does not exist";
+      suggestion = best; // still offer a Quick Fix to the closest keyword op
+    }
+
+    org.antlr.v4.runtime.Token tok = ctx.op;
+    int endCol = tok.getCharPositionInLine() + tok.getText().length();
+    errors.add(new CompileError(
+        tok.getLine(), tok.getCharPositionInLine(),
+        tok.getLine(), endCol,
+        message, ErrorSeverity.ERROR, "type-checker", null, suggestion));
+
     nodeTypes.put(ctx, Type.ERROR);
     return Type.ERROR;
   }
@@ -5264,15 +5955,165 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     for (VitruvOCLParser.ExpCSContext arg : ctx.args) {
       visit(arg);
     }
-    errors.add(ctx.opName, "Unknown operation '" + ctx.opName.getText() + "'",
-        ErrorSeverity.ERROR, "type-checker");
+    String typed = ctx.opName.getText();
+    java.util.Optional<String> close = suggestOperation(typed);   // within threshold
+    String best  = bestOperation(typed);                           // unconditional best
+
+    String message;
+    String suggestion; // stored for Quick Fix — always the best candidate
+    if (close.isPresent()) {
+      // Close enough: "did you mean?"
+      message    = "Unknown operation '" + typed + "' — did you mean '" + close.get() + "'?";
+      suggestion = close.get();
+    } else if (best != null) {
+      // Too far for a confident suggestion, but we still offer a fix in the tooltip
+      message    = "Unknown operation '" + typed + "' — this operation does not exist";
+      suggestion = best;
+    } else {
+      message    = "Unknown operation '" + typed + "' — this operation does not exist";
+      suggestion = null;
+    }
+
+    org.antlr.v4.runtime.Token tok = ctx.opName;
+    int endCol = tok.getCharPositionInLine() + tok.getText().length();
+    errors.add(new CompileError(
+        tok.getLine(), tok.getCharPositionInLine(),
+        tok.getLine(), endCol,
+        message, ErrorSeverity.ERROR, "type-checker", null, suggestion));
+
     nodeTypes.put(ctx, Type.ERROR);
     return Type.ERROR;
+  }
+
+  // ==================== Operation Name Suggestion ====================
+
+  /**
+   * All operation names known to VitruvOCL.
+   *
+   * <p>Used by {@link #suggestOperation} to propose the closest match when an unknown operation
+   * name is encountered.
+   */
+  private static final java.util.List<String> KNOWN_OPERATIONS = java.util.List.of(
+      // Collection query
+      "isEmpty", "notEmpty", "size", "count", "includes", "excludes",
+      "includesAll", "excludesAll", "first", "last", "at", "reverse",
+      // Collection modification
+      "including", "excluding", "union", "intersection", "symmetricDifference",
+      "flatten", "append", "prepend", "insertAt", "subSequence",
+      // Collection conversion
+      "asSet", "asBag", "asSequence", "asOrderedSet", "lift",
+      // Aggregation
+      "sum", "max", "min", "avg",
+      // Numeric
+      "abs", "floor", "ceil", "ceiling", "round",
+      // Iterator
+      "select", "reject", "collect", "collectNested",
+      "forAll", "exists", "one", "any",
+      "isUnique", "sortedBy", "iterate",
+      // String
+      "concat", "substring", "length", "toUpper", "toLower",
+      "indexOf", "equalsIgnoreCase", "characters", "tokenize",
+      "substituteAll", "substituteFirst", "matches",
+      "toInteger", "toReal",
+      // Type / meta
+      "oclIsKindOf", "oclIsTypeOf", "oclAsType", "allInstances"
+  );
+
+  /**
+   * Returns the single closest known operation name to {@code typed}, regardless of distance.
+   *
+   * <p>Used to populate the Quick Fix even when the name is too different for a confident "did you
+   * mean?" message. Returns {@code null} only when {@code KNOWN_OPERATIONS} is empty.
+   */
+  private static String bestOperation(String typed) {
+    String lower = typed.toLowerCase(java.util.Locale.ROOT);
+    String best = null;
+    int bestDist = Integer.MAX_VALUE;
+    for (String known : KNOWN_OPERATIONS) {
+      int dist = levenshtein(lower, known.toLowerCase(java.util.Locale.ROOT));
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = known;
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Returns the closest known operation name to {@code typed} if it is within the edit-distance
+   * threshold, otherwise returns empty.
+   *
+   * <p>Threshold scales with name length:
+   *
+   * <ul>
+   *   <li>1–3 chars → max distance 1
+   *   <li>4–6 chars → max distance 2
+   *   <li>7+ chars  → max distance 3
+   * </ul>
+   *
+   * <p>Comparison is case-insensitive so "Select" suggests "select".
+   */
+  private static java.util.Optional<String> suggestOperation(String typed) {
+    int threshold = typed.length() <= 3 ? 1 : typed.length() <= 6 ? 2 : 3;
+    String lower = typed.toLowerCase(java.util.Locale.ROOT);
+
+    String best = null;
+    int bestDist = threshold + 1;
+
+    for (String known : KNOWN_OPERATIONS) {
+      int dist = levenshtein(lower, known.toLowerCase(java.util.Locale.ROOT));
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = known;
+      }
+    }
+
+    return java.util.Optional.ofNullable(best);
+  }
+
+  /**
+   * Computes the Damerau-Levenshtein (Optimal String Alignment) distance between two strings.
+   *
+   * <p>Counts insertions, deletions, substitutions and <em>adjacent transpositions</em> (e.g.
+   * {@code "adn"} → {@code "and"} = 1 move). This is better than plain Levenshtein for catching
+   * real typing mistakes where two neighbouring characters are accidentally swapped.
+   *
+   * <p>Time O(|a|·|b|), space O(|a|·|b|).
+   */
+  private static int levenshtein(String a, String b) {
+    if (a.equals(b)) return 0;
+    if (a.isEmpty()) return b.length();
+    if (b.isEmpty()) return a.length();
+
+    int la = a.length(), lb = b.length();
+    int[][] d = new int[la + 1][lb + 1];
+
+    for (int i = 0; i <= la; i++) d[i][0] = i;
+    for (int j = 0; j <= lb; j++) d[0][j] = j;
+
+    for (int i = 1; i <= la; i++) {
+      for (int j = 1; j <= lb; j++) {
+        int cost = a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1;
+        d[i][j] = Math.min(d[i - 1][j] + 1,                 // deletion
+                  Math.min(d[i][j - 1] + 1,                  // insertion
+                           d[i - 1][j - 1] + cost));          // substitution
+        // Adjacent transposition (Damerau extension)
+        if (i > 1 && j > 1
+            && a.charAt(i - 1) == b.charAt(j - 2)
+            && a.charAt(i - 2) == b.charAt(j - 1)) {
+          d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + cost);
+        }
+      }
+    }
+
+    return d[la][lb];
   }
 
   /** Recursively checks whether any node in the subtree is an ANTLR {@link ErrorNode}. */
   private static boolean hasErrorNode(ParseTree tree) {
     if (tree instanceof ErrorNode) return true;
+    if (tree instanceof org.antlr.v4.runtime.ParserRuleContext
+        && ((org.antlr.v4.runtime.ParserRuleContext) tree).exception != null) return true;
     for (int i = 0; i < tree.getChildCount(); i++) {
       if (hasErrorNode(tree.getChild(i))) return true;
     }
@@ -5315,6 +6156,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   public void setTokenStream(org.antlr.v4.runtime.TokenStream tokens) {
     this.tokens = tokens;
+    // Eagerly fill the token buffer so all tokens are accessible by index,
+    // even tokens that ANTLR's error recovery consumed (or skipped) during parsing.
+    if (tokens instanceof org.antlr.v4.runtime.BufferedTokenStream) {
+      ((org.antlr.v4.runtime.BufferedTokenStream) tokens).fill();
+    }
   }
 
   /**

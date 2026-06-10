@@ -196,21 +196,33 @@ async function runAllConstraints() {
         }
         const ecoreFiles = await findEcoreFiles(document.uri);
         const instanceFiles = await findInstanceFiles(document.uri);
-        if (ecoreFiles.length === 0 || instanceFiles.length === 0) {
-            vscode.window.showWarningMessage('Missing .ecore or instance files');
+        if (ecoreFiles.length === 0) {
+            vscode.window.showWarningMessage('No .ecore metamodel files found in workspace.');
             return;
         }
+        if (instanceFiles.length === 0 || !instanceFiles.some(f => f.endsWith('.correspondence'))) {
+            vscode.window.showErrorMessage('No VSUM found. Run VSUMExample.main() from your IDE to create one, then try again.');
+            return;
+        }
+        const hasInstances = true;
         vscode.window.showInformationMessage('Running all constraints...');
-        const { stdout } = await execFile('java', [
+        const batchArgs = [
             '-jar', compilerPath,
             'eval-batch',
             document.fileName,
             '--ecore', ecoreFiles.join(','),
-            '--xmi', instanceFiles.join(',')
-        ]).catch(err => ({
+            ...(hasInstances ? ['--xmi', instanceFiles.join(',')] : [])
+        ];
+        const execResult = await execFile('java', batchArgs).catch(err => ({
             stdout: err.stdout || '',
             stderr: err.stderr || err.message
         }));
+        const stdout = execResult.stdout;
+        const stderr = execResult.stderr || '';
+        // Surface CLI stderr in the output channel so debug prints are visible
+        if (stderr && outputChannel) {
+            outputChannel.appendLine('[CLI-STDERR] ' + stderr.trim().split('\n').join('\n[CLI-STDERR] '));
+        }
         const result = JSON.parse(stdout);
         if (!result.success) {
             vscode.window.showErrorMessage('Batch evaluation failed');
@@ -256,8 +268,12 @@ async function runConstraint(constraintName, documentUri) {
         }
         const ecoreFiles = await findEcoreFiles(documentUri);
         const instanceFiles = await findInstanceFiles(documentUri);
-        if (ecoreFiles.length === 0 || instanceFiles.length === 0) {
-            vscode.window.showWarningMessage('Missing files');
+        if (ecoreFiles.length === 0) {
+            vscode.window.showWarningMessage('No .ecore metamodel files found in workspace.');
+            return;
+        }
+        if (instanceFiles.length === 0 || !instanceFiles.some(f => f.endsWith('.correspondence'))) {
+            vscode.window.showErrorMessage('No VSUM found. Run VSUMExample.main() from your IDE to create one, then try again.');
             return;
         }
         const singleConstraint = extractConstraint(document.getText(), constraintName);
@@ -407,11 +423,16 @@ function extractConstraint(text, constraintName) {
             }
         }
         if (collecting && i > startLine) {
-            constraint += line + '\n';
-            if (line.trim().startsWith('context')) {
-                constraint = constraint.substring(0, constraint.length - line.length - 1);
+            const trimmed = line.trim();
+            // Stop at the next constraint's context declaration
+            if (trimmed.startsWith('context ')) {
                 break;
             }
+            // Skip comment lines — the CLI eval command does not strip them
+            if (trimmed.startsWith('--')) {
+                continue;
+            }
+            constraint += line + '\n';
         }
     }
     return constraint.trim() || null;
@@ -457,32 +478,77 @@ async function findEcoreFiles(constraintFileUri) {
     const files = await vscode.workspace.findFiles('**/*.ecore', '**/target/**');
     return files.map(u => u.fsPath);
 }
+/** Directories that should never be treated as model instance sources. */
+const VSUM_SKIP_DIRS = new Set(['.git', 'target', 'src', 'node_modules']);
+/**
+ * Recursively collects all model instance files from a VSUM storage folder.
+ * Skips the internal vsum/ metadata subfolder and other non-model directories.
+ * Model files can be at the root level OR inside subdirectories.
+ */
+function collectVsumFiles(vsumFolder) {
+    if (!fs.existsSync(vsumFolder) || !fs.statSync(vsumFolder).isDirectory())
+        return [];
+    const result = [];
+    function walk(dir) {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const fullPath = path.join(dir, entry.name);
+            if (entry.isFile()) {
+                const ext = path.extname(entry.name).toLowerCase();
+                // Skip build artifacts, source files, and internal Vitruvius metadata
+                if (ext === '.ecore' || ext === '.genmodel' || ext === '.java'
+                    || ext === '.class' || ext === '.jar' || ext === '.mwe2'
+                    || ext === '.reactions' || ext === '.xtend'
+                    || ext === '.uuid' || ext === '.models'
+                    || entry.name.endsWith('.marker_vitruv')) {
+                    continue;
+                }
+                result.push(fullPath);
+            }
+            else if (entry.isDirectory()) {
+                if (VSUM_SKIP_DIRS.has(entry.name))
+                    continue;
+                walk(fullPath);
+            }
+        }
+    }
+    walk(vsumFolder);
+    return result;
+}
 async function findInstanceFiles(constraintFileUri) {
     const workspaceRoot = constraintFileUri
         ? vscode.workspace.getWorkspaceFolder(constraintFileUri)?.uri.fsPath
         : vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (!workspaceRoot)
         return [];
-    // Primary: VSUM layout — vsum/target/vsumtest/
-    // Marker file: vsum/target/vsumtest/vsum/models.models
-    const vsumBase = path.join(workspaceRoot, 'vsum', 'target', 'vsumtest');
-    const marker = path.join(vsumBase, 'vsum', 'models.models');
-    if (fs.existsSync(marker)) {
-        const result = [];
-        for (const entry of fs.readdirSync(vsumBase, { withFileTypes: true })) {
-            // Skip the vsum/ meta-folder itself — it only contains correspondences/marker
-            if (!entry.isDirectory() || entry.name === 'vsum')
-                continue;
-            const dir = path.join(vsumBase, entry.name);
-            for (const file of fs.readdirSync(dir)) {
-                const fullPath = path.join(dir, file);
-                if (fs.statSync(fullPath).isFile()) {
-                    result.push(fullPath);
-                }
-            }
-        }
-        return result;
+    // 0. User-configured VSUM path (vitruvocl.vsumPath setting)
+    const config = vscode.workspace.getConfiguration('vitruvocl');
+    const configuredPath = config.get('vsumPath');
+    if (configuredPath) {
+        const resolved = path.isAbsolute(configuredPath)
+            ? configuredPath
+            : path.join(workspaceRoot, configuredPath);
+        const files = collectVsumFiles(resolved);
+        if (files.length > 0)
+            return files;
     }
+    // 1. Standard Maven test VSUM: vsum/target/vsumtest/
+    const vsumBase = path.join(workspaceRoot, 'vsum', 'target', 'vsumtest');
+    const files1 = collectVsumFiles(vsumBase);
+    if (files1.length > 0)
+        return files1;
+    // 2. VSUMExample default: vsumexample/ at workspace root or inside vsum/
+    for (const candidate of [
+        path.join(workspaceRoot, 'vsumexample'),
+        path.join(workspaceRoot, 'vsum', 'vsumexample'),
+    ]) {
+        const files2 = collectVsumFiles(candidate);
+        if (files2.length > 0)
+            return files2;
+    }
+    // 3. Broader search: any folder named vsumtest, vsumexample, or vsum-storage
+    const broader = await vscode.workspace.findFiles('{**/vsumtest/**,**/vsumexample/**,**/vsum-storage/**}', '**/target/**');
+    if (broader.length > 0)
+        return broader.map(u => u.fsPath);
     // Fallback: legacy instances/ folder relative to constraint file
     const searchRoot = constraintFileUri ? path.dirname(constraintFileUri.fsPath) : workspaceRoot;
     const instancesPath = path.join(searchRoot, 'instances');

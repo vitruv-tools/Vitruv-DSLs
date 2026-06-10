@@ -9,6 +9,7 @@
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL.lsp;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -17,10 +18,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import org.eclipse.lsp4j.CodeAction;
+import org.eclipse.lsp4j.CodeActionKind;
+import org.eclipse.lsp4j.CodeActionParams;
+import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.CompletionParams;
 import org.eclipse.lsp4j.DefinitionParams;
+import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
 import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
@@ -37,6 +43,8 @@ import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.SignatureHelp;
 import org.eclipse.lsp4j.SignatureHelpParams;
 import org.eclipse.lsp4j.SymbolInformation;
+import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.TextDocumentService;
@@ -242,6 +250,57 @@ public class OCLTextDocumentService implements TextDocumentService {
     } catch (Exception e) {
       System.err.println("[OCL-LS] Analysis failed for " + uri + ": " + e.getMessage());
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Code actions (Quick Fix)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Returns quick-fix code actions for diagnostics that carry a suggestion.
+   *
+   * <p>When the type checker detects an unknown operation it stores the closest known operation name
+   * in {@link tools.vitruv.dsls.vitruvOCL.common.CompileError#getSuggestion()}. The
+   * {@link DocumentAnalyzer} serialises that suggestion into {@link Diagnostic#getData()}. Here we
+   * read it back and produce a {@code QuickFix} {@link CodeAction} whose {@link WorkspaceEdit}
+   * replaces the squiggled token range with the suggestion.
+   *
+   * <p>VS Code renders each action as a blue-highlighted item in the "Quick Fix…" menu (⌘. / Ctrl+.)
+   * directly below the squiggle.
+   */
+  @Override
+  public CompletableFuture<List<Either<Command, CodeAction>>> codeAction(CodeActionParams params) {
+    return CompletableFuture.supplyAsync(() -> {
+      List<Either<Command, CodeAction>> actions = new ArrayList<>();
+      String uri = params.getTextDocument().getUri();
+
+      for (Diagnostic diag : params.getContext().getDiagnostics()) {
+        Object data = diag.getData();
+        if (data == null) continue;
+
+        // data is a String (the replacement text) serialised as a JSON string by lsp4j
+        String suggestion = data instanceof String s ? s : data.toString();
+        // lsp4j may wrap the value in quotes when deserialised via Gson
+        if (suggestion.startsWith("\"") && suggestion.endsWith("\"") && suggestion.length() >= 2) {
+          suggestion = suggestion.substring(1, suggestion.length() - 1);
+        }
+        if (suggestion.isBlank()) continue;
+
+        TextEdit edit = new TextEdit(diag.getRange(), suggestion);
+        WorkspaceEdit wsEdit = new WorkspaceEdit(Map.of(uri, List.of(edit)));
+
+        CodeAction action = new CodeAction("Replace with '" + suggestion + "'");
+        action.setKind(CodeActionKind.QuickFix);
+        action.setDiagnostics(List.of(diag));
+        action.setEdit(wsEdit);
+        // Mark as preferred so VS Code highlights it in blue
+        action.setIsPreferred(true);
+
+        actions.add(Either.forRight(action));
+      }
+
+      return actions;
+    });
   }
 
   /**

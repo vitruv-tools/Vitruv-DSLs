@@ -218,12 +218,12 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Type contextType = nodeTypes.get(ctx);
 
     if (contextType == null || contextType == Type.ERROR) {
-      return error("Invalid context type", ctx);
+      return Value.empty(Type.bag(Type.BOOLEAN));
     }
 
     EClass eClass = contextType.getEClass();
     if (eClass == null) {
-      return error("Context type must be a metaclass type", ctx);
+      return Value.empty(Type.bag(Type.BOOLEAN));
     }
 
     // Retrieve all instances of the context type from the metamodel
@@ -303,15 +303,15 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitIfExpCS(VitruvOCLParser.IfExpCSContext ctx) {
     Value condVal = visit(ctx.condition);
 
-    if (condVal == null || condVal.size() != 1) {
-      return error("If condition must be singleton", ctx);
+    if (condVal == null || condVal.isEmpty()) {
+      return visit(ctx.elseBranch);
     }
 
     OCLElement condElem = condVal.getElements().get(0);
     Boolean condition = condElem.tryGetBool();
 
     if (condition == null) {
-      return error("If condition must be Boolean", ctx);
+      return visit(ctx.elseBranch);
     }
 
     // Short-circuit: only evaluate the selected branch
@@ -472,8 +472,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitIncludesOp(VitruvOCLParser.IncludesOpContext ctx) {
     Value receiver = receiverStack.peek();
     Value arg = visit(ctx.arg);
-    if (arg.size() != 1) {
-      return error("includes() requires singleton", ctx);
+    if (arg.isEmpty()) {
+      return Value.boolValue(false);
     }
 
     OCLElement searchElem = arg.getElements().get(0);
@@ -496,8 +496,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitIncludingOp(VitruvOCLParser.IncludingOpContext ctx) {
     Value receiver = receiverStack.peek();
     Value arg = visit(ctx.arg);
-    if (arg.size() != 1) {
-      return error("including() requires singleton", ctx);
+    if (arg.isEmpty()) {
+      return receiver;
     }
     return receiver.including(arg.getElements().get(0));
   }
@@ -516,8 +516,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitExcludingOp(VitruvOCLParser.ExcludingOpContext ctx) {
     Value receiver = receiverStack.peek();
     Value arg = visit(ctx.arg);
-    if (arg.size() != 1) {
-      return error("excluding() requires singleton", ctx);
+    if (arg.isEmpty()) {
+      return receiver;
     }
     return receiver.excluding(arg.getElements().get(0));
   }
@@ -536,8 +536,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitExcludesOp(VitruvOCLParser.ExcludesOpContext ctx) {
     Value receiver = receiverStack.peek();
     Value arg = visit(ctx.arg);
-    if (arg.size() != 1) {
-      return error("excludes() requires singleton", ctx);
+    if (arg.isEmpty()) {
+      return Value.boolValue(true);
     }
     return Value.boolValue(receiver.excludes(arg.getElements().get(0)));
   }
@@ -617,7 +617,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     double sum = 0.0;
     for (OCLElement elem : receiver.getElements()) {
       if (!OCLElement.isNumeric(elem)) {
-        return error("sum() requires numeric elements", ctx);
+        continue;
       }
       if (elem.tryGetFloat() != null || elem.tryGetDouble() != null) {
         hasFloating = true;
@@ -664,7 +664,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     double max = Double.NEGATIVE_INFINITY;
     for (OCLElement elem : elements) {
       if (!OCLElement.isNumeric(elem)) {
-        return error("max() requires numeric elements", ctx);
+        continue;
       }
       double val = elem.toDoubleValue();
       if (val > max) max = val;
@@ -708,7 +708,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     double min = Double.POSITIVE_INFINITY;
     for (OCLElement elem : elements) {
       if (!OCLElement.isNumeric(elem)) {
-        return error("min() requires numeric elements", ctx);
+        continue;
       }
       double val = elem.toDoubleValue();
       if (val < min) min = val;
@@ -738,7 +738,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     double sum = 0.0;
     for (OCLElement elem : receiver.getElements()) {
       if (!OCLElement.isNumeric(elem)) {
-        return error("avg() requires numeric elements", ctx);
+        continue;
       }
       sum += elem.toDoubleValue();
     }
@@ -766,8 +766,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         results.add(new OCLElement.FloatValue(Math.abs(elem.tryGetFloat())));
       } else if (elem.tryGetDouble() != null) {
         results.add(new OCLElement.DoubleValue(Math.abs(elem.tryGetDouble())));
-      } else {
-        return error("abs() requires a numeric value", ctx);
       }
     }
     return Value.of(results, receiver.getRuntimeType());
@@ -794,8 +792,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         results.add(new OCLElement.DoubleValue(Math.floor(elem.tryGetFloat())));
       } else if (elem.tryGetDouble() != null) {
         results.add(new OCLElement.DoubleValue(Math.floor(elem.tryGetDouble())));
-      } else {
-        return error("floor() requires a numeric value", ctx);
       }
     }
     return Value.of(results, receiver.getRuntimeType());
@@ -822,8 +818,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         results.add(new OCLElement.DoubleValue(Math.ceil(elem.tryGetFloat())));
       } else if (elem.tryGetDouble() != null) {
         results.add(new OCLElement.DoubleValue(Math.ceil(elem.tryGetDouble())));
-      } else {
-        return error("ceil() requires a numeric value", ctx);
       }
     }
     return Value.of(results, receiver.getRuntimeType());
@@ -851,8 +845,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         results.add(new OCLElement.DoubleValue((double) Math.round(elem.tryGetFloat())));
       } else if (elem.tryGetDouble() != null) {
         results.add(new OCLElement.DoubleValue((double) Math.round(elem.tryGetDouble())));
-      } else {
-        return error("round() requires a numeric value", ctx);
       }
     }
     return Value.of(results, receiver.getRuntimeType());
@@ -879,7 +871,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         return Value.intValue(str.length());
       }
     }
-    return error("length() requires String receiver", ctx);
+    return Value.intValue(0);
   }
 
   /**
@@ -895,24 +887,16 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitConcatOp(VitruvOCLParser.ConcatOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if (receiver.size() != 1) {
-      return error("concat() requires singleton String receiver", ctx);
-    }
+    if (receiver.isEmpty()) return receiver;
 
     String str = receiver.getElements().get(0).tryGetString();
-    if (str == null) {
-      return error("concat() requires String receiver", ctx);
-    }
+    if (str == null) return receiver;
 
     Value arg = visit(ctx.arg);
-    if (arg.size() != 1) {
-      return error("concat() requires singleton String argument", ctx);
-    }
+    if (arg.isEmpty()) return receiver;
 
     String argStr = arg.getElements().get(0).tryGetString();
-    if (argStr == null) {
-      return error("concat() requires String argument", ctx);
-    }
+    if (argStr == null) return receiver;
 
     return Value.stringValue(str + argStr);
   }
@@ -973,14 +957,10 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitToUpperOp(VitruvOCLParser.ToUpperOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if (receiver.size() != 1) {
-      return error("toUpper() requires singleton String receiver", ctx);
-    }
+    if (receiver.isEmpty()) return receiver;
 
     String str = receiver.getElements().get(0).tryGetString();
-    if (str == null) {
-      return error("toUpper() requires String receiver", ctx);
-    }
+    if (str == null) return receiver;
 
     return Value.stringValue(str.toUpperCase());
   }
@@ -998,14 +978,10 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitToLowerOp(VitruvOCLParser.ToLowerOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if (receiver.size() != 1) {
-      return error("toLower() requires singleton String receiver", ctx);
-    }
+    if (receiver.isEmpty()) return receiver;
 
     String str = receiver.getElements().get(0).tryGetString();
-    if (str == null) {
-      return error("toLower() requires String receiver", ctx);
-    }
+    if (str == null) return receiver;
 
     return Value.stringValue(str.toLowerCase());
   }
@@ -1023,24 +999,16 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitIndexOfOp(VitruvOCLParser.IndexOfOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if (receiver.size() != 1) {
-      return error("indexOf() requires singleton String receiver", ctx);
-    }
+    if (receiver.isEmpty()) return Value.intValue(0);
 
     String str = receiver.getElements().get(0).tryGetString();
-    if (str == null) {
-      return error("indexOf() requires String receiver", ctx);
-    }
+    if (str == null) return Value.intValue(0);
 
     Value arg = visit(ctx.arg);
-    if (arg.size() != 1) {
-      return error("indexOf() requires singleton String argument", ctx);
-    }
+    if (arg.isEmpty()) return Value.intValue(0);
 
     String searchStr = arg.getElements().get(0).tryGetString();
-    if (searchStr == null) {
-      return error("indexOf() requires String argument", ctx);
-    }
+    if (searchStr == null) return Value.intValue(0);
 
     // Convert Java's 0-based index to OCL's 1-based index
     int javaIndex = str.indexOf(searchStr);
@@ -1061,24 +1029,16 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitEqualsIgnoreCaseOp(VitruvOCLParser.EqualsIgnoreCaseOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if (receiver.size() != 1) {
-      return error("equalsIgnoreCase() requires singleton String receiver", ctx);
-    }
+    if (receiver.isEmpty()) return Value.boolValue(false);
 
     String str = receiver.getElements().get(0).tryGetString();
-    if (str == null) {
-      return error("equalsIgnoreCase() requires String receiver", ctx);
-    }
+    if (str == null) return Value.boolValue(false);
 
     Value arg = visit(ctx.arg);
-    if (arg.size() != 1) {
-      return error("equalsIgnoreCase() requires singleton String argument", ctx);
-    }
+    if (arg.isEmpty()) return Value.boolValue(false);
 
     String compareStr = arg.getElements().get(0).tryGetString();
-    if (compareStr == null) {
-      return error("equalsIgnoreCase() requires String argument", ctx);
-    }
+    if (compareStr == null) return Value.boolValue(false);
 
     return Value.boolValue(str.equalsIgnoreCase(compareStr));
   }
@@ -1107,19 +1067,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       }
     }
 
-    if (iterVars.isEmpty()) {
-      return error("select requires at least one iterator variable", ctx);
-    }
-
-    if (iterVars.size() == 1) {
-      return evaluateSelectSingleVar(ctx, receiver, iterVars.get(0));
-    }
-
     if (iterVars.size() == 2) {
       return evaluateSelectTwoVars(ctx, receiver, iterVars.get(0), iterVars.get(1));
     }
 
-    return error("select supports at most 2 iterator variables", ctx);
+    if (!iterVars.isEmpty()) {
+      return evaluateSelectSingleVar(ctx, receiver, iterVars.get(0));
+    }
+    return Value.of(List.of(), receiver.getRuntimeType());
   }
 
   /**
@@ -1144,7 +1099,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     for (TerminalNode id : ctx.iteratorVarList().ID()) {
       iterVars.add(id.getText());
     }
-    if (iterVars.isEmpty()) return error("one requires iterator variable", ctx);
+    if (iterVars.isEmpty()) return Value.boolValue(false);
 
     Type elemType = receiver.getRuntimeType().getElementType();
     Type iterVarType = Type.singleton(elemType);
@@ -1190,7 +1145,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     for (TerminalNode id : ctx.iteratorVarList().ID()) {
       iterVars.add(id.getText());
     }
-    if (iterVars.isEmpty()) return error("any requires iterator variable", ctx);
+    if (iterVars.isEmpty()) return Value.empty(Type.optional(Type.ANY));
 
     Type elemType = receiver.getRuntimeType().getElementType();
     Type iterVarType = Type.singleton(elemType);
@@ -1237,7 +1192,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     for (TerminalNode id : ctx.iteratorVarList().ID()) {
       iterVars.add(id.getText());
     }
-    if (iterVars.isEmpty()) return error("isUnique requires iterator variable", ctx);
+    if (iterVars.isEmpty()) return Value.boolValue(true);
 
     Type elemType = receiver.getRuntimeType().getElementType();
     Type iterVarType = Type.singleton(elemType);
@@ -1294,7 +1249,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     for (TerminalNode id : ctx.iteratorVarList().ID()) {
       iterVars.add(id.getText());
     }
-    if (iterVars.isEmpty()) return error("sortedBy requires iterator variable", ctx);
+    if (iterVars.isEmpty()) return Value.of(List.of(), Type.orderedSet(receiver.getRuntimeType().getElementType()));
 
     Type elemType = receiver.getRuntimeType().getElementType();
     Type iterVarType = Type.singleton(elemType);
@@ -1353,7 +1308,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     for (TerminalNode id : ctx.iteratorVarList().ID()) {
       iterVars.add(id.getText());
     }
-    if (iterVars.isEmpty()) return error("collectNested requires iterator variable", ctx);
+    if (iterVars.isEmpty()) return Value.of(List.of(), Type.bag(receiver.getRuntimeType().getElementType()));
 
     Type elemType = receiver.getRuntimeType().getElementType();
     Type iterVarType = Type.singleton(elemType);
@@ -1446,19 +1401,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       }
     }
 
-    if (iterVars.isEmpty()) {
-      return error("reject requires at least one iterator variable", ctx);
-    }
-
-    if (iterVars.size() == 1) {
-      return evaluateRejectSingleVar(ctx, receiver, iterVars.get(0));
-    }
-
     if (iterVars.size() == 2) {
       return evaluateRejectTwoVars(ctx, receiver, iterVars.get(0), iterVars.get(1));
     }
 
-    return error("reject supports at most 2 iterator variables", ctx);
+    if (!iterVars.isEmpty()) {
+      return evaluateRejectSingleVar(ctx, receiver, iterVars.get(0));
+    }
+    return Value.of(List.of(), receiver.getRuntimeType());
   }
 
   /**
@@ -1483,19 +1433,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       }
     }
 
-    if (iterVars.isEmpty()) {
-      return error("collect requires at least one iterator variable", ctx);
-    }
-
-    if (iterVars.size() == 1) {
-      return evaluateCollectSingleVar(ctx, receiver, iterVars.get(0));
-    }
-
     if (iterVars.size() == 2) {
       return evaluateCollectTwoVars(ctx, receiver, iterVars.get(0), iterVars.get(1));
     }
 
-    return error("collect supports at most 2 iterator variables", ctx);
+    if (!iterVars.isEmpty()) {
+      return evaluateCollectSingleVar(ctx, receiver, iterVars.get(0));
+    }
+    return Value.of(List.of(), receiver.getRuntimeType());
   }
 
   /**
@@ -1521,19 +1466,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       }
     }
 
-    if (iterVars.isEmpty()) {
-      return error("forAll requires at least one iterator variable", ctx);
-    }
-
-    if (iterVars.size() == 1) {
-      return evaluateForAllSingleVar(ctx, receiver, iterVars.get(0));
-    }
-
     if (iterVars.size() == 2) {
       return evaluateForAllTwoVars(ctx, receiver, iterVars.get(0), iterVars.get(1));
     }
 
-    return error("forAll supports at most 2 iterator variables", ctx);
+    if (!iterVars.isEmpty()) {
+      return evaluateForAllSingleVar(ctx, receiver, iterVars.get(0));
+    }
+    return Value.boolValue(true);
   }
 
   /**
@@ -1559,19 +1499,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       }
     }
 
-    if (iterVars.isEmpty()) {
-      return error("select requires at least one iterator variable", ctx);
-    }
-
-    if (iterVars.size() == 1) {
-      return evaluateExistsSingleVar(ctx, receiver, iterVars.get(0));
-    }
-
     if (iterVars.size() == 2) {
       return evaluateExistsTwoVars(ctx, receiver, iterVars.get(0), iterVars.get(1));
     }
 
-    return error("select supports at most 2 iterator variables", ctx);
+    if (!iterVars.isEmpty()) {
+      return evaluateExistsSingleVar(ctx, receiver, iterVars.get(0));
+    }
+    return Value.boolValue(false);
   }
 
   /**
@@ -1594,7 +1529,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Type targetType = nodeTypes.get(ctx);
 
     if (targetType == null) {
-      return error("Cannot resolve target type in oclAsType", ctx);
+      return Value.of(receiver.getElements(), receiver.getRuntimeType());
     }
 
     // Unwrap to the bare member type: handles both {cad::Box} and !cad::Box!
@@ -1624,24 +1559,17 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         EClass elemEClass = mv.instance().eClass();
         if (targetEClass.isSuperTypeOf(elemEClass) || elemEClass.equals(targetEClass)) {
           results.add(new OCLElement.CastedMetaclassValue(mv.instance(), targetEClass));
-        } else {
-          return error(
-              "oclAsType: cannot cast " + elemEClass.getName() + " to " + targetEClass.getName(),
-              ctx);
         }
+        // else: element fails cast — filter it out
       } else if (elem instanceof OCLElement.CastedMetaclassValue cmv) {
         // Already casted — re-validate against new target
         EClass elemEClass = cmv.instance().eClass();
         if (targetEClass.isSuperTypeOf(elemEClass) || elemEClass.equals(targetEClass)) {
           results.add(new OCLElement.CastedMetaclassValue(cmv.instance(), targetEClass));
-        } else {
-          return error(
-              "oclAsType: cannot cast " + elemEClass.getName() + " to " + targetEClass.getName(),
-              ctx);
         }
-      } else {
-        return error("oclAsType: element is not a metaclass instance", ctx);
+        // else: element fails cast — filter it out
       }
+      // else: non-metaclass element — filter it out
     }
 
     // Result type: singleton if receiver was singleton or bare metaclass,
@@ -1682,7 +1610,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
     Value value = varSymbol.getValue();
     if (value == null) {
-      return error("Variable '" + varName + "' has no value", ctx);
+      return Value.empty(Type.ANY);
     }
 
     return value;
@@ -1717,14 +1645,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         symbolTable.defineVariable(iterSymbol);
 
         Value bodyResult = visit(ctx.body);
-        if (bodyResult.size() != 1) {
-          return error("forAll predicate must return singleton Boolean", ctx);
-        }
-
-        Boolean condition = bodyResult.getElements().get(0).tryGetBool();
-        if (condition == null) {
-          return error("forAll predicate must return Boolean", ctx);
-        }
+        Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
+            : bodyResult.getElements().get(0).tryGetBool();
+        if (condition == null) condition = Boolean.FALSE;
 
         // Short-circuit on first false result
         if (!condition) {
@@ -1770,14 +1693,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           symbolTable.defineVariable(var2Symbol);
 
           Value bodyResult = visit(ctx.body);
-          if (bodyResult.size() != 1) {
-            return error("forAll predicate must return singleton Boolean", ctx);
-          }
-
-          Boolean condition = bodyResult.getElements().get(0).tryGetBool();
-          if (condition == null) {
-            return error("forAll predicate must return Boolean", ctx);
-          }
+          Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
+              : bodyResult.getElements().get(0).tryGetBool();
+          if (condition == null) condition = Boolean.FALSE;
 
           // Short-circuit on first false result
           if (!condition) {
@@ -1818,15 +1736,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         symbolTable.defineVariable(iterSymbol);
 
         Value bodyResult = visit(ctx.body);
-        if (bodyResult.size() != 1) {
-          return error("select predicate must return singleton Boolean", ctx);
-        }
-
-        Boolean condition = bodyResult.getElements().get(0).tryGetBool();
-
-        if (condition == null) {
-          return error("select predicate must return Boolean", ctx);
-        }
+        Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
+            : bodyResult.getElements().get(0).tryGetBool();
+        if (condition == null) condition = Boolean.FALSE;
 
         if (condition) {
           results.add(elem);
@@ -1872,14 +1784,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           symbolTable.defineVariable(var2Symbol);
 
           Value bodyResult = visit(ctx.body);
-          if (bodyResult.size() != 1) {
-            return error("select predicate must return singleton Boolean", ctx);
-          }
-
-          Boolean condition = bodyResult.getElements().get(0).tryGetBool();
-          if (condition == null) {
-            return error("select predicate must return Boolean", ctx);
-          }
+          Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
+              : bodyResult.getElements().get(0).tryGetBool();
+          if (condition == null) condition = Boolean.FALSE;
 
           if (condition) {
             results.add(elem1);
@@ -1920,14 +1827,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         symbolTable.defineVariable(iterSymbol);
 
         Value bodyResult = visit(ctx.body);
-        if (bodyResult.size() != 1) {
-          return error("reject predicate must return singleton Boolean", ctx);
-        }
-
-        Boolean condition = bodyResult.getElements().get(0).tryGetBool();
-        if (condition == null) {
-          return error("reject predicate must return Boolean", ctx);
-        }
+        Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
+            : bodyResult.getElements().get(0).tryGetBool();
+        if (condition == null) condition = Boolean.FALSE;
 
         // Collect elements where predicate is false
         if (!condition) {
@@ -1974,14 +1876,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           symbolTable.defineVariable(var2Symbol);
 
           Value bodyResult = visit(ctx.body);
-          if (bodyResult.size() != 1) {
-            return error("reject predicate must return singleton Boolean", ctx);
-          }
-
-          Boolean condition = bodyResult.getElements().get(0).tryGetBool();
-          if (condition == null) {
-            return error("reject predicate must return Boolean", ctx);
-          }
+          Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
+              : bodyResult.getElements().get(0).tryGetBool();
+          if (condition == null) condition = Boolean.FALSE;
 
           // Add pair if predicate is FALSE
           if (!condition) {
@@ -2102,14 +1999,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         symbolTable.defineVariable(iterSymbol);
 
         Value bodyResult = visit(ctx.body);
-        if (bodyResult.size() != 1) {
-          return error("exists predicate must return singleton Boolean", ctx);
-        }
-
-        Boolean condition = bodyResult.getElements().get(0).tryGetBool();
-        if (condition == null) {
-          return error("exists predicate must return Boolean", ctx);
-        }
+        Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
+            : bodyResult.getElements().get(0).tryGetBool();
+        if (condition == null) condition = Boolean.FALSE;
 
         // Short-circuit on first true result
         if (condition) {
@@ -2155,14 +2047,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           symbolTable.defineVariable(var2Symbol);
 
           Value bodyResult = visit(ctx.body);
-          if (bodyResult.size() != 1) {
-            return error("exists predicate must return singleton Boolean", ctx);
-          }
-
-          Boolean condition = bodyResult.getElements().get(0).tryGetBool();
-          if (condition == null) {
-            return error("exists predicate must return Boolean", ctx);
-          }
+          Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
+              : bodyResult.getElements().get(0).tryGetBool();
+          if (condition == null) condition = Boolean.FALSE;
 
           // Short-circuit on first true result
           if (condition) {
@@ -2246,8 +2133,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitCountOp(VitruvOCLParser.CountOpContext ctx) {
     Value receiver = receiverStack.peek();
     Value arg = visit(ctx.arg);
-    if (arg.size() != 1) {
-      return error("count() requires singleton argument", ctx);
+    if (arg.isEmpty()) {
+      return Value.intValue(0);
     }
     OCLElement searchElem = arg.getElements().get(0);
     int count = 0;
@@ -2279,8 +2166,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitPrependOp(VitruvOCLParser.PrependOpContext ctx) {
     Value receiver = receiverStack.peek();
     Value arg = visit(ctx.arg);
-    if (arg.size() != 1) {
-      return error("prepend() requires singleton argument", ctx);
+    if (arg.isEmpty()) {
+      return receiver;
     }
     List<OCLElement> elements = new ArrayList<>();
     elements.add(arg.getElements().get(0));
@@ -2316,19 +2203,11 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value receiver = receiverStack.peek();
     Value indexVal = visit(ctx.index);
     Value arg = visit(ctx.arg);
-    if (indexVal.size() != 1) {
-      return error("insertAt() requires singleton index", ctx);
-    }
+    if (indexVal.isEmpty()) return receiver;
     Integer index = indexVal.getElements().get(0).tryGetInt();
-    if (index == null) {
-      return error("insertAt() index must be Integer", ctx);
-    }
-    if (arg.size() != 1) {
-      return error("insertAt() requires singleton element", ctx);
-    }
-    if (index < 1 || index > receiver.size() + 1) {
-      return error("insertAt() index out of bounds", ctx);
-    }
+    if (index == null) return receiver;
+    if (arg.isEmpty()) return receiver;
+    if (index < 1 || index > receiver.size() + 1) return receiver;
     List<OCLElement> elements = new ArrayList<>(receiver.getElements());
     elements.add(index - 1, arg.getElements().get(0));
     Type resultType = nodeTypes.get(ctx);
@@ -2395,17 +2274,11 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitDivOp(VitruvOCLParser.DivOpContext ctx) {
     Value receiver = receiverStack.peek();
     Value arg = visit(ctx.arg);
-    if (receiver.size() != 1 || arg.size() != 1) {
-      return error("div() requires singleton operands", ctx);
-    }
+    if (receiver.isEmpty() || arg.isEmpty()) return Value.intValue(0);
     Integer left = receiver.getElements().get(0).tryGetInt();
     Integer right = arg.getElements().get(0).tryGetInt();
-    if (left == null || right == null) {
-      return error("div() requires Integer operands", ctx);
-    }
-    if (right == 0) {
-      return error("div() by zero", ctx);
-    }
+    if (left == null || right == null) return Value.intValue(0);
+    if (right == 0) return Value.intValue(0);
     return Value.intValue(left / right);
   }
 
@@ -2427,14 +2300,10 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitModOp(VitruvOCLParser.ModOpContext ctx) {
     Value receiver = receiverStack.peek();
     Value arg = visit(ctx.arg);
-    if (receiver.size() != 1 || arg.size() != 1) {
-      return error("mod() requires singleton operands", ctx);
-    }
+    if (receiver.isEmpty() || arg.isEmpty()) return Value.intValue(0);
     Integer left = receiver.getElements().get(0).tryGetInt();
     Integer right = arg.getElements().get(0).tryGetInt();
-    if (left == null || right == null) {
-      return error("mod() requires Integer operands", ctx);
-    }
+    if (left == null || right == null) return Value.intValue(0);
     if (right == 0) {
       return Value.intValue(0);
     }
@@ -2465,9 +2334,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value rightValue = visit(ctx.right);
     String operator = ctx.op.getText();
 
-    if (leftValue.size() != 1 || rightValue.size() != 1) {
-      return error("Arithmetic requires singleton operands", ctx);
-    }
+    if (leftValue.isEmpty() || rightValue.isEmpty()) return Value.empty(Type.INTEGER);
 
     OCLElement leftElem = leftValue.getElements().get(0);
     OCLElement rightElem = rightValue.getElements().get(0);
@@ -2477,7 +2344,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Integer rightInt = rightElem.tryGetInt();
     if (leftInt != null && rightInt != null) {
       if (operator.equals("/") && rightInt == 0) {
-        return error("Integer division by zero", ctx);
+        return Value.empty(Type.DOUBLE);
       }
       if (operator.equals("/")) {
         return Value.doubleValue(((double) leftInt) / rightInt);
@@ -2501,12 +2368,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return Value.doubleValue(result);
     }
 
-    return error(
-        "Arithmetic requires numeric operands, got "
-            + leftElem.getClass().getSimpleName()
-            + " and "
-            + rightElem.getClass().getSimpleName(),
-        ctx);
+    return Value.empty(Type.INTEGER);
   }
 
   /**
@@ -2529,9 +2391,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value rightValue = visit(ctx.right);
     String operator = ctx.op.getText();
 
-    if (leftValue.size() != 1 || rightValue.size() != 1) {
-      return error("Arithmetic requires singleton operands", ctx);
-    }
+    if (leftValue.isEmpty() || rightValue.isEmpty()) return Value.empty(Type.INTEGER);
 
     OCLElement leftElem = leftValue.getElements().get(0);
     OCLElement rightElem = rightValue.getElements().get(0);
@@ -2559,12 +2419,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return Value.doubleValue(result);
     }
 
-    return error(
-        "Arithmetic requires numeric operands, got "
-            + leftElem.getClass().getSimpleName()
-            + " and "
-            + rightElem.getClass().getSimpleName(),
-        ctx);
+    return Value.empty(Type.INTEGER);
   }
 
   // ==================== Comparison Operations ====================
@@ -2591,6 +2446,18 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitInequalityComparison(VitruvOCLParser.InequalityComparisonContext ctx) {
     return evaluateBinaryComparison(
         ctx.left, ctx.right, ctx, (left, right) -> !OCLElement.semanticEquals(left, right));
+  }
+
+  /** Invalid operator sequence — type checker already reported the error; yield empty. */
+  @Override
+  public Value visitInvalidBinaryOp(VitruvOCLParser.InvalidBinaryOpContext ctx) {
+    return Value.empty(Type.ERROR);
+  }
+
+  /** Typo of select/reject/exists with ~ syntax — type checker already reported the error. */
+  @Override
+  public Value visitUnknownCorrOp(VitruvOCLParser.UnknownCorrOpContext ctx) {
+    return Value.empty(Type.ERROR);
   }
 
   /**
@@ -2669,7 +2536,13 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
 
     if (leftValue.size() != 1 || rightValue.size() != 1) {
-      return error("Comparison requires singleton operands", errorCtx);
+      errors.add(
+          errorCtx.getStart().getLine(),
+          errorCtx.getStart().getCharPositionInLine(),
+          "Comparison requires singleton operands",
+          ErrorSeverity.ERROR,
+          "evaluator");
+      return Value.boolValue(false);
     }
 
     OCLElement leftElem = leftValue.getElements().get(0);
@@ -2743,9 +2616,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value leftValue = visit(leftCtx);
     Value rightValue = visit(rightCtx);
 
-    if (leftValue.size() != 1 || rightValue.size() != 1) {
-      return error("Boolean operators require singleton operands", errorCtx);
-    }
+    if (leftValue.isEmpty() || rightValue.isEmpty()) return Value.boolValue(false);
+    if (leftValue.size() != 1 || rightValue.size() != 1) return Value.boolValue(false);
 
     OCLElement leftElem = leftValue.getElements().get(0);
     OCLElement rightElem = rightValue.getElements().get(0);
@@ -2753,9 +2625,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Boolean left = leftElem.tryGetBool();
     Boolean right = rightElem.tryGetBool();
 
-    if (left == null || right == null) {
-      return error("Boolean operators require boolean operands", errorCtx);
-    }
+    if (left == null || right == null) return Value.boolValue(false);
 
     boolean result = logicalFn.apply(left, right);
     return Value.boolValue(result);
@@ -2784,9 +2654,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value leftValue = visit(ctx.left);
     Value rightValue = visit(ctx.right);
 
-    if (leftValue.size() != 1 || rightValue.size() != 1) {
-      return error("'implies' requires singleton operands", ctx);
-    }
+    if (leftValue.isEmpty() || rightValue.isEmpty()) return Value.boolValue(true);
+    if (leftValue.size() != 1 || rightValue.size() != 1) return Value.boolValue(true);
 
     OCLElement leftElem = leftValue.getElements().get(0);
     OCLElement rightElem = rightValue.getElements().get(0);
@@ -2794,9 +2663,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Boolean left = leftElem.tryGetBool();
     Boolean right = rightElem.tryGetBool();
 
-    if (left == null || right == null) {
-      return error("'implies' requires boolean operands", ctx);
-    }
+    if (left == null || right == null) return Value.boolValue(true);
 
     // A implies B ≡ ¬A ∨ B
     boolean result = !left || right;
@@ -2821,7 +2688,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value currentValue = visit(ctx.base);
 
     if (currentValue == null) {
-      return error("Base expression returned null", ctx);
+      return Value.empty(Type.ANY);
     }
 
     // Process navigation chain
@@ -2847,13 +2714,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitUnaryMinus(VitruvOCLParser.UnaryMinusContext ctx) {
     Value operandValue = visit(ctx.operand);
 
-    if (operandValue == null) {
-      return error("Operand returned null", ctx);
-    }
-
-    if (operandValue.size() != 1) {
-      return error("Unary minus requires singleton operand", ctx);
-    }
+    if (operandValue == null || operandValue.isEmpty()) return Value.empty(Type.INTEGER);
+    if (operandValue.size() != 1) return Value.empty(Type.INTEGER);
 
     OCLElement elem = operandValue.getElements().get(0);
     Double dblValue = elem.tryGetDouble();
@@ -2865,9 +2727,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return Value.doubleValue(-dblValue);
     }
     Integer value = elem.tryGetInt();
-    if (value == null) {
-      return error("Unary minus requires numeric operand", ctx);
-    }
+    if (value == null) return Value.empty(Type.INTEGER);
 
     return Value.intValue(-value);
   }
@@ -2886,17 +2746,13 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitLogicalNot(VitruvOCLParser.LogicalNotContext ctx) {
     Value operandValue = visit(ctx.operand);
 
-    if (operandValue == null) {
-      return error("Operand returned null", ctx);
-    }
+    if (operandValue == null) return Value.empty(Type.BOOLEAN);
 
     // Handle collection of booleans - negate all elements
     List<OCLElement> results = new ArrayList<>();
     for (OCLElement elem : operandValue.getElements()) {
       Boolean value = elem.tryGetBool();
-      if (value == null) {
-        return error("Logical not requires boolean operand", ctx);
-      }
+      if (value == null) continue;
       results.add(new OCLElement.BoolValue(!value));
     }
 
@@ -2933,7 +2789,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
           @Override
           protected Value defaultResult() {
-            return error("Invalid navigation target", ctx);
+            return Value.empty(Type.ANY);
           }
         });
   }
@@ -2997,7 +2853,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
 
     if (receiverType == null || !receiverType.isMetaclassType()) {
-      return error("allInstances() requires metaclass receiver", ctx);
+      return Value.empty(Type.set(Type.ANY));
     }
 
     EClass eClass = receiverType.getEClass();
@@ -3067,11 +2923,11 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           if (feature.isMany()) {
             List<?> list = (List<?>) value;
             for (Object item : list) {
-              results.add(wrapValue(item));
+              if (item != null) results.add(wrapValue(item));
             }
           } else {
-            OCLElement wrapped = wrapValue(value);
-            results.add(wrapped);
+            if (value == null) continue; // unset optional attribute → ?T? = []
+            results.add(wrapValue(value));
           }
         }
       }
@@ -3102,7 +2958,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private OCLElement wrapValue(Object value) {
     if (value == null) {
-      throw new RuntimeException("Cannot wrap null value");
+      return new OCLElement.StringValue("");
     }
 
     Class<?> clazz = value.getClass();
@@ -3132,7 +2988,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return new OCLElement.MetaclassValue((EObject) value);
     }
 
-    throw new RuntimeException("Cannot wrap value of type: " + clazz.getName());
+    return new OCLElement.StringValue(value.toString());
   }
 
   // ==================== Type Checking Operations ====================
@@ -3156,7 +3012,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Type targetType = nodeTypes.get(ctx.type);
 
     if (targetType == null) {
-      return error("Cannot resolve type in oclIsKindOf", ctx);
+      return Value.of(List.of(), Type.set(Type.BOOLEAN));
     }
 
     List<OCLElement> results = new ArrayList<>();
@@ -3185,13 +3041,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Type targetType = nodeTypes.get(ctx.type);
 
     if (targetType == null) {
-      return error(
-          "Cannot resolve type in oclIsTypeOf "
-              + "targetType "
-              + targetType
-              + " ctx.type.getText(): "
-              + ctx.type.getText(),
-          ctx);
+      return Value.of(List.of(), Type.set(Type.BOOLEAN));
     }
 
     List<OCLElement> results = new ArrayList<>();
@@ -3319,7 +3169,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     // Second try: metaclass type (metamodel::ClassName)
     Type metaclassType = symbolTable.lookupType(qualifiedName);
     if (metaclassType == null || metaclassType == Type.ERROR) {
-      return error("Invalid metamodel type: " + qualifiedName, ctx);
+      return Value.empty(Type.set(Type.ANY));
     }
 
     Value currentValue = Value.of(List.of(), metaclassType);
@@ -3422,8 +3272,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         results.add(new OCLElement.DoubleValue(Math.ceil(elem.tryGetFloat())));
       } else if (elem.tryGetDouble() != null) {
         results.add(new OCLElement.DoubleValue(Math.ceil(elem.tryGetDouble())));
-      } else {
-        return error("ceiling() requires a numeric value", ctx);
       }
     }
     return Value.of(results, receiver.getRuntimeType());
@@ -3450,9 +3298,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     if (ctx.expCS().size() == 2) {
       Value secondValue = visit(ctx.expCS(1));
 
-      if (firstValue.size() != 1 || secondValue.size() != 1) {
-        return error("Range bounds must be singleton integers", ctx);
-      }
+      if (firstValue.isEmpty() || secondValue.isEmpty()) return Value.empty(Type.INTEGER);
+      if (firstValue.size() != 1 || secondValue.size() != 1) return Value.empty(Type.INTEGER);
 
       OCLElement firstElem = firstValue.getElements().get(0);
       OCLElement secondElem = secondValue.getElements().get(0);
@@ -3460,9 +3307,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       Integer start = firstElem.tryGetInt();
       Integer end = secondElem.tryGetInt();
 
-      if (start == null || end == null) {
-        return error("Range bounds must be integers", ctx);
-      }
+      if (start == null || end == null) return Value.empty(Type.INTEGER);
 
       // Generate range (supports both ascending and descending)
       List<OCLElement> range = new ArrayList<>();
@@ -3569,13 +3414,13 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
 
     if (selfSymbol == null) {
-      return error("'self' not defined in current context", ctx);
+      return Value.empty(Type.ANY);
     }
 
     Value selfValue = selfSymbol.getValue();
 
     if (selfValue == null) {
-      return error("'self' has no value", ctx);
+      return Value.empty(Type.ANY);
     }
 
     return selfValue;
@@ -3595,7 +3440,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value initValue = visit(ctx.varInit);
 
     if (initValue == null) {
-      return error("Failed to evaluate initializer for variable '" + varName + "'", ctx);
+      return Value.empty(Type.ANY);
     }
 
     Type varType = nodeTypes.get(ctx);
@@ -3629,7 +3474,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     List<VitruvOCLParser.ExpCSContext> exps = ctx.expCS();
 
     if (exps.isEmpty()) {
-      return error("Empty nested expression", ctx);
+      return Value.empty(Type.ANY);
     }
 
     Value result = null;
@@ -3712,7 +3557,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       }
 
       if (result == null) {
-        return error("Let body is empty", ctx);
+        return Value.empty(Type.ANY);
       }
       return result;
     } finally {
@@ -3782,17 +3627,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value rightValue = visit(ctx.right);
 
     // Both sides must be singletons
-    if (leftValue.size() != 1 || rightValue.size() != 1) {
-      return error("Correspondence operator ~ requires singleton operands", ctx);
-    }
+    if (leftValue.isEmpty() || rightValue.isEmpty()) return Value.boolValue(false);
+    if (leftValue.size() != 1 || rightValue.size() != 1) return Value.boolValue(false);
 
     // Extract EObject instances
     EObject leftObject = leftValue.getElements().get(0).tryGetInstance();
     EObject rightObject = rightValue.getElements().get(0).tryGetInstance();
 
-    if (leftObject == null || rightObject == null) {
-      return error("Correspondence operator ~ requires object instances", ctx);
-    }
+    if (leftObject == null || rightObject == null) return Value.boolValue(false);
 
     // Check if correspondence exists between these two objects
     boolean corresponds = checkCorrespondence(leftObject, rightObject);
@@ -3882,7 +3724,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   @Override
   public Value visitMessage(VitruvOCLParser.MessageContext ctx) {
-    return error("Message operator '^' not yet implemented", ctx);
+    return Value.empty(Type.ANY);
   }
 
   // ==================== Type-Related Nodes (No Runtime Value)
@@ -3958,7 +3800,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   @Override
   public Value visitPropertyNav(VitruvOCLParser.PropertyNavContext ctx) {
-    return error("PropertyNav needs receiver context", ctx);
+    return Value.empty(Type.ANY);
   }
 
   /**
@@ -3968,7 +3810,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   @Override
   public Value visitOperationNav(VitruvOCLParser.OperationNavContext ctx) {
-    return error("OperationNav needs receiver context", ctx);
+    return Value.empty(Type.ANY);
   }
 
   /**
@@ -3978,7 +3820,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   @Override
   public Value visitPropertyAccess(VitruvOCLParser.PropertyAccessContext ctx) {
-    return error("PropertyAccess needs receiver context", ctx);
+    return Value.empty(Type.ANY);
   }
 
   // ==================== Miscellaneous ====================
@@ -4170,28 +4012,19 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value receiver = receiverStack.peek();
     Value indexVal = visit(ctx.index);
 
-    if (indexVal.size() != 1) {
-      return error("at() requires singleton index", ctx);
-    }
-
+    if (indexVal.isEmpty()) return Value.empty(Type.ANY);
     Integer index = indexVal.getElements().get(0).tryGetInt();
-    if (index == null) {
-      return error("at() index must be Integer", ctx);
-    }
+    if (index == null) return Value.empty(Type.ANY);
 
     // String case
     String str = receiver.isEmpty() ? null : receiver.getElements().get(0).tryGetString();
     if (str != null) {
-      if (index < 1 || index > str.length()) {
-        return error("at() index out of bounds for String", ctx);
-      }
+      if (index < 1 || index > str.length()) return Value.empty(Type.STRING);
       return Value.stringValue(String.valueOf(str.charAt(index - 1)));
     }
 
     // Collection case (1-based)
-    if (index < 1 || index > receiver.size()) {
-      return error("at() index out of bounds", ctx);
-    }
+    if (index < 1 || index > receiver.size()) return Value.empty(Type.ANY);
     OCLElement elem = receiver.getElements().get(index - 1);
     Type elemType = receiver.getRuntimeType().getElementType();
     return new Value(List.of(elem), Type.singleton(elemType));
@@ -4218,20 +4051,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value startVal = visit(ctx.start);
     Value endVal = visit(ctx.end);
 
-    if (startVal.size() != 1 || endVal.size() != 1) {
-      return error("subSequence() requires singleton bounds", ctx);
-    }
+    if (startVal.isEmpty() || endVal.isEmpty()) return Value.of(List.of(), receiver.getRuntimeType());
+    if (startVal.size() != 1 || endVal.size() != 1) return Value.of(List.of(), receiver.getRuntimeType());
 
     Integer start = startVal.getElements().get(0).tryGetInt();
     Integer end = endVal.getElements().get(0).tryGetInt();
 
-    if (start == null || end == null) {
-      return error("subSequence() bounds must be Integer", ctx);
-    }
-
-    if (start < 1 || end > receiver.size() || start > end) {
-      return error("subSequence() bounds out of range", ctx);
-    }
+    if (start == null || end == null) return Value.of(List.of(), receiver.getRuntimeType());
+    if (start < 1 || end > receiver.size() || start > end) return Value.of(List.of(), receiver.getRuntimeType());
 
     // 1-based, inclusive on both ends
     List<OCLElement> sub = receiver.getElements().subList(start - 1, end);
@@ -4253,13 +4080,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitCharactersOp(VitruvOCLParser.CharactersOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if (receiver.size() != 1) {
-      return error("characters() requires singleton String receiver", ctx);
-    }
+    if (receiver.isEmpty()) return Value.of(List.of(), Type.sequence(Type.STRING));
     String str = receiver.getElements().get(0).tryGetString();
-    if (str == null) {
-      return error("characters() requires String receiver", ctx);
-    }
+    if (str == null) return Value.of(List.of(), Type.sequence(Type.STRING));
     List<OCLElement> chars = new ArrayList<>();
     for (char c : str.toCharArray()) {
       chars.add(new OCLElement.StringValue(String.valueOf(c)));
@@ -4286,21 +4109,13 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitTokenizeOp(VitruvOCLParser.TokenizeOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if (receiver.size() != 1) {
-      return error("tokenize() requires singleton String receiver", ctx);
-    }
+    if (receiver.isEmpty()) return Value.of(List.of(), Type.sequence(Type.STRING));
     String str = receiver.getElements().get(0).tryGetString();
-    if (str == null) {
-      return error("tokenize() requires String receiver", ctx);
-    }
+    if (str == null) return Value.of(List.of(), Type.sequence(Type.STRING));
     Value argVal = visit(ctx.arg);
-    if (argVal.size() != 1) {
-      return error("tokenize() requires singleton String delimiter", ctx);
-    }
+    if (argVal.isEmpty()) return Value.of(List.of(new OCLElement.StringValue(str)), Type.sequence(Type.STRING));
     String delimiter = argVal.getElements().get(0).tryGetString();
-    if (delimiter == null) {
-      return error("tokenize() delimiter must be String", ctx);
-    }
+    if (delimiter == null) return Value.of(List.of(new OCLElement.StringValue(str)), Type.sequence(Type.STRING));
     List<OCLElement> tokens = new ArrayList<>();
     if (delimiter.isEmpty()) {
       tokens.add(new OCLElement.StringValue(str));
@@ -4367,12 +4182,13 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitToIntegerOp(VitruvOCLParser.ToIntegerOpContext ctx) {
     Value receiver = receiverStack.peek();
+    if (receiver.isEmpty()) return Value.intValue(0);
     String str = receiver.getElements().get(0).tryGetString();
-    if (str == null) return error("toInteger() requires String receiver", ctx);
+    if (str == null) return Value.intValue(0);
     try {
       return Value.intValue(Integer.parseInt(str.trim()));
     } catch (NumberFormatException e) {
-      return error("toInteger() cannot parse: " + str, ctx);
+      return Value.intValue(0);
     }
   }
 
@@ -4393,12 +4209,13 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitToRealOp(VitruvOCLParser.ToRealOpContext ctx) {
     Value receiver = receiverStack.peek();
+    if (receiver.isEmpty()) return Value.doubleValue(0.0);
     String str = receiver.getElements().get(0).tryGetString();
-    if (str == null) return error("toReal() requires String receiver", ctx);
+    if (str == null) return Value.doubleValue(0.0);
     try {
       return Value.doubleValue(Double.parseDouble(str.trim()));
     } catch (NumberFormatException e) {
-      return error("toReal() cannot parse: " + str, ctx);
+      return Value.doubleValue(0.0);
     }
   }
 
@@ -4421,14 +4238,15 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitSubstituteAllOp(VitruvOCLParser.SubstituteAllOpContext ctx) {
     Value receiver = receiverStack.peek();
+    if (receiver.isEmpty()) return receiver;
     String str = receiver.getElements().get(0).tryGetString();
-    if (str == null) return error("substituteAll() requires String receiver", ctx);
+    if (str == null) return receiver;
     Value patternVal = visit(ctx.pattern);
     Value replacementVal = visit(ctx.replacement);
+    if (patternVal.isEmpty() || replacementVal.isEmpty()) return receiver;
     String pattern = patternVal.getElements().get(0).tryGetString();
     String replacement = replacementVal.getElements().get(0).tryGetString();
-    if (pattern == null || replacement == null)
-      return error("substituteAll() requires String arguments", ctx);
+    if (pattern == null || replacement == null) return receiver;
     return Value.stringValue(str.replace(pattern, replacement));
   }
 
@@ -4451,14 +4269,15 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitSubstituteFirstOp(VitruvOCLParser.SubstituteFirstOpContext ctx) {
     Value receiver = receiverStack.peek();
+    if (receiver.isEmpty()) return receiver;
     String str = receiver.getElements().get(0).tryGetString();
-    if (str == null) return error("substituteFirst() requires String receiver", ctx);
+    if (str == null) return receiver;
     Value patternVal = visit(ctx.pattern);
     Value replacementVal = visit(ctx.replacement);
+    if (patternVal.isEmpty() || replacementVal.isEmpty()) return receiver;
     String pattern = patternVal.getElements().get(0).tryGetString();
     String replacement = replacementVal.getElements().get(0).tryGetString();
-    if (pattern == null || replacement == null)
-      return error("substituteFirst() requires String arguments", ctx);
+    if (pattern == null || replacement == null) return receiver;
     int idx = str.indexOf(pattern);
     if (idx == -1) return Value.stringValue(str);
     return Value.stringValue(
@@ -4483,11 +4302,13 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitMatchesOp(VitruvOCLParser.MatchesOpContext ctx) {
     Value receiver = receiverStack.peek();
+    if (receiver.isEmpty()) return Value.boolValue(false);
     String str = receiver.getElements().get(0).tryGetString();
-    if (str == null) return error("matches() requires String receiver", ctx);
+    if (str == null) return Value.boolValue(false);
     Value argVal = visit(ctx.arg);
+    if (argVal.isEmpty()) return Value.boolValue(false);
     String pattern = argVal.getElements().get(0).tryGetString();
-    if (pattern == null) return error("matches() requires String pattern", ctx);
+    if (pattern == null) return Value.boolValue(false);
     return Value.boolValue(str.matches(pattern));
   }
 
@@ -4497,17 +4318,11 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value receiver = receiverStack.peek();
 
     VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
-    if (selfSymbol == null) {
-      return error("'self' not defined in current context", ctx);
-    }
+    if (selfSymbol == null) return Value.of(List.of(), receiver.getRuntimeType());
     Value selfValue = selfSymbol.getValue();
-    if (selfValue.size() != 1) {
-      return error("select(~) requires singleton 'self'", ctx);
-    }
+    if (selfValue.isEmpty() || selfValue.size() != 1) return Value.of(List.of(), receiver.getRuntimeType());
     EObject selfObject = selfValue.getElements().get(0).tryGetInstance();
-    if (selfObject == null) {
-      return error("select(~) requires 'self' to be an object instance", ctx);
-    }
+    if (selfObject == null) return Value.of(List.of(), receiver.getRuntimeType());
 
     String tagFilter = extractTagFilter(ctx.corrFilter);
     EClass typeFilter = extractTypeFilter(ctx.corrFilter);
@@ -4534,17 +4349,11 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value receiver = receiverStack.peek();
 
     VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
-    if (selfSymbol == null) {
-      return error("'self' not defined in current context", ctx);
-    }
+    if (selfSymbol == null) return Value.of(List.of(), receiver.getRuntimeType());
     Value selfValue = selfSymbol.getValue();
-    if (selfValue.size() != 1) {
-      return error("reject(~) requires singleton 'self'", ctx);
-    }
+    if (selfValue.isEmpty() || selfValue.size() != 1) return Value.of(List.of(), receiver.getRuntimeType());
     EObject selfObject = selfValue.getElements().get(0).tryGetInstance();
-    if (selfObject == null) {
-      return error("reject(~) requires 'self' to be an object instance", ctx);
-    }
+    if (selfObject == null) return Value.of(List.of(), receiver.getRuntimeType());
 
     String tagFilter = extractTagFilter(ctx.corrFilter);
     EClass typeFilter = extractTypeFilter(ctx.corrFilter);
@@ -4571,17 +4380,11 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value receiver = receiverStack.peek();
 
     VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
-    if (selfSymbol == null) {
-      return error("'self' not defined in current context", ctx);
-    }
+    if (selfSymbol == null) return Value.boolValue(false);
     Value selfValue = selfSymbol.getValue();
-    if (selfValue.size() != 1) {
-      return error("exists(~) requires singleton 'self'", ctx);
-    }
+    if (selfValue.isEmpty() || selfValue.size() != 1) return Value.boolValue(false);
     EObject selfObject = selfValue.getElements().get(0).tryGetInstance();
-    if (selfObject == null) {
-      return error("exists(~) requires 'self' to be an object instance", ctx);
-    }
+    if (selfObject == null) return Value.boolValue(false);
 
     String tagFilter = extractTagFilter(ctx.corrFilter);
     EClass typeFilter = extractTypeFilter(ctx.corrFilter);
@@ -4608,10 +4411,10 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
     for (VitruvOCLParser.CorrespondenceOptionContext opt :
         corrFilter.correspondenceOptions().correspondenceOption()) {
-      if (opt instanceof VitruvOCLParser.CorrTagFilterContext tag) {
-        String raw = tag.tag.getText();
-        // Strip surrounding double-quotes
-        return raw.substring(1, raw.length() - 1);
+      if (opt instanceof VitruvOCLParser.CorrTagFilterContext tagCtx) {
+        Value tagVal = visit(tagCtx.tag);
+        if (tagVal.isEmpty()) return null;
+        return tagVal.getElements().get(0).tryGetString();
       }
     }
     return null;
@@ -4625,15 +4428,10 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     for (VitruvOCLParser.CorrespondenceOptionContext opt :
         corrFilter.correspondenceOptions().correspondenceOption()) {
       if (opt instanceof VitruvOCLParser.CorrTypeFilterContext typeCtx) {
-        VitruvOCLParser.TypeExpCSContext typeExp = typeCtx.type;
-        if (typeExp.typeNameExpCS() != null) {
-          VitruvOCLParser.TypeNameExpCSContext typeName = typeExp.typeNameExpCS();
-          if (typeName.metamodel != null) {
-            return specification.resolveEClass(
-                typeName.metamodel.getText(), typeName.className.getText());
-          } else {
-            return specification.resolveEClassByShortName(typeName.unqualified.getText());
-          }
+        // Use the type already resolved by the type checker phase
+        Type resolvedType = nodeTypes.get(typeCtx);
+        if (resolvedType != null && resolvedType.isMetaclassType()) {
+          return resolvedType.getEClass();
         }
       }
     }

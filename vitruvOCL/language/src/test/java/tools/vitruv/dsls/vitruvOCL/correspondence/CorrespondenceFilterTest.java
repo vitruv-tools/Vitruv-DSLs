@@ -1182,4 +1182,227 @@ public class CorrespondenceFilterTest {
     System.out.println("isSatisfied=" + result.isSatisfied());
     System.out.println("errors=" + result.toDetailedErrorString());
   }
+
+  // ================================================================
+  // Tag type-error tests
+  // ================================================================
+
+  @Test
+  @DisplayName("Tag = 3 (integer) reports tag-type error, not implies error")
+  public void testTagIntegerReportsTagTypeError() throws Exception {
+    ConstraintResult result =
+        eval(
+            """
+            context family::Member inv:
+              self.firstName == "Homer" implies
+                persons::Person.allInstances().select(~, Tag = 3).size() == 1
+            """);
+    assertFalse(result.isSuccess(), "Should fail: Tag = 3 is not a String");
+    String errors = result.toDetailedErrorString();
+    assertTrue(
+        errors.contains("Tag") && errors.contains("String"),
+        "Error should mention Tag and String, got: " + errors);
+    assertFalse(
+        errors.contains("implies"),
+        "Should NOT produce an 'implies' error, got: " + errors);
+  }
+
+  @Test
+  @DisplayName("Type = \"momma\" (string) reports type-filter error, not implies error")
+  public void testTypeStringReportsTypeFilterError() throws Exception {
+    ConstraintResult result =
+        eval(
+            """
+            context family::Member inv:
+              self.firstName == "Homer" implies
+                persons::Person.allInstances().select(~, Type = "momma").size() == 1
+            """);
+    assertFalse(result.isSuccess(), "Should fail: Type = \"momma\" is not a metaclass");
+    String errors = result.toDetailedErrorString();
+    assertTrue(
+        errors.contains("metaclass") || errors.contains("Type filter"),
+        "Error should mention metaclass or Type filter, got: " + errors);
+    assertFalse(
+        errors.contains("implies"),
+        "Should NOT produce an 'implies' error, got: " + errors);
+  }
+
+  // ================================================================
+  // Unknown filter option name tests (Tags, Types, etc.)
+  // ================================================================
+
+  @Test
+  @DisplayName("Tags = '...' reports unknown-option error with 'Tag' suggestion, no implies error")
+  public void testTagsTypoReportsFilterOptionError() throws Exception {
+    ConstraintResult result =
+        eval("""
+            context family::Member inv:
+              self.firstName == "Homer" implies
+                persons::Person.allInstances().select(~, Tags = "Husband").size() == 1
+            """);
+    assertFalse(result.isSuccess(), "Should fail: 'Tags' is not a valid filter option");
+    String errors = result.toDetailedErrorString();
+    assertTrue(
+        errors.contains("Tags") && (errors.contains("Tag") || errors.contains("filter option")),
+        "Error should mention 'Tags' and suggest 'Tag', got: " + errors);
+    assertFalse(errors.contains("implies"),
+        "Should NOT cascade to implies error, got: " + errors);
+  }
+
+  @Test
+  @DisplayName("Types = T reports unknown-option error with 'Type' suggestion")
+  public void testTypesTypoReportsFilterOptionError() throws Exception {
+    ConstraintResult result =
+        eval("""
+            context family::Member inv:
+              self.firstName == "Homer" implies
+                persons::Person.allInstances().select(~, Types = persons::Person).size() == 1
+            """);
+    assertFalse(result.isSuccess(), "Should fail: 'Types' is not a valid filter option");
+    String errors = result.toDetailedErrorString();
+    assertTrue(
+        errors.contains("Types") && (errors.contains("Type") || errors.contains("filter option")),
+        "Error should mention 'Types' and suggest 'Type', got: " + errors);
+    assertFalse(errors.contains("implies"),
+        "Should NOT cascade to implies error, got: " + errors);
+  }
+
+  // ================================================================
+  // Extended invalid operator tests (++, +-+, etc.)
+  // ================================================================
+
+  @Test
+  @DisplayName("++ reports invalid-operator error, no cascade to inv/implies")
+  public void testDoublePlusReportsError() throws Exception {
+    ConstraintResult result =
+        eval("""
+            context family::Member inv:
+              self.firstName == "Homer" implies
+                persons::Person.allInstances().select(~).size() ++ 1 == 1
+            """);
+    assertFalse(result.isSuccess(), "Should fail: ++ is not a valid operator");
+    String errors = result.toDetailedErrorString();
+    assertTrue(errors.contains("++") || errors.contains("Invalid operator"),
+        "Error should mention ++, got: " + errors);
+    assertFalse(errors.contains("implies"),
+        "Should NOT cascade to implies error, got: " + errors);
+  }
+
+  @Test
+  @DisplayName("+-+ reports invalid-operator error, no cascade to inv/implies")
+  public void testPlusMinusPlusReportsError() throws Exception {
+    ConstraintResult result =
+        eval("""
+            context family::Member inv:
+              self.firstName == "Homer" implies
+                persons::Person.allInstances().select(~).size() +-+ 1 == 1
+            """);
+    assertFalse(result.isSuccess(), "Should fail: +-+ is not a valid operator");
+    String errors = result.toDetailedErrorString();
+    assertTrue(errors.contains("+-+") || errors.contains("Invalid operator"),
+        "Error should mention +-+, got: " + errors);
+    assertFalse(errors.contains("implies"),
+        "Should NOT cascade to implies error, got: " + errors);
+  }
+
+  @Test
+  @DisplayName("selcft(~, ...) gives 'did you mean select?' not a cryptic ~ error")
+  public void testSelectTypo_selcft_suggests_select() throws Exception {
+    ConstraintResult result =
+        eval("""
+            context family::Member inv:
+              persons::Person.allInstances().selcft(~, Tag = "Husband").isEmpty()
+            """);
+    assertFalse(result.isSuccess(), "Should fail: 'selcft' is unknown");
+    String errors = result.toDetailedErrorString();
+    // Must NOT produce the cryptic ANTLR '~' token error
+    assertFalse(errors.contains("mismatched input"),
+        "Should not show cryptic parser error, got: " + errors);
+    assertTrue(errors.contains("did you mean") && errors.contains("select"),
+        "Should suggest 'select' for 'selcft', got: " + errors);
+  }
+
+  @Test
+  @DisplayName("rejct(~) gives 'did you mean reject?'")
+  public void testRejectTypo_rejct_suggests_reject() throws Exception {
+    ConstraintResult result =
+        eval("""
+            context family::Member inv:
+              persons::Person.allInstances().rejct(~).isEmpty()
+            """);
+    assertFalse(result.isSuccess());
+    String errors = result.toDetailedErrorString();
+    assertFalse(errors.contains("mismatched input"),
+        "Should not show cryptic parser error, got: " + errors);
+    assertTrue(errors.contains("did you mean") && errors.contains("reject"),
+        "Should suggest 'reject' for 'rejct', got: " + errors);
+  }
+
+  @Test
+  @DisplayName("Type = persons::Person (valid metaclass) produces no error")
+  public void testTypeMetaclassIsValid() throws Exception {
+    ConstraintResult result =
+        eval(
+            """
+            context family::Member inv:
+              self.firstName == "Homer" implies
+                persons::Person.allInstances().select(~, Type = persons::Person).size() == 1
+            """);
+    assertTrue(result.isSuccess(),
+        "Type = persons::Person should be valid, errors: " + result.getWarningsSummary());
+  }
+
+  // ================================================================
+  // Invalid operator sequence tests
+  // ================================================================
+
+  @Test
+  @DisplayName("<> reports invalid-operator error, not implies error")
+  public void testDiamondOperatorReportsError() throws Exception {
+    ConstraintResult result =
+        eval(
+            """
+            context family::Member inv:
+              self.firstName == "Homer" implies
+                persons::Person.allInstances().select(~, Tag = "Husband").size() <> 1
+            """);
+    assertFalse(result.isSuccess(), "Should fail: <> is not a valid operator");
+    String errors = result.toDetailedErrorString();
+    assertTrue(
+        errors.contains("<>"),
+        "Error should mention the invalid operator <>, got: " + errors);
+    assertFalse(
+        errors.contains("implies"),
+        "Should NOT produce an 'implies' error, got: " + errors);
+  }
+
+  @Test
+  @DisplayName("+- reports invalid-operator error")
+  public void testPlusMinusOperatorReportsError() throws Exception {
+    ConstraintResult result =
+        eval(
+            """
+            context family::Member inv:
+              self.firstName == "Homer" implies
+                persons::Person.allInstances().select(~).size() +- 0 == 1
+            """);
+    assertFalse(result.isSuccess(), "Should fail: +- is not a valid operator");
+    String errors = result.toDetailedErrorString();
+    assertTrue(
+        errors.contains("+-"),
+        "Error should mention the invalid operator +-, got: " + errors);
+  }
+
+  @Test
+  @DisplayName("Tag = \"Husband\" (string) is valid — no type error")
+  public void testTagStringIsValid() throws Exception {
+    ConstraintResult result =
+        eval(
+            """
+            context family::Member inv:
+              self.firstName == "Homer" implies
+                persons::Person.allInstances().select(~, Tag = "Husband").size() == 1
+            """);
+    assertTrue(result.isSuccess(), "Tag = \"Husband\" should be valid, errors: " + result.getWarningsSummary());
+  }
 }

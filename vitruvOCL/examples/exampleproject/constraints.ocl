@@ -214,8 +214,8 @@ context family::Member inv existsTildeTypeFemaletrueForMother:
     persons::Person.allInstances().exists(~, Type = persons::Female)
 
 context family::Member inv existsTildeTypeMalefalseForMother:
-  self.firstName == "Marge" implies
-    not persons::Person.allInstances().exists(~, Type = persons::Male)
+  self.firstName == "Marge" and 
+  not persons::Person.allInstances().exists(~, Type = persons::Male)
 
 -- ============================================================
 -- 12. exists(~, Type=T, Tag='x')

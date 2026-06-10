@@ -50,6 +50,14 @@ public class CompileError {
   private final String errorCode;
 
   /**
+   * Optional replacement text for a "did you mean?" quick fix.
+   *
+   * <p>When non-null, the LSP server will offer a {@code QuickFix} code action that replaces the
+   * erroneous token range with this string.
+   */
+  private final String suggestion;
+
+  /**
    * Creates a compile error without an error code.
    *
    * @param line Line number (1-based)
@@ -93,6 +101,24 @@ public class CompileError {
       ErrorSeverity severity,
       String source,
       String errorCode) {
+    this(line, column, endLine, endColumn, message, severity, source, errorCode, null);
+  }
+
+  /**
+   * Creates a compile error with a full span, error code, and quick-fix suggestion.
+   *
+   * @param suggestion Replacement text for a "did you mean?" quick fix, or {@code null}
+   */
+  public CompileError(
+      int line,
+      int column,
+      int endLine,
+      int endColumn,
+      String message,
+      ErrorSeverity severity,
+      String source,
+      String errorCode,
+      String suggestion) {
     this.line = line;
     this.column = column;
     this.endLine = endLine;
@@ -101,6 +127,7 @@ public class CompileError {
     this.severity = severity;
     this.source = source;
     this.errorCode = errorCode;
+    this.suggestion = suggestion;
   }
 
   /**
@@ -153,5 +180,15 @@ public class CompileError {
    */
   public String getErrorCode() {
     return errorCode;
+  }
+
+  /**
+   * Returns the quick-fix replacement text, or {@code null} if no suggestion is available.
+   *
+   * <p>When non-null the LSP server will offer a blue-highlighted "Replace with '...'" code action
+   * on the squiggled range so the user can apply the fix with a single click.
+   */
+  public String getSuggestion() {
+    return suggestion;
   }
 }

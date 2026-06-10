@@ -1032,4 +1032,418 @@ public class VitruvOCLErrorHandlingTest {
 
     assertEquals(0, violationCount);
   }
+
+  // ==================== Unknown Operation Tests ====================
+
+  /**
+   * Helper: compile a snippet and assert "Unknown operation 'foo'" is reported,
+   * without any cascade noise (implies / forAll / invariant errors).
+   */
+  private void assertUnknownOp(String constraint, String opName) {
+    ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            constraint, new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess(),
+        "Should fail — unknown operation '" + opName + "' used");
+    String errors = result.toDetailedErrorString();
+    assertTrue(
+        errors.contains("Unknown operation") && errors.contains(opName),
+        "Error should say 'Unknown operation' and name '" + opName + "', got: " + errors);
+    // Must NOT produce cascade noise
+    assertFalse(errors.contains("Invariant must be Boolean"),
+        "Should not cascade to invariant error, got: " + errors);
+    assertFalse(errors.contains("must be Boolean, got"),
+        "Should not cascade to boolean-conformance error, got: " + errors);
+  }
+
+  @Test
+  public void testUnknownOp_directlyInInv() {
+    assertUnknownOp("""
+        context spaceMission::Spacecraft inv:
+          self.nonExistent() == true
+        """, "nonExistent");
+  }
+
+  @Test
+  public void testUnknownOp_insideImplies() {
+    assertUnknownOp("""
+        context spaceMission::Spacecraft inv:
+          self.operational implies self.nonExistent() == true
+        """, "nonExistent");
+  }
+
+  @Test
+  public void testUnknownOp_insideForAll() {
+    assertUnknownOp("""
+        context spaceMission::Spacecraft inv:
+          spaceMission::Spacecraft.allInstances().forAll(s |
+            s.nonExistent() == true
+          )
+        """, "nonExistent");
+  }
+
+  @Test
+  public void testUnknownOp_insideLet() {
+    assertUnknownOp("""
+        context spaceMission::Spacecraft inv:
+          let x : Boolean = self.nonExistent() in x
+        """, "nonExistent");
+  }
+
+  @Test
+  public void testUnknownOp_chainedAfterValidOp() {
+    assertUnknownOp("""
+        context spaceMission::Spacecraft inv:
+          spaceMission::Spacecraft.allInstances().select(s | s.operational).nonExistent() == true
+        """, "nonExistent");
+  }
+
+  @Test
+  public void testUnknownOp_withArguments() {
+    assertUnknownOp("""
+        context spaceMission::Spacecraft inv:
+          self.nonExistent(42, "hello") == true
+        """, "nonExistent");
+  }
+
+  // ==================== "Did you mean?" Suggestion Tests ====================
+
+  private void assertSuggests(String typo, String expected) {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        "context spaceMission::Spacecraft inv: self." + typo + "() == true",
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess());
+    String errors = result.toDetailedErrorString();
+    assertTrue(errors.contains("did you mean") && errors.contains(expected),
+        "Expected suggestion '" + expected + "' for typo '" + typo + "', got: " + errors);
+  }
+
+  private void assertNoSuggestion(String typo) {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        "context spaceMission::Spacecraft inv: self." + typo + "() == true",
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess());
+    String errors = result.toDetailedErrorString();
+    assertFalse(errors.contains("did you mean"),
+        "Expected no suggestion for '" + typo + "', got: " + errors);
+  }
+
+  @Test public void testSuggest_selet_to_select()         { assertSuggests("selet",         "select"); }
+  @Test public void testSuggest_forAll_typo()             { assertSuggests("forall",         "forAll"); }
+  @Test public void testSuggest_exsits_to_exists()        { assertSuggests("exsits",         "exists"); }
+  @Test public void testSuggest_incldes_to_includes()     { assertSuggests("incldes",        "includes"); }
+  @Test public void testSuggest_isEmty_to_isEmpty()       { assertSuggests("isEmty",         "isEmpty"); }
+  @Test public void testSuggest_toUper_to_toUpper()       { assertSuggests("toUper",         "toUpper"); }
+  @Test public void testSuggest_allInstance_allInstances(){ assertSuggests("allInstance",    "allInstances"); }
+  @Test public void testSuggest_selectt_to_select()       { assertSuggests("selectt",        "select"); }
+
+  /** Far-off names still say "does not exist" (no "did you mean" in the message text). */
+  @Test
+  public void testFarName_saysDoesNotExist() {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        "context spaceMission::Spacecraft inv: self.foobar() == true",
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess());
+    String errors = result.toDetailedErrorString();
+    assertTrue(errors.contains("does not exist"),
+        "Far-off name should say 'does not exist', got: " + errors);
+    assertFalse(errors.contains("did you mean"),
+        "Far-off name should NOT say 'did you mean', got: " + errors);
+  }
+
+  // ==================== Keyword operator typo tests ====================
+
+  private void assertOpSuggests(String typo, String expected) {
+    // Build a constraint with the typo as a binary operator
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        "context spaceMission::Spacecraft inv: true " + typo + " true",
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess(), "Should fail: '" + typo + "' is not a valid operator");
+    String errors = result.toDetailedErrorString();
+    assertTrue(errors.contains("did you mean") && errors.contains(expected),
+        "Expected suggestion '" + expected + "' for '" + typo + "', got: " + errors);
+  }
+
+  // ==================== Missing iterator body tests ====================
+
+  @Test
+  public void testExistsMissingBody_noImpliesCascade() {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        """
+        context spaceMission::Spacecraft inv:
+          self.operational implies
+            spaceMission::Spacecraft.allInstances().exists(A)
+        """,
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess(), "Should fail: exists(A) is missing the '| body' part");
+    String errors = result.toDetailedErrorString();
+    // Must NOT cascade to the implies error
+    assertFalse(errors.contains("Right operand of 'implies'"),
+        "Should NOT cascade to implies error, got: " + errors);
+    // Must report something about the missing body
+    assertTrue(errors.contains("exists"),
+        "Error should mention 'exists', got: " + errors);
+  }
+
+  @Test
+  public void testForAllMissingBody_noImpliesCascade() {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        """
+        context spaceMission::Spacecraft inv:
+          self.operational implies
+            spaceMission::Spacecraft.allInstances().forAll(A)
+        """,
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess(), "Should fail: forAll(A) is missing the '| body' part");
+    String errors = result.toDetailedErrorString();
+    assertFalse(errors.contains("Right operand of 'implies'"),
+        "Should NOT cascade to implies error, got: " + errors);
+  }
+
+  @Test
+  public void testRejectCorrFilterExtraArg_noImpliesCascade() {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        """
+        context spaceMission::Spacecraft inv:
+          self.operational implies
+            spaceMission::Spacecraft.allInstances().reject(~, e, Type = spaceMission::Spacecraft).size() == 3
+        """,
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess(), "Should fail: 'e' is not a valid correspondence filter arg");
+    String errors = result.toDetailedErrorString();
+    assertFalse(errors.contains("Right operand of 'implies'"),
+        "Should NOT cascade to implies error, got: " + errors);
+  }
+
+  @Test
+  public void testAllInstancesWithArg_noImpliesCascade() {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        """
+        context spaceMission::Spacecraft inv:
+          self.operational implies
+            spaceMission::Spacecraft.allInstances(B).size() == 3
+        """,
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess(), "Should fail: allInstances() takes no arguments");
+    String errors = result.toDetailedErrorString();
+    assertFalse(errors.contains("Right operand of 'implies'"),
+        "Should NOT cascade to implies error, got: " + errors);
+    assertTrue(errors.contains("allInstances") && errors.contains("no arguments"),
+        "Error should mention allInstances and no arguments, got: " + errors);
+  }
+
+  @Test
+  public void testSizeWithArg_noImpliesCascade() {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        """
+        context spaceMission::Spacecraft inv:
+          self.operational implies
+            spaceMission::Spacecraft.allInstances().size(42) == 3
+        """,
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess(), "Should fail: size() takes no arguments");
+    String errors = result.toDetailedErrorString();
+    assertFalse(errors.contains("Right operand of 'implies'"),
+        "Should NOT cascade to implies error, got: " + errors);
+    assertTrue(errors.contains("size") && errors.contains("no arguments"),
+        "Error should mention size and no arguments, got: " + errors);
+  }
+
+  @Test
+  public void testAllInstancesEmptyCommaArg_errorOnRightSide() {
+    // ANTLR silently recovers from ", )" — the best we can do is point the
+    // error at the right-side expression (line 3), NOT at 'self' (line 2).
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        """
+        context spaceMission::Spacecraft inv:
+          self.operational implies
+            spaceMission::Spacecraft.allInstances( , ).size() == 3
+        """,
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    // allInstances( , ) is detected as a syntax error — the constraint must simply fail,
+    // and the error must NOT cascade to the 'self' line (line 2).
+    assertFalse(result.isSuccess(), "Should fail: allInstances( , ) is invalid");
+    String errors = result.toDetailedErrorString();
+    assertFalse(errors.contains("Line 2:"),
+        "Error must NOT point at line 2 ('self'), got: " + errors);
+  }
+
+  @Test
+  public void testRejectEmptyCommaArgs_errorOnRejectCall() {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        """
+        context spaceMission::Spacecraft inv:
+          self.operational implies
+            spaceMission::Spacecraft.allInstances().reject(~, , , Type = spaceMission::Spacecraft).size() == 3
+        """,
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    // reject(~, , , ...) either produces a syntax error or a targeted TypeChecker error —
+    // either way it must NOT cascade to the 'implies' level.
+    assertFalse(result.isSuccess(), "Should fail: extra commas in reject(~, , , ...)");
+    String errors = result.toDetailedErrorString();
+    assertFalse(errors.contains("Right operand of 'implies'"),
+        "Should NOT cascade to implies error, got: " + errors);
+  }
+
+  // ==================== equality operator typo tests ====================
+
+  @Test
+  public void testSingleEquals_suggestsDoubleEquals() {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        "context spaceMission::Spacecraft inv: self.serialNumber = \"SN-001\"",
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess());
+    String errors = result.toDetailedErrorString();
+    assertTrue(errors.contains("=="), "Error should mention '=='");
+    assertFalse(errors.contains("Invariant must be Boolean"),
+        "Should NOT cascade to invariant error, got: " + errors);
+  }
+
+  @Test
+  public void testTripleEquals_suggestsDoubleEquals() {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        "context spaceMission::Spacecraft inv: self.serialNumber === \"SN-001\"",
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess());
+    String errors = result.toDetailedErrorString();
+    assertTrue(errors.contains("===") || errors.contains("=="), "Error should mention ===");
+    assertFalse(errors.contains("Invariant must be Boolean"),
+        "Should NOT cascade to invariant error, got: " + errors);
+  }
+
+  @Test
+  public void testManyEquals_suggestsDoubleEquals() {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        "context spaceMission::Spacecraft inv: self.serialNumber ======= \"SN-001\"",
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess());
+    String errors = result.toDetailedErrorString();
+    assertFalse(errors.contains("Invariant must be Boolean"),
+        "Should NOT cascade to invariant error, got: " + errors);
+  }
+
+  // ==================== missing operand tests ====================
+
+  @Test
+  public void testMissingRightOperandOfEquals_errorOnOperator() {
+    // self.firstName == implies ... — right side of == is missing
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        """
+        context spaceMission::Spacecraft inv:
+          self.serialNumber == implies self.operational == true
+        """,
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess());
+    String errors = result.toDetailedErrorString();
+    assertFalse(errors.contains("Invariant must be Boolean"),
+        "Should NOT cascade to inv error, got: " + errors);
+    assertTrue(errors.contains("=="),
+        "Error should mention '==', got: " + errors);
+  }
+
+  // ==================== missing operator between expressions ====================
+
+  @Test
+  public void testMissingOperator_qualifiedName() {
+    // "Marge" persons::Person... — forgotten implies/and/or
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        """
+        context spaceMission::Spacecraft inv:
+          self.operational == true spaceMission::Spacecraft.allInstances().exists(~, Type = spaceMission::Spacecraft)
+        """,
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess(), "Should fail: missing operator between expressions");
+    String errors = result.toDetailedErrorString();
+    assertFalse(errors.contains("Invariant must be Boolean"),
+        "Should NOT cascade to inv error, got: " + errors);
+    assertTrue(errors.contains("operator") || errors.contains("implies") || errors.contains("and"),
+        "Error should mention missing operator, got: " + errors);
+  }
+
+  @Test
+  public void testMissingOperator_selfRef() {
+    // self.a self.b — forgotten and/or
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        "context spaceMission::Spacecraft inv: self.operational self.operational",
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess(), "Should fail: missing operator between self expressions");
+    String errors = result.toDetailedErrorString();
+    assertFalse(errors.contains("Invariant must be Boolean"),
+        "Should NOT cascade to inv error, got: " + errors);
+  }
+
+  @Test
+  public void testNotEmptyMissingParens_errorOnOperation() {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        """
+        context spaceMission::Spacecraft inv:
+          self.operational implies
+            spaceMission::Spacecraft.allInstances().select(sc | sc.operational).notEmpty
+        """,
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess(), "Should fail: notEmpty without ()");
+    String errors = result.toDetailedErrorString();
+    assertFalse(errors.contains("Right operand of 'implies'"),
+        "Should NOT cascade to implies error, got: " + errors);
+    assertTrue(errors.contains("notEmpty") && errors.contains("parentheses"),
+        "Error should mention notEmpty and parentheses, got: " + errors);
+  }
+
+  @Test
+  public void testSelectMissingParens_errorOnOperation() {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        """
+        context spaceMission::Spacecraft inv:
+          self.operational implies
+            spaceMission::Spacecraft.allInstances().select.notEmpty()
+        """,
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess(), "Should fail: select without ()");
+    String errors = result.toDetailedErrorString();
+    assertFalse(errors.contains("Right operand of 'implies'"),
+        "Should NOT cascade to implies error, got: " + errors);
+    assertTrue(errors.contains("select"),
+        "Error should mention select, got: " + errors);
+  }
+
+  // ==================== self / keyword typo tests ====================
+
+  @Test
+  public void testSelf_typo_slef_suggests_self() {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        "context spaceMission::Spacecraft inv: slef.operational == true",
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess(), "Should fail: 'slef' is undefined");
+    String errors = result.toDetailedErrorString();
+    assertTrue(errors.contains("did you mean") && errors.contains("self"),
+        "Should suggest 'self' for 'slef', got: " + errors);
+    assertFalse(errors.contains("Invariant must be Boolean"),
+        "Should NOT cascade to invariant error, got: " + errors);
+  }
+
+  @Test
+  public void testSelf_typo_sel_suggests_self() {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        "context spaceMission::Spacecraft inv: sel.operational == true",
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess());
+    String errors = result.toDetailedErrorString();
+    assertTrue(errors.contains("self"), "Should suggest 'self' for 'sel', got: " + errors);
+  }
+
+  @Test public void testSuggestOp_impdlies()  { assertOpSuggests("impdlies", "implies"); }
+  @Test public void testSuggestOp_impleis()   { assertOpSuggests("impleis",  "implies"); }
+  @Test public void testSuggestOp_adn()       { assertOpSuggests("adn",      "and");     }
+  @Test public void testSuggestOp_ro()        { assertOpSuggests("ro",       "or");      }
+
+  @Test
+  public void testFarName_ssssss_noDidYouMean() {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(
+        "context spaceMission::Spacecraft inv: self.ssssss() == true",
+        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
+    assertFalse(result.isSuccess());
+    String errors = result.toDetailedErrorString();
+    assertFalse(errors.contains("did you mean"),
+        "'ssssss' is too far from any operation — should not suggest, got: " + errors);
+  }
 }

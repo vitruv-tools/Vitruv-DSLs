@@ -105,6 +105,9 @@ public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
     // Inlay hints: type annotations for let-variables, iterator vars, and metaclass attributes.
     caps.setInlayHintProvider(Either.forLeft(true));
 
+    // Code actions: Quick Fix for unknown operations ("did you mean?" replace).
+    caps.setCodeActionProvider(Either.forLeft(true));
+
     return CompletableFuture.completedFuture(new InitializeResult(caps));
   }
 

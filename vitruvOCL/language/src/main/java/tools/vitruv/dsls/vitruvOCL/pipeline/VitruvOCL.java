@@ -290,7 +290,8 @@ public class VitruvOCL {
     StringBuilder cleaned = new StringBuilder();
     for (String line : lines) {
       String trimmed = line.trim();
-      if (!trimmed.startsWith("--") && !trimmed.isEmpty()) {
+      // Skip comment lines and import declarations (e.g. "import model : '...'")
+      if (!trimmed.startsWith("--") && !trimmed.startsWith("import ") && !trimmed.isEmpty()) {
         cleaned.append(line).append("\n");
       }
     }
