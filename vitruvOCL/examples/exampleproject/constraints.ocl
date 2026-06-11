@@ -299,7 +299,7 @@ context family::Member inv existsTildeTypeFemaletrueForMother:
 
 context family::Member inv existsTildeTypeMalefalseForMother:
   @severity WARNING
-  @message "{self} violates: a Marge-named member must not have a Male correspondent — but this constraint also fires for non-Marge members (intentional violation demo)"
+  @message "{self.lastName} violates: a Marge-named member must not have a Male correspondent — but this constraint also fires for non-Marge members (intentional violation demo)"
   self.firstName == "Marge" and
   not persons::Person.allInstances().exists(~, Type = persons::Male)
 

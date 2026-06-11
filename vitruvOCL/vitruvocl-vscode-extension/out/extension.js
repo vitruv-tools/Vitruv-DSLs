@@ -98,6 +98,22 @@ function updateGutterIcons(editor) {
         }
     }
 }
+const SEVERITY_STYLE = {
+    CRITICAL: { symbol: '✖', color: '#e05252' },
+    WARNING: { symbol: '⚠', color: '#e0b84a' },
+    MAJOR: { symbol: '⚠', color: '#d4773a' },
+    MINOR: { symbol: '⚠', color: '#c8b84a' },
+    INFO: { symbol: 'ℹ', color: '#5b9bd5' },
+};
+function parseViolationBlock(block) {
+    // Extract severity from line: [SEVERITY] constraintName
+    const sevMatch = block.match(/\[([A-Z]+)\]/);
+    const severity = sevMatch ? sevMatch[1] : 'WARNING';
+    // Extract message from "Message : ..." line
+    const msgMatch = block.match(/^Message\s*:\s*(.+)$/m);
+    const message = msgMatch ? msgMatch[1].trim() : block.split('\n').find(l => l.trim() && !l.startsWith('-') && !l.startsWith('[')) ?? block;
+    return { severity, message };
+}
 function updateInlineErrors(editor, constraintDetails) {
     const oldInlineDecoration = currentDecorations.get('inline_errors');
     if (oldInlineDecoration) {
@@ -115,32 +131,42 @@ function updateInlineErrors(editor, constraintDetails) {
             if (status?.ran && !status.passed) {
                 const lineLength = line.length;
                 const range = new vscode.Range(i, lineLength, i, lineLength);
-                let errorText = `${constraintName} violated`;
                 const details = constraintDetails?.get(constraintName);
+                // Build inline text from first violation
+                let inlineText;
+                let inlineColor;
                 if (details && details.length > 0) {
-                    errorText = details[0];
-                    if (details.length > 1) {
-                        errorText += ` (+${details.length - 1} more)`;
-                    }
+                    const { severity, message } = parseViolationBlock(details[0]);
+                    const style = SEVERITY_STYLE[severity] ?? SEVERITY_STYLE['WARNING'];
+                    inlineColor = style.color;
+                    const suffix = details.length > 1 ? ` (+${details.length - 1} more)` : '';
+                    inlineText = ` ◀ ${style.symbol} ${severity}: ${message}${suffix}`;
                 }
+                else {
+                    inlineText = ` ◀ ⚠ WARNING: ${constraintName} violated`;
+                    inlineColor = SEVERITY_STYLE['WARNING'].color;
+                }
+                // Build hover with all violations as formatted blocks
                 const hover = new vscode.MarkdownString();
-                hover.appendMarkdown(`**❌ Constraint violated**\n\n`);
+                hover.isTrusted = true;
+                hover.supportHtml = true;
                 if (details && details.length > 0) {
                     for (const d of details) {
-                        hover.appendMarkdown(`- ${d}\n`);
+                        const { severity, message } = parseViolationBlock(d);
+                        const style = SEVERITY_STYLE[severity] ?? SEVERITY_STYLE['WARNING'];
+                        hover.appendMarkdown(`${style.symbol} **${severity}:** ${message}\n\n`);
                     }
                 }
                 else {
-                    hover.appendMarkdown(`${constraintName} violated`);
+                    hover.appendMarkdown(`⚠ **WARNING:** ${constraintName} violated`);
                 }
-                hover.isTrusted = true;
                 const decoration = {
                     range,
                     hoverMessage: hover,
                     renderOptions: {
                         after: {
-                            contentText: ` ◀ ${errorText}`,
-                            color: new vscode.ThemeColor('errorForeground'),
+                            contentText: inlineText,
+                            color: inlineColor,
                             margin: '0 0 0 20px'
                         }
                     }
@@ -582,8 +608,7 @@ function showEvalResult(name, result) {
     else {
         channel.appendLine('❌ CONSTRAINT VIOLATED');
         if (result.warnings.length > 0) {
-            channel.appendLine('\nViolations:');
-            result.warnings.forEach(w => channel.appendLine(`  • ${w}`));
+            result.warnings.forEach(w => channel.appendLine(w));
         }
     }
     channel.appendLine('');

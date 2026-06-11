@@ -331,6 +331,31 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitInvCS(VitruvOCLParser.InvCSContext ctx) {
+    // Check for duplicate @severity / @message annotations
+    long severityCount =
+        ctx.annotationCS().stream()
+            .filter(a -> a instanceof VitruvOCLParser.SeverityAnnotationContext)
+            .count();
+    long messageCount =
+        ctx.annotationCS().stream()
+            .filter(a -> a instanceof VitruvOCLParser.MessageAnnotationContext)
+            .count();
+    if (severityCount > 1) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "@severity may only appear once per constraint",
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    if (messageCount > 1) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "@message may only appear once per constraint",
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
     // Validate annotations before type-checking the body
     for (VitruvOCLParser.AnnotationCSContext ann : ctx.annotationCS()) {
       visit(ann);

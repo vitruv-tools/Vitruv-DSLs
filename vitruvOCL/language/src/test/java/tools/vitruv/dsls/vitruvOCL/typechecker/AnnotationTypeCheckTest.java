@@ -101,6 +101,32 @@ public class AnnotationTypeCheckTest {
     assertTrue(result.isSuccess(), "Expected success for combined annotations: " + result.toDetailedErrorString());
   }
 
+  @Test
+  public void testDuplicateSeverityReportsError() throws Exception {
+    ConstraintResult result = eval(
+        "context brakesystem::BrakeDisk inv:\n"
+            + "    @severity WARNING\n"
+            + "    @severity CRITICAL\n"
+            + "    self.diameterInMM > 0");
+    assertFalse(result.isSuccess(), "Expected failure for duplicate @severity");
+    assertTrue(
+        result.getCompilerErrors().stream().anyMatch(e -> e.getMessage().contains("@severity")),
+        "Error should mention '@severity'");
+  }
+
+  @Test
+  public void testDuplicateMessageReportsError() throws Exception {
+    ConstraintResult result = eval(
+        "context brakesystem::BrakeDisk inv:\n"
+            + "    @message \"first\"\n"
+            + "    @message \"second\"\n"
+            + "    self.diameterInMM > 0");
+    assertFalse(result.isSuccess(), "Expected failure for duplicate @message");
+    assertTrue(
+        result.getCompilerErrors().stream().anyMatch(e -> e.getMessage().contains("@message")),
+        "Error should mention '@message'");
+  }
+
   private ConstraintResult eval(String constraint) throws Exception {
     return VitruvOCL.evaluateConstraint(
         constraint,

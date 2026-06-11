@@ -105,6 +105,9 @@ public class Warning {
 
   @Override
   public String toString() {
+    if (type == WarningType.CONSTRAINT_VIOLATION) {
+      return message;
+    }
     if (affectedFile != null) {
       return String.format("%s: %s (%s)", type.getDescription(), message, affectedFile);
     }
