@@ -87,22 +87,22 @@ public class ChainingOrderedVsUnorderedTest extends DummyTestSpecification {
 
   @Test
   public void testSetSelectThenFirstFails() {
-    assertEquals(1, compile("Set{1, 2, 3}.select(x | x > 1).first()").size());
+    compileExpectError("Set{1, 2, 3}.select(x | x > 1).first()");
   }
 
   @Test
   public void testSetSelectThenLastFails() {
-    assertEquals(1, compile("Set{1, 2, 3}.select(x | x > 1).last()").size());
+    compileExpectError("Set{1, 2, 3}.select(x | x > 1).last()");
   }
 
   @Test
   public void testBagSelectThenFirstFails() {
-    assertEquals(1, compile("Bag{1, 2, 3}.select(x | x > 1).first()").size());
+    compileExpectError("Bag{1, 2, 3}.select(x | x > 1).first()");
   }
 
   @Test
   public void testBagSelectThenLastFails() {
-    assertEquals(1, compile("Bag{1, 2, 3}.select(x | x > 1).last()").size());
+    compileExpectError("Bag{1, 2, 3}.select(x | x > 1).last()");
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -135,12 +135,12 @@ public class ChainingOrderedVsUnorderedTest extends DummyTestSpecification {
 
   @Test
   public void testSetRejectThenFirstFails() {
-    assertEquals(1, compile("Set{1, 2, 3}.reject(x | x > 2).first()").size());
+    compileExpectError("Set{1, 2, 3}.reject(x | x > 2).first()");
   }
 
   @Test
   public void testBagRejectThenLastFails() {
-    assertEquals(1, compile("Bag{1, 2, 3}.reject(x | x > 2).last()").size());
+    compileExpectError("Bag{1, 2, 3}.reject(x | x > 2).last()");
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -173,46 +173,46 @@ public class ChainingOrderedVsUnorderedTest extends DummyTestSpecification {
 
   @Test
   public void testSetCollectThenFirstFails() {
-    assertEquals(1, compile("Set{1, 2, 3}.collect(x | x * 2).first()").size());
+    compileExpectError("Set{1, 2, 3}.collect(x | x * 2).first()");
   }
 
   @Test
   public void testSetCollectThenLastFails() {
-    assertEquals(1, compile("Set{1, 2, 3}.collect(x | x * 2).last()").size());
+    compileExpectError("Set{1, 2, 3}.collect(x | x * 2).last()");
   }
 
   @Test
   public void testBagCollectThenFirstFails() {
-    assertEquals(1, compile("Bag{1, 2, 3}.collect(x | x * 2).first()").size());
+    compileExpectError("Bag{1, 2, 3}.collect(x | x * 2).first()");
   }
 
   @Test
   public void testBagCollectThenLastFails() {
-    assertEquals(1, compile("Bag{1, 2, 3}.collect(x | x * 2).last()").size());
+    compileExpectError("Bag{1, 2, 3}.collect(x | x * 2).last()");
   }
 
   // ══════════════════════════════════════════════════════════════
-  // asSet/asBag → first/last (allowed, non-deterministic)
+  // asSet/asBag → first/last (unordered → TYPE ERROR)
   // ══════════════════════════════════════════════════════════════
 
   @Test
   public void testAsSetThenFirstFails() {
-    assertEquals(1, compile("Sequence{1, 2, 3}.asSet().first()").size());
+    compileExpectError("Sequence{1, 2, 3}.asSet().first()");
   }
 
   @Test
   public void testAsSetThenLastFails() {
-    assertEquals(1, compile("Sequence{1, 2, 3}.asSet().last()").size());
+    compileExpectError("Sequence{1, 2, 3}.asSet().last()");
   }
 
   @Test
   public void testAsBagThenFirstFails() {
-    assertEquals(1, compile("Sequence{1, 2, 3}.asBag().first()").size());
+    compileExpectError("Sequence{1, 2, 3}.asBag().first()");
   }
 
   @Test
   public void testAsBagThenLastFails() {
-    assertEquals(1, compile("Sequence{1, 2, 3}.asBag().last()").size());
+    compileExpectError("Sequence{1, 2, 3}.asBag().last()");
   }
 
   // ══════════════════════════════════════════════════════════════

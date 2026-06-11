@@ -284,27 +284,57 @@ public class TypeResolver {
    */
   public static Type resolveCollectionOperation(
       Type sourceType, String operationName, Type... argumentTypes) {
-    if (!sourceType.isCollection()) {
+
+    boolean isAnyCollectionType =
+        sourceType.isCollection() || sourceType.isSingleton() || sourceType.isOptional();
+    if (!isAnyCollectionType) {
       return Type.ERROR;
     }
 
     Type elementType = sourceType.getElementType();
 
     switch (operationName) {
-      // Query operations → Boolean
+      // Universally allowed: ¡T!, ¿T?, and all collection types
       case "includes":
       case "excludes":
       case "isEmpty":
       case "notEmpty":
         return Type.BOOLEAN;
 
-      // Size → Integer
       case "size":
         return Type.INTEGER;
 
-      // Including/Excluding → same collection type
+      case "select":
+      case "reject":
+        // ¡T! filtered → ¿T?; others preserve type
+        if (sourceType.isSingleton()) {
+          return Type.optional(elementType);
+        }
+        return sourceType;
+
+      case "collect":
+        // TypeCheckVisitor handles return type precisely; fallback here
+        if (sourceType.isSingleton()) {
+          return Type.singleton(Type.ANY);
+        }
+        if (sourceType.isOptional()) {
+          return Type.optional(Type.ANY);
+        }
+        return Type.set(Type.ANY);
+
+      case "any":
+        return Type.optional(elementType);
+
+      case "forAll":
+      case "exists":
+        return Type.BOOLEAN;
+
+      // Including/Excluding → only on multi-valued collections
       case "including":
       case "excluding":
+        if (!sourceType.isCollection()) {
+          return Type.ERROR;
+        }
         if (argumentTypes.length > 0) {
           if (!argumentTypes[0].isConformantTo(elementType)) {
             return Type.ERROR;
@@ -312,29 +342,39 @@ public class TypeResolver {
         }
         return sourceType;
 
-      // Filter operations → same collection type
-      case "select":
-      case "reject":
-        return sourceType;
-
-      // Collect → collection of transformed type
-      case "collect":
-        return Type.set(Type.ANY);
-
-      // Element extraction → optional of element type
+      // Element extraction → only on Seq/OrderedSet
       case "first":
       case "last":
-      case "any":
+        if (!sourceType.isCollection()) {
+          return Type.ERROR;
+        }
         return Type.optional(elementType);
 
-      // Flatten → unwrap nested collections
+      // Flatten/union/intersection → only on multi-valued collections
       case "flatten":
+        if (!sourceType.isCollection()) {
+          return Type.ERROR;
+        }
         if (elementType.isCollection()) {
           return Type.set(elementType.getElementType());
         }
         return sourceType;
 
-      // Sum → preserves numeric element type (Integer, Float, or Double)
+      case "union":
+      case "intersection":
+        if (!sourceType.isCollection()) {
+          return Type.ERROR;
+        }
+        if (argumentTypes.length > 0 && argumentTypes[0].isCollection()) {
+          Type otherElement = argumentTypes[0].getElementType();
+          if (elementType.isConformantTo(otherElement)
+              || otherElement.isConformantTo(elementType)) {
+            return sourceType;
+          }
+        }
+        return Type.ERROR;
+
+      // Sum → preserves numeric element type
       case "sum":
         if (elementType == Type.INTEGER) {
           return Type.INTEGER;
@@ -356,18 +396,6 @@ public class TypeResolver {
       case "asOrderedSet":
         return Type.sequence(elementType);
 
-      // Union/intersection → same collection type
-      case "union":
-      case "intersection":
-        if (argumentTypes.length > 0 && argumentTypes[0].isCollection()) {
-          Type otherElement = argumentTypes[0].getElementType();
-          if (elementType.isConformantTo(otherElement)
-              || otherElement.isConformantTo(elementType)) {
-            return sourceType;
-          }
-        }
-        return Type.ERROR;
-
       default:
         return Type.ERROR;
     }
@@ -386,6 +414,8 @@ public class TypeResolver {
               "select",
               "reject",
               "collect",
+              "forAll",
+              "exists",
               "first",
               "last",
               "any",

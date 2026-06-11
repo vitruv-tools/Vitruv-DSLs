@@ -116,7 +116,7 @@ public class CrossMetamodelNavigationTest {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  cad::Namespace.allInstances().select(ns | ns.id == self.id)\n"
-            + "    .shapes.forAll(s | s != null)";
+            + "    .shapes.forAll(s | s.notEmpty())";
     ConstraintResult r = eval(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());

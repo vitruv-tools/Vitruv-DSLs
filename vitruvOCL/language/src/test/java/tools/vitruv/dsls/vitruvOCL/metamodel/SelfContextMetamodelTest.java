@@ -187,7 +187,7 @@ public class SelfContextMetamodelTest {
 
   @Test
   public void testSelfNamespaceShapesForAll() throws Exception {
-    String c = "context cad::Namespace inv:\n" + "  self.shapes.forAll(s | s != null)";
+    String c = "context cad::Namespace inv:\n" + "  self.shapes.forAll(s | s.notEmpty())";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());

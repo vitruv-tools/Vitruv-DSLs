@@ -506,14 +506,12 @@ public class EnumTypeTest extends DummyTestSpecification {
 
   @Test
   public void testEnumSetFirstFails() {
-    Value r = compile("Set{Status::ACTIVE, Status::INACTIVE}.first()");
-    assertEquals(1, r.size());
+    compileExpectError("Set{Status::ACTIVE, Status::INACTIVE}.first()");
   }
 
   @Test
   public void testEnumBagLastFails() {
-    Value r = compile("Bag{Status::ACTIVE}.last()");
-    assertEquals(1, r.size());
+    compileExpectError("Bag{Status::ACTIVE}.last()");
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -822,8 +820,9 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testEnumSetSelectThenFirstFails() {
-    Value r = compile("Set{Status::ACTIVE, Status::INACTIVE}.select(e | e != null).first()");
+  public void testEnumSetSelectThenFirst() {
+    // select on Set → Set (unordered) → need asSequence() before first()
+    Value r = compile("Set{Status::ACTIVE, Status::INACTIVE}.select(e | e.notEmpty()).asSequence().first()");
     assertEquals(1, r.size());
   }
 

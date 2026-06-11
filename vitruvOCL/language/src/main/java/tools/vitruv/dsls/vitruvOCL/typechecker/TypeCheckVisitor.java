@@ -181,7 +181,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   /** OCL keywords that look like variable names and are commonly mistyped. */
   private static final java.util.List<String> KEYWORD_LIKE_NAMES =
-      java.util.List.of("self", "null", "true", "false");
+      java.util.List.of("self", "true", "false");
 
   protected void handleUndefinedSymbol(String name, ParserRuleContext ctx) {
     String lower = name.toLowerCase(java.util.Locale.ROOT);
@@ -918,8 +918,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   }
 
   private boolean areOrderable(Type t1, Type t2) {
-    Type e1 = t1.isSingleton() ? t1.getElementType() : t1;
-    Type e2 = t2.isSingleton() ? t2.getElementType() : t2;
+    // Unwrap ¡T! and ¿T? for ordering checks
+    Type e1 = (t1.isSingleton() || t1.isOptional()) ? t1.getElementType() : t1;
+    Type e2 = (t2.isSingleton() || t2.isOptional()) ? t2.getElementType() : t2;
     if (e1 == Type.ERROR || e2 == Type.ERROR) return true;
     if (e1 == Type.ANY || e2 == Type.ANY) return true;
     return TypeResolver.isNumeric(e1) && TypeResolver.isNumeric(e2);
@@ -1056,11 +1057,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return true;
     }
 
-    // Unwrap singletons for comparison
-    Type e1 =
-        t1.isSingleton() ? t1.getElementType() : (t1.isCollection() ? t1.getElementType() : t1);
-    Type e2 =
-        t2.isSingleton() ? t2.getElementType() : (t2.isCollection() ? t2.getElementType() : t2);
+    // Unwrap singletons and optionals for comparison (¡T! and ¿T? both unwrap to T)
+    Type e1 = (t1.isSingleton() || t1.isOptional()) ? t1.getElementType()
+        : (t1.isCollection() ? t1.getElementType() : t1);
+    Type e2 = (t2.isSingleton() || t2.isOptional()) ? t2.getElementType()
+        : (t2.isCollection() ? t2.getElementType() : t2);
     if (!e1.equals(t1) || !e2.equals(t2)) {
       return areComparable(e1, e2);
     }
@@ -1655,8 +1656,14 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         return Type.bag(baseType); // {{T}}
       }
     } else {
-      // Single-valued: singleton !T!
-      return Type.singleton(baseType);
+      // EAttribute with lowerBound=0: primitive always has a default value → ¡T!
+      // EReference with lowerBound=0: reference may be absent → ¿T?
+      // Any single-valued with lowerBound>=1: always present → ¡T!
+      if (feature instanceof org.eclipse.emf.ecore.EReference && feature.getLowerBound() == 0) {
+        return Type.optional(baseType);
+      } else {
+        return Type.singleton(baseType);
+      }
     }
   }
 
@@ -2004,11 +2011,16 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitVariableExpCS(VitruvOCLParser.VariableExpCSContext ctx) {
     String varName = ctx.varName.getText();
 
-    // null is the empty optional ?Any? = []
+    // null is not valid in OCL# — use isEmpty() / notEmpty() instead
     if (varName.equals("null")) {
-      Type nullType = Type.optional(Type.ANY);
-      nodeTypes.put(ctx, nullType);
-      return nullType;
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "'null' is not a valid expression in OCL#. Use isEmpty() / notEmpty() to test optional values.",
+          ErrorSeverity.ERROR,
+          "type-checker");
+      nodeTypes.put(ctx, Type.ERROR);
+      return Type.ERROR;
     }
 
     VariableSymbol symbol = symbolTable.resolveVariable(varName);
@@ -2209,11 +2221,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitFirstOp(VitruvOCLParser.FirstOpContext ctx) {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
-    if (!receiverType.isCollection()) {
+    if (!receiverType.isCollection() || !receiverType.isOrdered()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "first() requires collection receiver",
+          "first() requires an ordered collection (Sequence or OrderedSet), got: " + receiverType,
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
@@ -2237,11 +2249,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitLastOp(VitruvOCLParser.LastOpContext ctx) {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
-    if (!receiverType.isCollection()) {
+    if (!receiverType.isCollection() || !receiverType.isOrdered()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "last() requires collection receiver",
+          "last() requires an ordered collection (Sequence or OrderedSet), got: " + receiverType,
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
@@ -2284,18 +2296,17 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitIsEmptyOp(VitruvOCLParser.IsEmptyOpContext ctx) {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
-    if (!receiverType.isCollection()) {
+    if (!receiverType.isCollection() && !receiverType.isSingleton() && !receiverType.isOptional()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "isEmpty() requires collection receiver",
+          "isEmpty() requires a collection, ¡T!, or ¿T? receiver",
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
     }
-    Type resultType = Type.singleton(Type.BOOLEAN);
-    nodeTypes.put(ctx, resultType);
-    return resultType;
+    nodeTypes.put(ctx, Type.BOOLEAN);
+    return Type.BOOLEAN;
   }
 
   /**
@@ -2309,19 +2320,18 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
-    if (!receiverType.isCollection()) {
+    if (!receiverType.isCollection() && !receiverType.isSingleton() && !receiverType.isOptional()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "notEmpty() requires collection receiver",
+          "notEmpty() requires a collection, ¡T!, or ¿T? receiver",
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
     }
 
-    Type resultType = Type.BOOLEAN;
-    nodeTypes.put(ctx, resultType);
-    return resultType;
+    nodeTypes.put(ctx, Type.BOOLEAN);
+    return Type.BOOLEAN;
   }
 
   /**
@@ -2421,11 +2431,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
-    if (!receiverType.isCollection()) {
+    if (!receiverType.isCollection() && !receiverType.isSingleton() && !receiverType.isOptional()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "'includes' requires collection",
+          "'includes' requires a collection, ¡T!, or ¿T? receiver",
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
@@ -2459,11 +2469,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
-    if (!receiverType.isCollection()) {
+    if (!receiverType.isCollection() && !receiverType.isSingleton() && !receiverType.isOptional()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "'excludes' requires collection",
+          "'excludes' requires a collection, ¡T!, or ¿T? receiver",
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
@@ -2842,11 +2852,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
-    if (!receiverType.isCollection()) {
+    if (!receiverType.isCollection() && !receiverType.isSingleton() && !receiverType.isOptional()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "size() requires collection receiver",
+          "size() requires a collection, ¡T!, or ¿T? receiver",
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
@@ -2944,11 +2954,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
-    if (!receiverType.isCollection()) {
+    if (!receiverType.isCollection() && !receiverType.isSingleton() && !receiverType.isOptional()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "'select' requires collection",
+          "'select' requires a collection, ¡T!, or ¿T? receiver",
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
@@ -2971,7 +2981,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    // each iterated element is a singleton ¡T! of the collection's element type
+    // each iterated element is a singleton ¡T! of the receiver's element type
     Type elemType = receiverType.getElementType();
     Type iterVarType = normalizeToSingleton(elemType);
 
@@ -3010,8 +3020,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
             "type-checker");
       }
 
-      nodeTypes.put(ctx, receiverType);
-      return receiverType;
+      // select on ¡T! may filter out the element → result is ¿T?
+      Type resultType = receiverType.isSingleton() ? Type.optional(elemType) : receiverType;
+      nodeTypes.put(ctx, resultType);
+      return resultType;
     } finally {
       symbolTable.exitScope();
     }
@@ -3030,11 +3042,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
-    if (!receiverType.isCollection()) {
+    if (!receiverType.isCollection() && !receiverType.isSingleton() && !receiverType.isOptional()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "'reject' requires collection",
+          "'reject' requires a collection, ¡T!, or ¿T? receiver",
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
@@ -3057,7 +3069,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    // each iterated element is a singleton ¡T! of the collection's element type
+    // each iterated element is a singleton ¡T! of the receiver's element type
     Type elemType = receiverType.getElementType();
     Type iterVarType = normalizeToSingleton(elemType);
 
@@ -3096,8 +3108,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         return Type.ERROR;
       }
 
-      nodeTypes.put(ctx, receiverType);
-      return receiverType;
+      // reject on ¡T! may filter out the element → result is ¿T?
+      Type resultType = receiverType.isSingleton() ? Type.optional(elemType) : receiverType;
+      nodeTypes.put(ctx, resultType);
+      return resultType;
     } finally {
       symbolTable.exitScope();
     }
@@ -3116,11 +3130,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
-    if (!receiverType.isCollection()) {
+    if (!receiverType.isCollection() && !receiverType.isSingleton() && !receiverType.isOptional()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "'collect' requires collection",
+          "'collect' requires a collection, ¡T!, or ¿T? receiver",
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
@@ -3176,10 +3190,17 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         return Type.ERROR;
       }
 
-      // collect result: preserve collection kind of receiver, element type from body
-      // If body returns ¡T!, the collection element type is T (unwrap singleton)
+      // collect result: preserve collection kind, element type from body
+      // If body returns ¡T!, the element type is T (unwrap singleton)
       Type resultElemType = bodyType.isSingleton() ? bodyType.getElementType() : bodyType;
-      Type resultType = preserveCollectionKind(receiverType, resultElemType);
+      Type resultType;
+      if (receiverType.isSingleton()) {
+        resultType = Type.singleton(resultElemType); // ¡T! → ¡U!
+      } else if (receiverType.isOptional()) {
+        resultType = Type.optional(resultElemType);  // ¿T? → ¿U?
+      } else {
+        resultType = preserveCollectionKind(receiverType, resultElemType);
+      }
       nodeTypes.put(ctx, resultType);
       return resultType;
     } finally {
@@ -3201,17 +3222,17 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
-    if (!receiverType.isCollection()) {
+    if (!receiverType.isCollection() && !receiverType.isSingleton() && !receiverType.isOptional()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "'forAll' requires collection",
+          "'forAll' requires a collection, ¡T!, or ¿T? receiver",
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
     }
 
-    // each iterated element is a singleton ¡T! of the collection's element type
+    // each iterated element is a singleton ¡T! of the receiver's element type
     Type elemType = receiverType.getElementType();
     Type iterVarType = normalizeToSingleton(elemType);
 
@@ -3291,17 +3312,17 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
-    if (!receiverType.isCollection()) {
+    if (!receiverType.isCollection() && !receiverType.isSingleton() && !receiverType.isOptional()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "'exists' requires collection",
+          "'exists' requires a collection, ¡T!, or ¿T? receiver",
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
     }
 
-    // each iterated element is a singleton ¡T! of the collection's element type
+    // each iterated element is a singleton ¡T! of the receiver's element type
     Type elemType = receiverType.getElementType();
     Type iterVarType = normalizeToSingleton(elemType);
 
@@ -3787,10 +3808,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    *
    * <p>Requires metaclass receiver, returns Set of that metaclass type.
    *
-   * <p><b>Example:</b> {@code Person.allInstances()} → Set(Person)
+   * <p><b>Example:</b> {@code Person.allInstances()} → OrderedSet(Person)
    *
    * @param ctx The allInstances operation node
-   * @return Set(MetaclassType)
+   * @return OrderedSet(MetaclassType)
    */
   @Override
   public Type visitAllInstancesOp(VitruvOCLParser.AllInstancesOpContext ctx) {
@@ -3807,7 +3828,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    Type resultType = Type.set(receiverType);
+    Type resultType = Type.orderedSet(receiverType);
     nodeTypes.put(ctx, resultType);
     return resultType;
   }
@@ -4610,11 +4631,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitAnyOp(VitruvOCLParser.AnyOpContext ctx) {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
-    if (!receiverType.isCollection()) {
+    if (!receiverType.isCollection() && !receiverType.isSingleton() && !receiverType.isOptional()) {
       errors.add(
           ctx.getStart().getLine(),
           ctx.getStart().getCharPositionInLine(),
-          "'any' requires collection",
+          "'any' requires a collection, ¡T!, or ¿T? receiver",
           ErrorSeverity.ERROR,
           "type-checker");
       return Type.ERROR;
@@ -4655,8 +4676,8 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
             ErrorSeverity.ERROR,
             "type-checker");
       }
-      // any() returns one element — singleton of the element type
-      Type resultType = Type.singleton(receiverType.getElementType());
+      // any() returns ¿T? — may find no matching element
+      Type resultType = Type.optional(receiverType.getElementType());
       nodeTypes.put(ctx, resultType);
       return resultType;
     } finally {

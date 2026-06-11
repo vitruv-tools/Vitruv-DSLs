@@ -108,18 +108,21 @@ public class CollectionArgOpsTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testIntegerIncludesFails() {
-    compileExpectError("1.includes(1)");
+  public void testIntegerIncludesOnSingleton() {
+    // ¡Integer! includes(1) → the singleton IS 1 → true
+    assertSingleBool(compile("1.includes(1)"), true);
   }
 
   @Test
-  public void testBooleanExcludesFails() {
-    compileExpectError("true.excludes(false)");
+  public void testBooleanExcludesOnSingleton() {
+    // ¡Boolean! (true) excludes(false) → false is not in singleton → true
+    assertSingleBool(compile("true.excludes(false)"), true);
   }
 
   @Test
-  public void testStringIncludesFails() {
-    compileExpectError("\"hello\".includes(\"h\")");
+  public void testStringIncludesOnSingleton() {
+    // ¡String! ("hello") includes("h") → "h" is not the singleton value → false
+    assertSingleBool(compile("\"hello\".includes(\"h\")"), false);
   }
 
   // ══════════════════════════════════════════════════════════════

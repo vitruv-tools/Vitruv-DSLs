@@ -399,7 +399,7 @@ public class BrakeSystemConstraintTest {
     String constraint =
         """
         context cad::Pyramid inv apexDefined:
-          self.apex != null
+          self.apex.notEmpty()
         """;
 
     ConstraintResult result =

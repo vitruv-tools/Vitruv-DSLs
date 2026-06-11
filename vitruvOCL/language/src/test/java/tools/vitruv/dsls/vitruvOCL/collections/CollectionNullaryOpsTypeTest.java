@@ -87,23 +87,24 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testIntegerSizeOnScalarFails() {
-    compileExpectError("1.size()");
+  public void testIntegerSizeOnSingleton() {
+    // ¡Integer! singleton always has size 1
+    assertSingleInt(compile("1.size()"), 1);
   }
 
   @Test
-  public void testFloatSizeOnScalarFails() {
-    compileExpectError("1.5.size()");
+  public void testFloatSizeOnSingleton() {
+    assertSingleInt(compile("1.5.size()"), 1);
   }
 
   @Test
-  public void testDoubleSizeOnScalarFails() {
-    compileExpectError("2.5.size()");
+  public void testDoubleSizeOnSingleton() {
+    assertSingleInt(compile("2.5.size()"), 1);
   }
 
   @Test
-  public void testBooleanSizeOnScalarFails() {
-    compileExpectError("true.size()");
+  public void testBooleanSizeOnSingleton() {
+    assertSingleInt(compile("true.size()"), 1);
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -151,18 +152,19 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testIntegerIsEmptyFails() {
-    compileExpectError("1.isEmpty()");
+  public void testIntegerIsEmptyOnSingleton() {
+    // ¡Integer! singleton is never empty
+    assertSingleBool(compile("1.isEmpty()"), false);
   }
 
   @Test
-  public void testBooleanIsEmptyFails() {
-    compileExpectError("true.isEmpty()");
+  public void testBooleanIsEmptyOnSingleton() {
+    assertSingleBool(compile("true.isEmpty()"), false);
   }
 
   @Test
-  public void testStringIsEmptyFails() {
-    compileExpectError("\"hello\".isEmpty()");
+  public void testStringIsEmptyOnSingleton() {
+    assertSingleBool(compile("\"hello\".isEmpty()"), false);
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -199,26 +201,22 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
 
   @Test
   public void testSetFirstFails() {
-    Value r = compile("Set{1, 2}.first()");
-    assertEquals(1, r.size());
+    compileExpectError("Set{1, 2}.first()");
   }
 
   @Test
   public void testSetLastFails() {
-    Value r = compile("Set{1, 2}.last()");
-    assertEquals(1, r.size());
+    compileExpectError("Set{1, 2}.last()");
   }
 
   @Test
   public void testBagFirstFails() {
-    Value r = compile("Bag{1, 2}.first()");
-    assertEquals(1, r.size());
+    compileExpectError("Bag{1, 2}.first()");
   }
 
   @Test
   public void testBagLastFails() {
-    Value r = compile("Bag{1, 2}.last()");
-    assertEquals(1, r.size());
+    compileExpectError("Bag{1, 2}.last()");
   }
 
   // ══════════════════════════════════════════════════════════════

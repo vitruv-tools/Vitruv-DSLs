@@ -74,15 +74,15 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testRejectThenFirstOnSet() {
-    Value r = compile("Set{1, 2, 3}.reject(x | x > 1).first()");
-    assertEquals(1, r.size());
+  public void testRejectThenFirstOnSetFails() {
+    // Set is unordered → reject returns Set → first() not allowed
+    compileExpectError("Set{1, 2, 3}.reject(x | x > 1).first()");
   }
 
   @Test
-  public void testRejectThenLastOnBag() {
-    Value r = compile("Bag{1, 2, 3}.reject(x | x > 1).last()");
-    assertEquals(1, r.size());
+  public void testRejectThenLastOnBagFails() {
+    // Bag is unordered → reject returns Bag → last() not allowed
+    compileExpectError("Bag{1, 2, 3}.reject(x | x > 1).last()");
   }
 
   @Test
@@ -127,15 +127,15 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testCollectThenFirstOnSet() {
-    Value r = compile("Set{1, 2}.collect(x | x * 2).first()");
-    assertEquals(1, r.size());
+  public void testCollectThenFirstOnSetFails() {
+    // Set.collect → Set (unordered) → first() not allowed
+    compileExpectError("Set{1, 2}.collect(x | x * 2).first()");
   }
 
   @Test
-  public void testCollectThenLastOnBag() {
-    Value r = compile("Bag{1, 2}.collect(x | x * 2).last()");
-    assertEquals(1, r.size());
+  public void testCollectThenLastOnBagFails() {
+    // Bag.collect → Bag (unordered) → last() not allowed
+    compileExpectError("Bag{1, 2}.collect(x | x * 2).last()");
   }
 
   @Test
@@ -181,14 +181,12 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
 
   @Test
   public void testAsBagThenFirstFails() {
-    Value r = compile("Set{1, 2, 3}.asBag().first()");
-    assertEquals(1, r.size());
+    compileExpectError("Set{1, 2, 3}.asBag().first()");
   }
 
   @Test
   public void testAsBagThenLastFails() {
-    Value r = compile("Sequence{1, 2, 3}.asBag().last()");
-    assertEquals(1, r.size());
+    compileExpectError("Sequence{1, 2, 3}.asBag().last()");
   }
 
   @Test
@@ -200,14 +198,12 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
 
   @Test
   public void testAsSetThenFirstFails() {
-    Value r = compile("Sequence{1, 2, 3}.asSet().first()");
-    assertEquals(1, r.size());
+    compileExpectError("Sequence{1, 2, 3}.asSet().first()");
   }
 
   @Test
   public void testAsSetThenLastFails() {
-    Value r = compile("Sequence{1, 2, 3}.asSet().last()");
-    assertEquals(1, r.size());
+    compileExpectError("Sequence{1, 2, 3}.asSet().last()");
   }
 
   // ── asSequence → first/last (ordered → valid) ★ ───────────────
@@ -242,31 +238,36 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testAnyThenSelectFails() {
-    // any() → ¡T! singleton — cannot chain collection ops
-    compileExpectError("Set{1, 2, 3}.any(x | x > 1).select(x | x > 1)");
+  public void testAnyThenSelectValid() {
+    // any() → ¿T?, select on ¿T? is valid per spec
+    Value r = compile("Set{1, 2, 3}.any(x | x > 1).select(x | x > 1)");
+    assertEquals(1, r.size()); // the matched element passes the filter
   }
 
   @Test
-  public void testAnyThenSizeFails() {
-    compileExpectError("Set{1, 2, 3}.any(x | x > 1).size()");
+  public void testAnyThenSizeValid() {
+    // any() → ¿T?, size() on ¿T? is valid per spec
+    assertSingleInt(compile("Set{1, 2, 3}.any(x | x > 1).size()"), 1);
   }
 
-  // ── iterate → collect (ERROR: accType is scalar) ★ ────────────
+  // ── iterate → collect/select/size: valid per spec ★ ───────────
+  // iterate() → ¡T!, collection ops on ¡T! are allowed per spec
 
   @Test
-  public void testIterateThenCollectFails() {
-    compileExpectError("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x).collect(x | x)");
-  }
-
-  @Test
-  public void testIterateThenSelectFails() {
-    compileExpectError("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x).select(x | x > 2)");
+  public void testIterateThenCollectValid() {
+    Value r = compile("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x).collect(x | x)");
+    assertEquals(1, r.size());
   }
 
   @Test
-  public void testIterateThenSizeFails() {
-    compileExpectError("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x).size()");
+  public void testIterateThenSelectValid() {
+    Value r = compile("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x).select(x | x > 2)");
+    assertEquals(1, r.size()); // sum=6 > 2 → kept
+  }
+
+  @Test
+  public void testIterateThenSizeValid() {
+    assertSingleInt(compile("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x).size()"), 1);
   }
 
   @Test
@@ -311,13 +312,17 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testOneThenSelectFails() {
-    compileExpectError("Set{1, 2}.one(x | x > 0).select(x | x)");
+  public void testOneThenSelectValid() {
+    // one() → ¡Boolean!, select on ¡Boolean! is valid per spec
+    // Set{1,2} has 2 elements > 0 → one() returns false → select(x|x) filters out false → empty
+    Value r = compile("Set{1, 2}.one(x | x > 0).select(x | x)");
+    assertEquals(0, r.size());
   }
 
   @Test
-  public void testOneThenSizeFails() {
-    compileExpectError("Set{1, 2}.one(x | x > 0).size()");
+  public void testOneThenSizeValid() {
+    // one() → ¡Boolean!, size() on ¡Boolean! is valid per spec → always 1
+    assertSingleInt(compile("Set{1, 2}.one(x | x > 0).size()"), 1);
   }
 
   // ── isUnique → logical ★ ─────────────────────────────────────
@@ -333,8 +338,10 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testIsUniqueThenSelectFails() {
-    compileExpectError("Sequence{1, 2}.isUnique(x | x).select(x | x)");
+  public void testIsUniqueThenSelectValid() {
+    // isUnique() → ¡Boolean!, select on ¡Boolean! is valid per spec
+    Value r = compile("Sequence{1, 2}.isUnique(x | x).select(x | x)");
+    assertEquals(1, r.size()); // Sequence{1,2} unique → isUnique=true → select(x|x) keeps true
   }
 
   // ── sortedBy → subSequence (ordered result) ★ ─────────────────

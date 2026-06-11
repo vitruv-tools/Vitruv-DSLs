@@ -307,31 +307,43 @@ public class ChainingTypeTest extends DummyTestSpecification {
     assertSingleBool(compile("Set{1, 2, 3}.any(x | x > 2) == 3"), true);
   }
 
-  // ── ERROR: scalar → collection op ────────────────────────────
+  // ── ¡Boolean!/¡Integer! → collection ops: valid per spec ─────────
+  // Per OCL# spec: collection ops (select, collect, size, etc.) are allowed on ALL types
+  // including ¡T! singletons. Boolean results from forAll/exists/one become ¡Boolean!.
 
   @Test
-  public void testForAllThenSelectFails() {
-    compileExpectError("Set{1, 2}.forAll(x | x > 0).select(x | x)");
+  public void testForAllThenSelectValid() {
+    // forAll() → ¡Boolean!, select on ¡Boolean! is valid per spec
+    Value r = compile("Set{1, 2}.forAll(x | x > 0).select(x | x)");
+    assertEquals(1, r.size()); // ¿Boolean? with one true element
   }
 
   @Test
-  public void testExistsThenCollectFails() {
-    compileExpectError("Set{1, 2}.exists(x | x > 0).collect(x | x)");
+  public void testExistsThenCollectValid() {
+    // exists() → ¡Boolean!, collect on ¡Boolean! is valid per spec
+    Value r = compile("Set{1, 2}.exists(x | x > 0).collect(x | x)");
+    assertEquals(1, r.size());
   }
 
   @Test
-  public void testSizeThenSelectFails() {
-    compileExpectError("Set{1, 2}.size().select(x | x > 0)");
+  public void testSizeThenSelectValid() {
+    // size() → ¡Integer!, select on ¡Integer! is valid per spec
+    Value r = compile("Set{1, 2}.size().select(x | x > 0)");
+    assertEquals(1, r.size());
   }
 
   @Test
-  public void testIsEmptyThenSelectFails() {
-    compileExpectError("Set{}.isEmpty().select(x | x)");
+  public void testIsEmptyThenSelectValid() {
+    // isEmpty() → ¡Boolean!, select on ¡Boolean! is valid per spec
+    Value r = compile("Set{}.isEmpty().select(x | x)");
+    assertEquals(1, r.size()); // ¿Boolean? with one true element
   }
 
   @Test
-  public void testOneThenSelectFails() {
-    compileExpectError("Set{1, 2}.one(x | x > 0).select(x | x)");
+  public void testOneThenSelectValid() {
+    // one() → ¡Boolean!, select on ¡Boolean! is valid per spec
+    Value r = compile("Set{1, 2}.one(x | x > 0).select(x | x)");
+    assertEquals(0, r.size()); // select(x | x) on false → ¿Boolean? empty
   }
 
   // ── characters/tokenize → collection ops ★ ───────────────────

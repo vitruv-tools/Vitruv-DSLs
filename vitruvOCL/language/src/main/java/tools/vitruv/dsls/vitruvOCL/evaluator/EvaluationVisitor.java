@@ -526,14 +526,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitSizeOp(VitruvOCLParser.SizeOpContext ctx) {
     Value receiver = receiverStack.peek();
-    // String.size() returns string length — but only for actual String values, not EnumValues
-    if (receiver.size() == 1) {
-      OCLElement elem = receiver.getElements().get(0);
-      if (elem instanceof OCLElement.StringValue sv) {
-        return Value.intValue(sv.value().length());
-      }
-    }
-
     return Value.intValue(receiver.size());
   }
 
@@ -1679,7 +1671,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitVariableExpCS(VitruvOCLParser.VariableExpCSContext ctx) {
     String varName = ctx.varName.getText();
 
-    // null is the empty optional ?Any? = []
+    // null is not valid in OCL# — type checker already prevents reaching this
     if (varName.equals("null")) {
       return Value.empty(Type.optional(Type.ANY));
     }

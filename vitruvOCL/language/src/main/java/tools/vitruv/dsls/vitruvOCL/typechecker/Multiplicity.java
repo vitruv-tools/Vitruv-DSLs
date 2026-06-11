@@ -115,6 +115,8 @@ public enum Multiplicity {
    *
    * <pre>
    * !T!  <:  ?T?  <:  {T}
+   * &lt;T&gt;  <:  {T}     (OrderedSet is a more specific Set)
+   * [T]  <:  {{T}}   (Sequence is a more specific Bag)
    * </pre>
    *
    * <p>Intuitively:
@@ -122,6 +124,8 @@ public enum Multiplicity {
    * <ul>
    *   <li>A singleton value can be used where any other multiplicity is expected
    *   <li>An optional value can be used where a collection is expected
+   *   <li>OrderedSet can be used where Set is expected (adds ordering)
+   *   <li>Sequence can be used where Bag is expected (adds ordering)
    * </ul>
    *
    * @param other the target multiplicity
@@ -139,6 +143,16 @@ public enum Multiplicity {
 
     // Optional conforms to collection multiplicities
     if (this == OPTIONAL && other.isCollection()) {
+      return true;
+    }
+
+    // OrderedSet <: Set (ordered unique is a subtype of unordered unique)
+    if (this == ORDERED_SET && other == SET) {
+      return true;
+    }
+
+    // Sequence <: Bag (ordered non-unique is a subtype of unordered non-unique)
+    if (this == SEQUENCE && other == BAG) {
       return true;
     }
 

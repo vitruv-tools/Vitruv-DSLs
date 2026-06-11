@@ -211,7 +211,7 @@ public class AllInstancesMetamodelTest {
 
   @Test
   public void testAllInstancesThenFirst() throws Exception {
-    String c = "context cad::Cylinder inv:\n" + "  cad::Cylinder.allInstances().first() != null";
+    String c = "context cad::Cylinder inv:\n" + "  cad::Cylinder.allInstances().first().notEmpty()";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
   }
