@@ -10,8 +10,11 @@ import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import java.util.HashSet;
+import java.util.Set;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EClassifier;
+import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.EcorePackage;
 import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser;
@@ -1555,15 +1558,24 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
-    // Unwrap singleton !T! to T for property access — every iterated
-    // element is ¡T!, so unwrapping here is the standard path
-    if (receiverType.isSingleton()) {
+    // Track whether the receiver was optional so we can propagate ?T? through navigation
+    boolean receiverWasOptional = receiverType.isOptional();
+
+    // Unwrap singleton !T! or optional ?T? to T for property access
+    if (receiverType.isSingleton() || receiverType.isOptional()) {
       receiverType = receiverType.getElementType();
     }
 
     String propertyName = ctx.propertyAccess().propertyName.getText();
     Type resultType = typeCheckPropertyAccess(
         receiverType, propertyName, ctx.propertyAccess().propertyName);
+
+    // Propagate optionality: ?T?.prop where prop : !R! → result is ?R?
+    // Collections keep their type (absent optional → treated as empty collection)
+    if (receiverWasOptional && resultType != Type.ERROR && resultType.isSingleton()) {
+      resultType = Type.optional(resultType.getElementType());
+    }
+
     nodeTypes.put(ctx, resultType);
     return resultType;
   }
@@ -1619,9 +1631,15 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       EStructuralFeature feature = eClass.getEStructuralFeature(propName);
 
       if (feature == null) {
-        errors.add(propertyNameToken, "Unknown property: " + propName,
-            ErrorSeverity.ERROR, "type-checker");
-        return Type.ERROR;
+        feature = findFeatureInSubtypes(eClass, propName);
+        if (feature == null) {
+          errors.add(propertyNameToken, "Unknown property '" + propName
+              + "' on type '" + eClass.getName() + "'"
+              + " (not found on declared type or any known subtype;"
+              + " use oclIsKindOf + oclAsType to cast to the concrete subtype first)",
+              ErrorSeverity.ERROR, "type-checker");
+          return Type.ERROR;
+        }
       }
 
       Type featureType = mapFeatureToType(feature);
@@ -1634,9 +1652,15 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       EStructuralFeature feature = eClass.getEStructuralFeature(propName);
 
       if (feature == null) {
-        errors.add(propertyNameToken, "Unknown property: " + propName,
-            ErrorSeverity.ERROR, "type-checker");
-        return Type.ERROR;
+        feature = findFeatureInSubtypes(eClass, propName);
+        if (feature == null) {
+          errors.add(propertyNameToken, "Unknown property '" + propName
+              + "' on type '" + eClass.getName() + "'"
+              + " (not found on declared type or any known subtype;"
+              + " use oclIsKindOf + oclAsType to cast to the concrete subtype first)",
+              ErrorSeverity.ERROR, "type-checker");
+          return Type.ERROR;
+        }
       }
 
       return mapFeatureToType(feature);
@@ -1645,6 +1669,47 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     errors.add(propertyNameToken, "Cannot access property on " + receiverType,
         ErrorSeverity.ERROR, "type-checker");
     return Type.ERROR;
+  }
+
+  /**
+   * Searches all known subclasses of {@code abstractClass} (reachable via EMF EPackage hierarchy)
+   * for a structural feature named {@code propName}. Returns the feature if found unambiguously on
+   * one or more subtypes (all with the same defining EClass), or {@code null} if not found or
+   * ambiguous across incompatible types.
+   */
+  private EStructuralFeature findFeatureInSubtypes(EClass abstractClass, String propName) {
+    // Collect all EPackages reachable from the root package
+    EPackage rootPkg = abstractClass.getEPackage();
+    while (rootPkg.getESuperPackage() != null) {
+      rootPkg = rootPkg.getESuperPackage();
+    }
+    List<EClass> allClasses = new ArrayList<>();
+    collectEClasses(rootPkg, allClasses, new HashSet<>());
+
+    // Find feature on any subtype (abstractClass.isSuperTypeOf(candidate) is true for subtypes)
+    EStructuralFeature found = null;
+    for (EClass candidate : allClasses) {
+      if (candidate == abstractClass || !abstractClass.isSuperTypeOf(candidate)) continue;
+      EStructuralFeature f = candidate.getEStructuralFeature(propName);
+      if (f == null) continue;
+      if (found == null) {
+        found = f;
+      } else if (found.getEType() != f.getEType() || found.isMany() != f.isMany()) {
+        // Ambiguous: same feature name but different types on different subtypes — reject
+        return null;
+      }
+    }
+    return found;
+  }
+
+  private void collectEClasses(EPackage pkg, List<EClass> result, Set<EPackage> visited) {
+    if (!visited.add(pkg)) return;
+    for (EClassifier c : pkg.getEClassifiers()) {
+      if (c instanceof EClass) result.add((EClass) c);
+    }
+    for (EPackage sub : pkg.getESubpackages()) {
+      collectEClasses(sub, result, visited);
+    }
   }
 
   /**
