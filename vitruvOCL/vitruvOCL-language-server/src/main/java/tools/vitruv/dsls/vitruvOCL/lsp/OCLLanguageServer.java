@@ -84,7 +84,7 @@ public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
 
     // Completion: trigger on '.' (property access) and ':' (detects '::' namespace separator).
     CompletionOptions completionOptions = new CompletionOptions();
-    completionOptions.setTriggerCharacters(List.of(".", ":"));
+    completionOptions.setTriggerCharacters(List.of(".", ":", "@", " "));
     completionOptions.setResolveProvider(false);
     caps.setCompletionProvider(completionOptions);
 

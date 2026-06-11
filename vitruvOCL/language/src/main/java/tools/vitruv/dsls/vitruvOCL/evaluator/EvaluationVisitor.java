@@ -81,6 +81,18 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private final List<EObject> violatingInstances = new ArrayList<>();
 
+  /**
+   * Violation records produced during evaluation, one per violated invariant instance.
+   *
+   * @param severity  The @severity value (never null; defaults to "WARNING").
+   * @param customMessage The interpolated @message template, or {@code null} when no @message
+   *                      annotation was present on the invariant.
+   * @param instance  The EObject that violated the constraint.
+   */
+  public record ViolationRecord(String severity, String customMessage, EObject instance) {}
+
+  private final List<ViolationRecord> violationRecords = new ArrayList<>();
+
   /* Cache for allInstances() results to avoid redundant metamodel queries during evaluation. */
   private final java.util.Map<EClass, Value> allInstancesCache = new java.util.HashMap<>();
 
@@ -262,6 +274,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           Boolean boolResult = elem.tryGetBool();
           if (boolResult == null || !boolResult) {
             violatingInstances.add(instance);
+            String severity = extractSeverity(inv);
+            String customMessage = extractCustomMessage(inv, instance);
+            violationRecords.add(new ViolationRecord(severity, customMessage, instance));
           }
         }
       }
@@ -282,6 +297,73 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   public List<EObject> getViolatingInstances() {
     return Collections.unmodifiableList(violatingInstances);
+  }
+
+  /** Returns violation records produced during the last evaluation, one per violated invariant instance. */
+  public List<ViolationRecord> getViolationRecords() {
+    return Collections.unmodifiableList(violationRecords);
+  }
+
+  private String extractSeverity(VitruvOCLParser.InvCSContext inv) {
+    for (VitruvOCLParser.AnnotationCSContext ann : inv.annotationCS()) {
+      if (ann instanceof VitruvOCLParser.SeverityAnnotationContext sev) {
+        return sev.severityValue.getText();
+      }
+    }
+    return "WARNING";
+  }
+
+  /**
+   * Returns the interpolated {@code @message} template for the invariant, or {@code null} when no
+   * {@code @message} annotation is present.
+   */
+  private String extractCustomMessage(VitruvOCLParser.InvCSContext inv, EObject instance) {
+    for (VitruvOCLParser.AnnotationCSContext ann : inv.annotationCS()) {
+      if (ann instanceof VitruvOCLParser.MessageAnnotationContext msg) {
+        String raw = msg.message.getText();
+        String template = raw.length() >= 2 ? raw.substring(1, raw.length() - 1) : raw;
+        return interpolateTemplate(template, instance);
+      }
+    }
+    return null;
+  }
+
+  private String interpolateTemplate(String template, EObject instance) {
+    // Replace {self.attr}
+    java.util.regex.Matcher m =
+        java.util.regex.Pattern.compile("\\{self\\.([a-zA-Z_][a-zA-Z0-9_]*)\\}")
+            .matcher(template);
+    StringBuffer sb = new StringBuffer();
+    while (m.find()) {
+      String attr = m.group(1);
+      org.eclipse.emf.ecore.EStructuralFeature feature =
+          instance.eClass().getEStructuralFeature(attr);
+      String val;
+      if (feature == null) {
+        val = "{" + attr + "}";
+      } else {
+        String raw = String.valueOf(instance.eGet(feature));
+        boolean isString = feature.getEType() == org.eclipse.emf.ecore.EcorePackage.Literals.ESTRING;
+        val = isString ? "\"" + raw + "\"" : raw;
+      }
+      m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(val));
+    }
+    m.appendTail(sb);
+    // Replace bare {self}
+    return sb.toString()
+        .replace("{self}", instance.eClass().getName() + "@" + Integer.toHexString(instance.hashCode()));
+  }
+
+  // ==================== Annotations ====================
+
+  @Override
+  public Value visitSeverityAnnotation(VitruvOCLParser.SeverityAnnotationContext ctx) {
+    return Value.boolValue(true);
+  }
+
+  @Override
+  public Value visitMessageAnnotation(VitruvOCLParser.MessageAnnotationContext ctx) {
+    return Value.boolValue(true);
   }
 
   // ==================== Control Flow ====================

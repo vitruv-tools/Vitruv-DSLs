@@ -139,4 +139,53 @@ public class OCLParsingTest {
 
     assertNotNull(tree);
   }
+
+  @Test
+  @DisplayName("Should parse @severity annotation")
+  public void testSeverityAnnotation() {
+    String input = "context Pkg::Foo inv Bar:\n    @severity CRITICAL\n    self.x > 0";
+    VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
+    CommonTokenStream tokens = new CommonTokenStream(lexer);
+    VitruvOCLParser parser = new VitruvOCLParser(tokens);
+
+    ParseTree tree = parser.contextDeclCS();
+
+    assertEquals(0, parser.getNumberOfSyntaxErrors(), "Expected no syntax errors");
+    assertNotNull(tree);
+  }
+
+  @Test
+  @DisplayName("Should parse @message annotation")
+  public void testMessageAnnotation() {
+    String input =
+        "context Pkg::Foo inv Bar:\n"
+            + "    @message \"Foo {self.name} violated\"\n"
+            + "    self.x > 0";
+    VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
+    CommonTokenStream tokens = new CommonTokenStream(lexer);
+    VitruvOCLParser parser = new VitruvOCLParser(tokens);
+
+    ParseTree tree = parser.contextDeclCS();
+
+    assertEquals(0, parser.getNumberOfSyntaxErrors(), "Expected no syntax errors");
+    assertNotNull(tree);
+  }
+
+  @Test
+  @DisplayName("Should parse both @severity and @message annotations")
+  public void testBothAnnotations() {
+    String input =
+        "context Pkg::Foo inv Bar:\n"
+            + "    @severity WARNING\n"
+            + "    @message \"Object {self.name} failed\"\n"
+            + "    self.x > 0";
+    VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
+    CommonTokenStream tokens = new CommonTokenStream(lexer);
+    VitruvOCLParser parser = new VitruvOCLParser(tokens);
+
+    ParseTree tree = parser.contextDeclCS();
+
+    assertEquals(0, parser.getNumberOfSyntaxErrors(), "Expected no syntax errors");
+    assertNotNull(tree);
+  }
 }

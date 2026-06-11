@@ -95,6 +95,22 @@
             }
         },
         {
+            "name": "@severity / @message annotation keyword",
+            "scope": "storage.type.annotation.vitruvocl",
+            "settings": {
+                "foreground": "#E8C46A",
+                "fontStyle": "bold"
+            }
+        },
+        {
+            "name": "@severity value (CRITICAL, WARNING, …)",
+            "scope": "storage.type.annotation.value.vitruvocl",
+            "settings": {
+                "foreground": "#F5D88A",
+                "fontStyle": ""
+            }
+        },
+        {
             "name": "Context keyword — the structural anchor",
             "scope": "keyword.control.context.vitruvocl",
             "settings": {

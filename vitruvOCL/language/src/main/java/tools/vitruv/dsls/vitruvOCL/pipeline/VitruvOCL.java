@@ -201,19 +201,25 @@ public class VitruvOCL {
 
     List<Warning> warnings = new ArrayList<>(loaderWarnings);
     EvaluationVisitor evaluator = compiler.getLastEvaluator();
-    List<EObject> violatingInstances =
-        evaluator != null ? evaluator.getViolatingInstances() : List.of();
+    List<EvaluationVisitor.ViolationRecord> records =
+        evaluator != null ? evaluator.getViolationRecords() : List.of();
 
-    boolean satisfied = violatingInstances.isEmpty();
-    for (EObject instance : violatingInstances) {
-      String sourceFile = wrapper.getSourceFileForInstance(instance);
+    boolean satisfied = records.isEmpty();
+    String constraintName = extractConstraintName(constraint);
+    for (EvaluationVisitor.ViolationRecord record : records) {
+      String sourceFile = wrapper.getSourceFileForInstance(record.instance());
       String filename = sourceFile != null ? sourceFile : "unknown";
-      String instanceLabel = describeInstance(instance);
-      String constraintName = extractConstraintName(constraint);
+      String instanceLabel = describeInstance(record.instance());
+      // Format: [SEVERITY] constraintName @ filename :: <message>
+      // When @message is present it is shown alone; otherwise the instance description is used.
+      String detail = record.customMessage() != null
+          ? record.customMessage()
+          : instanceLabel;
       warnings.add(
           new Warning(
               Warning.WarningType.CONSTRAINT_VIOLATION,
-              "[VIOLATION] " + constraintName + " @ " + filename + " :: " + instanceLabel));
+              "[" + record.severity() + "] " + constraintName
+                  + " @ " + filename + " :: " + detail));
     }
 
     return new ConstraintResult(constraint, satisfied, compilerErrors, List.of(), warnings);

@@ -21,6 +21,7 @@ import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
+import org.eclipse.lsp4j.InsertTextFormat;
 import org.eclipse.lsp4j.Position;
 import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapper;
 import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
@@ -51,10 +52,31 @@ public class CompletionProvider {
   private static final Pattern SELF_DOT = Pattern.compile("\\bself\\.$");
   private static final Pattern CONTEXT_DECL = Pattern.compile("\\bcontext\\s+(\\w+)::(\\w+)");
 
+  // 'context ' with no '::' yet → suggest metamodel package names.
+  private static final Pattern CONTEXT_NEEDS_PKG =
+      Pattern.compile("^\\s*context\\s+\\w*$");
+  // 'context Pkg::Class ' without 'inv' yet → only 'inv' makes sense.
+  private static final Pattern CONTEXT_NEEDS_INV =
+      Pattern.compile("^\\s*context\\s+\\w+::\\w+\\s+\\w*$");
+
   // Type-position patterns: after "let x :" and after type-cast / type-test operations.
   private static final Pattern LET_TYPE_POS = Pattern.compile("\\blet\\s+\\w+\\s*:\\s*\\w*$");
   private static final Pattern TYPE_CAST_POS =
       Pattern.compile("\\b(oclIsKindOf|oclIsTypeOf|oclAsType)\\s*\\(\\s*\\w*$");
+
+  // Annotation patterns
+  private static final Pattern AT_SEVERITY_PREFIX = Pattern.compile("@severity\\s+\\w*$");
+  // Matches '@severity ' (with trailing space) — triggers the severity-level list.
+  private static final Pattern AT_SEVERITY_SPACE = Pattern.compile("@severity\\s$");
+  // Matches a bare '@' or '@<partial>' that could be the start of an annotation keyword.
+  // Only fires when there is an 'inv … :' somewhere before the cursor on a prior line.
+  private static final Pattern AT_ANNOTATION_START = Pattern.compile("@\\w*$");
+  private static final Pattern INV_BEFORE_CURSOR = Pattern.compile("\\binv\\b[^:]*:");
+  // Detect already-present annotations in the constraint block before the cursor.
+  private static final Pattern HAS_SEVERITY = Pattern.compile("@severity\\s+\\w+");
+  private static final Pattern HAS_MESSAGE  = Pattern.compile("@message\\s+\"");
+  // Non-annotation, non-blank line — signals we are in the OCL body, not the annotation zone.
+  private static final Pattern ANNOTATION_LINE = Pattern.compile("^\\s*@(severity|message)\\b");
 
   // OCL# primitive type names.
   private static final List<String> PRIMITIVE_TYPES =
@@ -128,6 +150,69 @@ public class CompletionProvider {
       String documentText, Position cursor, DocumentAnalysis lastAnalysis) {
 
     String textBefore = textBefore(documentText, cursor);
+    String currentLine = textBefore.substring(textBefore.lastIndexOf('\n') + 1);
+
+    // -----------------------------------------------------------------------
+    // 'context ' (no '::' yet) → suggest all metamodel package names
+    // -----------------------------------------------------------------------
+    if (CONTEXT_NEEDS_PKG.matcher(currentLine).find()) {
+      List<CompletionItem> items = new ArrayList<>();
+      for (String pkgName : wrapper.getAvailableMetamodels()) {
+        CompletionItem item = new CompletionItem(pkgName);
+        item.setKind(CompletionItemKind.Module);
+        item.setDetail("Metamodel package");
+        items.add(item);
+      }
+      return items;
+    }
+
+    // -----------------------------------------------------------------------
+    // 'context Pkg::Class ' without 'inv' yet → only 'inv'
+    // -----------------------------------------------------------------------
+    if (CONTEXT_NEEDS_INV.matcher(currentLine).find()) {
+      CompletionItem inv = new CompletionItem("inv");
+      inv.setKind(CompletionItemKind.Keyword);
+      inv.setDetail("Introduce a named invariant");
+      inv.setInsertText("inv $1:\n  $0");
+      inv.setInsertTextFormat(InsertTextFormat.Snippet);
+      return List.of(inv);
+    }
+
+    // -----------------------------------------------------------------------
+    // Guard: never offer completions while the cursor is still on the
+    // 'context Pkg::Class inv name:' header line itself.
+    // -----------------------------------------------------------------------
+    if (currentLine.matches(".*\\binv\\s+\\w+\\s*:.*")) {
+      return List.of();
+    }
+
+    // -----------------------------------------------------------------------
+    // -2a. Blank line in the annotation zone (between 'inv …:' and the OCL body)
+    //      → offer @severity / @message. If both are already present, fall through
+    //        to body completions so the user can start writing the OCL expression.
+    // -----------------------------------------------------------------------
+    if (currentLine.isBlank() && isInAnnotationZone(textBefore)) {
+      List<CompletionItem> annItems = annotationKeywordItems(true, textBefore);
+      if (!annItems.isEmpty()) return annItems;
+      // Both annotations present — fall through to body completions below.
+    }
+
+    // -----------------------------------------------------------------------
+    // -2. '@' or '@<partial>' after an 'inv … :' → annotation keyword suggestions
+    //     insertText without '@' because the user already typed it.
+    // -----------------------------------------------------------------------
+    if (AT_ANNOTATION_START.matcher(textBefore).find()
+        && INV_BEFORE_CURSOR.matcher(textBefore).find()) {
+      return annotationKeywordItems(false, textBefore);
+    }
+
+    // -----------------------------------------------------------------------
+    // -1. '@severity ' (space just typed) or '@severity <partial>' → severity level completions
+    // -----------------------------------------------------------------------
+    if (AT_SEVERITY_SPACE.matcher(textBefore).find()
+        || AT_SEVERITY_PREFIX.matcher(textBefore).find()) {
+      return severityItems();
+    }
 
     // -----------------------------------------------------------------------
     // 0. Type-position: after "let x :" or inside oclIsKindOf/oclAsType/oclIsTypeOf(
@@ -195,6 +280,29 @@ public class CompletionProvider {
     // 5. Top-level: keywords + known package names
     // -----------------------------------------------------------------------
     return topLevelItems();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Annotation-zone detection
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Returns true when the cursor is in the annotation zone of a constraint — i.e. between the
+   * {@code inv …:} header and the first real OCL body line. Walking backward through the lines
+   * before the cursor, every non-blank line must be an {@code @severity} or {@code @message}
+   * annotation until we reach the {@code inv} header. Any other content means we are in the body.
+   */
+  private boolean isInAnnotationZone(String textBefore) {
+    String[] lines = textBefore.split("\n", -1);
+    // Start from the line just before the current (blank) line.
+    for (int i = lines.length - 2; i >= 0; i--) {
+      String line = lines[i];
+      if (line.isBlank()) continue;
+      if (INV_BEFORE_CURSOR.matcher(line).find()) return true;
+      if (ANNOTATION_LINE.matcher(line).find()) continue;
+      return false; // OCL body line — not in annotation zone
+    }
+    return false;
   }
 
   // ---------------------------------------------------------------------------
@@ -312,21 +420,92 @@ public class CompletionProvider {
   private List<CompletionItem> topLevelItems() {
     List<CompletionItem> items = new ArrayList<>();
 
-    // Keywords.
-    for (String kw : TOP_LEVEL_KEYWORDS) {
-      CompletionItem item = new CompletionItem(kw);
-      item.setKind(CompletionItemKind.Keyword);
-      items.add(item);
-    }
-
-    // All registered package names — useful as namespace prefixes (e.g. JavaMM::).
+    // ── Group 1: Metamodel packages ──────────────────────────────────────────
     for (String pkgName : wrapper.getAvailableMetamodels()) {
       CompletionItem item = new CompletionItem(pkgName);
       item.setKind(CompletionItemKind.Module);
-      item.setDetail("Metamodel package");
+      item.setDetail("Metamodel — add :: to list classes");
+      item.setSortText("1_" + pkgName);
       items.add(item);
     }
 
+    // ── Group 2: Keywords ────────────────────────────────────────────────────
+    for (String kw : List.of("self", "let", "in", "if", "then", "else", "endif",
+                              "not", "and", "or", "xor", "implies", "null")) {
+      CompletionItem item = new CompletionItem(kw);
+      item.setKind(CompletionItemKind.Keyword);
+      item.setSortText("2_" + kw);
+      items.add(item);
+    }
+
+    // ── Group 3: Boolean literals ────────────────────────────────────────────
+    for (String lit : List.of("true", "false")) {
+      CompletionItem item = new CompletionItem(lit);
+      item.setKind(CompletionItemKind.Value);
+      item.setDetail("Boolean literal");
+      item.setSortText("3_" + lit);
+      items.add(item);
+    }
+
+    // ── Group 4: Collection literals ─────────────────────────────────────────
+    for (String col : List.of("Set{}", "Bag{}", "Sequence{}", "OrderedSet{}")) {
+      CompletionItem item = new CompletionItem(col);
+      item.setKind(CompletionItemKind.Constructor);
+      item.setDetail("Collection literal");
+      item.setInsertText(col.replace("{}", "{$0}"));
+      item.setInsertTextFormat(InsertTextFormat.Snippet);
+      item.setSortText("4_" + col);
+      items.add(item);
+    }
+
+    return items;
+  }
+
+  private List<CompletionItem> annotationKeywordItems(boolean includeAt, String textBefore) {
+    // Extract only the text after the last 'inv …:' so we don't see annotations from
+    // earlier constraints in the same file.
+    String blockText = textBefore;
+    java.util.regex.Matcher invMatcher = INV_BEFORE_CURSOR.matcher(textBefore);
+    int lastInvEnd = 0;
+    while (invMatcher.find()) lastInvEnd = invMatcher.end();
+    if (lastInvEnd > 0) blockText = textBefore.substring(lastInvEnd);
+
+    boolean severityPresent = HAS_SEVERITY.matcher(blockText).find();
+    boolean messagePresent  = HAS_MESSAGE.matcher(blockText).find();
+
+    List<CompletionItem> items = new ArrayList<>();
+
+    if (!severityPresent) {
+      CompletionItem severity = new CompletionItem("@severity");
+      severity.setKind(CompletionItemKind.Keyword);
+      severity.setDetail("Set violation severity — type a space to choose level");
+      severity.setFilterText("@severity");
+      severity.setInsertText(includeAt ? "@severity" : "severity");
+      items.add(severity);
+    }
+
+    if (!messagePresent) {
+      CompletionItem message = new CompletionItem("@message");
+      message.setKind(CompletionItemKind.Keyword);
+      message.setDetail("Custom violation message — supports {self} and {self.attr}");
+      message.setFilterText("@message");
+      message.setInsertText(includeAt ? "@message \"$0\"" : "message \"$0\"");
+      message.setInsertTextFormat(InsertTextFormat.Snippet);
+      items.add(message);
+    }
+
+    return items;
+  }
+
+  private List<CompletionItem> severityItems() {
+    List<String> levels = List.of("CRITICAL", "WARNING", "MAJOR", "MINOR", "INFO");
+    List<CompletionItem> items = new ArrayList<>();
+    for (String level : levels) {
+      CompletionItem item = new CompletionItem(level);
+      item.setKind(CompletionItemKind.EnumMember);
+      item.setDetail("Severity level");
+      items.add(item);
+    }
     return items;
   }
 

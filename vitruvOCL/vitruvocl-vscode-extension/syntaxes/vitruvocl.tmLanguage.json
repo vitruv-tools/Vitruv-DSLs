@@ -7,6 +7,9 @@
             "include": "#comments"
         },
         {
+            "include": "#constraint-annotations"
+        },
+        {
             "include": "#package-block"
         },
         {
@@ -59,6 +62,25 @@
         }
     ],
     "repository": {
+        "constraint-annotations": {
+            "patterns": [
+                {
+                    "comment": "@severity CRITICAL — keyword in gold, value in lighter gold",
+                    "match": "(@severity)\\s+([A-Z]+)",
+                    "captures": {
+                        "1": { "name": "storage.type.annotation.vitruvocl" },
+                        "2": { "name": "storage.type.annotation.value.vitruvocl" }
+                    }
+                },
+                {
+                    "comment": "@message \"...\" — keyword in gold, string keeps its own color",
+                    "match": "(@message)\\b",
+                    "captures": {
+                        "1": { "name": "storage.type.annotation.vitruvocl" }
+                    }
+                }
+            ]
+        },
         "comments": {
             "patterns": [
                 {

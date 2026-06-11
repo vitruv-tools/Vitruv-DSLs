@@ -11,6 +11,8 @@ package tools.vitruv.dsls.vitruvOCL.lsp;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
@@ -87,6 +89,9 @@ public class DocumentAnalyzer {
     // Strip import declarations before parsing — the VitruvOCL grammar has no import rule.
     // We replace them with blank comments to preserve line numbers for diagnostics.
     documentText = stripImportLines(documentText);
+
+    // Pre-parse scan: flag @keyword typos with quick-fix suggestions before ANTLR runs.
+    checkAnnotationKeywordTypos(documentText, diagnostics);
 
     try {
       // -----------------------------------------------------------------------
@@ -182,6 +187,79 @@ public class DocumentAnalyzer {
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
+
+  // ---------------------------------------------------------------------------
+  // Annotation keyword typo detection
+  // ---------------------------------------------------------------------------
+
+  private static final Pattern AT_WORD = Pattern.compile("@(\\w+)");
+  private static final List<String> ANNOTATION_KEYWORDS = List.of("severity", "message");
+
+  /**
+   * Scans {@code text} for {@code @word} tokens that look like misspellings of
+   * {@code @severity} or {@code @message} and appends a diagnostic with a quick-fix suggestion.
+   */
+  private static void checkAnnotationKeywordTypos(String text, List<Diagnostic> diagnostics) {
+    String[] lines = text.split("\n", -1);
+    for (int lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+      Matcher m = AT_WORD.matcher(lines[lineIdx]);
+      while (m.find()) {
+        String word = m.group(1);
+        // Exact match — valid annotation keyword, skip.
+        if (ANNOTATION_KEYWORDS.contains(word)) continue;
+
+        // Find the closest known annotation keyword.
+        String bestKeyword = null;
+        int bestDist = Integer.MAX_VALUE;
+        for (String kw : ANNOTATION_KEYWORDS) {
+          int dist = damerauLevenshtein(word.toLowerCase(), kw);
+          if (dist < bestDist) { bestDist = dist; bestKeyword = kw; }
+        }
+
+        // Only flag if within edit distance 3 (generous — covers @Severity, @severit, @sev, @msg).
+        int threshold = word.length() <= 3 ? 1 : word.length() <= 6 ? 2 : 3;
+        if (bestKeyword == null || bestDist > threshold) continue;
+
+        int startCol = m.start(); // position of '@'
+        int endCol   = m.end();
+        String suggestion = "@" + bestKeyword;
+        String badAnnotation = "@" + word;
+
+        Diagnostic d = new Diagnostic(
+            new Range(new Position(lineIdx, startCol), new Position(lineIdx, endCol)),
+            "Unknown annotation '" + badAnnotation + "'. Did you mean '" + suggestion + "'?",
+            DiagnosticSeverity.Error,
+            "vitruvOCL");
+        d.setData(suggestion); // picked up by the code-action handler for the quick fix
+        diagnostics.add(d);
+        System.err.printf(
+            "[OCL-LS] DIAG annotation-typo L%d:C%d  %s → %s%n",
+            lineIdx, startCol, badAnnotation, suggestion);
+      }
+    }
+  }
+
+  private static int damerauLevenshtein(String a, String b) {
+    if (a.equals(b)) return 0;
+    if (a.isEmpty()) return b.length();
+    if (b.isEmpty()) return a.length();
+    int la = a.length(), lb = b.length();
+    int[][] d = new int[la + 1][lb + 1];
+    for (int i = 0; i <= la; i++) d[i][0] = i;
+    for (int j = 0; j <= lb; j++) d[0][j] = j;
+    for (int i = 1; i <= la; i++) {
+      for (int j = 1; j <= lb; j++) {
+        int cost = a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1;
+        d[i][j] = Math.min(d[i-1][j] + 1, Math.min(d[i][j-1] + 1, d[i-1][j-1] + cost));
+        if (i > 1 && j > 1
+            && a.charAt(i-1) == b.charAt(j-2)
+            && a.charAt(i-2) == b.charAt(j-1)) {
+          d[i][j] = Math.min(d[i][j], d[i-2][j-2] + cost);
+        }
+      }
+    }
+    return d[la][lb];
+  }
 
   /**
    * Returns line ranges (0-based, inclusive) of {@code invCS} nodes that are almost certainly

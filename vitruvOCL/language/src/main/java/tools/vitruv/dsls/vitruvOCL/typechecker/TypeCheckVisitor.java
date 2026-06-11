@@ -331,6 +331,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitInvCS(VitruvOCLParser.InvCSContext ctx) {
+    // Validate annotations before type-checking the body
+    for (VitruvOCLParser.AnnotationCSContext ann : ctx.annotationCS()) {
+      visit(ann);
+    }
+
     List<VitruvOCLParser.SpecificationCSContext> specs = ctx.specificationCS();
     Type resultType = Type.BOOLEAN;
 
@@ -368,6 +373,30 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
     nodeTypes.put(ctx, resultType);
     return resultType;
+  }
+
+  // ==================== Annotations ====================
+
+  private static final java.util.Set<String> VALID_SEVERITIES =
+      java.util.Set.of("CRITICAL", "WARNING", "MAJOR", "MINOR", "INFO");
+
+  @Override
+  public Type visitSeverityAnnotation(VitruvOCLParser.SeverityAnnotationContext ctx) {
+    String val = ctx.severityValue.getText();
+    if (!VALID_SEVERITIES.contains(val)) {
+      errors.add(
+          ctx.getStart().getLine(),
+          ctx.getStart().getCharPositionInLine(),
+          "Unknown severity level '" + val + "'. Valid values: CRITICAL, WARNING, MAJOR, MINOR, INFO",
+          ErrorSeverity.ERROR,
+          "type-checker");
+    }
+    return Type.BOOLEAN;
+  }
+
+  @Override
+  public Type visitMessageAnnotation(VitruvOCLParser.MessageAnnotationContext ctx) {
+    return Type.BOOLEAN;
   }
 
   // ==================== Type Expressions ====================

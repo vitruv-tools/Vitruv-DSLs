@@ -67,6 +67,12 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    */
   private final Map<String, Set<String>> correspondenceUriMap = new HashMap<>();
 
+  /**
+   * Maps a bidirectional key {@code "leftUri|rightUri"} to the set of tags on that correspondence.
+   * Both directions are stored so lookups are O(1) regardless of order.
+   */
+  private final Map<String, Set<String>> correspondenceTagMap = new HashMap<>();
+
   /** Ordered list of context-level (root) EObjects for index-based lookup from evaluator. */
   private final List<EObject> contextObjects = new ArrayList<>();
 
@@ -658,12 +664,24 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
       NodeList corrNodes = doc.getElementsByTagName("correspondences");
       for (int i = 0; i < corrNodes.getLength(); i++) {
         Element corrEl = (Element) corrNodes.item(i);
-        List<String> lefts = collectHrefs(corrEl, "leftEObjects", baseUri);
-        List<String> rights = collectHrefs(corrEl, "rightEObjects", baseUri);
+        String tag = corrEl.getAttribute("tag");
+        // Support two XMI serialisation styles:
+        //   (a) inline attributes:  <correspondences leftEObjects="..." rightEObjects="..."/>
+        //   (b) child elements:     <correspondences><leftEObjects href="..."/></correspondences>
+        List<String> lefts = collectHrefsFromAttr(corrEl, "leftEObjects", baseUri);
+        if (lefts.isEmpty()) lefts = collectHrefsFromChildElements(corrEl, "leftEObjects", baseUri);
+        List<String> rights = collectHrefsFromAttr(corrEl, "rightEObjects", baseUri);
+        if (rights.isEmpty()) rights = collectHrefsFromChildElements(corrEl, "rightEObjects", baseUri);
         for (String l : lefts) {
           for (String r : rights) {
             correspondenceUriMap.computeIfAbsent(l, k -> new LinkedHashSet<>()).add(r);
             correspondenceUriMap.computeIfAbsent(r, k -> new LinkedHashSet<>()).add(l);
+            if (tag != null && !tag.isEmpty()) {
+              correspondenceTagMap
+                  .computeIfAbsent(l + "|" + r, k -> new LinkedHashSet<>()).add(tag);
+              correspondenceTagMap
+                  .computeIfAbsent(r + "|" + l, k -> new LinkedHashSet<>()).add(tag);
+            }
           }
         }
       }
@@ -674,16 +692,36 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
     }
   }
 
-  /** Collects all href strings from child elements with the given tag, resolved to absolute URIs. */
-  private List<String> collectHrefs(Element parent, String childTag, URI baseUri) {
+  /** Collects href values from child elements (format: {@code <leftEObjects href="..."/>}). */
+  private List<String> collectHrefsFromChildElements(Element parent, String childTag, URI baseUri) {
     List<String> result = new ArrayList<>();
     NodeList children = parent.getElementsByTagName(childTag);
     for (int i = 0; i < children.getLength(); i++) {
       Element child = (Element) children.item(i);
       String href = child.getAttribute("href");
       if (href != null && !href.isEmpty()) {
-        // Resolve relative href against the correspondence file's URI
         URI resolved = URI.createURI(href).resolve(baseUri);
+        result.add(resolved.toString());
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Collects href values from a space-separated attribute on a DOM element.
+   *
+   * <p>The Vitruvius correspondence XMI format stores {@code leftEObjects} and {@code
+   * rightEObjects} as space-separated attribute values (one URI per token), not as child elements.
+   */
+  private List<String> collectHrefsFromAttr(Element parent, String attrName, URI baseUri) {
+    List<String> result = new ArrayList<>();
+    String attrValue = parent.getAttribute(attrName);
+    if (attrValue == null || attrValue.isEmpty()) {
+      return result;
+    }
+    for (String token : attrValue.trim().split("\\s+")) {
+      if (!token.isEmpty()) {
+        URI resolved = URI.createURI(token).resolve(baseUri);
         result.add(resolved.toString());
       }
     }
@@ -717,9 +755,12 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
 
   @Override
   public boolean correspondenceHasTag(EObject obj1, EObject obj2, String tag) {
-    // Tag support is not needed for the ~ operator (which is tag-agnostic).
-    // DOM-loaded correspondences do not carry tag metadata in the current implementation.
-    return false;
+    URI uri1 = EcoreUtil.getURI(obj1);
+    URI uri2 = EcoreUtil.getURI(obj2);
+    if (uri1 == null || uri2 == null) return false;
+    String key = uri1.toString() + "|" + uri2.toString();
+    Set<String> tags = correspondenceTagMap.get(key);
+    return tags != null && tags.contains(tag);
   }
 
   /**

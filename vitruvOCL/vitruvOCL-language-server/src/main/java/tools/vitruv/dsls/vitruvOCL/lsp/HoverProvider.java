@@ -74,10 +74,31 @@ public class HoverProvider {
     if (node == null) return null;
 
     // ------------------------------------------------------------------
-    // 1. Known operation keyword / method name
+    // 1. Annotation keywords (@severity / @message)
     // ------------------------------------------------------------------
     if (node instanceof TerminalNode terminal) {
       String tokenText = terminal.getSymbol().getText();
+      if ("@severity".equals(tokenText)) {
+        return buildAnnotationHover(
+            "@severity",
+            "Sets the severity of a constraint violation. Placed after the invariant `:` before the body.",
+            "**Values:** `CRITICAL` | `WARNING` *(default)* | `MAJOR` | `MINOR` | `INFO`",
+            "@severity CRITICAL\nself.radius > 0");
+      }
+      if ("@message".equals(tokenText)) {
+        return buildAnnotationHover(
+            "@message",
+            "Custom violation message. Supports `{self}` and `{self.attr}` template variables.",
+            "**Template variables:** `{self}` — the context object · `{self.attr}` — an attribute value",
+            "@message \"Brake disk {self.name} has no radius defined\"");
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // 2. Known operation keyword / method name
+    // ------------------------------------------------------------------
+    if (node instanceof TerminalNode terminal2) {
+      String tokenText = terminal2.getSymbol().getText();
       Optional<OperationDoc> doc = OclOperationDocs.lookup(tokenText);
       if (doc.isPresent()) return buildOperationHover(doc.get());
     }
@@ -253,6 +274,16 @@ public class HoverProvider {
   }
 
   // ---------------------------------------------------------------------------
+
+  private static Hover buildAnnotationHover(
+      String keyword, String description, String details, String example) {
+    String md =
+        "### `" + keyword + "`\n\n"
+            + description + "\n\n"
+            + details + "\n\n"
+            + "**Example:**\n```ocl\n" + example + "\n```";
+    return hover(md);
+  }
 
   private static Hover buildDiagnosticHover(List<Diagnostic> hits) {
     StringBuilder sb = new StringBuilder();

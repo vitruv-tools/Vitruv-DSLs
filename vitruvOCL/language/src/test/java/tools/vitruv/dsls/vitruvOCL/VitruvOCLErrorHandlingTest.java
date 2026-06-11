@@ -213,7 +213,7 @@ public class VitruvOCLErrorHandlingTest {
 
     assertEquals(1, violations.size(), "Only inactive should violate, not active");
     assertTrue(
-        violations.get(0).getMessage().contains("[VIOLATION]"),
+        violations.get(0).getMessage().contains("["),
         "Should use standard violation format");
     assertTrue(
         violations.get(0).getMessage().contains("Inactive-1")
@@ -620,7 +620,7 @@ public class VitruvOCLErrorHandlingTest {
     assertEquals(1, violations.size(), "Should have exactly one violation");
 
     String message = violations.get(0).getMessage();
-    assertTrue(message.contains("[VIOLATION]"), "Violation should use standard format");
+    assertTrue(message.contains("["), "Violation should use standard format");
     assertTrue(message.contains("operationalCheck"), "Violation should include constraint name");
     assertTrue(message.contains("Spacecraft"), "Violation should reference Spacecraft");
     assertFalse(

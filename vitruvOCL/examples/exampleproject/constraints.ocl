@@ -1,17 +1,25 @@
 
 context family::Member inv selectTildenotEmptyForFather:
+  @severity CRITICAL
+  @message "Homer must have at least one corresponding person"
   self.firstName == "Homer" implies
     persons::Person.allInstances().select(~).notEmpty()
 
 context family::Member inv selectTildesizeOneForFather:
+  @severity CRITICAL
+  @message "Homer must have exactly one corresponding person"
   self.firstName == "Homer" implies
     persons::Person.allInstances().select(~).size() == 1
 
 context family::Member inv selectTildeemptyForDaughter:
+  @severity WARNING
+  @message "Lisa must not have any corresponding persons"
   self.firstName == "Lisa" implies
     persons::Person.allInstances().select(~).isEmpty()
 
 context family::Member inv selectTildesizeZeroForDaughter:
+  @severity WARNING
+  @message "Lisa must have zero corresponding persons"
   self.firstName == "Lisa" implies
     persons::Person.allInstances().select(~).size() == 0
 
@@ -20,25 +28,37 @@ context family::Member inv selectTildesizeZeroForDaughter:
 -- ============================================================
 
 context family::Member inv selectTildeTagHusbandnotEmpty:
+  @severity MAJOR
+  @message "Homer must have at least one correspondent tagged 'Husband'"
   self.firstName == "Homer" implies
     persons::Person.allInstances().select(~, Tag = "Husband").notEmpty()
 
 context family::Member inv selectTildeTagHusbandsizeOne:
+  @severity MAJOR
+  @message "Homer must have exactly one correspondent tagged 'Husband'"
   self.firstName == "Homer" implies
     persons::Person.allInstances().select(~, Tag = "Husband").size() == 1
 
 context family::Member inv selectTildeTagWifeemptyForFather:
+  @severity MINOR
+  @message "Homer must have no correspondents tagged 'Wife'"
   self.firstName == "Homer" implies
     persons::Person.allInstances().select(~, Tag = "Wife").isEmpty()
 
 context family::Member inv selectTildeTagSonsizeOne:
+  @severity MAJOR
+  @message "Bart must have exactly one correspondent tagged 'Son'"
   self.firstName == "Bart" implies
     persons::Person.allInstances().select(~, Tag = "Son").size() == 1
 
 context family::Member inv selectTildeTagNonExistentempty:
+  @severity INFO
+  @message "No member may have a correspondent tagged 'NoSuchTag'"
   persons::Person.allInstances().select(~, Tag = "NoSuchTag").isEmpty()
 
 context family::Member inv selectTildeTagWifenotEmptyforMother:
+  @severity MAJOR
+  @message "Marge must have at least one correspondent tagged 'Wife'"
   self.firstName == "Marge" implies
     persons::Person.allInstances().select(~, Tag = "Wife").notEmpty()
 
@@ -47,22 +67,32 @@ context family::Member inv selectTildeTagWifenotEmptyforMother:
 -- ============================================================
 
 context family::Member inv selectTildeTypeMalesizeOneForFather:
+  @severity MAJOR
+  @message "Homer must have exactly one corresponding Male person"
   self.firstName == "Homer" implies
     persons::Person.allInstances().select(~, Type = persons::Male).size() == 1
 
 context family::Member inv selectTildeTypeFemaleemptyForFather:
+  @severity MINOR
+  @message "Homer must have no corresponding Female persons"
   self.firstName == "Homer" implies
     persons::Person.allInstances().select(~, Type = persons::Female).isEmpty()
 
 context family::Member inv selectTildeTypeFemalesizeOneForMother:
+  @severity MAJOR
+  @message "Marge must have exactly one corresponding Female person"
   self.firstName == "Marge" implies
     persons::Person.allInstances().select(~, Type = persons::Female).size() == 1
 
 context family::Member inv selectTildeTypeMaleemptyForMother:
+  @severity MINOR
+  @message "Marge must have no corresponding Male persons"
   self.firstName == "Marge" implies
     persons::Person.allInstances().select(~, Type = persons::Male).isEmpty()
 
 context family::Member inv selectTildeTypePersonsizeOne:
+  @severity MAJOR
+  @message "Homer must have exactly one corresponding Person"
   self.firstName == "Homer" implies
     persons::Person.allInstances().select(~, Type = persons::Person).size() == 1
 
@@ -71,26 +101,36 @@ context family::Member inv selectTildeTypePersonsizeOne:
 -- ============================================================
 
 context family::Member inv selectTildeTypeMaleTagHusbandsizeOneForFather:
+  @severity CRITICAL
+  @message "Homer must have exactly one Male correspondent tagged 'Husband'"
   self.firstName == "Homer" implies
     persons::Person.allInstances()
       .select(~, Type = persons::Male, Tag = "Husband").size() == 1
 
 context family::Member inv selectTildeTypeFemaleTagHusbandempty:
+  @severity MINOR
+  @message "Homer must have no Female correspondents tagged 'Husband'"
   self.firstName == "Homer" implies
     persons::Person.allInstances()
       .select(~, Type = persons::Female, Tag = "Husband").isEmpty()
 
 context family::Member inv selectTildeTypeMaleTagWifeempty:
+  @severity MINOR
+  @message "Homer must have no Male correspondents tagged 'Wife'"
   self.firstName == "Homer" implies
     persons::Person.allInstances()
       .select(~, Type = persons::Male, Tag = "Wife").isEmpty()
 
 context family::Member inv selectTildeTagFirsttypeSecond:
+  @severity MAJOR
+  @message "Bart must have exactly one Male correspondent tagged 'Son'"
   self.firstName == "Bart" implies
     persons::Person.allInstances()
       .select(~, Tag = "Son", Type = persons::Male).size() == 1
 
 context family::Member inv selectTildeTypeFemaleTagWifesizeOneForMother:
+  @severity CRITICAL
+  @message "Marge must have exactly one Female correspondent tagged 'Wife'"
   self.firstName == "Marge" implies
     persons::Person.allInstances()
       .select(~, Type = persons::Female, Tag = "Wife").size() == 1
@@ -100,14 +140,20 @@ context family::Member inv selectTildeTypeFemaleTagWifesizeOneForMother:
 -- ============================================================
 
 context family::Member inv rejectTildesizeThree:
+  @severity MAJOR
+  @message "Homer's non-corresponding persons must number exactly three"
   self.firstName == "Homer" implies
     persons::Person.allInstances().reject(~).size() == 3
 
 context family::Member inv rejectTildenotEmpty:
+  @severity INFO
+  @message "Homer must have at least one non-corresponding person"
   self.firstName == "Homer" implies
     persons::Person.allInstances().reject(~).notEmpty()
 
 context family::Member inv rejectTildesizeFourForDaughter:
+  @severity MAJOR
+  @message "Lisa must have four non-corresponding persons (all of them)"
   self.firstName == "Lisa" implies
     persons::Person.allInstances().reject(~).size() == 4
 
@@ -116,14 +162,20 @@ context family::Member inv rejectTildesizeFourForDaughter:
 -- ============================================================
 
 context family::Member inv rejectTildeTagHusbandsizeThree:
+  @severity MAJOR
+  @message "Homer must have three persons not tagged 'Husband' as correspondents"
   self.firstName == "Homer" implies
     persons::Person.allInstances().reject(~, Tag = "Husband").size() == 3
 
 context family::Member inv rejectTildeTagWifesizeFourForFather:
+  @severity MINOR
+  @message "Homer must have four persons not tagged 'Wife' as correspondents"
   self.firstName == "Homer" implies
     persons::Person.allInstances().reject(~, Tag = "Wife").size() == 4
 
 context family::Member inv rejectTildeTagWifesizeThreeForMother:
+  @severity MAJOR
+  @message "Marge must have three persons not tagged 'Wife' as correspondents"
   self.firstName == "Marge" implies
     persons::Person.allInstances().reject(~, Tag = "Wife").size() == 3
 
@@ -132,14 +184,20 @@ context family::Member inv rejectTildeTagWifesizeThreeForMother:
 -- ============================================================
 
 context family::Member inv rejectTildeTypeMalesizeThreeForFather:
+  @severity MAJOR
+  @message "Homer must have three non-Male correspondents"
   self.firstName == "Homer" implies
     persons::Person.allInstances().reject(~, Type = persons::Male).size() == 3
 
 context family::Member inv rejectTildeTypeFemalesizeFourForFather:
+  @severity MINOR
+  @message "Homer must have four non-Female correspondents"
   self.firstName == "Homer" implies
     persons::Person.allInstances().reject(~, Type = persons::Female).size() == 4
 
 context family::Member inv rejectTildeTypeFemalesizeThreeForMother:
+  @severity MAJOR
+  @message "Marge must have three non-Female correspondents"
   self.firstName == "Marge" implies
     persons::Person.allInstances().reject(~, Type = persons::Female).size() == 3
 
@@ -148,16 +206,22 @@ context family::Member inv rejectTildeTypeFemalesizeThreeForMother:
 -- ============================================================
 
 context family::Member inv rejectTildeTypeMaleTagHusbandsizeThreeForFather:
+  @severity MAJOR
+  @message "Homer must have three persons who are not Male correspondents tagged 'Husband'"
   self.firstName == "Homer" implies
     persons::Person.allInstances()
       .reject(~, Type = persons::Male, Tag = "Husband").size() == 3
 
 context family::Member inv rejectTildeTypeFemaleTagHusbandsizeFourForFather:
+  @severity MINOR
+  @message "Homer must have four persons who are not Female correspondents tagged 'Husband'"
   self.firstName == "Homer" implies
     persons::Person.allInstances()
       .reject(~, Type = persons::Female, Tag = "Husband").size() == 4
 
 context family::Member inv rejectTildeTypeMaleTagWifesizeFourForFather:
+  @severity MINOR
+  @message "Homer must have four persons who are not Male correspondents tagged 'Wife'"
   self.firstName == "Homer" implies
     persons::Person.allInstances()
       .reject(~, Type = persons::Male, Tag = "Wife").size() == 4
@@ -167,10 +231,14 @@ context family::Member inv rejectTildeTypeMaleTagWifesizeFourForFather:
 -- ============================================================
 
 context family::Member inv existsTildetrueForFather:
+  @severity CRITICAL
+  @message "Homer must have at least one corresponding person"
   self.firstName == "Homer" implies
     persons::Person.allInstances().exists(~)
 
 context family::Member inv existsTildefalseForDaughter:
+  @severity WARNING
+  @message "Lisa must not have any corresponding persons"
   self.firstName == "Lisa" implies
     not persons::Person.allInstances().exists(~)
 
@@ -179,21 +247,31 @@ context family::Member inv existsTildefalseForDaughter:
 -- ============================================================
 
 context family::Member inv existsTildeTagHusbandtrueForFather:
+  @severity CRITICAL
+  @message "Homer must have a correspondent tagged 'Husband'"
   self.firstName == "Homer" implies
     persons::Person.allInstances().exists(~, Tag = "Husband")
 
 context family::Member inv existsTildeTagWifefalseForFather:
+  @severity MINOR
+  @message "Homer must not have a correspondent tagged 'Wife'"
   self.firstName == "Homer" implies
     not persons::Person.allInstances().exists(~, Tag = "Wife")
 
 context family::Member inv existsTildeTagSontrueForSon:
+  @severity CRITICAL
+  @message "Bart must have a correspondent tagged 'Son'"
   self.firstName == "Bart" implies
     persons::Person.allInstances().exists(~, Tag = "Son")
 
 context family::Member inv existsTildeTagNonExistentfalse:
+  @severity INFO
+  @message "No member may have a correspondent tagged 'NoSuchTag'"
   not persons::Person.allInstances().exists(~, Tag = "NoSuchTag")
 
 context family::Member inv existsTildeTagWifetrueForMother:
+  @severity CRITICAL
+  @message "Marge must have a correspondent tagged 'Wife'"
   self.firstName == "Marge" implies
     persons::Person.allInstances().exists(~, Tag = "Wife")
 
@@ -202,19 +280,27 @@ context family::Member inv existsTildeTagWifetrueForMother:
 -- ============================================================
 
 context family::Member inv existsTildeTypeMaletrueForFather:
+  @severity CRITICAL
+  @message "Homer must have a corresponding Male person"
   self.firstName == "Homer" implies
     persons::Person.allInstances().exists(~, Type = persons::Male)
 
 context family::Member inv existsTildeTypeFemalefalseForFather:
+  @severity MINOR
+  @message "Homer must not have a corresponding Female person"
   self.firstName == "Homer" implies
     not persons::Person.allInstances().exists(~, Type = persons::Female)
 
 context family::Member inv existsTildeTypeFemaletrueForMother:
+  @severity CRITICAL
+  @message "Marge must have a corresponding Female person"
   self.firstName == "Marge" implies
     persons::Person.allInstances().exists(~, Type = persons::Female)
 
 context family::Member inv existsTildeTypeMalefalseForMother:
-  self.firstName == "Marge" and 
+  @severity WARNING
+  @message "{self} violates: a Marge-named member must not have a Male correspondent — but this constraint also fires for non-Marge members (intentional violation demo)"
+  self.firstName == "Marge" and
   not persons::Person.allInstances().exists(~, Type = persons::Male)
 
 -- ============================================================
@@ -222,21 +308,29 @@ context family::Member inv existsTildeTypeMalefalseForMother:
 -- ============================================================
 
 context family::Member inv existsTildeTypeMaleTagHusbandtrueForFather:
+  @severity CRITICAL
+  @message "Homer must have a Male correspondent tagged 'Husband'"
   self.firstName == "Homer" implies
     persons::Person.allInstances()
       .exists(~, Type = persons::Male, Tag = "Husband")
 
 context family::Member inv existsTildeTypeFemaleTagHusbandfalse:
+  @severity MINOR
+  @message "Homer must not have a Female correspondent tagged 'Husband'"
   self.firstName == "Homer" implies
     not persons::Person.allInstances()
       .exists(~, Type = persons::Female, Tag = "Husband")
 
 context family::Member inv existsTildeTypeMaleTagWifefalse:
+  @severity MINOR
+  @message "Homer must not have a Male correspondent tagged 'Wife'"
   self.firstName == "Homer" implies
     not persons::Person.allInstances()
       .exists(~, Type = persons::Male, Tag = "Wife")
 
 context family::Member inv existsTildeTypeFemaleTagWifetrueForMother:
+  @severity CRITICAL
+  @message "Marge must have a Female correspondent tagged 'Wife'"
   self.firstName == "Marge" implies
     persons::Person.allInstances()
       .exists(~, Type = persons::Female, Tag = "Wife")
@@ -246,14 +340,20 @@ context family::Member inv existsTildeTypeFemaleTagWifetrueForMother:
 -- ============================================================
 
 context family::Member inv selectTildeTagthenSize:
+  @severity MAJOR
+  @message "Homer must have exactly one correspondent tagged 'Husband'"
   self.firstName == "Homer" implies
     persons::Person.allInstances().select(~, Tag = "Husband").size() == 1
 
 context family::Member inv selectTildeTypethenNotEmpty:
+  @severity MAJOR
+  @message "Homer must have at least one corresponding Male person"
   self.firstName == "Homer" implies
     persons::Person.allInstances().select(~, Type = persons::Male).notEmpty()
 
 context family::Member inv rejectTildeTagthenSize:
+  @severity MAJOR
+  @message "Homer must have exactly three persons not tagged 'Husband' as correspondents"
   self.firstName == "Homer" implies
     persons::Person.allInstances().reject(~, Tag = "Husband").size() == 3
 
@@ -262,17 +362,23 @@ context family::Member inv rejectTildeTagthenSize:
 -- ============================================================
 
 context family::Member inv existsTildeimpliesselectNotEmpty:
+  @severity CRITICAL
+  @message "{self} violates: if any correspondent exists, select(~) must be non-empty"
   persons::Person.allInstances().exists(~)
     implies
   persons::Person.allInstances().select(~).notEmpty()
 
 context family::Member inv existsTildeTagandselectTildeTagSize:
+  @severity MAJOR
+  @message "Homer must have a 'Husband'-tagged correspondent and exactly one such in select"
   self.firstName == "Homer" implies
     (persons::Person.allInstances().exists(~, Tag = "Husband")
       and
     persons::Person.allInstances().select(~, Tag = "Husband").size() == 1)
 
 context family::Member inv selectTildethenCollect:
+  @severity MAJOR
+  @message "Homer's corresponding persons must have non-empty fullName values"
   self.firstName == "Homer" implies
     persons::Person.allInstances().select(~).collect(p | p.fullName).notEmpty()
 
@@ -281,21 +387,30 @@ context family::Member inv selectTildethenCollect:
 -- ============================================================
 
 context family::Member inv selectAndRejectSizeSumToTotal:
+  @severity CRITICAL
+  @message "{self}: select(~).size() + reject(~).size() must equal total persons count"
   persons::Person.allInstances().select(~).size()
     + persons::Person.allInstances().reject(~).size()
     == persons::Person.allInstances().size()
 
 context family::Member inv existsEqualsSelectNotEmpty:
+  @severity CRITICAL
+  @message "{self}: exists(~) must be consistent with select(~).notEmpty()"
   persons::Person.allInstances().exists(~)
     == persons::Person.allInstances().select(~).notEmpty()
 
 context family::Member inv selectTagSizeconsistentWithExistsTag:
+  @severity MAJOR
+  @message "Homer: select(~, Tag='Husband').size()==1 must be consistent with exists(~, Tag='Husband')"
   self.firstName == "Homer" implies
     (persons::Person.allInstances().select(~, Tag = "Husband").size() == 1
       and
     persons::Person.allInstances().exists(~, Tag = "Husband"))
 
 context family::Member inv selectAndRejectTagSumToTotal:
+  @severity CRITICAL
+  @message "{self}: select(~, Tag='Husband').size() + reject(~, Tag='Husband').size() must equal total persons count"
   persons::Person.allInstances().select(~, Tag = "Husband").size()
     + persons::Person.allInstances().reject(~, Tag = "Husband").size()
     == persons::Person.allInstances().size()
+

@@ -34,10 +34,19 @@ classifierContextCS
 
 invCS
 :
-    'inv' (ID ('(' specificationCS ')')?)? ':' specificationCS
+    'inv' (ID ('(' specificationCS ')')?)? ':' annotationCS* specificationCS
+;
+
+// Constraint annotations (@severity / @message) placed between ':' and the body expression.
+annotationCS
+:
+    AT_SEVERITY severityValue=ID   # severityAnnotation
+    | AT_MESSAGE message=STRING    # messageAnnotation
 ;
 
 CONTEXT: 'context';
+AT_SEVERITY: '@severity';
+AT_MESSAGE: '@message';
 
 // ============================================================================
 // TYPE SYSTEM

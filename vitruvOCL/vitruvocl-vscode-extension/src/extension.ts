@@ -106,6 +106,7 @@ export function activate(context: vscode.ExtensionContext) {
             if (editor && editor.document === event.document && editor.document.languageId === 'vitruvocl') {
                 updateGutterIcons(editor);
                 updateInlineErrors(editor);
+                triggerSuggestAfterInvNewline(editor, event);
             }
         })
     );
@@ -790,6 +791,51 @@ function showSummaryResult(passed: number, failed: number, constraints: Constrai
         vscode.window.showInformationMessage(`✅ All ${total} constraints passed!`);
     } else {
         vscode.window.showWarningMessage(`❌ ${failed}/${total} constraints failed`);
+    }
+}
+
+/**
+ * After the user presses Enter on an 'inv ...:' line, automatically opens
+ * the suggestion widget on the new blank/indented line below.
+ */
+function triggerSuggestAfterInvNewline(
+    editor: vscode.TextEditor,
+    event: vscode.TextDocumentChangeEvent
+): void {
+    for (const change of event.contentChanges) {
+        if (!change.text.includes('\n')) continue;
+
+        const newLine = change.range.start.line + 1;
+        const doc = editor.document;
+        if (newLine >= doc.lineCount) continue;
+
+        // The new line must be empty / whitespace only.
+        const newLineText = doc.lineAt(newLine).text;
+        if (newLineText.trim() !== '') continue;
+
+        // Walk upward from the new line: only suggest annotations when every non-blank
+        // line between here and the 'inv ...:' header is itself an annotation line.
+        // The moment we hit any other content (OCL body), we stop.
+        let inAnnotationZone = false;
+        for (let i = newLine - 1; i >= 0; i--) {
+            const lineText = doc.lineAt(i).text;
+            const trimmed = lineText.trim();
+            if (trimmed === '') continue; // blank lines are fine
+            if (/\binv\s+\w+\s*:/.test(lineText)) {
+                inAnnotationZone = true; // reached the inv header — we're in the zone
+                break;
+            }
+            if (/^\s*@(severity|message)\b/.test(lineText)) continue; // other annotation — ok
+            break; // anything else means we're in the OCL body
+        }
+        if (!inAnnotationZone) continue;
+
+        // Move cursor to end of indentation and fire suggest.
+        const indentEnd = newLineText.length;
+        const pos = new vscode.Position(newLine, indentEnd);
+        editor.selection = new vscode.Selection(pos, pos);
+        vscode.commands.executeCommand('editor.action.triggerSuggest');
+        break;
     }
 }
 
