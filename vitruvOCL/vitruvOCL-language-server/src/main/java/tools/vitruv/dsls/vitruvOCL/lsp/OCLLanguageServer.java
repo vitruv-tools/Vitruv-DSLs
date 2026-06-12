@@ -167,6 +167,10 @@ public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
       scanForEcore(uriToPath(params.getRootUri()), ecoreFiles);
     }
 
+    // Before loading: register platform:/plugin/ → local-file mappings so cross-ecore
+    // inheritance (e.g. PCMRandomVariable → stoex::RandomVariable) resolves automatically.
+    wrapper.registerWorkspaceEcoresForPlatformResolution(ecoreFiles);
+
     for (Path ecoreFile : ecoreFiles) {
       try {
         wrapper.loadMetamodel(ecoreFile);
