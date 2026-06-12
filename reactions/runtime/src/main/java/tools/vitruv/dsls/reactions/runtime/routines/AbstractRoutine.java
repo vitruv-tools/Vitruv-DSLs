@@ -17,6 +17,7 @@ import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.xbase.lib.Exceptions;
 import org.eclipse.xtext.xbase.lib.Extension;
+import tools.vitruv.change.composite.description.AnnotationSource;
 import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView;
 import tools.vitruv.dsls.reactions.runtime.correspondence.ReactionsCorrespondence;
 import tools.vitruv.dsls.reactions.runtime.helper.PersistenceHelper;
@@ -273,6 +274,17 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
     protected Update(ReactionExecutionState executionState) {
       super(executionState.getCorrespondenceModel());
       this.executionState = executionState;
+    }
+
+    /**
+     * Returns the annotations carried by the triggering change.
+     *
+     * <p>Declared here rather than relying on {@code @Extension} on {@code executionState}
+     * because Xbase resolves extension methods only from fields declared on the compiled class,
+     * not from inherited ones. A concrete method is always in scope.
+     */
+    protected AnnotationSource changeAnnotations() {
+      return executionState.changeAnnotations();
     }
 
     /**
