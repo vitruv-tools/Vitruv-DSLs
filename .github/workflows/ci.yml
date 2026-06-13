@@ -90,7 +90,9 @@ jobs:
 
     - name: Package extension
       working-directory: reactions/vscode-plugin
-      run: npx @vscode/vsce package
+      env:
+        REACTIONS_SKIP_LSP_JAR_BUILD: "true"
+      run: npx --yes @vscode/vsce@3.9.1 package
 
     - name: Stage build results
       run: mkdir staging-${{ matrix.os }} && cp reactions/vscode-plugin/*.vsix staging-${{ matrix.os }}/;
