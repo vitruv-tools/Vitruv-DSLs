@@ -4,7 +4,12 @@
 package tools.vitruv.dsls.reactions.ide
 
 import com.google.inject.Guice
+import java.net.URL
+import javax.xml.parsers.DocumentBuilderFactory
+import org.apache.logging.log4j.LogManager
+import org.eclipse.emf.ecore.EPackage
 import org.eclipse.xtext.util.Modules2
+import org.w3c.dom.Element
 import tools.vitruv.dsls.reactions.ReactionsLanguageRuntimeModule
 import tools.vitruv.dsls.reactions.ReactionsLanguageStandaloneSetup
 
@@ -12,9 +17,77 @@ import tools.vitruv.dsls.reactions.ReactionsLanguageStandaloneSetup
  * Initialization support for running Xtext languages as language servers.
  */
 class ReactionsLanguageIdeSetup extends ReactionsLanguageStandaloneSetup {
+	static val LOG = LogManager.getLogger(ReactionsLanguageIdeSetup)
 
 	override createInjector() {
 		Guice.createInjector(Modules2.mixin(new ReactionsLanguageRuntimeModule, new ReactionsLanguageIdeModule))
 	}
-	
+
+	override createInjectorAndDoEMFRegistration() {
+		registerMetamodelsFromPluginXml()
+		super.createInjectorAndDoEMFRegistration()
+	}
+
+	/**
+	 * Registers every package declared in any plugin.xml on the classpath.
+	 * This covers all additional paths supplied through the extension settings.
+	 */
+	def private static void registerMetamodelsFromPluginXml() {
+		val classLoader = ReactionsLanguageIdeSetup.classLoader
+		try {
+			val resources = classLoader.getResources("plugin.xml")
+			var registered = 0
+			while (resources.hasMoreElements) {
+				registered += registerPackagesFromPluginXml(resources.nextElement, classLoader)
+			}
+
+			LOG.info('''Registered «registered» EPackages from plugin.xml files on the classpath.''')
+		} catch (Throwable t) {
+			LOG.error("Failed to scan plugin.xml for metamodels.", t)
+		}
+	}
+
+	/**
+	 * Parses a single {@code plugin.xml} and registers all of its package declarations.
+	 * Returns the number of newly registered EPackages.
+	 */
+	def private static int registerPackagesFromPluginXml(URL url, ClassLoader classLoader) {
+		try (val stream = url.openStream) {
+			val factory = DocumentBuilderFactory.newInstance() => [
+				namespaceAware = false
+			]
+
+			val nodes = factory.newDocumentBuilder().parse(stream).getElementsByTagName("package")
+			var registered = 0
+			for (var i = 0; i < nodes.length; i++) {
+				if (registerPackage(nodes.item(i) as Element, classLoader)) {
+					registered++
+				}
+			}
+
+			return registered
+		} catch (Throwable t) {
+			LOG.debug('''Failed to process «url»: «t.message»''')
+			return 0
+		}
+	}
+
+	def private static boolean registerPackage(Element node, ClassLoader classLoader) {
+		val uri = node.getAttribute("uri")
+		val className = node.getAttribute("class")
+		if (uri.nullOrEmpty || className.nullOrEmpty || EPackage.Registry.INSTANCE.containsKey(uri)) {
+			return false
+		}
+
+		try {
+			val cls = Class.forName(className, true, classLoader)
+			val pkg = cls.getField("eINSTANCE").get(null) as EPackage
+			EPackage.Registry.INSTANCE.put(uri, pkg)
+			return true
+		} catch (Throwable t) {
+			LOG.debug('''Skipping «uri» («className»): «t.message»''')
+			return false
+		}
+	}
+
 }

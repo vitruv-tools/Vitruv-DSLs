@@ -90,6 +90,8 @@ jobs:
 
     - name: Package extension
       working-directory: reactions/vscode-plugin
+      env:
+        REACTIONS_SKIP_LSP_JAR_BUILD: "true"
       run: npx --yes --ignore-scripts @vscode/vsce@3.9.1 package
 
     - name: Stage build results
@@ -168,7 +170,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
       - name: Run checkstyle
-        uses: dbelyaev/action-checkstyle@v3.11.0
+        uses: dbelyaev/action-checkstyle@v3.9.0
         with:
           github_token: ${{ secrets.github_token }}
           reporter: github-pr-review
