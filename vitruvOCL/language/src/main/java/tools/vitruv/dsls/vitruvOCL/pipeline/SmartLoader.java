@@ -101,25 +101,40 @@ public class SmartLoader {
       return new LoadResult(wrapper, fileErrors, warnings);
     }
 
+    // Resolve platform:/plugin/ supertype references (e.g. PCM's Identifier/Units ecores) to
+    // local copies among the supplied ecore files, so cross-ecore eSuperTypes are visible to
+    // EMF outside of an Eclipse/OSGi runtime. Without this, types like pcm's Entity (which
+    // extends platform:/plugin/de.uka.ipd.sdq.identifier/model/identifier.ecore#//Identifier)
+    // fail to load model instances referencing inherited features (e.g. "id").
+    wrapper.registerWorkspaceEcoresForPlatformResolution(resolvedEcores);
+
     // Map files to package names
     Map<String, Path> availableEcores = new HashMap<>();
-    Map<String, List<Path>> availableXmis = new HashMap<>();
 
     for (Path ecore : resolvedEcores) {
       try {
-        String packageName = FileValidator.extractPackageNameFromEcore(ecore);
-        if (!availableEcores.containsKey(packageName)) {
-          availableEcores.put(packageName, ecore);
+        Set<String> packageNames = FileValidator.extractAllPackageNamesFromEcore(ecore);
+        for (String packageName : packageNames) {
+          if (!availableEcores.containsKey(packageName)) {
+            availableEcores.put(packageName, ecore);
+          }
         }
       } catch (IOException e) {
         fileErrors.add(new FileError(ecore, FileError.FileErrorType.PARSE_ERROR, e.getMessage()));
       }
     }
 
+    // One entry per occurrence in xmiFiles (duplicated input paths are kept as separate entries
+    // so that callers intentionally passing the same file twice get it loaded twice), each
+    // carrying every package name referenced by that file (a single root element may declare
+    // xmlns:xxx for several packages used by deeply nested xsi:type elements).
+    List<Path> xmiOccurrences = new ArrayList<>();
+    List<Set<String>> xmiPackageNames = new ArrayList<>();
     for (Path xmi : resolvedXmis) {
       try {
-        String packageName = FileValidator.extractPackageNameFromXmi(xmi);
-        availableXmis.computeIfAbsent(packageName, k -> new ArrayList<>()).add(xmi);
+        Set<String> packageNames = FileValidator.extractAllPackageNamesFromXmi(xmi);
+        xmiOccurrences.add(xmi);
+        xmiPackageNames.add(packageNames);
       } catch (IOException e) {
         // Non-XML or unrecognised files (e.g. Vitruvius-internal metadata) are skipped silently.
         warnings.add(new Warning(Warning.WarningType.UNUSED_MODEL,
@@ -137,9 +152,10 @@ public class SmartLoader {
 
     System.err.println("[DBG-SL] requiredPackages=" + requiredPackages);
     System.err.println("[DBG-SL] availableEcores=" + availableEcores.keySet());
-    System.err.println("[DBG-SL] availableXmis=" + availableXmis.keySet());
+    System.err.println("[DBG-SL] xmiPackageNames=" + xmiPackageNames);
 
-    // Load only required metamodels
+    // Load only required metamodels and the instances that match them.
+    boolean[] loaded = new boolean[xmiOccurrences.size()];
     for (String pkg : requiredPackages) {
       if (!availableEcores.containsKey(pkg)) {
         // "correspondence" ecore is embedded in the JAR and auto-registered — not an error.
@@ -162,34 +178,44 @@ public class SmartLoader {
         }
       }
 
-      if (availableXmis.containsKey(pkg)) {
-        for (Path xmi : availableXmis.get(pkg)) {
-          try {
-            System.err.println("[DBG-SL] Loading XMI: " + xmi.getFileName());
-            wrapper.loadModelInstance(xmi);
-            System.err.println("[DBG-SL] XMI loaded OK: " + xmi.getFileName());
-          } catch (IOException e) {
-            System.err.println("[DBG-SL] IOException loading " + xmi.getFileName() + ": " + e.getMessage());
-            fileErrors.add(
-                new FileError(
-                    xmi,
-                    FileError.FileErrorType.PARSE_ERROR,
-                    "Failed to load model: " + e.getMessage()));
-          } catch (Exception e) {
-            System.err.println("[DBG-SL] RuntimeException loading " + xmi.getFileName() + ": " + e.getClass().getSimpleName() + ": " + e.getMessage());
-            fileErrors.add(
-                new FileError(
-                    xmi,
-                    FileError.FileErrorType.PARSE_ERROR,
-                    "Failed to load model (runtime error): " + e.getMessage()));
-          }
+      boolean foundInstance = false;
+      for (int i = 0; i < xmiOccurrences.size(); i++) {
+        if (!xmiPackageNames.get(i).contains(pkg)) {
+          continue;
         }
-      } else {
-        // Don't warn for correspondence package if it has no instances
-        if (!pkg.equals("correspondence")) {
-          warnings.add(
-              new Warning(Warning.WarningType.UNUSED_MODEL, "No instances for '" + pkg + "'"));
+        foundInstance = true;
+        if (loaded[i]) {
+          // Already loaded for a different package name found in the same occurrence
+          // (e.g. a repository:Repository root with nested xsi:type="seff:..." elements).
+          continue;
         }
+        loaded[i] = true;
+        Path xmi = xmiOccurrences.get(i);
+        try {
+          System.err.println("[DBG-SL] Loading XMI: " + xmi.getFileName());
+          wrapper.loadModelInstance(xmi);
+          System.err.println("[DBG-SL] XMI loaded OK: " + xmi.getFileName());
+        } catch (IOException e) {
+          System.err.println("[DBG-SL] IOException loading " + xmi.getFileName() + ": " + e.getMessage());
+          fileErrors.add(
+              new FileError(
+                  xmi,
+                  FileError.FileErrorType.PARSE_ERROR,
+                  "Failed to load model: " + e.getMessage()));
+        } catch (Exception e) {
+          System.err.println("[DBG-SL] RuntimeException loading " + xmi.getFileName() + ": " + e.getClass().getSimpleName() + ": " + e.getMessage());
+          fileErrors.add(
+              new FileError(
+                  xmi,
+                  FileError.FileErrorType.PARSE_ERROR,
+                  "Failed to load model (runtime error): " + e.getMessage()));
+        }
+      }
+
+      // Don't warn for correspondence package if it has no instances
+      if (!foundInstance && !pkg.equals("correspondence")) {
+        warnings.add(
+            new Warning(Warning.WarningType.UNUSED_MODEL, "No instances for '" + pkg + "'"));
       }
     }
 

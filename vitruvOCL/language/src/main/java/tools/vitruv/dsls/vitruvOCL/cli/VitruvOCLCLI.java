@@ -48,9 +48,9 @@ public class VitruvOCLCLI {
           System.exit(1);
         }
       }
-    } catch (Exception e) {
+    } catch (Throwable e) {
       System.out.println(
-          String.format("{\"success\":false,\"error\":%s}", jsonString(e.getMessage())));
+          String.format("{\"success\":false,\"error\":%s}", jsonString(e.getClass().getSimpleName() + ": " + e.getMessage())));
       System.exit(1);
     }
   }

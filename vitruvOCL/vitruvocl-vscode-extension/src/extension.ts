@@ -419,11 +419,23 @@ async function runConstraint(constraintName: string, documentUri: vscode.Uri) {
 
         vscode.window.showInformationMessage(`Running: ${constraintName}...`);
 
-        const { stdout } = await execFile('java', [
+        const execResult = await execFile('java', [
             '-jar', compilerPath, 'eval', tempFile,
             '--ecore', ecoreFiles.join(','),
             '--xmi', instanceFiles.join(',')
-        ]).catch(err => ({ stdout: err.stdout || '' }));
+        ]).catch(err => ({ stdout: err.stdout || '', stderr: err.stderr || err.message || '' }));
+
+        const stdout = execResult.stdout;
+        const stderr = (execResult as any).stderr || '';
+
+        if (stderr && outputChannel) {
+            outputChannel.appendLine('[CLI-STDERR] ' + stderr.trim().split('\n').join('\n[CLI-STDERR] '));
+        }
+
+        if (!stdout.trim()) {
+            const hint = stderr ? `\n\nStderr:\n${stderr.trim()}` : '';
+            throw new Error(`Java process produced no output.${hint}`);
+        }
 
         const result = JSON.parse(stdout) as EvalResult;
 

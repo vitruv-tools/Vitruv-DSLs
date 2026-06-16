@@ -304,7 +304,9 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
     }
 
     EPackage ePackage = (EPackage) resource.getContents().get(0);
-    metamodelRegistry.put(packageName, ePackage);
+    // packageName may refer to a nested eSubpackage (e.g. "repository" inside pcm.ecore), so
+    // don't blindly bind it to the root package here — registerPackageRecursively() resolves
+    // the correct (sub-)package for each name found in the file.
     registerPackageRecursively(ePackage);
   }
 
