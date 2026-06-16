@@ -11,7 +11,7 @@
   </parent>
   <!-- Project Information -->
   <artifactId>tools.vitruv.dsls</artifactId>
-  <version>4.0.0</version>
+  <version>4.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Vitruv Consistency DSLs</name>
   <description>Domain specific languages for specifying consistency preservation rules in the Vitruv framework</description>
@@ -37,7 +37,7 @@
     <module>p2wrappers</module>
   </modules>
   <properties>
-    <vitruv-change.version>4.0.0</vitruv-change.version>
+    <vitruv-change.version>4.0.1-SNAPSHOT</vitruv-change.version>
     <!-- SonarQube configuration -->
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <sonar.organization>vitruv-tools</sonar.organization>
