@@ -11,7 +11,7 @@
   </parent>
   <!-- Project Information -->
   <artifactId>tools.vitruv.dsls</artifactId>
-  <version>3.2.4-SNAPSHOT</version>
+  <version>4.0.0</version>
   <packaging>pom</packaging>
   <name>Vitruv Consistency DSLs</name>
   <description>Domain specific languages for specifying consistency preservation rules in the Vitruv framework</description>
