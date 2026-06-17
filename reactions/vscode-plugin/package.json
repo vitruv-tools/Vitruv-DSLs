@@ -4,7 +4,7 @@
 	"description": "Reactions VSCode Extension",
 	"author": "",
 	"license": "EPL-1.0",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/vitruv-tools/Vitruv-DSLs"
@@ -35,7 +35,18 @@
 				"scopeName": "source.reactionslanguage",
 				"path": "./src/lsp/reactionslanguage.tmLanguage.json"
 			}
-		]
+		],
+		"configuration": {
+			"title": "Reactions",
+			"properties": {
+				"reactions.metamodelJars": {
+					"type": "array",
+					"items": { "type": "string" },
+					"default": [],
+					"markdownDescription": "Absolute paths to metamodel jars to load into the Reactions language server classpath. Each jar's `plugin.xml` is auto-registered via `EcorePlugin.ExtensionProcessor`."
+				}
+			}
+		}
 	},
 	"files": [
 		"package.json",
