@@ -253,7 +253,7 @@ class SimpleChangesTests extends ReactionsExecutionTest {
 
 		assertThat(executionMonitor,
 			observedExecutions(DeleteNonRootEObjectInList, DeleteEObject, CreateNonRootEObjectInList, CreateEObject))
-		assertThat(Root.from(SOURCE_MODEL).multiValuedContainmentEReference.last.id,
+		assertThat(Root.from(SOURCE_MODEL).multiValuedContainmentEReference.lastOrNull.id,
 			is("multiValuedContainmentNonRootAfter"))
 		assertThat(resourceAt(TARGET_MODEL), containsModelOf(resourceAt(SOURCE_MODEL)))
 	}
