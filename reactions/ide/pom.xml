@@ -3,18 +3,14 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>tools.vitruv</groupId>
         <artifactId>tools.vitruv.dsls.reactions</artifactId>
-        <version>3.2.4-SNAPSHOT</version>
+        <version>4.0.1-SNAPSHOT</version>
     </parent>
-
     <artifactId>tools.vitruv.dsls.reactions.ide</artifactId>
-
     <name>Vitruv Reactions IDE</name>
     <description>IDE integration with LSP server</description>
-
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -32,7 +28,6 @@
             <version>${xtextVersion}</version>
         </dependency>
     </dependencies>
-
     <build>
         <finalName>${project.artifactId}</finalName>
         <resources>
@@ -64,7 +59,7 @@
                 <artifactId>build-helper-maven-plugin</artifactId>
             </plugin>
             <plugin>
-                <groupId>org.eclipse.xtend</groupId>
+                <groupId>org.eclipse.xtext</groupId>
                 <artifactId>xtend-maven-plugin</artifactId>
             </plugin>
             <plugin>
