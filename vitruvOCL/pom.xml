@@ -1,7 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -10,7 +9,7 @@
         <version>3.2.3-SNAPSHOT</version>
     </parent>
 
-    <groupId>tools.vitruv.dsls</groupId> 
+    <groupId>tools.vitruv.dsls</groupId>
     <artifactId>vitruvOCL</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -52,6 +51,22 @@
                 <artifactId>mockito-core</artifactId>
                 <version>5.10.0</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>tools.vitruv</groupId>
+                <artifactId>tools.vitruv.change.correspondence</artifactId>
+                <version>${vitruv-change.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>tools.vitruv</groupId>
+                <artifactId>tools.vitruv.framework.views</artifactId>
+                <version>${vitruv-change.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tools.vitruv</groupId>
+                <artifactId>tools.vitruv.framework.vsum</artifactId>
+                <version>${vitruv-change.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
