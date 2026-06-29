@@ -1,9 +1,6 @@
 package tools.vitruv.dsls.vitruvocl.typechecker;
 
-import java.util.List;
 import org.eclipse.emf.ecore.EClass;
-import tools.vitruv.dsls.vitruvocl.evaluator.OCLElement;
-import tools.vitruv.dsls.vitruvocl.evaluator.Value;
 
 /**
  * Represents a type in the OCL type system.
@@ -860,45 +857,6 @@ public abstract class Type {
   // Hilfsmethode:
   public boolean isEnumType() {
     return this instanceof EnumType;
-  }
-
-  /**
-   * Compares two runtime values for ordering.
-   *
-   * <p>Used during Pass 3 (Evaluation) for comparison operators (&lt;, &gt;, &lt;=, &gt;=).
-   * Compares values lexicographically by size first, then element-wise.
-   *
-   * @param v1 First value
-   * @param v2 Second value
-   * @return Negative if v1 &lt; v2, zero if equal, positive if v1 &gt; v2
-   */
-  public static int compare(Value v1, Value v2) {
-    if (v1 == v2) {
-      return 0;
-    }
-    if (v1 == null) {
-      return -1;
-    }
-    if (v2 == null) {
-      return 1;
-    }
-
-    int sizeCompare = Integer.compare(v1.size(), v2.size());
-    if (sizeCompare != 0) {
-      return sizeCompare;
-    }
-
-    List<OCLElement> elems1 = v1.getElements();
-    List<OCLElement> elems2 = v2.getElements();
-
-    for (int i = 0; i < elems1.size(); i++) {
-      int elemCompare = OCLElement.compare(elems1.get(i), elems2.get(i));
-      if (elemCompare != 0) {
-        return elemCompare;
-      }
-    }
-
-    return 0;
   }
 
   /**

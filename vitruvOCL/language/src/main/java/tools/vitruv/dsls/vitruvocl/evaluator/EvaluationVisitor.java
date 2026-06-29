@@ -34,7 +34,6 @@ import tools.vitruv.dsls.vitruvocl.common.ErrorSeverity;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapperInterface;
 import tools.vitruv.dsls.vitruvocl.symboltable.*;
 import tools.vitruv.dsls.vitruvocl.typechecker.Type;
-import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
 
 /**
  * Phase 3 visitor that evaluates OCL expressions and produces runtime values.
@@ -45,8 +44,9 @@ import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
  *
  * <h2>Architecture</h2>
  *
- * The evaluator uses pre-computed type information from {@link TypeCheckVisitor} stored in {@code
- * nodeTypes} to perform type-dependent operations correctly. It maintains a {@code receiverStack}
+ * The evaluator uses pre-computed type information from the type checking phase stored in {@code
+ * nodeTypes} (a {@code ParseTreeProperty<Type>}) to perform type-dependent operations correctly.
+ * It maintains a {@code receiverStack}
  * to handle method chaining (e.g., {@code collection.select(...).size()}) and uses the symbol table
  * for variable resolution.
  *
@@ -57,7 +57,6 @@ import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
  * Value.empty(Type.ERROR)} for failed operations.
  *
  * @see Value The runtime value type representing OCL collections
- * @see TypeCheckVisitor Phase 2 visitor that produces type information
  * @see AbstractPhaseVisitor Base class providing common visitor infrastructure
  */
 public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {

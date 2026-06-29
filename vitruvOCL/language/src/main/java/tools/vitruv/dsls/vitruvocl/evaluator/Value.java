@@ -30,7 +30,7 @@ import tools.vitruv.dsls.vitruvocl.typechecker.Type;
  * unordered - [τ] (Sequence): Non-unique, ordered - {{τ}} (Bag): Non-unique, unordered - ⟨τ⟩
  * (OrderedSet): Unique, ordered
  */
-public class Value {
+public class Value implements Comparable<Value> {
 
   /** The actual value - in OCL, this is ALWAYS List&lt;OCLElement&gt;. */
   private final List<OCLElement> elements;
@@ -530,6 +530,26 @@ public class Value {
   /** Convenience: Creates float singleton. */
   public static Value floatValue(float value) {
     return singleton(new OCLElement.FloatValue(value), Type.FLOAT);
+  }
+
+  /**
+   * Compares this value to another by size then element-wise via {@link OCLElement#compare}.
+   *
+   * <p>Null is ordered before any non-null value.
+   */
+  @Override
+  public int compareTo(Value other) {
+    if (this == other) return 0;
+    if (other == null) return 1;
+    int sizeCompare = Integer.compare(this.size(), other.size());
+    if (sizeCompare != 0) return sizeCompare;
+    List<OCLElement> elems1 = this.getElements();
+    List<OCLElement> elems2 = other.getElements();
+    for (int i = 0; i < elems1.size(); i++) {
+      int elemCompare = OCLElement.compare(elems1.get(i), elems2.get(i));
+      if (elemCompare != 0) return elemCompare;
+    }
+    return 0;
   }
 }
 
