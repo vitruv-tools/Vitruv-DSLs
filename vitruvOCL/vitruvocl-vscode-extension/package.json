@@ -99,7 +99,7 @@
         "vitruvocl.compilerPath": {
           "type": "string",
           "default": "",
-          "description": "Path to vitruvOCL.jar (leave empty for auto-detection)"
+          "description": "Path to vitruvocl.jar (leave empty for auto-detection)"
         },
         "vitruvocl.languageServerPath": {
           "type": "string",

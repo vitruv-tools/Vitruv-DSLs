@@ -42,7 +42,7 @@
     <module>reactions</module>
     <module>testutils</module>
     <module>p2wrappers</module>
-    <module>vitruvOCL</module>
+    <module>vitruvocl</module>
   </modules>
 
   <properties>

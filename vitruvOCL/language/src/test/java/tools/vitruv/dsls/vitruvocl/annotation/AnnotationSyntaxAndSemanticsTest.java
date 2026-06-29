@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Stream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.eclipse.emf.ecore.EPackage;
@@ -24,6 +25,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLLexer;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvocl.evaluator.EvaluationVisitor;
@@ -385,66 +389,43 @@ class AnnotationSyntaxAndSemanticsTest {
 
   @Nested
   @DisplayName("Valid @message annotations")
+  @TestInstance(TestInstance.Lifecycle.PER_CLASS)
   class ValidMessageAnnotations {
 
-    @Test
-    @DisplayName("Plain message without template variables is accepted")
-    void plainMessage() {
-      ConstraintResult r = eval("""
+    @ParameterizedTest
+    @MethodSource("validMessageConstraints")
+    void testValidMessageAccepted(String constraint) {
+      ConstraintResult r = eval(constraint);
+      assertTrue(r.isSuccess(), r.toDetailedErrorString());
+    }
+
+    Stream<String> validMessageConstraints() {
+      return Stream.of(
+          """
           context brakesystem::BrakeDisk inv:
               @message "Brake disk violates the constraint"
-              self.diameterInMM > 0""");
-      assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    }
-
-    @Test
-    @DisplayName("{self} template variable is accepted")
-    void selfTemplate() {
-      ConstraintResult r = eval("""
+              self.diameterInMM > 0""",
+          """
           context brakesystem::BrakeDisk inv:
               @message "Object {self} violates the constraint"
-              self.diameterInMM > 0""");
-      assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    }
-
-    @Test
-    @DisplayName("{self.attr} template variable is accepted")
-    void selfAttrTemplate() {
-      ConstraintResult r = eval("""
+              self.diameterInMM > 0""",
+          """
           context brakesystem::BrakeDisk inv:
               @message "Brake disk {self.name} has an invalid diameter"
-              self.diameterInMM > 0""");
-      assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    }
-
-    @Test
-    @DisplayName("Multiple template variables in one message are accepted")
-    void multipleTemplateVars() {
-      ConstraintResult r = eval("""
+              self.diameterInMM > 0""",
+          """
           context brakesystem::BrakeDisk inv:
               @message "Disk {self.name} (id={self.id}) has diameter {self.diameterInMM}"
-              self.diameterInMM > 0""");
-      assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    }
-
-    @Test
-    @DisplayName("Message with no template vars and special characters is accepted")
-    void specialCharsMessage() {
-      ConstraintResult r = eval("""
+              self.diameterInMM > 0""",
+          """
           context brakesystem::BrakeDisk inv:
               @message "Error: radius must be > 0 (check your model!)"
-              self.diameterInMM > 0""");
-      assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    }
-
-    @Test
-    @DisplayName("Empty message string is accepted")
-    void emptyMessage() {
-      ConstraintResult r = eval("""
+              self.diameterInMM > 0""",
+          """
           context brakesystem::BrakeDisk inv:
               @message ""
-              self.diameterInMM > 0""");
-      assertTrue(r.isSuccess(), r.toDetailedErrorString());
+              self.diameterInMM > 0"""
+      );
     }
   }
 
@@ -454,45 +435,34 @@ class AnnotationSyntaxAndSemanticsTest {
 
   @Nested
   @DisplayName("Annotation combinations and ordering")
+  @TestInstance(TestInstance.Lifecycle.PER_CLASS)
   class AnnotationCombinations {
 
-    @Test
-    @DisplayName("@severity before @message is accepted")
-    void severityBeforeMessage() {
-      ConstraintResult r = eval("""
-          context brakesystem::BrakeDisk inv:
-              @severity CRITICAL
-              @message "Brake disk {self.name} failed"
-              self.diameterInMM > 0""");
+    @ParameterizedTest
+    @MethodSource("acceptedAnnotationConstraints")
+    void annotationCombinationIsAccepted(String constraint) {
+      ConstraintResult r = eval(constraint);
       assertTrue(r.isSuccess(), r.toDetailedErrorString());
     }
 
-    @Test
-    @DisplayName("@message before @severity is accepted")
-    void messageBeforeSeverity() {
-      ConstraintResult r = eval("""
+    Stream<String> acceptedAnnotationConstraints() {
+      return Stream.of(
+          """
+          context brakesystem::BrakeDisk inv:
+              @severity CRITICAL
+              @message "Brake disk {self.name} failed"
+              self.diameterInMM > 0""",
+          """
           context brakesystem::BrakeDisk inv:
               @message "Brake disk {self.name} failed"
               @severity CRITICAL
-              self.diameterInMM > 0""");
-      assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    }
-
-    @Test
-    @DisplayName("Annotation on a named invariant is accepted")
-    void annotationOnNamedInv() {
-      ConstraintResult r = eval("""
+              self.diameterInMM > 0""",
+          """
           context brakesystem::BrakeDisk inv BD_HasDiameter:
               @severity WARNING
               @message "Disk {self.name} has zero diameter"
-              self.diameterInMM > 0""");
-      assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    }
-
-    @Test
-    @DisplayName("Each invariant in a multi-inv context may carry independent annotations")
-    void multipleInvEachWithAnnotation() {
-      ConstraintResult r = eval("""
+              self.diameterInMM > 0""",
+          """
           context brakesystem::BrakeDisk inv BD_1:
               @severity CRITICAL
               @message "Disk {self.name}: diameter must be positive"
@@ -500,36 +470,17 @@ class AnnotationSyntaxAndSemanticsTest {
           context brakesystem::BrakeDisk inv BD_2:
               @severity INFO
               @message "Disk {self.name}: diameter should exceed 100 mm"
-              self.diameterInMM > 100""");
-      assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    }
-
-    @Test
-    @DisplayName("Only @severity with no @message is accepted")
-    void onlySeverity() {
-      ConstraintResult r = eval("""
+              self.diameterInMM > 100""",
+          """
           context brakesystem::BrakeDisk inv:
               @severity MAJOR
-              self.diameterInMM > 0""");
-      assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    }
-
-    @Test
-    @DisplayName("Only @message with no @severity is accepted")
-    void onlyMessage() {
-      ConstraintResult r = eval("""
+              self.diameterInMM > 0""",
+          """
           context brakesystem::BrakeDisk inv:
               @message "Diameter must be positive"
-              self.diameterInMM > 0""");
-      assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    }
-
-    @Test
-    @DisplayName("No annotations at all is still accepted (annotations are optional)")
-    void noAnnotations() {
-      ConstraintResult r = eval(
-          "context brakesystem::BrakeDisk inv:\n    self.diameterInMM > 0");
-      assertTrue(r.isSuccess(), r.toDetailedErrorString());
+              self.diameterInMM > 0""",
+          "context brakesystem::BrakeDisk inv:\n    self.diameterInMM > 0"
+      );
     }
 
     @Test

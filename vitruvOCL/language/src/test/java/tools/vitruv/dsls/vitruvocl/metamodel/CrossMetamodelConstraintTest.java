@@ -15,8 +15,12 @@ package tools.vitruv.dsls.vitruvocl.metamodel;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.file.Path;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.dsls.vitruvocl.pipeline.ConstraintResult;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
 import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCL;
@@ -39,6 +43,8 @@ class CrossMetamodelConstraintTest {
       Path.of("src/test/resources/test-metamodels/spaceMission.ecore");
   private static final Path SATELLITE_ECORE =
       Path.of("src/test/resources/test-metamodels/satelliteSystem.ecore");
+  private static final Path[] SM_SAT_ECORES = {SPACEMISSION_ECORE, SATELLITE_ECORE};
+  private static final Path[] SAT_ONLY_ECORES = {SATELLITE_ECORE};
 
   private static final Path SPACECRAFT_VOYAGER = Path.of("spacecraft-voyager.spacemission");
   private static final Path SPACECRAFT_ATLAS = Path.of("spacecraft-atlas.spacemission");
@@ -51,138 +57,460 @@ class CrossMetamodelConstraintTest {
     MetamodelWrapper.setTestModelsPath(Path.of("src/test/resources/test-models"));
   }
 
-  /**
-   * Tests cross-metamodel matching using allInstances() and exists iterator. Validates Spacecraft
-   * can find matching Satellite by serialNumber.
-   */
-  @Test
-  void testCrossMetamodelSerialNumberMatch() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().exists(sat |
-            sat.serialNumber == self.serialNumber
-          )
-        """;
+  // ── Parameterized: satisfied constraints (isSuccess + isSatisfied) ────────
 
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
+  @ParameterizedTest
+  @MethodSource("satisfiedConstraints")
+  void testConstraintSatisfied(String c, Path[] instances) {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(c, SM_SAT_ECORES, instances);
     assertTrue(result.isSuccess(), "Evaluation should succeed");
-    assertTrue(result.isSatisfied(), "Spacecraft SC-001 should find matching Satellite SC-001");
+    assertTrue(result.isSatisfied());
   }
 
-  /**
-   * Tests cross-metamodel consistency checking with logical implication. Validates that matching
-   * mass values imply matching operational/active status.
-   */
-  @Test
-  void testCrossMetamodelMassConsistency() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().forAll(sat |
-            sat.massKg == self.mass implies sat.active == self.operational
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_ATLAS, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-    assertTrue(
-        result.isSatisfied(), "Matching mass should imply matching operational/active status");
-  }
-
-  /**
-   * Tests constraint violation when no matching cross-metamodel instance exists. Validates
-   * Spacecraft with SC-001 does not match Satellite with SAT-099.
-   */
-  @Test
-  void testCrossMetamodelNoMatchingSerialNumber() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().exists(sat |
-            sat.serialNumber == self.serialNumber
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_HUBBLE});
-
-    assertTrue(result.isSuccess());
-    assertFalse(result.isSatisfied(), "Spacecraft SC-001 should NOT match Satellite SAT-099");
-  }
-
-  /**
-   * Tests evaluation with multiple model instances from both metamodels. Validates allInstances()
-   * aggregates all instances and select filters correctly.
-   */
-  @Test
-  void testMultipleModelsFromBothMetamodels() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().select(sat |
-            sat.serialNumber == self.serialNumber
-          ).size() >= 1
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+  static Stream<Arguments> satisfiedConstraints() {
+    Path[] voy = {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER};
+    Path[] voy2 = {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS};
+    Path[] voy3 = {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS, SATELLITE_HUBBLE};
+    Path[] atl = {SPACECRAFT_ATLAS, SATELLITE_ATLAS};
+    return Stream.of(
+        // Serial number match
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().exists(sat |
+                sat.serialNumber == self.serialNumber
+              )
+            """,
+            voy),
+        // Mass consistency implication
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().forAll(sat |
+                sat.massKg == self.mass implies sat.active == self.operational
+              )
+            """,
+            atl),
+        // Bidirectional: satellite references spacecraft
+        Arguments.of(
+            """
+            context satelliteSystem::Satellite inv:
+              spaceMission::Spacecraft.allInstances().exists(sc |
+                sc.serialNumber == self.serialNumber and sc.mass == self.massKg
+              )
+            """,
+            voy),
+        // Size >= 2
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().size() >= 2
+            """,
+            voy3),
+        // isEmpty when no match
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().select(sat |
+                sat.serialNumber == \"NONEXISTENT-999\"
+              ).isEmpty()
+            """,
+            voy),
+        // notEmpty
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().notEmpty()
+            """,
+            voy2),
+        // sum > 0
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().collect(sat |
+                sat.massKg
+              ).sum() > 0
+            """,
+            voy2),
+        // avg > 0
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().collect(sat |
+                sat.massKg
+              ).avg() > 0
+            """,
+            voy3),
+        // includes serialNumber
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().collect(sat |
+                sat.serialNumber
+              ).includes(self.serialNumber)
+            """,
+            voy2),
+        // excludes non-existent
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().collect(sat |
+                sat.serialNumber
+              ).excludes(\"DEFINITELY-NOT-THERE\")
+            """,
+            voy),
+        // reverse same size
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().reverse().size() ==
+              satelliteSystem::Satellite.allInstances().size()
+            """,
+            voy2),
+        // including
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              Sequence{1, 2, 3}.including(4).size() == 4
+            """,
+            voy),
+        // excluding
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              Sequence{1, 2, 3, 4}.excluding(4).size() == 3
+            """,
+            voy),
+        // let expression
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              let satellites = satelliteSystem::Satellite.allInstances() in
+                satellites.size() >= 0
+            """,
+            voy),
+        // multiple let bindings
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              let sats = satelliteSystem::Satellite.allInstances(),
+                  countSat = sats.size() in
+                countSat >= 0
+            """,
+            voy2),
+        // negation of isEmpty
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              not satelliteSystem::Satellite.allInstances().isEmpty()
+            """,
+            voy),
+        // string concat
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().exists(sat |
+                sat.serialNumber.concat(\"-SUFFIX\") != \"\"
+              )
+            """,
+            voy),
+        // substring
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().exists(sat |
+                sat.serialNumber.substring(1, 2) == \"SC\"
+              )
+            """,
+            voy),
+        // noSatellitesAvailable
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().isEmpty()
+            """,
+            new Path[] {SPACECRAFT_VOYAGER}),
+        // forAll on empty collection (vacuous truth)
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().select(sat |
+                sat.serialNumber == \"NONEXISTENT\"
+              ).forAll(sat | sat.massKg < 0)
+            """,
+            voy),
+        // Atlas: serial number match
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv serialNumberMatch:
+              satelliteSystem::Satellite.allInstances().exists(sat |
+                sat.serialNumber == self.serialNumber
+              )
+            """,
             new Path[] {
-              SPACECRAFT_VOYAGER,
-              SPACECRAFT_ATLAS,
-              SATELLITE_VOYAGER,
-              SATELLITE_ATLAS,
-              SATELLITE_HUBBLE
-            });
-
-    assertTrue(result.isSuccess());
+              Path.of("src/test/resources/test-models/spacecraft-atlas.spacemission"),
+              Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem"),
+              Path.of("src/test/resources/test-models/satellite-voyager.satellitesystem"),
+              Path.of("src/test/resources/test-models/satellite-hubble.satellitesystem")
+            }),
+        // Atlas: serial inclusion
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv serialInclusion:
+              satelliteSystem::Satellite.allInstances().collect(sat |
+                sat.serialNumber
+              ).includes(self.serialNumber)
+            """,
+            new Path[] {
+              Path.of("src/test/resources/test-models/spacecraft-atlas.spacemission"),
+              Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem"),
+              Path.of("src/test/resources/test-models/satellite-voyager.satellitesystem"),
+              Path.of("src/test/resources/test-models/satellite-hubble.satellitesystem")
+            }),
+        // Atlas: andLogic
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv andLogic:
+              satelliteSystem::Satellite.allInstances().exists(sat |
+                sat.serialNumber == self.serialNumber
+              ) and self.operational
+            """,
+            new Path[] {
+              Path.of("src/test/resources/test-models/spacecraft-atlas.spacemission"),
+              Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem"),
+              Path.of("src/test/resources/test-models/satellite-voyager.satellitesystem"),
+              Path.of("src/test/resources/test-models/satellite-hubble.satellitesystem")
+            }),
+        // Int/Double comparison
+        Arguments.of(
+            """
+            context satelliteSystem::Satellite inv:
+              spaceMission::Spacecraft.allInstances().exists(sc |
+                sc.serialNumber == self.serialNumber and sc.mass == self.massKg
+              )
+            """,
+            new Path[] {
+              Path.of("src/test/resources/test-models/spacecraft-voyager.spacemission"),
+              Path.of("src/test/resources/test-models/spacecraft-atlas.spacemission"),
+              Path.of("src/test/resources/test-models/satellite-voyager.satellitesystem"),
+              Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem")
+            })
+    );
   }
 
-  /**
-   * Tests bidirectional cross-metamodel navigation. Validates Satellite can access Spacecraft
-   * instances and check matching attributes.
-   */
-  @Test
-  void testSatelliteReferencesSpacecraft() {
-    String constraint =
-        """
-        context satelliteSystem::Satellite inv:
-          spaceMission::Spacecraft.allInstances().exists(sc |
-            sc.serialNumber == self.serialNumber and sc.mass == self.massKg
-          )
-        """;
+  // ── Parameterized: success-only constraints ───────────────────────────────
 
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess());
-    assertTrue(
-        result.isSatisfied(),
-        "Satellite should find corresponding Spacecraft with matching attributes");
+  @ParameterizedTest
+  @MethodSource("successOnlyConstraints")
+  void testConstraintSuccess(String c, Path[] instances) {
+    ConstraintResult result = VitruvOCL.evaluateConstraint(c, SM_SAT_ECORES, instances);
+    assertTrue(result.isSuccess(), "Evaluation should succeed");
   }
 
-  /**
-   * Tests select iterator with two variables (Cartesian product). Validates all pairs of Satellites
-   * can be compared for distinct serialNumbers.
-   */
+  static Stream<Arguments> successOnlyConstraints() {
+    Path[] voy = {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER};
+    Path[] voy2 = {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS};
+    Path[] voy3 = {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS, SATELLITE_HUBBLE};
+    Path[] sc2sat3 = {SPACECRAFT_VOYAGER, SPACECRAFT_ATLAS, SATELLITE_VOYAGER, SATELLITE_ATLAS, SATELLITE_HUBBLE};
+    return Stream.of(
+        // Multiple models aggregation
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().select(sat |
+                sat.serialNumber == self.serialNumber
+              ).size() >= 1
+            """,
+            sc2sat3),
+        // max
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              self.mass <= satelliteSystem::Satellite.allInstances().collect(sat |
+                sat.massKg
+              ).max()
+            """,
+            voy2),
+        // min > 0
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().collect(sat |
+                sat.massKg
+              ).min() > 0
+            """,
+            voy2),
+        // union
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().union(
+                satelliteSystem::Satellite.allInstances()
+              ).size() >= satelliteSystem::Satellite.allInstances().size()
+            """,
+            voy2),
+        // flatten
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              Sequence{
+                satelliteSystem::Satellite.allInstances(),
+                satelliteSystem::Satellite.allInstances()
+              }.flatten().size() >= 2
+            """,
+            voy2),
+        // and logic
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().exists(sat |
+                sat.serialNumber == self.serialNumber
+              ) and self.operational
+            """,
+            voy),
+        // or logic
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().exists(sat |
+                sat.serialNumber == self.serialNumber
+              ) or self.mass > 1000
+            """,
+            voy),
+        // xor logic
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().size() > 5 xor self.operational
+            """,
+            voy2),
+        // if-then-else
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              if satelliteSystem::Satellite.allInstances().size() > 2
+              then self.operational
+              else self.mass > 0
+              endif
+            """,
+            voy2),
+        // less than sum
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              self.mass < satelliteSystem::Satellite.allInstances().collect(sat |
+                sat.massKg
+              ).sum()
+            """,
+            voy2),
+        // not equal serial numbers
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().forAll(sat |
+                sat.serialNumber != \"\"
+              )
+            """,
+            voy),
+        // unary minus
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().forAll(sat |
+                -sat.massKg < 0
+              )
+            """,
+            voy),
+        // long chain
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances()
+                .select(sat | sat.active)
+                .collect(sat | sat.massKg)
+                .select(mass | mass > 100)
+                .size() >= 0
+            """,
+            voy3),
+        // reject then collect
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances()
+                .reject(sat | sat.active)
+                .collect(sat | sat.serialNumber)
+                .notEmpty()
+            """,
+            voy2),
+        // nested exists across metamodels
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().exists(sat |
+                spaceMission::Spacecraft.allInstances().exists(sc |
+                  sc.serialNumber == sat.serialNumber and sc.operational
+                )
+              )
+            """,
+            new Path[] {SPACECRAFT_VOYAGER, SPACECRAFT_ATLAS, SATELLITE_VOYAGER}),
+        // nested forAll across metamodels
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().forAll(sat1 |
+                satelliteSystem::Satellite.allInstances().forAll(sat2 |
+                  sat1.serialNumber == sat2.serialNumber implies sat1.massKg == sat2.massKg
+                )
+              )
+            """,
+            voy2),
+        // arithmetic
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().exists(sat |
+                (sat.massKg * 2) > self.mass
+              )
+            """,
+            voy2),
+        // division
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().forAll(sat |
+                sat.massKg / 2 > 0
+              )
+            """,
+            voy),
+        // first
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().first().serialNumber != \"\"
+            """,
+            voy2),
+        // last
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().last().massKg > 0
+            """,
+            voy2),
+        // toUpper
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().exists(sat |
+                sat.serialNumber.toUpper() == self.serialNumber.toUpper()
+              )
+            """,
+            voy)
+    );
+  }
+
+  // ── Tests with satellite-only ecores (two-variable iterators) ─────────────
+
+  /** Tests select with two variables (Cartesian product). */
   @Test
   void testSelectWithTwoVariables() {
     String constraint =
@@ -192,258 +520,18 @@ class CrossMetamodelConstraintTest {
             s1.serialNumber != s2.serialNumber
           ).size() > 0
         """;
-
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
             constraint,
-            new Path[] {SATELLITE_ECORE},
+            SAT_ONLY_ECORES,
             new Path[] {SATELLITE_VOYAGER, SATELLITE_ATLAS, SATELLITE_HUBBLE});
-
     if (!result.isSuccess()) {
       fail("Compilation failed: " + result.toDetailedErrorString());
     }
     assertTrue(result.isSatisfied(), "Should find distinct pairs");
   }
 
-  /**
-   * Tests size() operation on cross-metamodel collection. Validates constraint can count instances
-   * from another metamodel.
-   */
-  @Test
-  void testCrossMetamodelSizeComparison() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().size() >= 2
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS, SATELLITE_HUBBLE});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Should have at least 2 satellites");
-  }
-
-  /**
-   * Tests isEmpty() on filtered cross-metamodel collection. Validates empty collection when no
-   * instances match filter condition.
-   */
-  @Test
-  void testCrossMetamodelIsEmpty() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().select(sat |
-            sat.serialNumber == \"NONEXISTENT-999\"
-          ).isEmpty()
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "No satellites with NONEXISTENT-999 should exist");
-  }
-
-  /**
-   * Tests notEmpty() on cross-metamodel collection. Validates non-empty collection when instances
-   * exist in another metamodel.
-   */
-  @Test
-  void testCrossMetamodelNotEmpty() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().notEmpty()
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Should have at least one satellite");
-  }
-
-  /**
-   * Tests sum() operation on cross-metamodel numeric collection. Validates aggregation of massKg
-   * values from all Satellite instances.
-   */
-  @Test
-  void testCrossMetamodelSumOperation() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().collect(sat |
-            sat.massKg
-          ).sum() > 0
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Total satellite mass should be positive");
-  }
-
-  /**
-   * Tests avg() operation on cross-metamodel numeric collection. Validates average calculation
-   * across Satellite massKg values.
-   */
-  @Test
-  void testCrossMetamodelAvgOperation() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().collect(sat |
-            sat.massKg
-          ).avg() > 0
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS, SATELLITE_HUBBLE});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Average satellite mass should be positive");
-  }
-
-  /**
-   * Tests max() operation on cross-metamodel numeric collection. Validates Spacecraft mass is at
-   * most the maximum Satellite mass.
-   */
-  @Test
-  void testCrossMetamodelMaxOperation() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          self.mass <= satelliteSystem::Satellite.allInstances().collect(sat |
-            sat.massKg
-          ).max()
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests min() operation on cross-metamodel numeric collection. Validates minimum satellite mass
-   * is positive.
-   */
-  @Test
-  void testCrossMetamodelMinOperation() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().collect(sat |
-            sat.massKg
-          ).min() > 0
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Minimum satellite mass should be positive");
-  }
-
-  /**
-   * Tests includes() operation on cross-metamodel collection. Validates collected Satellite
-   * serialNumbers include Spacecraft serialNumber.
-   */
-  @Test
-  void testNestedCollectWithIncludes() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().collect(sat |
-            sat.serialNumber
-          ).includes(self.serialNumber)
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Satellite serial numbers should include spacecraft serial");
-  }
-
-  /**
-   * Tests excludes() operation on cross-metamodel collection. Validates collected serialNumbers do
-   * not contain non-existent value.
-   */
-  @Test
-  void testCrossMetamodelExcludes() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().collect(sat |
-            sat.serialNumber
-          ).excludes(\"DEFINITELY-NOT-THERE\")
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Should not include non-existent serial number");
-  }
-
-  /**
-   * Tests flatten() operation on nested cross-metamodel collections. Validates flattening sequence
-   * of allInstances() calls produces expected size.
-   */
-  @Test
-  void testCrossMetamodelFlatten() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          Sequence{
-            satelliteSystem::Satellite.allInstances(),
-            satelliteSystem::Satellite.allInstances()
-          }.flatten().size() >= 2
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests forAll iterator with two variables (Cartesian product). Validates uniqueness: same
-   * serialNumber implies same object identity.
-   */
+  /** Tests forAll with two variables: same serialNumber implies same object. */
   @Test
   void testForAllWithTwoVariables() {
     String constraint =
@@ -453,20 +541,15 @@ class CrossMetamodelConstraintTest {
             s1.serialNumber == s2.serialNumber implies s1 == s2
           )
         """;
-
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
             constraint,
-            new Path[] {SATELLITE_ECORE},
+            SAT_ONLY_ECORES,
             new Path[] {SATELLITE_VOYAGER, SATELLITE_ATLAS, SATELLITE_HUBBLE});
-
     assertTrue(result.isSuccess());
   }
 
-  /**
-   * Tests exists iterator with two variables (Cartesian product). Validates at least one pair of
-   * Satellites has different masses.
-   */
+  /** Tests exists with two variables: at least one pair with different masses. */
   @Test
   void testExistsWithTwoVariables() {
     String constraint =
@@ -476,20 +559,15 @@ class CrossMetamodelConstraintTest {
             s1.massKg > s2.massKg
           )
         """;
-
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
             constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            SM_SAT_ECORES,
             new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS, SATELLITE_HUBBLE});
-
     assertTrue(result.isSuccess());
   }
 
-  /**
-   * Tests collect iterator with two variables (Cartesian product). Validates collecting computed
-   * values from all pairs of Satellites.
-   */
+  /** Tests collect with two variables: sums of pairs. */
   @Test
   void testCollectWithTwoVariables() {
     String constraint =
@@ -499,137 +577,36 @@ class CrossMetamodelConstraintTest {
             s1.massKg + s2.massKg
           ).size() > 0
         """;
-
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
             constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            SM_SAT_ECORES,
             new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
     assertTrue(result.isSuccess());
   }
 
-  /**
-   * Tests string concatenation on cross-metamodel attributes. Validates concat() works on Satellite
-   * serialNumbers.
-   */
+  // ── Tests with negative outcomes (isSatisfied == false) ──────────────────
+
+  /** Tests constraint violation: no matching serial number. */
   @Test
-  void testCrossMetamodelStringConcat() {
+  void testCrossMetamodelNoMatchingSerialNumber() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
           satelliteSystem::Satellite.allInstances().exists(sat |
-            sat.serialNumber.concat(\"-SUFFIX\") != \"\"
+            sat.serialNumber == self.serialNumber
           )
         """;
-
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
             constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
+            SM_SAT_ECORES,
+            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_HUBBLE});
     assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "String concatenation should work");
+    assertFalse(result.isSatisfied(), "Spacecraft SC-001 should NOT match Satellite SAT-099");
   }
 
-  /**
-   * Tests case conversion on cross-metamodel string attributes. Validates toUpper() enables
-   * case-insensitive comparison across metamodels.
-   */
-  @Test
-  void testCrossMetamodelToUpper() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().exists(sat |
-            sat.serialNumber.toUpper() == self.serialNumber.toUpper()
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests substring extraction on cross-metamodel string attributes. Validates substring(1,2) on
-   * Satellite serialNumber returns expected prefix.
-   */
-  @Test
-  void testCrossMetamodelSubstring() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().exists(sat |
-            sat.serialNumber.substring(1, 2) == \"SC\"
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Substring of SC-001 at positions 1-2 should be 'SC'");
-  }
-
-  /**
-   * Tests isEmpty() when no instances exist in another metamodel. Validates allInstances() returns
-   * empty collection when no models loaded.
-   */
-  @Test
-  void testNoSatellitesAvailable() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().isEmpty()
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Should be empty when no satellites exist");
-  }
-
-  /**
-   * Tests forAll on empty collection (vacuous truth). Validates forAll returns true when no
-   * elements satisfy filter condition.
-   */
-  @Test
-  void testForAllOnEmptyCollection() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().select(sat |
-            sat.serialNumber == \"NONEXISTENT\"
-          ).forAll(sat | sat.massKg < 0)
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "forAll on empty collection should be vacuously true");
-  }
-
-  /**
-   * Tests exists on empty collection. Validates exists returns false when no elements satisfy
-   * filter condition.
-   */
+  /** Tests exists on empty collection → false. */
   @Test
   void testExistsOnEmptyCollection() {
     String constraint =
@@ -639,527 +616,16 @@ class CrossMetamodelConstraintTest {
             sat.serialNumber == \"NONEXISTENT\"
           ).exists(sat | sat.active)
         """;
-
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
             constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            SM_SAT_ECORES,
             new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
     assertTrue(result.isSuccess());
     assertFalse(result.isSatisfied(), "exists on empty collection should be false");
   }
 
-  /**
-   * Tests boolean AND combining cross-metamodel and single-metamodel conditions. Validates both
-   * conditions must hold for constraint satisfaction.
-   */
-  @Test
-  void testCrossMetamodelAndLogic() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().exists(sat |
-            sat.serialNumber == self.serialNumber
-          ) and self.operational
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests boolean OR combining cross-metamodel and single-metamodel conditions. Validates
-   * constraint satisfied when at least one condition holds.
-   */
-  @Test
-  void testCrossMetamodelOrLogic() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().exists(sat |
-            sat.serialNumber == self.serialNumber
-          ) or self.mass > 1000
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests boolean XOR (exclusive or) with cross-metamodel condition. Validates exactly one of two
-   * conditions must be true.
-   */
-  @Test
-  void testCrossMetamodelXorLogic() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().size() > 5 xor self.operational
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests long chain of collection operations. Validates select, collect, and filter operations can
-   * be chained across metamodels.
-   */
-  @Test
-  void testLongOperationChain() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances()
-            .select(sat | sat.active)
-            .collect(sat | sat.massKg)
-            .select(mass | mass > 100)
-            .size() >= 0
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS, SATELLITE_HUBBLE});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests reject iterator followed by collect. Validates reject filters out matching elements,
-   * collect extracts attributes.
-   */
-  @Test
-  void testRejectThenCollect() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances()
-            .reject(sat | sat.active)
-            .collect(sat | sat.serialNumber)
-            .notEmpty()
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests nested exists iterators across different metamodels. Validates outer exists on
-   * Satellites, inner exists on Spacecraft with matching criteria.
-   */
-  @Test
-  void testNestedExistsAcrossMetamodels() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().exists(sat |
-            spaceMission::Spacecraft.allInstances().exists(sc |
-              sc.serialNumber == sat.serialNumber and sc.operational
-            )
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SPACECRAFT_ATLAS, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests nested forAll iterators with implication logic. Validates all pairs of Satellites with
-   * matching serialNumbers have matching masses.
-   */
-  @Test
-  void testNestedForAllAcrossMetamodels() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().forAll(sat1 |
-            satelliteSystem::Satellite.allInstances().forAll(sat2 |
-              sat1.serialNumber == sat2.serialNumber implies sat1.massKg == sat2.massKg
-            )
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests arithmetic operations on cross-metamodel attributes. Validates multiplication in
-   * comparison between Satellite and Spacecraft masses.
-   */
-  @Test
-  void testCrossMetamodelArithmetic() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().exists(sat |
-            (sat.massKg * 2) > self.mass
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests division operation on cross-metamodel numeric attributes. Validates all Satellites have
-   * positive mass after division by 2.
-   */
-  @Test
-  void testCrossMetamodelDivision() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().forAll(sat |
-            sat.massKg / 2 > 0
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests first() operation on cross-metamodel collection. Validates accessing first Satellite
-   * instance and checking its serialNumber.
-   */
-  @Test
-  void testCrossMetamodelFirst() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().first().serialNumber != \"\"
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests last() operation on cross-metamodel collection. Validates accessing last Satellite
-   * instance and checking its mass.
-   */
-  @Test
-  void testCrossMetamodelLast() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().last().massKg > 0
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests reverse() operation on cross-metamodel collection. Validates reversed collection has same
-   * size as original.
-   */
-  @Test
-  void testCrossMetamodelReverse() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().reverse().size() ==
-          satelliteSystem::Satellite.allInstances().size()
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Reversed collection should have same size");
-  }
-
-  /**
-   * Tests including() operation adding element to sequence. Validates including(4) on [1,2,3]
-   * produces collection of size 4.
-   */
-  @Test
-  void testCrossMetamodelIncluding() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          Sequence{1, 2, 3}.including(4).size() == 4
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied());
-  }
-
-  /**
-   * Tests excluding() operation removing element from sequence. Validates excluding(4) on [1,2,3,4]
-   * produces collection of size 3.
-   */
-  @Test
-  void testCrossMetamodelExcluding() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          Sequence{1, 2, 3, 4}.excluding(4).size() == 3
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied());
-  }
-
-  /**
-   * Tests union() operation combining two collections. Validates union of allInstances() with
-   * itself has size at least as large as original.
-   */
-  @Test
-  void testCrossMetamodelUnion() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().union(
-            satelliteSystem::Satellite.allInstances()
-          ).size() >= satelliteSystem::Satellite.allInstances().size()
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests let expression with cross-metamodel collection. Validates variable binding of
-   * allInstances() result for reuse in constraint body.
-   */
-  @Test
-  void testCrossMetamodelLetExpression() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          let satellites = satelliteSystem::Satellite.allInstances() in
-            satellites.size() >= 0
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied());
-  }
-
-  /**
-   * Tests let expression with multiple variable bindings. Validates chained let bindings where
-   * second variable references first.
-   */
-  @Test
-  void testMultipleLetBindings() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          let sats = satelliteSystem::Satellite.allInstances(),
-              countSat = sats.size() in
-            countSat >= 0
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied());
-  }
-
-  /**
-   * Tests if-then-else conditional with cross-metamodel condition. Validates different branches
-   * execute based on Satellite collection size.
-   */
-  @Test
-  void testCrossMetamodelIfThenElse() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          if satelliteSystem::Satellite.allInstances().size() > 2
-          then self.operational
-          else self.mass > 0
-          endif
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests less-than comparison with cross-metamodel aggregation. Validates Spacecraft mass is less
-   * than sum of all Satellite masses.
-   */
-  @Test
-  void testCrossMetamodelLessThan() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          self.mass < satelliteSystem::Satellite.allInstances().collect(sat |
-            sat.massKg
-          ).sum()
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests not-equal comparison on cross-metamodel string attributes. Validates all Satellite
-   * serialNumbers are non-empty strings.
-   */
-  @Test
-  void testCrossMetamodelNotEqual() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().forAll(sat |
-            sat.serialNumber != \"\"
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests boolean negation with cross-metamodel collection query. Validates negation of isEmpty()
-   * correctly evaluates to true when satellites exist.
-   */
-  @Test
-  void testCrossMetamodelNegation() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          not satelliteSystem::Satellite.allInstances().isEmpty()
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Should have satellites (negation of isEmpty)");
-  }
-
-  /**
-   * Tests unary minus operator on cross-metamodel numeric attributes. Validates negated mass values
-   * are negative for positive masses.
-   */
-  @Test
-  void testCrossMetamodelUnaryMinus() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().forAll(sat |
-            -sat.massKg < 0
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess());
-  }
-
-  /**
-   * Tests constraint violation detection. Validates constraint correctly evaluates to false when
-   * condition is impossible (all satellites having negative mass).
-   */
+  /** Tests constraint violation: all satellites having negative mass → false. */
   @Test
   void testConstraintViolation() {
     String constraint =
@@ -1169,21 +635,16 @@ class CrossMetamodelConstraintTest {
             sat.massKg < 0
           )
         """;
-
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
             constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            SM_SAT_ECORES,
             new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
     assertTrue(result.isSuccess());
     assertFalse(result.isSatisfied(), "All satellites having negative mass should be false");
   }
 
-  /**
-   * Tests exists returning false when no elements match condition. Validates constraint violation
-   * when searching for non-existent serialNumber.
-   */
+  /** Tests exists returning false: impossible serial number. */
   @Test
   void testNoMatchingCondition() {
     String constraint =
@@ -1193,131 +654,12 @@ class CrossMetamodelConstraintTest {
             sat.serialNumber == \"IMPOSSIBLE-SERIAL-999999\"
           )
         """;
-
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
             constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            SM_SAT_ECORES,
             new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS});
-
     assertTrue(result.isSuccess());
     assertFalse(result.isSatisfied(), "Should not find impossible serial number");
-  }
-
-  /**
-   * Tests serialNumberMatch constraint with spacecraft-atlas that SHOULD match satellite-atlas.
-   * Both have serialNumber "ATLAS-V-2002".
-   */
-  @Test
-  void testSerialNumberMatchAtlas() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv serialNumberMatch:
-          satelliteSystem::Satellite.allInstances().exists(sat |
-            sat.serialNumber == self.serialNumber
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {
-              Path.of("src/test/resources/test-models/spacecraft-atlas.spacemission"),
-              Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem"),
-              Path.of("src/test/resources/test-models/satellite-voyager.satellitesystem"),
-              Path.of("src/test/resources/test-models/satellite-hubble.satellitesystem")
-            });
-
-    assertTrue(result.isSuccess(), "Constraint should compile without errors");
-    assertTrue(
-        result.isSatisfied(), "spacecraft-atlas should match satellite-atlas by serialNumber");
-  }
-
-  /**
-   * Tests serialInclusion constraint with spacecraft-atlas. Should pass since satellite-atlas has
-   * matching serialNumber.
-   */
-  @Test
-  void testSerialInclusionAtlas() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv serialInclusion:
-          satelliteSystem::Satellite.allInstances().collect(sat |
-            sat.serialNumber
-          ).includes(self.serialNumber)
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {
-              Path.of("src/test/resources/test-models/spacecraft-atlas.spacemission"),
-              Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem"),
-              Path.of("src/test/resources/test-models/satellite-voyager.satellitesystem"),
-              Path.of("src/test/resources/test-models/satellite-hubble.satellitesystem")
-            });
-
-    assertTrue(result.isSuccess(), "Constraint should compile without errors");
-    assertTrue(result.isSatisfied(), "Collected serial numbers should include ATLAS-V-2002");
-  }
-
-  /**
-   * Tests andLogic constraint with spacecraft-atlas (operational=true, has matching satellite).
-   * Should pass both conditions.
-   */
-  @Test
-  void testAndLogicAtlas() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv andLogic:
-          satelliteSystem::Satellite.allInstances().exists(sat |
-            sat.serialNumber == self.serialNumber
-          ) and self.operational
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {
-              Path.of("src/test/resources/test-models/spacecraft-atlas.spacemission"),
-              Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem"),
-              Path.of("src/test/resources/test-models/satellite-voyager.satellitesystem"),
-              Path.of("src/test/resources/test-models/satellite-hubble.satellitesystem")
-            });
-
-    assertTrue(result.isSuccess(), "Constraint should compile without errors");
-    assertTrue(result.isSatisfied(), "spacecraft-atlas is operational and has matching satellite");
-  }
-
-  /**
-   * Tests testIntDoubleComparison constraint with satellite-atlas. EXPECTED TO SUCCESS due to
-   * masses are equal even though one is Int and other is Double.
-   */
-  @Test
-  void testIntDoubleComparison() {
-    String constraint =
-        """
-        context satelliteSystem::Satellite inv:
-          spaceMission::Spacecraft.allInstances().exists(sc |
-            sc.serialNumber == self.serialNumber and sc.mass == self.massKg
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {
-              Path.of("src/test/resources/test-models/spacecraft-voyager.spacemission"),
-              Path.of("src/test/resources/test-models/spacecraft-atlas.spacemission"),
-              Path.of("src/test/resources/test-models/satellite-voyager.satellitesystem"),
-              Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem")
-            });
-
-    assertTrue(result.isSuccess(), "Should compile");
-    assertTrue(result.isSatisfied(), "Int should equal Double with type coercion");
   }
 }

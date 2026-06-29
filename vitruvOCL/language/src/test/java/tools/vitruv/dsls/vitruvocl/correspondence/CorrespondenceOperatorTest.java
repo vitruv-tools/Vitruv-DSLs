@@ -15,8 +15,12 @@ package tools.vitruv.dsls.vitruvocl.correspondence;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.file.Path;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.dsls.vitruvocl.pipeline.ConstraintResult;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
 import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCL;
@@ -66,6 +70,7 @@ class CorrespondenceOperatorTest {
       Path.of("src/test/resources/test-metamodels/satelliteSystem.ecore");
   private static final Path CORRESPONDENCE_ECORE =
       Path.of("src/test/resources/test-metamodels/correspondence.ecore");
+  private static final Path[] ECORES = {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE};
 
   private static final Path SPACECRAFT_VOYAGER = Path.of("spacecraft-voyager.spacemission");
   private static final Path SPACECRAFT_ATLAS = Path.of("spacecraft-atlas.spacemission");
@@ -79,39 +84,230 @@ class CorrespondenceOperatorTest {
     MetamodelWrapper.setTestModelsPath(Path.of("src/test/resources/test-models"));
   }
 
-  // ==================== Basic Correspondence Checking ====================
-
-  /**
-   * Tests basic correspondence operator in select statement.
-   *
-   * <p>Validates that the ~ operator correctly filters satellites that correspond to the
-   * spacecraft. Uses select() to find corresponding satellites.
-   */
-  @Test
-  void testBasicCorrespondenceInSelect() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().select(sat |
-            self ~ sat).notEmpty()
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed");
-    assertTrue(result.isSatisfied(), "Voyager spacecraft should have corresponding satellite");
+  private static ConstraintResult eval(String c, Path... instances) {
+    return VitruvOCL.evaluateConstraint(c, ECORES, instances);
   }
 
-  /**
-   * Tests correspondence operator returns false when no correspondence exists.
-   *
-   * <p>Validates that when objects are not in the same correspondence, the ~ operator returns
-   * false, resulting in an empty select result.
-   */
+  // ── Parameterized: satisfied constraints ─────────────────────────────────
+
+  @ParameterizedTest
+  @MethodSource("satisfiedConstraints")
+  void testConstraintSatisfied(String c, Path[] instances) {
+    ConstraintResult r = VitruvOCL.evaluateConstraint(c, ECORES, instances);
+    assertTrue(r.isSuccess(), "Evaluation should succeed");
+    assertTrue(r.isSatisfied());
+  }
+
+  static Stream<Arguments> satisfiedConstraints() {
+    Path[] voyager = {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES};
+    Path[] multiSat = {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS, CORRESPONDENCES};
+    Path[] noCorr = {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER};
+    return Stream.of(
+        // Basic correspondence in select
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().select(sat |
+                self ~ sat).notEmpty()
+            """,
+            voyager),
+        // Correspondence in forAll - mass consistency
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().forAll(sat |
+                self ~ sat implies sat.massKg == self.mass
+              )
+            """,
+            voyager),
+        // Multi-attribute consistency
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().forAll(sat |
+                self ~ sat implies (
+                  sat.serialNumber == self.serialNumber and
+                  sat.massKg == self.mass and
+                  sat.active == self.operational
+                )
+              )
+            """,
+            voyager),
+        // Correspondence in exists
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().exists(sat |
+                self ~ sat and sat.active == true
+              )
+            """,
+            voyager),
+        // Implication
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().forAll(sat |
+                self ~ sat implies sat.active == self.operational
+              )
+            """,
+            voyager),
+        // Reject shorthand
+        Arguments.of(
+            """
+            context satelliteSystem::Satellite inv:
+              spaceMission::Spacecraft.allInstances().reject(sc |
+                self ~ sc
+              ).size() >= 0
+            """,
+            voyager),
+        // Syntactic sugar: basic select(~)
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().select(~).notEmpty()
+            """,
+            voyager),
+        // Syntactic sugar: reject(~)
+        Arguments.of(
+            """
+            context satelliteSystem::Satellite inv:
+              spaceMission::Spacecraft.allInstances().reject(~).size() >= 0
+            """,
+            voyager),
+        // Multiple correspondences: size >= 1
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().select(sat |
+                self ~ sat
+              ).size() >= 1
+            """,
+            multiSat),
+        // Multiple correspondences: forAll mass > 0
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().forAll(sat |
+                self ~ sat implies sat.massKg > 0
+              )
+            """,
+            multiSat),
+        // Syntactic sugar: select(~) size >= 1
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().select(~).size() >= 1
+            """,
+            multiSat),
+        // No correspondence model → empty result
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().select(sat |
+                self ~ sat
+              ).isEmpty()
+            """,
+            noCorr)
+    );
+  }
+
+  // ── Parameterized: success-only constraints ───────────────────────────────
+
+  @ParameterizedTest
+  @MethodSource("successOnlyConstraints")
+  void testConstraintSuccess(String c, Path[] instances) {
+    ConstraintResult r = VitruvOCL.evaluateConstraint(c, ECORES, instances);
+    assertTrue(r.isSuccess(), "Evaluation should succeed");
+  }
+
+  static Stream<Arguments> successOnlyConstraints() {
+    Path[] voyager = {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES};
+    Path[] multiSat = {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS, CORRESPONDENCES};
+    return Stream.of(
+        // AND combination
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              self.operational and
+              satelliteSystem::Satellite.allInstances().exists(sat | self ~ sat)
+            """,
+            voyager),
+        // Conditional
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              if satelliteSystem::Satellite.allInstances().exists(sat | self ~ sat)
+              then satelliteSystem::Satellite.allInstances().forAll(sat |
+                self ~ sat implies sat.active == true
+              )
+              else true
+              endif
+            """,
+            voyager),
+        // Negated correspondence
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().forAll(sat |
+                not (self ~ sat) or sat.massKg == self.mass
+              )
+            """,
+            voyager),
+        // Attribute filter
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().select(sat |
+                self ~ sat and sat.massKg > 1000
+              ).size() >= 0
+            """,
+            voyager),
+        // Syntactic sugar: AND
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              self.operational and
+              satelliteSystem::Satellite.allInstances().exists(~)
+            """,
+            voyager),
+        // Syntactic sugar: conditional
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              if satelliteSystem::Satellite.allInstances().exists(~)
+              then satelliteSystem::Satellite.allInstances().forAll(sat |
+                self ~ sat implies sat.active == true
+              )
+              else true
+              endif
+            """,
+            voyager),
+        // Syntactic sugar: attribute filter
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().select(~)
+                .select(sat | sat.massKg > 1000).size() >= 0
+            """,
+            voyager),
+        // Nested iterators
+        Arguments.of(
+            """
+            context spaceMission::Spacecraft inv:
+              satelliteSystem::Satellite.allInstances().exists(sat1 |
+                self ~ sat1 and
+                satelliteSystem::Satellite.allInstances().exists(sat2 |
+                  sat1.serialNumber != sat2.serialNumber
+                )
+              )
+            """,
+            multiSat)
+    );
+  }
+
+  // ── Standalone tests ──────────────────────────────────────────────────────
+
+  /** Tests correspondence returns false (no match): SC_ATLAS has no match with SAT_HUBBLE. */
   @Test
   void testCorrespondenceReturnsFalseWhenNoMatch() {
     String constraint =
@@ -121,26 +317,27 @@ class CorrespondenceOperatorTest {
             self ~ sat
           ).isEmpty()
         """;
-
     ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_ATLAS, SATELLITE_HUBBLE, CORRESPONDENCES});
-
+        eval(constraint, SPACECRAFT_ATLAS, SATELLITE_HUBBLE, CORRESPONDENCES);
     assertTrue(result.isSuccess());
-    assertTrue(
-        result.isSatisfied(), "Atlas spacecraft should have no correspondence to Hubble satellite");
+    assertTrue(result.isSatisfied(), "Atlas spacecraft should have no correspondence to Hubble satellite");
   }
 
-  // ==================== Bidirectional Correspondence ====================
+  /** Same as above but with select(~) shorthand. */
+  @Test
+  void testCorrespondenceReturnsFalseWhenNoMatchSyntacticSugarVersion() {
+    String constraint =
+        """
+        context spaceMission::Spacecraft inv:
+          satelliteSystem::Satellite.allInstances().select(~).isEmpty()
+        """;
+    ConstraintResult result =
+        eval(constraint, SPACECRAFT_ATLAS, SATELLITE_HUBBLE, CORRESPONDENCES);
+    assertTrue(result.isSuccess());
+    assertTrue(result.isSatisfied(), "Atlas spacecraft should have no correspondence to Hubble satellite");
+  }
 
-  /**
-   * Tests bidirectional correspondence checking.
-   *
-   * <p>Validates that the ~ operator works in both directions: spacecraft ~ satellite and satellite
-   * ~ spacecraft both return true for the same correspondence.
-   */
+  /** Tests bidirectional correspondence: spacecraft → satellite AND satellite → spacecraft. */
   @Test
   void testBidirectionalCorrespondence() {
     String spacecraftConstraint =
@@ -150,7 +347,6 @@ class CorrespondenceOperatorTest {
             self ~ sat
           )
         """;
-
     String satelliteConstraint =
         """
         context satelliteSystem::Satellite inv:
@@ -158,256 +354,40 @@ class CorrespondenceOperatorTest {
             self ~ sc
           )
         """;
-
     ConstraintResult spacecraftResult =
-        VitruvOCL.evaluateConstraint(
-            spacecraftConstraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
+        eval(spacecraftConstraint, SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES);
     ConstraintResult satelliteResult =
-        VitruvOCL.evaluateConstraint(
-            satelliteConstraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
+        eval(satelliteConstraint, SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES);
     assertTrue(spacecraftResult.isSuccess());
     assertTrue(spacecraftResult.isSatisfied(), "Spacecraft should find corresponding Satellite");
-
     assertTrue(satelliteResult.isSuccess());
     assertTrue(satelliteResult.isSatisfied(), "Satellite should find corresponding Spacecraft");
   }
 
-  // ==================== Correspondence in ForAll ====================
-
-  /**
-   * Tests correspondence operator in forAll for consistency checking.
-   *
-   * <p>Validates that forAll can be used with ~ to check properties of all corresponding objects.
-   * Checks that mass values are consistent between corresponding objects.
-   */
+  /** Tests bidirectional with exists(~) shorthand. */
   @Test
-  void testCorrespondenceInForAll() {
-    String constraint =
+  void testBidirectionalCorrespondenceSyntacticSugarVersion() {
+    String spacecraftConstraint =
         """
         context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().forAll(sat |
-            self ~ sat implies sat.massKg == self.mass
-          )
+          satelliteSystem::Satellite.allInstances().exists(~)
         """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Corresponding objects should have consistent mass values");
-  }
-
-  /**
-   * Tests correspondence with multiple attribute consistency checks.
-   *
-   * <p>Validates that the ~ operator can be used in complex boolean expressions combining
-   * correspondence checks with multiple attribute comparisons.
-   */
-  @Test
-  void testCorrespondenceMultiAttributeConsistency() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().forAll(sat |
-            self ~ sat implies (
-              sat.serialNumber == self.serialNumber and
-              sat.massKg == self.mass and
-              sat.active == self.operational
-            )
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    assertTrue(
-        result.isSatisfied(), "All attributes should be consistent for corresponding objects");
-  }
-
-  // ==================== Correspondence in Exists ====================
-
-  /**
-   * Tests correspondence operator in exists statement.
-   *
-   * <p>Validates that exists() can be used with ~ to check if at least one corresponding object
-   * meets a condition.
-   */
-  @Test
-  void testCorrespondenceInExists() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().exists(sat |
-            self ~ sat and sat.active == true
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Should find at least one active satellite that corresponds");
-  }
-
-  // ==================== Correspondence in Reject ====================
-
-  /**
-   * Tests correspondence operator in reject statement.
-   *
-   * <p>Validates that reject() can be used with ~ to filter out corresponding objects, keeping only
-   * non-corresponding ones.
-   */
-  @Test
-  void testCorrespondenceInReject() {
-    String constraint =
+    String satelliteConstraint =
         """
         context satelliteSystem::Satellite inv:
-          spaceMission::Spacecraft.allInstances().reject(sc |
-            self ~ sc
-          ).size() >= 0
+          spaceMission::Spacecraft.allInstances().exists(~)
         """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Reject should filter out corresponding spacecraft");
+    ConstraintResult spacecraftResult =
+        eval(spacecraftConstraint, SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES);
+    ConstraintResult satelliteResult =
+        eval(satelliteConstraint, SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES);
+    assertTrue(spacecraftResult.isSuccess());
+    assertTrue(spacecraftResult.isSatisfied(), "Spacecraft should find corresponding Satellite");
+    assertTrue(satelliteResult.isSuccess());
+    assertTrue(satelliteResult.isSatisfied(), "Satellite should find corresponding Spacecraft");
   }
 
-  // ==================== Correspondence with Logical Operators ====================
-
-  /**
-   * Tests correspondence combined with AND operator.
-   *
-   * <p>Validates that ~ can be combined with other boolean expressions using and.
-   */
-  @Test
-  void testCorrespondenceWithAnd() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          self.operational and
-          satelliteSystem::Satellite.allInstances().exists(sat | self ~ sat)
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    // Spacecraft must be operational AND have corresponding satellites
-  }
-
-  /**
-   * Tests correspondence in implication.
-   *
-   * <p>Validates that ~ works correctly in implication expressions for conditional consistency
-   * checking.
-   */
-  @Test
-  void testCorrespondenceInImplication() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().forAll(sat |
-            self ~ sat implies sat.active == self.operational
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    assertTrue(
-        result.isSatisfied(), "If objects correspond, their operational status should match");
-  }
-
-  // ==================== Multiple Correspondences ====================
-
-  /**
-   * Tests correspondence with multiple satellites.
-   *
-   * <p>Validates that when multiple satellites correspond to a spacecraft, the ~ operator correctly
-   * identifies all of them in select/exists statements.
-   */
-  @Test
-  void testMultipleCorrespondences() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().select(sat |
-            self ~ sat
-          ).size() >= 1
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Should find one or more corresponding satellites");
-  }
-
-  /**
-   * Tests forAll over multiple corresponding objects.
-   *
-   * <p>Validates that forAll with ~ correctly checks all corresponding objects when there are
-   * multiple correspondences.
-   */
-  @Test
-  void testForAllOnMultipleCorrespondences() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().forAll(sat |
-            self ~ sat implies sat.massKg > 0
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "All corresponding satellites should have positive mass");
-  }
-
-  // ==================== Error Cases ====================
-
-  /**
-   * Tests correspondence operator with invalid target type.
-   *
-   * <p>Validates that the type checker catches errors when trying to use ~ with a non-existent
-   * metaclass type.
-   */
+  /** Tests that ~ with a non-existent metamodel fails with a file error. */
   @Test
   void testCorrespondenceWithInvalidTargetType() {
     String constraint =
@@ -417,16 +397,8 @@ class CorrespondenceOperatorTest {
             self ~ nonExistent::FakeType
           )
         """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, CORRESPONDENCES});
-
+    ConstraintResult result = eval(constraint, SPACECRAFT_VOYAGER, CORRESPONDENCES);
     assertFalse(result.isSuccess(), "Should fail with unknown metamodel");
-
-    // Check for file errors instead of compiler errors
     assertTrue(
         result.getFileErrors().stream()
             .anyMatch(
@@ -434,344 +406,5 @@ class CorrespondenceOperatorTest {
                     err.toString().contains("nonExistent")
                         || err.toString().contains("Required metamodel")),
         "Error should mention missing metamodel 'nonExistent'");
-  }
-
-  /**
-   * Tests correspondence without correspondence model loaded.
-   *
-   * <p>Validates that when no correspondence model is loaded, the ~ operator returns false (no
-   * correspondences found) for all pairs, rather than failing.
-   */
-  @Test
-  void testCorrespondenceWithoutCorrespondenceModel() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().select(sat |
-            self ~ sat
-          ).isEmpty()
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER}); // No CORRESPONDENCES file
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Should return empty when no correspondence model is loaded");
-  }
-
-  // ==================== Complex Correspondence Queries ====================
-
-  /**
-   * Tests correspondence in nested exists statements.
-   *
-   * <p>Validates that ~ can be used in nested iterator expressions for complex correspondence
-   * queries.
-   */
-  @Test
-  void testCorrespondenceInNestedIterators() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().exists(sat1 |
-            self ~ sat1 and
-            satelliteSystem::Satellite.allInstances().exists(sat2 |
-              sat1.serialNumber != sat2.serialNumber
-            )
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    // Checks: there exists a corresponding satellite AND another satellite with different serial
-  }
-
-  /**
-   * Tests correspondence in if-then-else expression.
-   *
-   * <p>Validates that ~ results can be used in conditional expressions for branching logic based on
-   * correspondence existence.
-   */
-  @Test
-  void testCorrespondenceInConditional() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          if satelliteSystem::Satellite.allInstances().exists(sat | self ~ sat)
-          then satelliteSystem::Satellite.allInstances().forAll(sat |
-            self ~ sat implies sat.active == true
-          )
-          else true
-          endif
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    // If correspondences exist, all must be active; otherwise constraint is satisfied
-  }
-
-  /**
-   * Tests negation of correspondence check.
-   *
-   * <p>Validates that the NOT operator can be applied to correspondence checks for inverse logic.
-   */
-  @Test
-  void testNegatedCorrespondence() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().forAll(sat |
-            not (self ~ sat) or sat.massKg == self.mass
-          )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    // For all satellites: if they correspond, mass must match
-  }
-
-  /**
-   * Tests correspondence combined with attribute comparison.
-   *
-   * <p>Validates that ~ can be combined with other predicates in complex boolean expressions.
-   */
-  @Test
-  void testCorrespondenceWithAttributeFilter() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().select(sat |
-            self ~ sat and sat.massKg > 1000
-          ).size() >= 0
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    // Filters for corresponding satellites with mass > 1000kg
-  }
-
-  // ==================== Basic Correspondence Checking ====================
-
-  /**
-   * Tests basic correspondence operator shorthand in select statement.
-   *
-   * <p>Validates that select(~) correctly filters satellites that correspond to the spacecraft.
-   */
-  @Test
-  void testBasicCorrespondenceInSelectSyntacticSugarVersion() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().select(~).notEmpty()
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed");
-    assertTrue(result.isSatisfied(), "Voyager spacecraft should have corresponding satellite");
-  }
-
-  /**
-   * Tests correspondence operator returns false when no correspondence exists.
-   *
-   * <p>Validates that when objects are not in the same correspondence, select(~) returns empty.
-   */
-  @Test
-  void testCorrespondenceReturnsFalseWhenNoMatchSyntacticSugarVersion() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().select(~).isEmpty()
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_ATLAS, SATELLITE_HUBBLE, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    assertTrue(
-        result.isSatisfied(), "Atlas spacecraft should have no correspondence to Hubble satellite");
-  }
-
-  // ==================== Bidirectional Correspondence ====================
-
-  /**
-   * Tests bidirectional correspondence checking with exists(~).
-   *
-   * <p>Validates that exists(~) works in both directions.
-   */
-  @Test
-  void testBidirectionalCorrespondenceSyntacticSugarVersion() {
-    String spacecraftConstraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().exists(~)
-        """;
-
-    String satelliteConstraint =
-        """
-        context satelliteSystem::Satellite inv:
-          spaceMission::Spacecraft.allInstances().exists(~)
-        """;
-
-    ConstraintResult spacecraftResult =
-        VitruvOCL.evaluateConstraint(
-            spacecraftConstraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    ConstraintResult satelliteResult =
-        VitruvOCL.evaluateConstraint(
-            satelliteConstraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    assertTrue(spacecraftResult.isSuccess());
-    assertTrue(spacecraftResult.isSatisfied(), "Spacecraft should find corresponding Satellite");
-
-    assertTrue(satelliteResult.isSuccess());
-    assertTrue(satelliteResult.isSatisfied(), "Satellite should find corresponding Spacecraft");
-  }
-
-  // ==================== Correspondence in Reject ====================
-
-  /**
-   * Tests correspondence operator reject(~) shorthand.
-   *
-   * <p>Validates that reject(~) filters out corresponding objects.
-   */
-  @Test
-  void testCorrespondenceInRejectSyntacticSugarVersion() {
-    String constraint =
-        """
-        context satelliteSystem::Satellite inv:
-          spaceMission::Spacecraft.allInstances().reject(~).size() >= 0
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Reject should filter out corresponding spacecraft");
-  }
-
-  // ==================== Correspondence with Logical Operators ====================
-
-  /** Tests correspondence combined with AND operator using exists(~). */
-  @Test
-  void testCorrespondenceWithAndSyntacticSugarVersion() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          self.operational and
-          satelliteSystem::Satellite.allInstances().exists(~)
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    // Spacecraft must be operational AND have corresponding satellites
-  }
-
-  // ==================== Multiple Correspondences ====================
-
-  /** Tests correspondence with multiple satellites using select(~). */
-  @Test
-  void testMultipleCorrespondencesSyntacticSugarVersion() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().select(~).size() >= 1
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Should find one or more corresponding satellites");
-  }
-
-  // ==================== Complex Correspondence Queries ====================
-
-  /** Tests correspondence in if-then-else with exists(~). */
-  @Test
-  void testCorrespondenceInConditionalSyntacticSugarVersion() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          if satelliteSystem::Satellite.allInstances().exists(~)
-          then satelliteSystem::Satellite.allInstances().forAll(sat |
-            self ~ sat implies sat.active == true
-          )
-          else true
-          endif
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    // If correspondences exist, all must be active; otherwise constraint is satisfied
-  }
-
-  /** Tests correspondence combined with attribute comparison using select(~). */
-  @Test
-  void testCorrespondenceWithAttributeFilterSyntacticSugarVersion() {
-    String constraint =
-        """
-        context spaceMission::Spacecraft inv:
-          satelliteSystem::Satellite.allInstances().select(~)
-            .select(sat | sat.massKg > 1000).size() >= 0
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE, CORRESPONDENCE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, CORRESPONDENCES});
-
-    assertTrue(result.isSuccess());
-    // First filters for corresponding satellites, then filters for mass > 1000kg
   }
 }

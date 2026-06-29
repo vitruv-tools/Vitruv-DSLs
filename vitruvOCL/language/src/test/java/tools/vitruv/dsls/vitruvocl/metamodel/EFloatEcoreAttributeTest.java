@@ -8,8 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.dsls.vitruvocl.pipeline.ConstraintResult;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
 import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCL;
@@ -59,31 +62,75 @@ class EFloatEcoreAttributeTest {
     return VitruvOCL.evaluateConstraint(c, new Path[] {CAD_ECORE}, new Path[] {CAD_INST});
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // self.radius: EFloat attribute → ¡Float! singleton
-  // ══════════════════════════════════════════════════════════════
-
-  @Test
-  void testSphereRadiusIsFloat() {
-    // self.radius > 0 — basic EFloat attribute access
-    ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius > 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied(), "All sphere radii should be > 0");
-  }
-
-  @Test
-  void testSphereRadiusEquality() {
-    // self.radius == self.radius → ¡Boolean! true (EFloat == EFloat)
-    ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius == self.radius");
+  @ParameterizedTest
+  @MethodSource("satisfiedConstraints")
+  void testConstraintSatisfied(String c) {
+    ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
-  @Test
-  void testSphereRadiusComparisonGe() {
-    ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius >= 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
+  static Stream<String> satisfiedConstraints() {
+    return Stream.of(
+        // Basic EFloat attribute access
+        "context cad::Sphere inv:\n  self.radius > 0",
+        "context cad::Sphere inv:\n  self.radius == self.radius",
+        "context cad::Sphere inv:\n  self.radius >= 0",
+        // EFloat arithmetic promotion rules
+        "context cad::Sphere inv:\n  self.radius + 1 > 0",
+        "context cad::Sphere inv:\n  self.radius * 2 > 0",
+        """
+        context cad::Sphere inv:
+          let r = self.radius in
+          r * r > 0""",
+        "context cad::Sphere inv:\n  self.radius + 0.5 > 0",
+        "context cad::Sphere inv:\n  self.radius / 2 > 0",
+        // EFloat unary ops: abs() preserves, floor/ceil/round promote
+        "context cad::Sphere inv:\n  self.radius.abs() > 0",
+        "context cad::Sphere inv:\n  self.radius.floor() >= 0",
+        "context cad::Sphere inv:\n  self.radius.ceil() > 0",
+        "context cad::Sphere inv:\n  self.radius.round() >= 0",
+        "context cad::Sphere inv:\n  self.radius.ceiling() > 0",
+        // EFloat in collections
+        "context cad::Sphere inv:\n  cad::Sphere.allInstances().collect(s | s.radius).size() > 0",
+        "context cad::Sphere inv:\n  cad::Sphere.allInstances().select(s | s.radius > 0).size() > 0",
+        """
+        context cad::Sphere inv:
+          cad::Sphere.allInstances().forAll(s | s.radius > 0)""",
+        "context cad::Sphere inv:\n  cad::Sphere.allInstances().collect(s | s.radius).max() > 0",
+        "context cad::Sphere inv:\n  cad::Sphere.allInstances().collect(s | s.radius).min() > 0",
+        "context cad::Sphere inv:\n  cad::Sphere.allInstances().collect(s | s.radius).sum() > 0",
+        // EFloat in let binding
+        """
+        context cad::Sphere inv:
+          let r = self.radius in
+          r > 0""",
+        """
+        context cad::Sphere inv:
+          let r = self.radius in
+          r * 2.0 > 0""",
+        """
+        context cad::Tube inv:
+          let outer = self.outerRadius in
+          let inner = self.innerRadius in
+          outer > inner""",
+        // Multiple EFloat attributes (Cylinder, Tube, Cone)
+        "context cad::Cylinder inv:\n  self.radius > 0",
+        "context cad::Tube inv:\n  self.outerRadius > 0",
+        "context cad::Tube inv:\n  self.innerRadius >= 0",
+        "context cad::Cone inv:\n  self.baseRadius > 0",
+        """
+        context cad::Tube inv:
+          self.outerRadius > self.innerRadius""",
+        // EFloat in if-then-else
+        "context cad::Sphere inv:\n  if self.radius > 0 then true else false endif",
+        """
+        context cad::Tube inv:
+          if self.outerRadius > self.innerRadius
+          then self.outerRadius
+          else self.innerRadius
+          endif > 0"""
+    );
   }
 
   @Test
@@ -95,272 +142,5 @@ class EFloatEcoreAttributeTest {
             new Path[] {Path.of("Intersecting.cad")});
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertFalse(r.isSatisfied(), "No sphere should have negative radius");
-  }
-
-  // ══════════════════════════════════════════════════════════════
-  // EFloat arithmetic promotion rules
-  // ══════════════════════════════════════════════════════════════
-
-  @Test
-  void testFloatPlusIntegerPromotion() {
-    // self.radius (¡Float!) + 1 (¡Integer!) → ¡Double!
-    ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius + 1 > 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testFloatTimesIntegerPromotion() {
-    // self.radius * 2 → ¡Double!
-    ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius * 2 > 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testFloatTimesFloatPromotion() {
-    // self.radius * self.radius → ¡Double! (radius^2)
-    ConstraintResult r =
-        evalCad("""
-            context cad::Sphere inv:
-              let r = self.radius in
-              r * r > 0""");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testFloatPlusDoublePromotion() {
-    // self.radius + 0.5 → ¡Double!
-    ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius + 0.5 > 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testFloatDivideIntegerPromotion() {
-    // self.radius / 2 → ¡Double!
-    ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius / 2 > 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  // ══════════════════════════════════════════════════════════════
-  // EFloat unary ops: abs() preserves, floor/ceil/round promote
-  // ══════════════════════════════════════════════════════════════
-
-  @Test
-  void testFloatAbsPreservesType() {
-    // self.radius.abs() → ¡Float!
-    ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius.abs() > 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testFloatFloorPromotion() {
-    // self.radius.floor() → ¡Double! (promoted)
-    ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius.floor() >= 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testFloatCeilPromotion() {
-    ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius.ceil() > 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testFloatRoundPromotion() {
-    ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius.round() >= 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testFloatCeilingPromotion() {
-    ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius.ceiling() > 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  // ══════════════════════════════════════════════════════════════
-  // EFloat in collections (collect, select, forAll)
-  // ══════════════════════════════════════════════════════════════
-
-  @Test
-  void testCollectFloatAttribute() {
-    // cad::Sphere.allInstances().collect(s | s.radius) → Set{¡Float!}
-    ConstraintResult r =
-        evalCad(
-            "context cad::Sphere inv:\n"
-                + "  cad::Sphere.allInstances().collect(s | s.radius).size() > 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testSelectOnFloatPredicate() {
-    // select on EFloat attribute
-    ConstraintResult r =
-        evalCad(
-            "context cad::Sphere inv:\n"
-                + "  cad::Sphere.allInstances().select(s | s.radius > 0).size() > 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testForAllOnFloatPredicate() {
-    ConstraintResult r =
-        evalCad(
-            """
-            context cad::Sphere inv:
-              cad::Sphere.allInstances().forAll(s | s.radius > 0)""");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testCollectFloatThenMax() {
-    // max() on a Set{¡Float!}
-    ConstraintResult r =
-        evalCad(
-            "context cad::Sphere inv:\n"
-                + "  cad::Sphere.allInstances().collect(s | s.radius).max() > 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testCollectFloatThenMin() {
-    ConstraintResult r =
-        evalCad(
-            "context cad::Sphere inv:\n"
-                + "  cad::Sphere.allInstances().collect(s | s.radius).min() > 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testCollectFloatThenSum() {
-    ConstraintResult r =
-        evalCad(
-            "context cad::Sphere inv:\n"
-                + "  cad::Sphere.allInstances().collect(s | s.radius).sum() > 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  // ══════════════════════════════════════════════════════════════
-  // EFloat in let binding
-  // ══════════════════════════════════════════════════════════════
-
-  @Test
-  void testFloatInLetBinding() {
-    ConstraintResult r =
-        evalCad("""
-            context cad::Sphere inv:
-              let r = self.radius in
-              r > 0""");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testFloatLetArithmetic() {
-    ConstraintResult r =
-        evalCad("""
-            context cad::Sphere inv:
-              let r = self.radius in
-              r * 2.0 > 0""");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testFloatLetComparisonToOtherFloat() {
-    // Tube.outerRadius > Tube.innerRadius (both EFloat)
-    ConstraintResult r =
-        evalCad(
-            """
-            context cad::Tube inv:
-              let outer = self.outerRadius in
-              let inner = self.innerRadius in
-              outer > inner""");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  // ══════════════════════════════════════════════════════════════
-  // Multiple EFloat attributes (Cylinder, Tube, Cone)
-  // ══════════════════════════════════════════════════════════════
-
-  @Test
-  void testCylinderRadiusIsFloat() {
-    ConstraintResult r = evalCad("context cad::Cylinder inv:\n  self.radius > 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testTubeOuterRadiusIsFloat() {
-    ConstraintResult r = evalCad("context cad::Tube inv:\n  self.outerRadius > 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testTubeInnerRadiusIsFloat() {
-    ConstraintResult r = evalCad("context cad::Tube inv:\n  self.innerRadius >= 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testConeBaseRadiusIsFloat() {
-    ConstraintResult r = evalCad("context cad::Cone inv:\n  self.baseRadius > 0");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testTwoFloatAttributesComparison() {
-    // outerRadius > innerRadius (two EFloat attrs from same object)
-    ConstraintResult r =
-        evalCad("""
-            context cad::Tube inv:
-              self.outerRadius > self.innerRadius""");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  // ══════════════════════════════════════════════════════════════
-  // EFloat in if-then-else
-  // ══════════════════════════════════════════════════════════════
-
-  @Test
-  void testFloatInIfCondition() {
-    ConstraintResult r =
-        evalCad("context cad::Sphere inv:\n" + "  if self.radius > 0 then true else false endif");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testFloatInIfThenElseBranches() {
-    // if cond then EFloat else EFloat → ¡Float! result
-    ConstraintResult r =
-        evalCad(
-            """
-            context cad::Tube inv:
-              if self.outerRadius > self.innerRadius
-              then self.outerRadius
-              else self.innerRadius
-              endif > 0""");
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
   }
 }

@@ -843,12 +843,12 @@ public abstract class Type {
     public boolean equals(Object obj) {
       if (this == obj) return true;
       if (!(obj instanceof EnumType other)) return false;
-      return eEnum.equals(other.eEnum);
+      return getTypeName().equals(other.getTypeName());
     }
 
     @Override
     public int hashCode() {
-      return eEnum.hashCode();
+      return getTypeName().hashCode();
     }
   }
 

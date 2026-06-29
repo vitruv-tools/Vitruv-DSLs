@@ -16,11 +16,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.provider.Arguments;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.dsls.vitruvocl.DummyTestSpecification;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLLexer;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
@@ -64,106 +68,59 @@ class OCLIsTypeOfTest extends DummyTestSpecification {
     MetamodelWrapper.setTestModelsPath(Path.of("src/test/resources/test-models"));
   }
 
-  // ==================== Integer Type Checking ====================
+  // ==================== Single-element type checking ====================
 
-  /** Tests Integer is type of Integer → {@code [true]}. */
-  @Test
-  void testIntegerIsTypeOfInteger() {
-    assertSingleBool(compile("Set{5}.oclIsTypeOf(Integer)"), true);
+  @ParameterizedTest
+  @MethodSource("singleElementTrueExpressions")
+  void testSingleElementIsTypeOfSelf(String expression) {
+    assertSingleBool(compile(expression), true);
   }
 
-  /** Tests Integer is NOT type of String → {@code [false]}. */
-  @Test
-  void testIntegerIsTypeOfString() {
-    assertSingleBool(compile("Set{5}.oclIsTypeOf(String)"), false);
+  static Stream<String> singleElementTrueExpressions() {
+    return Stream.of(
+        "Set{5}.oclIsTypeOf(Integer)",
+        "Set{\"hello\"}.oclIsTypeOf(String)",
+        "Set{true}.oclIsTypeOf(Boolean)"
+    );
   }
 
-  /** Tests Integer is NOT type of Boolean → {@code [false]}. */
-  @Test
-  void testIntegerIsTypeOfBoolean() {
-    assertSingleBool(compile("Set{5}.oclIsTypeOf(Boolean)"), false);
+  @ParameterizedTest
+  @MethodSource("singleElementFalseExpressions")
+  void testSingleElementIsNotTypeOf(String expression) {
+    assertSingleBool(compile(expression), false);
   }
 
-  // ==================== String Type Checking ====================
-
-  /** Tests String is type of String → {@code [true]}. */
-  @Test
-  void testStringIsTypeOfString() {
-    assertSingleBool(compile("Set{\"hello\"}.oclIsTypeOf(String)"), true);
-  }
-
-  /** Tests String is NOT type of Integer → {@code [false]}. */
-  @Test
-  void testStringIsTypeOfInteger() {
-    assertSingleBool(compile("Set{\"hello\"}.oclIsTypeOf(Integer)"), false);
-  }
-
-  /** Tests String is NOT type of Boolean → {@code [false]}. */
-  @Test
-  void testStringIsTypeOfBoolean() {
-    assertSingleBool(compile("Set{\"hello\"}.oclIsTypeOf(Boolean)"), false);
-  }
-
-  // ==================== Boolean Type Checking ====================
-
-  /** Tests Boolean is type of Boolean → {@code [true]}. */
-  @Test
-  void testBooleanIsTypeOfBoolean() {
-    assertSingleBool(compile("Set{true}.oclIsTypeOf(Boolean)"), true);
-  }
-
-  /** Tests Boolean is NOT type of Integer → {@code [false]}. */
-  @Test
-  void testBooleanIsTypeOfInteger() {
-    assertSingleBool(compile("Set{true}.oclIsTypeOf(Integer)"), false);
-  }
-
-  /** Tests Boolean is NOT type of String → {@code [false]}. */
-  @Test
-  void testBooleanIsTypeOfString() {
-    assertSingleBool(compile("Set{false}.oclIsTypeOf(String)"), false);
+  static Stream<String> singleElementFalseExpressions() {
+    return Stream.of(
+        "Set{5}.oclIsTypeOf(String)",
+        "Set{5}.oclIsTypeOf(Boolean)",
+        "Set{\"hello\"}.oclIsTypeOf(Integer)",
+        "Set{\"hello\"}.oclIsTypeOf(Boolean)",
+        "Set{true}.oclIsTypeOf(Integer)",
+        "Set{false}.oclIsTypeOf(String)"
+    );
   }
 
   // ==================== Multiple Elements ====================
 
-  /** Tests all Integer elements → all true: {@code Set{1,2,3}.oclIsTypeOf(Integer)}. */
-  @Test
-  void testMultipleIntegersIsTypeOfInteger() {
-    Value result = compile("Set{1, 2, 3}.oclIsTypeOf(Integer)");
-    assertSize(result, 3);
+  @ParameterizedTest
+  @MethodSource("multipleElementExpressions")
+  void testMultipleElementsTypeOf(String expr, int expectedSize, boolean expectedAll) {
+    Value result = compile(expr);
+    assertSize(result, expectedSize);
     for (OCLElement elem : result.getElements()) {
-      assertTrue(((OCLElement.BoolValue) elem).value());
+      assertEquals(expectedAll, ((OCLElement.BoolValue) elem).value());
     }
   }
 
-  /** Tests Integer elements checked against String → all false. */
-  @Test
-  void testMultipleIntegersIsTypeOfString() {
-    Value result = compile("Set{1, 2, 3}.oclIsTypeOf(String)");
-    assertSize(result, 3);
-    for (OCLElement elem : result.getElements()) {
-      assertFalse(((OCLElement.BoolValue) elem).value());
-    }
-  }
-
-  /** Tests all String elements → all true. */
-  @Test
-  void testMultipleStringsIsTypeOfString() {
-    Value result = compile("Set{\"a\", \"b\", \"c\"}.oclIsTypeOf(String)");
-    assertSize(result, 3);
-    for (OCLElement elem : result.getElements()) {
-      assertTrue(((OCLElement.BoolValue) elem).value());
-    }
-  }
-
-  /** Tests Boolean Set with duplicates: {true,false,true} → 2 elements, both true. */
-  @Test
-  void testMultipleBooleansIsTypeOfBoolean() {
-    Value result = compile("Set{true, false, true}.oclIsTypeOf(Boolean)");
-    assertSize(result, 2);
-    for (OCLElement elem : result.getElements()) {
-      assertTrue(((OCLElement.BoolValue) elem).value());
-    }
+  static Stream<Arguments> multipleElementExpressions() {
+    return Stream.of(
+        Arguments.of("Set{1, 2, 3}.oclIsTypeOf(Integer)", 3, true),
+        Arguments.of("Set{1, 2, 3}.oclIsTypeOf(String)", 3, false),
+        Arguments.of("Set{\"a\", \"b\", \"c\"}.oclIsTypeOf(String)", 3, true),
+        Arguments.of("Set{true, false, true}.oclIsTypeOf(Boolean)", 2, true),
+        Arguments.of("Sequence{1, 2, 3}.oclIsTypeOf(Integer)", 3, true)
+    );
   }
 
   // ==================== Empty Collection ====================
@@ -172,18 +129,6 @@ class OCLIsTypeOfTest extends DummyTestSpecification {
   @Test
   void testEmptyCollectionIsTypeOf() {
     assertSize(compile("Set{}.oclIsTypeOf(Integer)"), 0);
-  }
-
-  // ==================== Sequence Preservation ====================
-
-  /** Tests Sequence order preserved: {@code Sequence{1,2,3}.oclIsTypeOf(Integer)} → all true. */
-  @Test
-  void testSequencePreservesOrder() {
-    Value result = compile("Sequence{1, 2, 3}.oclIsTypeOf(Integer)");
-    assertSize(result, 3);
-    for (OCLElement elem : result.getElements()) {
-      assertTrue(((OCLElement.BoolValue) elem).value());
-    }
   }
 
   // ==================== Type Checking ====================
@@ -300,26 +245,31 @@ class OCLIsTypeOfTest extends DummyTestSpecification {
 
   // ==================== Metamodel Type Checking ====================
 
-  /** Tests Spacecraft instance is exactly of type Spacecraft → {@code [true]}. */
-  @Test
-  void testSpacecraftIsTypeOfSpacecraft() {
-    String constraint =
+  @ParameterizedTest
+  @MethodSource("metamodelTypeOfSatisfiedConstraints")
+  void testMetamodelTypeOfConstraintSatisfied(String constraint) {
+    ConstraintResult r = VitruvOCL.evaluateConstraint(
+        constraint,
+        new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+        new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
+    assertTrue(r.isSuccess(), "Evaluation should succeed");
+    assertTrue(r.isSatisfied());
+  }
+
+  static Stream<String> metamodelTypeOfSatisfiedConstraints() {
+    return Stream.of(
         """
 context spaceMission::Spacecraft inv typeOfSpacecraft:
   spaceMission::Spacecraft.allInstances().oclIsTypeOf(spaceMission::Spacecraft).forAll(b | b)
-""";
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed");
-    assertTrue(result.isSatisfied(), "Spacecraft instances should be exactly of type Spacecraft");
+""",
+        """
+context satelliteSystem::Satellite inv typeOfSatellite:
+  satelliteSystem::Satellite.allInstances().oclIsTypeOf(satelliteSystem::Satellite).forAll(b | b)
+"""
+    );
   }
 
-  /** Tests Spacecraft instance is NOT exactly of type Satellite → all false, constraint fails. */
+  /** Spacecraft is NOT exactly of type Satellite → constraint fails. */
   @Test
   void testSpacecraftIsNotTypeOfSatellite() {
     String constraint =
@@ -327,40 +277,15 @@ context spaceMission::Spacecraft inv typeOfSpacecraft:
 context spaceMission::Spacecraft inv typeOfSatellite:
   spaceMission::Spacecraft.allInstances().oclIsTypeOf(satelliteSystem::Satellite).forAll(b | b)
 """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed");
-    assertFalse(result.isSatisfied(), "Spacecraft is not of type Satellite");
+    ConstraintResult r = VitruvOCL.evaluateConstraint(
+        constraint,
+        new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+        new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
+    assertTrue(r.isSuccess(), "Evaluation should succeed");
+    assertFalse(r.isSatisfied(), "Spacecraft is not of type Satellite");
   }
 
-  /** Tests Satellite instances are exactly of type Satellite → all true. */
-  @Test
-  void testSatelliteIsTypeOfSatellite() {
-    String constraint =
-        """
-context satelliteSystem::Satellite inv typeOfSatellite:
-  satelliteSystem::Satellite.allInstances().oclIsTypeOf(satelliteSystem::Satellite).forAll(b | b)
-""";
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed");
-    assertTrue(result.isSatisfied(), "Satellite instances should be exactly of type Satellite");
-  }
-
-  /**
-   * Tests mixed allInstances() results filtered by oclIsTypeOf. Only Spacecraft instances should
-   * pass oclIsTypeOf(Spacecraft).
-   */
+  /** Tests oclIsTypeOf used inside select iterator (uses extra instance file SPACECRAFT_ATLAS). */
   @Test
   void testOclIsTypeOfUsedInSelect() {
     String constraint =
@@ -370,15 +295,12 @@ context satelliteSystem::Satellite inv typeOfSatellite:
             sc.oclIsTypeOf(spaceMission::Spacecraft)
           ).size() > 0
         """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-            new Path[] {SPACECRAFT_VOYAGER, SPACECRAFT_ATLAS, SATELLITE_VOYAGER});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed");
-    assertTrue(result.isSatisfied(), "Should find Spacecraft instances via oclIsTypeOf");
+    ConstraintResult r = VitruvOCL.evaluateConstraint(
+        constraint,
+        new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+        new Path[] {SPACECRAFT_VOYAGER, SPACECRAFT_ATLAS, SATELLITE_VOYAGER});
+    assertTrue(r.isSuccess(), "Evaluation should succeed");
+    assertTrue(r.isSatisfied(), "Should find Spacecraft instances via oclIsTypeOf");
   }
 
   /**

@@ -17,8 +17,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.dsls.vitruvocl.pipeline.ConstraintResult;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
 import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCL;
@@ -48,14 +51,67 @@ class BrakeSystemConstraintTest {
   }
 
   // ---------------------------------------------------------------------------
-  // Cross-metamodel brake system constraints
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  private static ConstraintResult eval(String c) {
+    return VitruvOCL.evaluateConstraint(
+        c, new Path[] {BRAKESYSTEM_ECORE, CAD_ECORE},
+        new Path[] {BRAKESYSTEM_INSTANCE, CAD_INSTANCE});
+  }
+
+  private static ConstraintResult evalCad(String c) {
+    return VitruvOCL.evaluateConstraint(c, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
+  }
+
+  // ---------------------------------------------------------------------------
+  // Cross-metamodel brake system constraints: satisfied
+  // ---------------------------------------------------------------------------
+
+  @ParameterizedTest
+  @MethodSource("crossMetamodelSatisfiedConstraints")
+  void testCrossMetamodelConstraintSatisfied(String constraint) {
+    ConstraintResult r = eval(constraint);
+    assertTrue(r.isSuccess(), "Evaluation should succeed: " + r.toDetailedErrorString());
+    assertTrue(r.isSatisfied());
+  }
+
+  static Stream<String> crossMetamodelSatisfiedConstraints() {
+    return Stream.of(
+        // x=165 >= 165 and x=175 >= 165 → satisfied
+        """
+        context brakesystem::BrakeDisk inv:
+          let cadDisk = cad::Namespace.allInstances().select(b | b.id == self.id) in
+          let brakeCaliper = brakesystem::BrakeCaliper.allInstances().first() in
+          let cadCaliper = cad::Namespace.allInstances()
+            .select(b | b.id == brakeCaliper.id) in
+          cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+            .forAll(p | p.oclAsType(cad::Coordinate).x >= self.diameterInMM / 2)
+        """,
+        // oclIsTypeOf correctly filters only Coordinate instances
+        """
+        context brakesystem::BrakeDisk inv onlyCoordinates:
+          let cadCaliper = cad::Namespace.allInstances()
+            .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
+          cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size() == 4
+        """,
+        // oclIsKindOf finds all Parameter subtypes
+        """
+        context brakesystem::BrakeDisk inv allSubtypes:
+          let cadCaliper = cad::Namespace.allInstances()
+            .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
+          cadCaliper.parameters.select(p | p.oclIsKindOf(cad::Parameter)).size() == 5
+        """
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Cross-metamodel brake system constraints: special cases
   // ---------------------------------------------------------------------------
 
   /**
-   * Tests that Coordinate parameters in the caliper namespace can be filtered and cast. Verifies
-   * oclIsTypeOf + oclAsType pipeline with real inheritance (Coordinate extends Parameter). The
-   * caliper has Coordinates with x=165 and x=175, disk diameter=330 (radius=165). x=175 > 165 →
-   * constraint should NOT be satisfied.
+   * The caliper has Coordinates with x=165 and x=175, disk diameter=330 (radius=165).
+   * x=175 > 165 → constraint should NOT be satisfied.
    */
   @Test
   void testCaliperCoordinatesWithinDiskRadius() {
@@ -67,101 +123,12 @@ class BrakeSystemConstraintTest {
           cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
             .forAll(p | p.oclAsType(cad::Coordinate).x <= self.diameterInMM / 2)
         """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {BRAKESYSTEM_ECORE, CAD_ECORE},
-            new Path[] {BRAKESYSTEM_INSTANCE, CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertFalse(
-        result.isSatisfied(),
-        "Constraint should fail: caliper coordinate x=175 exceeds disk radius 165");
+    ConstraintResult r = eval(constraint);
+    assertTrue(r.isSuccess(), "Evaluation should succeed: " + r.toDetailedErrorString());
+    assertFalse(r.isSatisfied(), "Constraint should fail: caliper coordinate x=175 exceeds disk radius 165");
   }
 
-  /**
-   * Tests that all caliper Coordinate x-values are >= disk radius. The caliper has Coordinates with
-   * x=165 and x=175, disk radius=165. x=165 >= 165 and x=175 >= 165 → constraint SHOULD be
-   * satisfied.
-   */
-  @Test
-  void testCaliperCoordinatesOutsideDiskRadius() {
-    String constraint =
-        """
-        context brakesystem::BrakeDisk inv:
-          let cadDisk = cad::Namespace.allInstances().select(b | b.id == self.id) in
-          let brakeCaliper = brakesystem::BrakeCaliper.allInstances().first() in
-          let cadCaliper = cad::Namespace.allInstances()
-            .select(b | b.id == brakeCaliper.id) in
-          cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
-            .forAll(p | p.oclAsType(cad::Coordinate).x >= self.diameterInMM / 2)
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {BRAKESYSTEM_ECORE, CAD_ECORE},
-            new Path[] {BRAKESYSTEM_INSTANCE, CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    // x=165 >= 165 and x=175 >= 165 → satisfied
-    assertTrue(
-        result.isSatisfied(),
-        "Constraint should pass: all caliper coordinate x-values >= disk radius 165");
-  }
-
-  /**
-   * Tests that oclIsTypeOf correctly filters only Coordinate instances from mixed Parameter list.
-   * The caliper namespace has 4 Coordinates and 1 NumericParameter.
-   */
-  @Test
-  void testFilterCoordinatesFromMixedParameters() {
-    String constraint =
-        """
-        context brakesystem::BrakeDisk inv onlyCoordinates:
-          let cadCaliper = cad::Namespace.allInstances()
-            .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
-          cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size() == 4
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {BRAKESYSTEM_ECORE, CAD_ECORE},
-            new Path[] {BRAKESYSTEM_INSTANCE, CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Should find exactly 4 Coordinate parameters in caliper namespace");
-  }
-
-  /**
-   * Tests that oclIsKindOf finds all Parameter subtypes including Coordinate and NumericParameter.
-   */
-  @Test
-  void testFilterAllParameterSubtypes() {
-    String constraint =
-        """
-        context brakesystem::BrakeDisk inv allSubtypes:
-          let cadCaliper = cad::Namespace.allInstances()
-            .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
-          cadCaliper.parameters.select(p | p.oclIsKindOf(cad::Parameter)).size() == 5
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {BRAKESYSTEM_ECORE, CAD_ECORE},
-            new Path[] {BRAKESYSTEM_INSTANCE, CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(),
-        "Should find all 5 parameters (Coordinate + NumericParameter) via oclIsKindOf");
-  }
-
-  /** Tests that oclAsType property access on x-coordinates returns a collection of size 2. */
+  /** oclAsType property access on x-coordinates returns a collection of size 2. */
   @Test
   void testOclAsTypePropertyAccessX() {
     String constraint =
@@ -171,17 +138,11 @@ class BrakeSystemConstraintTest {
             .parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
             .collect(p | p.oclAsType(cad::Coordinate).x).size() == 2
         """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {BRAKESYSTEM_ECORE, CAD_ECORE},
-            new Path[] {BRAKESYSTEM_INSTANCE, CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
+    ConstraintResult r = eval(constraint);
+    assertTrue(r.isSuccess(), "Evaluation should succeed: " + r.toDetailedErrorString());
   }
 
-  /** Tests the original constraint using string concatenation to avoid line-length issues. */
+  /** Original constraint using string concatenation; caliper coordinate x=175 exceeds radius 165. */
   @Test
   void testOriginalConstraintExact() {
     String constraint =
@@ -192,231 +153,83 @@ class BrakeSystemConstraintTest {
           let cadCaliper = cad::Namespace.allInstances().select(b | b.id == brakeCaliper.id) in
           cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).forAll(p |\
  p.oclAsType(cad::Coordinate).x <= self.diameterInMM / 2)""";
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {BRAKESYSTEM_ECORE, CAD_ECORE},
-            new Path[] {BRAKESYSTEM_INSTANCE, CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertFalse(
-        result.isSatisfied(),
-        "Constraint should fail: caliper coordinate x=175 exceeds disk radius 165");
+    ConstraintResult r = eval(constraint);
+    assertTrue(r.isSuccess(), "Evaluation should succeed: " + r.toDetailedErrorString());
+    assertFalse(r.isSatisfied(), "Constraint should fail: caliper coordinate x=175 exceeds disk radius 165");
   }
 
   // ---------------------------------------------------------------------------
-  // CAD basic validity constraints
+  // CAD shape validity + non-intersection constraints
   // ---------------------------------------------------------------------------
 
-  /** Tests that all Sphere instances have a positive radius. */
-  @Test
-  void testSphereRadiusPositive() {
-    String constraint =
+  @ParameterizedTest
+  @MethodSource("cadConstraints")
+  void testCadConstraintSatisfied(String constraint) {
+    ConstraintResult r = evalCad(constraint);
+    assertTrue(r.isSuccess(), "Evaluation should succeed: " + r.toDetailedErrorString());
+    assertTrue(r.isSatisfied());
+  }
+
+  static Stream<String> cadConstraints() {
+    return Stream.of(
+        // ── basic shape validity ─────────────────────────────────────────────
         """
         context cad::Sphere inv radiusPositive:
           self.radius > 0
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "All spheres should have positive radius");
-  }
-
-  /** Tests that all Cylinder instances have a positive radius. */
-  @Test
-  void testCylinderRadiusPositive() {
-    String constraint =
+        """,
         """
         context cad::Cylinder inv radiusPositive:
           self.radius > 0
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "All cylinders should have positive radius");
-  }
-
-  /** Tests that all Cylinder instances have distinct top and bottom center points. */
-  @Test
-  void testCylinderDistinctEndpoints() {
-    String constraint =
+        """,
         """
         context cad::Cylinder inv distinctEndpoints:
           self.bottomCenter.x != self.topCenter.x or
           self.bottomCenter.y != self.topCenter.y or
           self.bottomCenter.z != self.topCenter.z
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "All cylinders should have distinct top/bottom centers");
-  }
-
-  /** Tests that all Cone instances have a positive base radius. */
-  @Test
-  void testConeBaseRadiusPositive() {
-    String constraint =
+        """,
         """
         context cad::Cone inv baseRadiusPositive:
           self.baseRadius > 0
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "All cones should have positive base radius");
-  }
-
-  /** Tests that all Cone instances have distinct base center and apex points. */
-  @Test
-  void testConeDistinctBaseAndApex() {
-    String constraint =
+        """,
         """
         context cad::Cone inv distinctBaseAndApex:
           self.baseCenter.x != self.apex.x or
           self.baseCenter.y != self.apex.y or
           self.baseCenter.z != self.apex.z
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "All cones should have distinct base center and apex");
-  }
-
-  /** Tests that all Tube instances have a positive outer radius. */
-  @Test
-  void testTubeOuterRadiusPositive() {
-    String constraint =
+        """,
         """
         context cad::Tube inv outerRadiusPositive:
           self.outerRadius > 0
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "All tubes should have positive outer radius");
-  }
-
-  /** Tests that all Tube instances have a non-negative inner radius. */
-  @Test
-  void testTubeInnerRadiusNonNegative() {
-    String constraint =
+        """,
         """
         context cad::Tube inv innerRadiusNonNegative:
           self.innerRadius >= 0
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "All tubes should have non-negative inner radius");
-  }
-
-  /** Tests that all Tube instances have outer radius strictly larger than inner radius. */
-  @Test
-  void testTubeOuterLargerThanInner() {
-    String constraint =
+        """,
         """
         context cad::Tube inv outerLargerThanInner:
           self.outerRadius > self.innerRadius
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "All tubes should have outer radius larger than inner radius");
-  }
-
-  /** Tests that all Tube instances have distinct top and bottom center points. */
-  @Test
-  void testTubeDistinctEndpoints() {
-    String constraint =
+        """,
         """
         context cad::Tube inv distinctEndpoints:
           self.bottomCenter.x != self.topCenter.x or
           self.bottomCenter.y != self.topCenter.y or
           self.bottomCenter.z != self.topCenter.z
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "All tubes should have distinct top/bottom centers");
-  }
-
-  /** Tests that all Prism instances have a non-zero extrusion vector. */
-  @Test
-  void testPrismExtrusionNonZero() {
-    String constraint =
+        """,
         """
         context cad::Prism inv extrusionNonZero:
           self.extrusion.x != 0 or
           self.extrusion.y != 0 or
           self.extrusion.z != 0
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "All prisms should have a non-zero extrusion vector");
-  }
-
-  /** Tests that all Prism base profiles have at least 3 vertices. */
-  @Test
-  void testPrismBaseProfileHasEnoughVertices() {
-    String constraint =
+        """,
         """
         context cad::Prism inv baseProfileHasEnoughVertices:
           self.baseProfile.vertices.size() >= 3
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "All prism base profiles should have at least 3 vertices");
-  }
-
-  /** Tests that all Pyramid instances have a defined (non-null) apex. */
-  @Test
-  void testPyramidApexDefined() {
-    String constraint =
+        """,
         """
         context cad::Pyramid inv apexDefined:
           self.apex.notEmpty()
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "All pyramids should have a defined apex");
-  }
-
-  // ---------------------------------------------------------------------------
-  // CAD non-intersection constraints: Sphere
-  // ---------------------------------------------------------------------------
-
-  /** Tests that spheres from different namespaces do not intersect with other spheres. */
-  @Test
-  void testSphereNoIntersectWithSphere() {
-    String constraint =
+        """,
+        // ── Sphere non-intersection ──────────────────────────────────────────
         """
         context cad::Sphere inv noIntersectWithSphere:
           let foreignShapes =
@@ -432,19 +245,7 @@ class BrakeSystemConstraintTest {
               let rSum: Real = self.radius + o.radius in
               dx*dx + dy*dy + dz*dz >= rSum * rSum
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "Spheres in different namespaces should not intersect");
-  }
-
-  /** Tests that spheres from different namespaces do not intersect with cylinders. */
-  @Test
-  void testSphereNoIntersectWithCylinder() {
-    String constraint =
+        """,
         """
         context cad::Sphere inv noIntersectWithCylinder:
           let foreignShapes =
@@ -467,20 +268,7 @@ class BrakeSystemConstraintTest {
               let rSum: Real = self.radius + o.radius in
               dx*dx + dy*dy + dz*dz >= (rSum + halfH) * (rSum + halfH)
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Spheres should not intersect with cylinders in foreign namespaces");
-  }
-
-  /** Tests that spheres from different namespaces do not intersect with cones. */
-  @Test
-  void testSphereNoIntersectWithCone() {
-    String constraint =
+        """,
         """
         context cad::Sphere inv noIntersectWithCone:
           let foreignShapes =
@@ -503,20 +291,7 @@ class BrakeSystemConstraintTest {
               let rSum: Real = self.radius + o.baseRadius in
               dx*dx + dy*dy + dz*dz >= (rSum + halfH) * (rSum + halfH)
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Spheres should not intersect with cones in foreign namespaces");
-  }
-
-  /** Tests that spheres from different namespaces do not intersect with tubes. */
-  @Test
-  void testSphereNoIntersectWithTube() {
-    String constraint =
+        """,
         """
         context cad::Sphere inv noIntersectWithTube:
           let foreignShapes =
@@ -539,20 +314,7 @@ class BrakeSystemConstraintTest {
               let rSum: Real = self.radius + o.outerRadius in
               dx*dx + dy*dy + dz*dz >= (rSum + halfH) * (rSum + halfH)
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Spheres should not intersect with tubes in foreign namespaces");
-  }
-
-  /** Tests that spheres from different namespaces do not intersect with boxes. */
-  @Test
-  void testSphereNoIntersectWithBox() {
-    String constraint =
+        """,
         """
         context cad::Sphere inv noIntersectWithBox:
           let foreignShapes =
@@ -586,20 +348,7 @@ class BrakeSystemConstraintTest {
               let bound: Real = self.radius + halfW + halfH + halfD in
               dx*dx + dy*dy + dz*dz >= bound * bound
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Spheres should not intersect with boxes in foreign namespaces");
-  }
-
-  /** Tests that spheres from different namespaces do not intersect with prisms. */
-  @Test
-  void testSphereNoIntersectWithPrism() {
-    String constraint =
+        """,
         """
         context cad::Sphere inv noIntersectWithPrism:
           let foreignShapes =
@@ -638,20 +387,7 @@ class BrakeSystemConstraintTest {
               dy.abs() >= self.radius + (extMaxY - extMinY) / 2.0 or
               dz.abs() >= self.radius + (extMaxZ - extMinZ) / 2.0
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Spheres should not intersect with prisms in foreign namespaces");
-  }
-
-  /** Tests that spheres from different namespaces do not intersect with pyramids. */
-  @Test
-  void testSphereNoIntersectWithPyramid() {
-    String constraint =
+        """,
         """
         context cad::Sphere inv noIntersectWithPyramid:
           let foreignShapes =
@@ -666,24 +402,8 @@ class BrakeSystemConstraintTest {
               let dz: Real = self.center.z - o.apex.z in
               dx*dx + dy*dy + dz*dz >= self.radius * self.radius
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Spheres should not intersect with pyramids in foreign namespaces");
-  }
-
-  // ---------------------------------------------------------------------------
-  // CAD non-intersection constraints: Cylinder
-  // ---------------------------------------------------------------------------
-
-  /** Tests that cylinders from different namespaces do not intersect with other cylinders. */
-  @Test
-  void testCylinderNoIntersectWithCylinder() {
-    String constraint =
+        """,
+        // ── Cylinder non-intersection ────────────────────────────────────────
         """
         context cad::Cylinder inv noIntersectWithCylinder:
           let foreignShapes =
@@ -714,21 +434,7 @@ class BrakeSystemConstraintTest {
               dx*dx + dy*dy + dz*dz >=
                 (rSum + halfH1 + halfH2) * (rSum + halfH1 + halfH2)
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(),
-        "Cylinders should not intersect with cylinders in foreign namespaces");
-  }
-
-  /** Tests that cylinders from different namespaces do not intersect with cones. */
-  @Test
-  void testCylinderNoIntersectWithCone() {
-    String constraint =
+        """,
         """
         context cad::Cylinder inv noIntersectWithCone:
           let foreignShapes =
@@ -759,20 +465,7 @@ class BrakeSystemConstraintTest {
               dx*dx + dy*dy + dz*dz >=
                 (rSum + halfH1 + halfH2) * (rSum + halfH1 + halfH2)
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Cylinders should not intersect with cones in foreign namespaces");
-  }
-
-  /** Tests that cylinders from different namespaces do not intersect with tubes. */
-  @Test
-  void testCylinderNoIntersectWithTube() {
-    String constraint =
+        """,
         """
         context cad::Cylinder inv noIntersectWithTube:
           let foreignShapes =
@@ -803,20 +496,7 @@ class BrakeSystemConstraintTest {
               dx*dx + dy*dy + dz*dz >=
                 (rSum + halfH1 + halfH2) * (rSum + halfH1 + halfH2)
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Cylinders should not intersect with tubes in foreign namespaces");
-  }
-
-  /** Tests that cylinders from different namespaces do not intersect with boxes. */
-  @Test
-  void testCylinderNoIntersectWithBox() {
-    String constraint =
+        """,
         """
         context cad::Cylinder inv noIntersectWithBox:
           let foreignShapes =
@@ -857,20 +537,7 @@ class BrakeSystemConstraintTest {
               let bound: Real = self.radius + halfH1 + halfW + halfH2 + halfD in
               dx*dx + dy*dy + dz*dz >= bound * bound
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Cylinders should not intersect with boxes in foreign namespaces");
-  }
-
-  /** Tests that cylinders from different namespaces do not intersect with prisms. */
-  @Test
-  void testCylinderNoIntersectWithPrism() {
-    String constraint =
+        """,
         """
         context cad::Cylinder inv noIntersectWithPrism:
           let foreignShapes =
@@ -918,20 +585,7 @@ class BrakeSystemConstraintTest {
                                 (extMaxZ - extMinZ) / 2.0 in
               dx*dx + dy*dy + dz*dz >= bound * bound
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Cylinders should not intersect with prisms in foreign namespaces");
-  }
-
-  /** Tests that cylinders from different namespaces do not intersect with pyramids. */
-  @Test
-  void testCylinderNoIntersectWithPyramid() {
-    String constraint =
+        """,
         """
         context cad::Cylinder inv noIntersectWithPyramid:
           let foreignShapes =
@@ -954,24 +608,8 @@ class BrakeSystemConstraintTest {
               let bound: Real = self.radius + halfH1 in
               dx*dx + dy*dy + dz*dz >= bound * bound
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Cylinders should not intersect with pyramids in foreign namespaces");
-  }
-
-  // ---------------------------------------------------------------------------
-  // CAD non-intersection constraints: Cone
-  // ---------------------------------------------------------------------------
-
-  /** Tests that cones from different namespaces do not intersect with other cones. */
-  @Test
-  void testConeNoIntersectWithCone() {
-    String constraint =
+        """,
+        // ── Cone non-intersection ────────────────────────────────────────────
         """
         context cad::Cone inv noIntersectWithCone:
           let foreignShapes =
@@ -1002,19 +640,7 @@ class BrakeSystemConstraintTest {
               dx*dx + dy*dy + dz*dz >=
                 (rSum + halfH1 + halfH2) * (rSum + halfH1 + halfH2)
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "Cones should not intersect with cones in foreign namespaces");
-  }
-
-  /** Tests that cones from different namespaces do not intersect with tubes. */
-  @Test
-  void testConeNoIntersectWithTube() {
-    String constraint =
+        """,
         """
         context cad::Cone inv noIntersectWithTube:
           let foreignShapes =
@@ -1045,19 +671,7 @@ class BrakeSystemConstraintTest {
               dx*dx + dy*dy + dz*dz >=
                 (rSum + halfH1 + halfH2) * (rSum + halfH1 + halfH2)
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "Cones should not intersect with tubes in foreign namespaces");
-  }
-
-  /** Tests that cones from different namespaces do not intersect with boxes. */
-  @Test
-  void testConeNoIntersectWithBox() {
-    String constraint =
+        """,
         """
         context cad::Cone inv noIntersectWithBox:
           let foreignShapes: Set(Shape) =
@@ -1099,19 +713,7 @@ class BrakeSystemConstraintTest {
               let bound: Real = self.baseRadius + halfH1 + halfW + halfH2 + halfD in
               dx*dx + dy*dy + dz*dz >= bound * bound
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "Cones should not intersect with boxes in foreign namespaces");
-  }
-
-  /** Tests that cones from different namespaces do not intersect with prisms. */
-  @Test
-  void testConeNoIntersectWithPrism() {
-    String constraint =
+        """,
         """
         context cad::Cone inv noIntersectWithPrism:
           let foreignShapes: Set(Shape) =
@@ -1160,20 +762,7 @@ class BrakeSystemConstraintTest {
                                 (extMaxZ - extMinZ) / 2.0 in
               dx*dx + dy*dy + dz*dz >= bound * bound
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Cones should not intersect with prisms in foreign namespaces");
-  }
-
-  /** Tests that cones from different namespaces do not intersect with pyramids. */
-  @Test
-  void testConeNoIntersectWithPyramid() {
-    String constraint =
+        """,
         """
         context cad::Cone inv noIntersectWithPyramid:
           let foreignShapes =
@@ -1196,24 +785,8 @@ class BrakeSystemConstraintTest {
               let bound: Real = self.baseRadius + halfH1 in
               dx*dx + dy*dy + dz*dz >= bound * bound
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Cones should not intersect with pyramids in foreign namespaces");
-  }
-
-  // ---------------------------------------------------------------------------
-  // CAD non-intersection constraints: Tube
-  // ---------------------------------------------------------------------------
-
-  /** Tests that tubes from different namespaces do not intersect with other tubes. */
-  @Test
-  void testTubeNoIntersectWithTube() {
-    String constraint =
+        """,
+        // ── Tube non-intersection ────────────────────────────────────────────
         """
         context cad::Tube inv noIntersectWithTube:
           let foreignShapes =
@@ -1244,19 +817,7 @@ class BrakeSystemConstraintTest {
               dx*dx + dy*dy + dz*dz >=
                 (rSum + halfH1 + halfH2) * (rSum + halfH1 + halfH2)
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "Tubes should not intersect with tubes in foreign namespaces");
-  }
-
-  /** Tests that tubes from different namespaces do not intersect with boxes. */
-  @Test
-  void testTubeNoIntersectWithBox() {
-    String constraint =
+        """,
         """
         context cad::Tube inv noIntersectWithBox:
           let foreignShapes =
@@ -1297,19 +858,7 @@ class BrakeSystemConstraintTest {
               let bound: Real = self.outerRadius + halfH1 + halfW + halfH2 + halfD in
               dx*dx + dy*dy + dz*dz >= bound * bound
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "Tubes should not intersect with boxes in foreign namespaces");
-  }
-
-  /** Tests that tubes from different namespaces do not intersect with prisms. */
-  @Test
-  void testTubeNoIntersectWithPrism() {
-    String constraint =
+        """,
         """
         context cad::Tube inv noIntersectWithPrism:
           let foreignShapes =
@@ -1357,20 +906,7 @@ class BrakeSystemConstraintTest {
                                 (extMaxZ - extMinZ) / 2.0 in
               dx*dx + dy*dy + dz*dz >= bound * bound
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Tubes should not intersect with prisms in foreign namespaces");
-  }
-
-  /** Tests that tubes from different namespaces do not intersect with pyramids. */
-  @Test
-  void testTubeNoIntersectWithPyramid() {
-    String constraint =
+        """,
         """
         context cad::Tube inv noIntersectWithPyramid:
           let foreignShapes =
@@ -1393,24 +929,8 @@ class BrakeSystemConstraintTest {
               let bound: Real = self.outerRadius + halfH1 in
               dx*dx + dy*dy + dz*dz >= bound * bound
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Tubes should not intersect with pyramids in foreign namespaces");
-  }
-
-  // ---------------------------------------------------------------------------
-  // CAD non-intersection constraints: Box
-  // ---------------------------------------------------------------------------
-
-  /** Tests that boxes from different namespaces do not intersect with other boxes. */
-  @Test
-  void testBoxNoIntersectWithBox() {
-    String constraint =
+        """,
+        // ── Box non-intersection ─────────────────────────────────────────────
         """
         context cad::Box inv noIntersectWithBox:
           let foreignShapes =
@@ -1462,19 +982,7 @@ class BrakeSystemConstraintTest {
               let bound: Real = half1W + half1H + half1D + half2W + half2H + half2D in
               dx*dx + dy*dy + dz*dz >= bound * bound
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "Boxes should not intersect with boxes in foreign namespaces");
-  }
-
-  /** Tests that boxes from different namespaces do not intersect with prisms. */
-  @Test
-  void testBoxNoIntersectWithPrism() {
-    String constraint =
+        """,
         """
         context cad::Box inv noIntersectWithPrism:
           let foreignShapes =
@@ -1533,20 +1041,7 @@ class BrakeSystemConstraintTest {
                                 (extMaxZ - extMinZ) / 2.0 in
               dx*dx + dy*dy + dz*dz >= bound * bound
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Boxes should not intersect with prisms in foreign namespaces");
-  }
-
-  /** Tests that boxes from different namespaces do not intersect with pyramids. */
-  @Test
-  void testBoxNoIntersectWithPyramid() {
-    String constraint =
+        """,
         """
         context cad::Box inv noIntersectWithPyramid:
           let foreignShapes =
@@ -1580,24 +1075,8 @@ class BrakeSystemConstraintTest {
               let bound: Real = half1W + half1H + half1D in
               dx*dx + dy*dy + dz*dz >= bound * bound
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Boxes should not intersect with pyramids in foreign namespaces");
-  }
-
-  // ---------------------------------------------------------------------------
-  // CAD non-intersection constraints: Prism
-  // ---------------------------------------------------------------------------
-
-  /** Tests that prisms from different namespaces do not intersect with other prisms. */
-  @Test
-  void testPrismNoIntersectWithPrism() {
-    String constraint =
+        """,
+        // ── Prism non-intersection ───────────────────────────────────────────
         """
         context cad::Prism inv noIntersectWithPrism:
           let foreignShapes =
@@ -1660,20 +1139,7 @@ class BrakeSystemConstraintTest {
                 (eMaxY2 - eMinY2) / 2.0 + (eMaxZ2 - eMinZ2) / 2.0 in
               dx*dx + dy*dy + dz*dz >= bound * bound
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Prisms should not intersect with prisms in foreign namespaces");
-  }
-
-  /** Tests that prisms from different namespaces do not intersect with pyramids. */
-  @Test
-  void testPrismNoIntersectWithPyramid() {
-    String constraint =
+        """,
         """
         context cad::Prism inv noIntersectWithPyramid:
           let foreignShapes =
@@ -1714,24 +1180,8 @@ class BrakeSystemConstraintTest {
                 (eMaxZ1 - eMinZ1) / 2.0 in
               dx*dx + dy*dy + dz*dz >= bound * bound
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Prisms should not intersect with pyramids in foreign namespaces");
-  }
-
-  // ---------------------------------------------------------------------------
-  // CAD non-intersection constraints: Pyramid
-  // ---------------------------------------------------------------------------
-
-  /** Tests that pyramids from different namespaces do not share the same apex point. */
-  @Test
-  void testPyramidNoIntersectWithPyramid() {
-    String constraint =
+        """,
+        // ── Pyramid non-intersection ─────────────────────────────────────────
         """
         context cad::Pyramid inv noIntersectWithPyramid:
           let foreignShapes =
@@ -1746,13 +1196,7 @@ class BrakeSystemConstraintTest {
               let dz: Real = self.apex.z - o.apex.z in
               dx*dx + dy*dy + dz*dz > 0.0
             )
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(constraint, new Path[] {CAD_ECORE}, new Path[] {CAD_INSTANCE});
-
-    assertTrue(result.isSuccess(), "Evaluation should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "Pyramids should not share the same apex in foreign namespaces");
+        """
+    );
   }
 }

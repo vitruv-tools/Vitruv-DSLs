@@ -27,10 +27,13 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.change.correspondence.Correspondence;
 import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView;
 import tools.vitruv.dsls.vitruvocl.pipeline.BatchValidationResult;
@@ -362,8 +365,7 @@ class VSUMConstraintTest {
   // Correspondence operator ~ against VSUM
   // ---------------------------------------------------------------------------
 
-  @Test
-  void testCorrespondenceOperatorAgainstVSUM() {
+  private void setupCorrespondenceVsum() {
     Collection<Resource> modelResources =
         loadResources(
             SPACEMISSION_ECORE,
@@ -372,54 +374,54 @@ class VSUMConstraintTest {
             SPACECRAFT_VOYAGER,
             SATELLITE_VOYAGER,
             CORRESPONDENCES);
-
     List<Resource> corrResources =
         modelResources.stream()
             .filter(r -> r.getURI().toString().endsWith(".correspondence"))
             .toList();
-
     setupMockVsum(modelResources, mockCorrespondenceModel(corrResources));
     VitruvOCL.registerVSUM(mockVsum);
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            """
-            context spaceMission::Spacecraft inv:
-              satelliteSystem::Satellite.allInstances().exists(sat | self ~ sat)
-            """);
-
-    assertTrue(result.isSuccess(), "Should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "Spacecraft should have a corresponding Satellite");
   }
 
-  @Test
-  void testSelectCorrespondenceAgainstVSUM() {
-    Collection<Resource> modelResources =
-        loadResources(
-            SPACEMISSION_ECORE,
-            SATELLITE_ECORE,
-            CORRESPONDENCE_ECORE,
-            SPACECRAFT_VOYAGER,
-            SATELLITE_VOYAGER,
-            CORRESPONDENCES);
-
-    List<Resource> corrResources =
-        modelResources.stream()
-            .filter(r -> r.getURI().toString().endsWith(".correspondence"))
-            .toList();
-
-    setupMockVsum(modelResources, mockCorrespondenceModel(corrResources));
-    VitruvOCL.registerVSUM(mockVsum);
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            """
-            context spaceMission::Spacecraft inv:
-              satelliteSystem::Satellite.allInstances().select(~).notEmpty()
-            """);
-
+  @ParameterizedTest
+  @MethodSource("correspondenceSatisfiedConstraints")
+  void testCorrespondenceConstraintSatisfied(String constraint) {
+    setupCorrespondenceVsum();
+    ConstraintResult result = VitruvOCL.evaluateConstraint(constraint);
     assertTrue(result.isSuccess(), "Should succeed: " + result.toDetailedErrorString());
-    assertTrue(result.isSatisfied(), "select(~) should find corresponding satellites");
+    assertTrue(result.isSatisfied());
+  }
+
+  static Stream<String> correspondenceSatisfiedConstraints() {
+    return Stream.of(
+        // exists(sat | self ~ sat)
+        """
+        context spaceMission::Spacecraft inv:
+          satelliteSystem::Satellite.allInstances().exists(sat | self ~ sat)
+        """,
+        // select(~).notEmpty()
+        """
+        context spaceMission::Spacecraft inv:
+          satelliteSystem::Satellite.allInstances().select(~).notEmpty()
+        """,
+        // select(~, Tag=...) matching tag
+        """
+        context spaceMission::Spacecraft inv:
+          satelliteSystem::Satellite.allInstances()
+            .select(~, Tag = "voyager-match").notEmpty()
+        """,
+        // select(~, Tag=...) wrong tag → isEmpty
+        """
+        context spaceMission::Spacecraft inv:
+          satelliteSystem::Satellite.allInstances()
+            .select(~, Tag = "no-such-tag").isEmpty()
+        """,
+        // reject(~, Tag=...) removes match → isEmpty
+        """
+        context spaceMission::Spacecraft inv:
+          satelliteSystem::Satellite.allInstances()
+            .reject(~, Tag = "voyager-match").isEmpty()
+        """
+    );
   }
 
   @Test
@@ -444,75 +446,8 @@ class VSUMConstraintTest {
   }
 
   // ---------------------------------------------------------------------------
-  // select(~, Tag=...) / exists(~, Tag=...) / reject(~, Tag=...) against VSUM
+  // exists(~, Tag=...) against VSUM (two-call test, stays standalone)
   // ---------------------------------------------------------------------------
-
-  @Test
-  void testSelectCorrespondenceWithMatchingTagAgainstVSUM() {
-    Collection<Resource> modelResources =
-        loadResources(
-            SPACEMISSION_ECORE,
-            SATELLITE_ECORE,
-            CORRESPONDENCE_ECORE,
-            SPACECRAFT_VOYAGER,
-            SATELLITE_VOYAGER,
-            CORRESPONDENCES);
-
-    List<Resource> corrResources =
-        modelResources.stream()
-            .filter(r -> r.getURI().toString().endsWith(".correspondence"))
-            .toList();
-
-    setupMockVsum(modelResources, mockCorrespondenceModel(corrResources));
-    VitruvOCL.registerVSUM(mockVsum);
-
-    // Tag "voyager-match" ist in correspondences.correspondence vorhanden
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            """
-            context spaceMission::Spacecraft inv:
-              satelliteSystem::Satellite.allInstances()
-                .select(~, Tag = "voyager-match").notEmpty()
-            """);
-
-    assertTrue(result.isSuccess(), "Should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(),
-        "select(~, Tag='voyager-match') should find the corresponding satellite");
-  }
-
-  @Test
-  void testSelectCorrespondenceWithWrongTagAgainstVSUM() {
-    Collection<Resource> modelResources =
-        loadResources(
-            SPACEMISSION_ECORE,
-            SATELLITE_ECORE,
-            CORRESPONDENCE_ECORE,
-            SPACECRAFT_VOYAGER,
-            SATELLITE_VOYAGER,
-            CORRESPONDENCES);
-
-    List<Resource> corrResources =
-        modelResources.stream()
-            .filter(r -> r.getURI().toString().endsWith(".correspondence"))
-            .toList();
-
-    setupMockVsum(modelResources, mockCorrespondenceModel(corrResources));
-    VitruvOCL.registerVSUM(mockVsum);
-
-    // Falscher Tag → Ergebnis leer
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            """
-            context spaceMission::Spacecraft inv:
-              satelliteSystem::Satellite.allInstances()
-                .select(~, Tag = "no-such-tag").isEmpty()
-            """);
-
-    assertTrue(result.isSuccess(), "Should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(), "select(~, Tag='no-such-tag') should be empty — tag does not exist");
-  }
 
   @Test
   void testExistsCorrespondenceWithTagAgainstVSUM() {
@@ -556,40 +491,6 @@ class VSUMConstraintTest {
     assertTrue(resultFalse.isSuccess(), "Should succeed: " + resultFalse.toDetailedErrorString());
     assertTrue(
         resultFalse.isSatisfied(), "exists(~, Tag='no-such-tag') should be false — wrong tag");
-  }
-
-  @Test
-  void testRejectCorrespondenceWithTagAgainstVSUM() {
-    Collection<Resource> modelResources =
-        loadResources(
-            SPACEMISSION_ECORE,
-            SATELLITE_ECORE,
-            CORRESPONDENCE_ECORE,
-            SPACECRAFT_VOYAGER,
-            SATELLITE_VOYAGER,
-            CORRESPONDENCES);
-
-    List<Resource> corrResources =
-        modelResources.stream()
-            .filter(r -> r.getURI().toString().endsWith(".correspondence"))
-            .toList();
-
-    setupMockVsum(modelResources, mockCorrespondenceModel(corrResources));
-    VitruvOCL.registerVSUM(mockVsum);
-
-    // reject(~, Tag="voyager-match") entfernt den Voyager-Satellite → leer (nur 1 Satellite)
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            """
-            context spaceMission::Spacecraft inv:
-              satelliteSystem::Satellite.allInstances()
-                .reject(~, Tag = "voyager-match").isEmpty()
-            """);
-
-    assertTrue(result.isSuccess(), "Should succeed: " + result.toDetailedErrorString());
-    assertTrue(
-        result.isSatisfied(),
-        "reject(~, Tag='voyager-match') should remove the only satellite, leaving empty");
   }
 
   // ---------------------------------------------------------------------------

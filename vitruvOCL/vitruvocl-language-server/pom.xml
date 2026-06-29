@@ -6,16 +6,16 @@
 
     <parent>
         <groupId>tools.vitruv.dsls</groupId>
-        <artifactId>vitruvOCL</artifactId>
+        <artifactId>vitruvocl</artifactId>
         <version>0.1.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>vitruvOCL-language-server</artifactId>
+    <artifactId>vitruvocl-language-server</artifactId>
     <packaging>jar</packaging>
 
-    <name>vitruvOCL Language Server</name>
-    <description>LSP-based language server providing live diagnostics, completion and hover for vitruvOCL</description>
+    <name>vitruvocl Language Server</name>
+    <description>LSP-based language server providing live diagnostics, completion and hover for vitruvocl</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -24,41 +24,61 @@
 
     <dependencies>
         <dependency>
-    <groupId>tools.vitruv.dsls</groupId>
-    <artifactId>vitruvOCL-language</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
-</dependency>
-
-
+            <groupId>tools.vitruv.dsls</groupId>
+            <artifactId>vitruvocl-language</artifactId>
+            <version>0.1.0-SNAPSHOT</version>
+        </dependency>
 
         <dependency>
             <groupId>org.eclipse.lsp4j</groupId>
             <artifactId>org.eclipse.lsp4j</artifactId>
-            <version>0.21.2</version>
         </dependency>
 
         <dependency>
-    <groupId>org.eclipse.emf</groupId>
-    <artifactId>org.eclipse.emf.ecore</artifactId>
-    <version>2.35.0</version>
-</dependency>
-<dependency>
-    <groupId>org.eclipse.emf</groupId>
-    <artifactId>org.eclipse.emf.common</artifactId>
-    <version>2.43.0</version>
-</dependency>
+            <groupId>org.eclipse.emf</groupId>
+            <artifactId>org.eclipse.emf.ecore</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.emf</groupId>
+            <artifactId>org.eclipse.emf.common</artifactId>
+        </dependency>
 
         <dependency>
-    <groupId>org.antlr</groupId>
-    <artifactId>antlr4-runtime</artifactId>
-    <version>4.13.1</version>
-</dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+        </dependency>
 
-<dependency>
-    <groupId>org.eclipse.emf</groupId>
-    <artifactId>org.eclipse.emf.ecore.xmi</artifactId>
-    <version>2.39.0</version>
-</dependency>
+        <dependency>
+            <groupId>org.eclipse.emf</groupId>
+            <artifactId>org.eclipse.emf.ecore.xmi</artifactId>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -96,6 +116,10 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

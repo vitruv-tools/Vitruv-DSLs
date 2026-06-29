@@ -14,7 +14,10 @@ package tools.vitruv.dsls.vitruvocl.iterators;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.dsls.vitruvocl.DummyTestSpecification;
 import tools.vitruv.dsls.vitruvocl.evaluator.OCLElement;
 import tools.vitruv.dsls.vitruvocl.evaluator.Value;
@@ -56,12 +59,20 @@ class IteratorTest extends DummyTestSpecification {
     assertIncludes(result, 5);
   }
 
-  /** Tests select where no elements match → empty collection. */
-  @Test
-  void testSelectNoneMatch() {
-    Value result = compile("Set{1,2,3}.select(x | x > 10)");
+  @ParameterizedTest
+  @MethodSource("emptyResultExpressions")
+  void testEmptyResult(String expr) {
+    Value result = compile(expr);
     assertTrue(result.isEmpty());
     assertSize(result, 0);
+  }
+
+  static Stream<String> emptyResultExpressions() {
+    return Stream.of(
+        "Set{1,2,3}.select(x | x > 10)",
+        "Set{1,2,3}.reject(x | x > 0)",
+        "Set{}.collect(x | x * 2)"
+    );
   }
 
   /** Tests select where all elements match → full collection. */
@@ -127,13 +138,6 @@ class IteratorTest extends DummyTestSpecification {
     assertIncludes(result, 3);
   }
 
-  /** Tests reject where all elements are rejected → empty collection. */
-  @Test
-  void testRejectAllRejected() {
-    Value result = compile("Set{1,2,3}.reject(x | x > 0)");
-    assertTrue(result.isEmpty());
-    assertSize(result, 0);
-  }
 
   /** Tests reject with equality: removes element 3 → {1,2,4,5} */
   @Test
@@ -202,13 +206,6 @@ class IteratorTest extends DummyTestSpecification {
     assertIncludes(result, 5);
   }
 
-  /** Tests collect on empty set → empty collection */
-  @Test
-  void testCollectOnEmptySet() {
-    Value result = compile("Set{}.collect(x | x * 2)");
-    assertTrue(result.isEmpty());
-    assertSize(result, 0);
-  }
 
   /** Tests that collect auto-flattens results — no nested collections in output. */
   @Test

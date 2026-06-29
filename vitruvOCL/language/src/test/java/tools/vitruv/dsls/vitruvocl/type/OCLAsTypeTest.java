@@ -19,8 +19,11 @@ import java.util.List;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.dsls.vitruvocl.DummyTestSpecification;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLLexer;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
@@ -72,11 +75,18 @@ class OCLAsTypeTest extends DummyTestSpecification {
     assertEquals(5, ((OCLElement.IntValue) result.getElements().get(0)).value());
   }
 
-  /** Tests casting multiple Integers to Integer → all elements preserved. */
-  @Test
-  void testMultipleIntegersAsTypeInteger() {
-    Value result = compile("Set{1, 2, 3}.oclAsType(Integer)");
-    assertSize(result, 3);
+  @ParameterizedTest
+  @MethodSource("threeElementCastExpressions")
+  void testThreeElementCast(String expr) {
+    assertSize(compile(expr), 3);
+  }
+
+  static Stream<String> threeElementCastExpressions() {
+    return Stream.of(
+        "Set{1, 2, 3}.oclAsType(Integer)",
+        "Set{\"a\", \"b\", \"c\"}.oclAsType(String)",
+        "Sequence{1, 2, 3}.collect(p | p.oclAsType(Integer))"
+    );
   }
 
   // ==================== String Cast ====================
@@ -89,12 +99,6 @@ class OCLAsTypeTest extends DummyTestSpecification {
     assertEquals("hello", ((OCLElement.StringValue) result.getElements().get(0)).value());
   }
 
-  /** Tests casting multiple Strings to String → all elements preserved. */
-  @Test
-  void testMultipleStringsAsTypeString() {
-    Value result = compile("Set{\"a\", \"b\", \"c\"}.oclAsType(String)");
-    assertSize(result, 3);
-  }
 
   // ==================== Boolean Cast ====================
 
@@ -188,12 +192,6 @@ class OCLAsTypeTest extends DummyTestSpecification {
     assertEquals(2, ((OCLElement.IntValue) elements.get(1)).value());
   }
 
-  /** Tests oclAsType used inside collect iterator. */
-  @Test
-  void testOclAsTypeInsideCollect() {
-    Value result = compile("Sequence{1, 2, 3}.collect(p | p.oclAsType(Integer))");
-    assertSize(result, 3);
-  }
 
   // ==================== Metamodel Type Checking ====================
 

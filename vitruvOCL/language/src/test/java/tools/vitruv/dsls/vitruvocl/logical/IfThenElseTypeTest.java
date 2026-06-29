@@ -13,12 +13,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.dsls.vitruvocl.DummyTestSpecification;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLLexer;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvocl.common.ErrorCollector;
-import tools.vitruv.dsls.vitruvocl.evaluator.Value;
 import tools.vitruv.dsls.vitruvocl.symboltable.ScopeAnnotator;
 import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTable;
 import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTableBuilder;
@@ -165,34 +167,20 @@ class IfThenElseTypeTest extends DummyTestSpecification {
 
   // ── then:Set{T} else:Set{T} → Set{T} ───────────────────
 
-  @Test
-  void testBoolCondSetThenSetElseTrueBranch() {
-    Value r = compile("if true then Set{1, 2} else Set{3, 4} endif");
-    assertEquals(2, r.size());
+  @ParameterizedTest
+  @MethodSource("twoElementCollectionIfExpressions")
+  void testTwoElementCollectionIf(String expr) {
+    assertEquals(2, compile(expr).size());
   }
 
-  @Test
-  void testBoolCondSetThenSetElseFalseBranch() {
-    Value r = compile("if false then Set{1, 2} else Set{3, 4} endif");
-    assertEquals(2, r.size());
-  }
-
-  @Test
-  void testBoolCondSequenceThenSequenceElse() {
-    Value r = compile("if true then Sequence{1, 2} else Sequence{3, 4} endif");
-    assertEquals(2, r.size());
-  }
-
-  @Test
-  void testBoolCondBagThenBagElse() {
-    Value r = compile("if true then Bag{1, 1} else Bag{2, 2} endif");
-    assertEquals(2, r.size());
-  }
-
-  @Test
-  void testBoolCondOrderedSetThenOrderedSetElse() {
-    Value r = compile("if false then OrderedSet{1, 2} else OrderedSet{3, 4} endif");
-    assertEquals(2, r.size());
+  static Stream<String> twoElementCollectionIfExpressions() {
+    return Stream.of(
+        "if true then Set{1, 2} else Set{3, 4} endif",
+        "if false then Set{1, 2} else Set{3, 4} endif",
+        "if true then Sequence{1, 2} else Sequence{3, 4} endif",
+        "if true then Bag{1, 1} else Bag{2, 2} endif",
+        "if false then OrderedSet{1, 2} else OrderedSet{3, 4} endif"
+    );
   }
 
   // ── condition derived from expression ─────────────────────────

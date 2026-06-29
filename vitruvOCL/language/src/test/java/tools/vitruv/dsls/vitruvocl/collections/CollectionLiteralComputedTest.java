@@ -13,7 +13,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.dsls.vitruvocl.DummyTestSpecification;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLLexer;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
@@ -182,29 +185,19 @@ class CollectionLiteralComputedTest extends DummyTestSpecification {
   // Nested collection literals (used with flatten)
   // ══════════════════════════════════════════════════════════════
 
-  @Test
-  void testSetNestedLiteralCreation() {
-    // nested Set literal, valid
-    Value r = compile("Set{Set{1, 2}, Set{3}}.size()");
-    assertSingleInt(r, 2); // 2 inner sets
+  @ParameterizedTest
+  @MethodSource("nestedLiteralSizeExpressions")
+  void testNestedLiteralSize(String expr) {
+    assertSingleInt(compile(expr), 2);
   }
 
-  @Test
-  void testSequenceNestedLiteralCreation() {
-    Value r = compile("Sequence{Sequence{1, 2}, Sequence{3, 4}}.size()");
-    assertSingleInt(r, 2);
-  }
-
-  @Test
-  void testBagNestedLiteralCreation() {
-    Value r = compile("Bag{Bag{1}, Bag{1}}.size()");
-    assertSingleInt(r, 2); // Bag: both inner bags kept
-  }
-
-  @Test
-  void testOrderedSetNestedLiteralCreation() {
-    Value r = compile("OrderedSet{OrderedSet{1, 2}, OrderedSet{3}}.size()");
-    assertSingleInt(r, 2);
+  static Stream<String> nestedLiteralSizeExpressions() {
+    return Stream.of(
+        "Set{Set{1, 2}, Set{3}}.size()",
+        "Sequence{Sequence{1, 2}, Sequence{3, 4}}.size()",
+        "Bag{Bag{1}, Bag{1}}.size()",
+        "OrderedSet{OrderedSet{1, 2}, OrderedSet{3}}.size()"
+    );
   }
 
   @Test

@@ -13,7 +13,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.dsls.vitruvocl.DummyTestSpecification;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLLexer;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
@@ -219,28 +222,19 @@ class ChainingOrderedVsUnorderedTest extends DummyTestSpecification {
   // asSequence/asOrderedSet → first/last (ordered → OK)
   // ══════════════════════════════════════════════════════════════
 
-  @Test
-  void testAsSequenceThenFirst() {
-    Value r = compile("Set{1, 2, 3}.asSequence().first()");
-    assertEquals(1, r.size());
+  @ParameterizedTest
+  @MethodSource("asConversionFirstLastExpressions")
+  void testAsConversionFirstOrLast(String expr) {
+    assertEquals(1, compile(expr).size());
   }
 
-  @Test
-  void testAsSequenceThenLast() {
-    Value r = compile("Set{1, 2, 3}.asSequence().last()");
-    assertEquals(1, r.size());
-  }
-
-  @Test
-  void testAsOrderedSetThenFirst() {
-    Value r = compile("Bag{3, 1, 2}.asOrderedSet().first()");
-    assertEquals(1, r.size());
-  }
-
-  @Test
-  void testAsOrderedSetThenLast() {
-    Value r = compile("Bag{3, 1, 2}.asOrderedSet().last()");
-    assertEquals(1, r.size());
+  static Stream<String> asConversionFirstLastExpressions() {
+    return Stream.of(
+        "Set{1, 2, 3}.asSequence().first()",
+        "Set{1, 2, 3}.asSequence().last()",
+        "Bag{3, 1, 2}.asOrderedSet().first()",
+        "Bag{3, 1, 2}.asOrderedSet().last()"
+    );
   }
 
   // ══════════════════════════════════════════════════════════════

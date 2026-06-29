@@ -8,8 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.dsls.vitruvocl.pipeline.ConstraintResult;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
 import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCL;
@@ -36,121 +39,73 @@ class CrossMetamodelNavigationTest {
     return VitruvOCL.evaluateConstraint(c, new Path[] {CAD_ECORE}, new Path[] {CAD_INST});
   }
 
-  // ── allInstances() cross-metamodel: id-based join ────────────
-
-  @Test
-  void testDiskIdJoinToNamespace() {
-    String c =
-        """
-        context brakesystem::BrakeDisk inv:
-          cad::Namespace.allInstances().select(ns | ns.id == self.id).notEmpty()""";
-    ConstraintResult r = eval(c);
+  @ParameterizedTest
+  @MethodSource("crossMetamodelSatisfiedConstraints")
+  void testCrossMetamodelConstraintSatisfied(String constraint) {
+    ConstraintResult r = eval(constraint);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied(), "Each BrakeDisk has a matching CAD Namespace");
+    assertTrue(r.isSatisfied());
   }
 
-  @Test
-  void testCaliperIdJoinToNamespace() {
-    String c =
+  static Stream<String> crossMetamodelSatisfiedConstraints() {
+    return Stream.of(
+        // id-based joins
+        """
+        context brakesystem::BrakeDisk inv:
+          cad::Namespace.allInstances().select(ns | ns.id == self.id).notEmpty()""",
         """
         context brakesystem::BrakeCaliper inv:
-          cad::Namespace.allInstances().select(ns | ns.id == self.id).notEmpty()""";
-    ConstraintResult r = eval(c);
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testDiskIdJoinExactlyOne() {
-    String c =
+          cad::Namespace.allInstances().select(ns | ns.id == self.id).notEmpty()""",
         """
         context brakesystem::BrakeDisk inv:
-          cad::Namespace.allInstances().select(ns | ns.id == self.id).size() == 1""";
-    ConstraintResult r = eval(c);
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  // ── let bindings with cross-metamodel values ─────────────────
-
-  @Test
-  void testLetCadNamespaceFromBrakeDisk() {
-    String c =
+          cad::Namespace.allInstances().select(ns | ns.id == self.id).size() == 1""",
+        // let bindings
         """
         context brakesystem::BrakeDisk inv:
           let cadDisk = cad::Namespace.allInstances().select(ns | ns.id == self.id) in
-          cadDisk.size() == 1""";
-    ConstraintResult r = eval(c);
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testLetCadShapesFromBrakeDisk() {
-    String c =
+          cadDisk.size() == 1""",
         """
         context brakesystem::BrakeDisk inv:
           let cadDisk = cad::Namespace.allInstances().select(ns | ns.id == self.id) in
-          cadDisk.shapes.size() >= 0""";
-    ConstraintResult r = eval(c);
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testLetChainedCrossMetamodel() {
-    String c =
+          cadDisk.shapes.size() >= 0""",
         """
         context brakesystem::BrakeDisk inv:
           let caliper = brakesystem::BrakeCaliper.allInstances().first() in
           let cadCaliper = cad::Namespace.allInstances().select(ns | ns.id == caliper.id) in
-          cadCaliper.notEmpty()""";
-    ConstraintResult r = eval(c);
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  // ── Property navigation across metamodel boundary ────────────
-
-  @Test
-  void testCrossMetamodelShapesAccess() {
-    String c =
+          cadCaliper.notEmpty()""",
+        // property navigation
         """
         context brakesystem::BrakeDisk inv:
           cad::Namespace.allInstances().select(ns | ns.id == self.id)
-            .shapes.forAll(s | s.notEmpty())""";
-    ConstraintResult r = eval(c);
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testCrossMetamodelParametersCount() {
-    String c =
+            .shapes.forAll(s | s.notEmpty())""",
         """
         context brakesystem::BrakeDisk inv:
           let cadCaliper = cad::Namespace.allInstances()
             .select(ns | ns.id == brakesystem::BrakeCaliper.allInstances().first().id) in
-          cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size() == 4""";
-    ConstraintResult r = eval(c);
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testCrossMetamodelAllParameterSubtypes() {
-    String c =
+          cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size() == 4""",
         """
         context brakesystem::BrakeDisk inv:
           let cadCaliper = cad::Namespace.allInstances()
             .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
-          cadCaliper.parameters.select(p | p.oclIsKindOf(cad::Parameter)).size() == 5""";
-    ConstraintResult r = eval(c);
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied(), "5 total parameters (4 Coordinates + 1 NumericParameter)");
+          cadCaliper.parameters.select(p | p.oclIsKindOf(cad::Parameter)).size() == 5""",
+        // arithmetic + both instances
+        """
+        context brakesystem::BrakeDisk inv:
+          let radius = self.diameterInMM / 2 in
+          radius > 0""",
+        """
+        context brakesystem::BrakeDisk inv:
+          brakesystem::BrakeDisk.allInstances().size() > 0 and
+          cad::Namespace.allInstances().size() > 0""",
+        // full pipeline: satisfied case
+        """
+        context brakesystem::BrakeDisk inv:
+          let cadCaliper = cad::Namespace.allInstances()
+            .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
+          cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+            .forAll(p | p.oclAsType(cad::Coordinate).x >= self.diameterInMM / 2)"""
+    );
   }
-
-  // ── Full pipeline: allInstances + oclIsTypeOf + oclAsType ─────
 
   @Test
   void testFullPipelineCrossMetamodelFails() {
@@ -166,49 +121,16 @@ class CrossMetamodelNavigationTest {
     assertFalse(r.isSatisfied(), "x=175 > radius=165 should fail");
   }
 
-  @Test
-  void testFullPipelineCrossMetamodelSatisfied() {
-    String c =
-        """
-        context brakesystem::BrakeDisk inv:
-          let cadCaliper = cad::Namespace.allInstances()
-            .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
-          cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
-            .forAll(p | p.oclAsType(cad::Coordinate).x >= self.diameterInMM / 2)""";
-    ConstraintResult r = eval(c);
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied(), "x=165 and x=175 both >= radius=165");
-  }
-
-  @Test
-  void testCrossMetamodelArithmeticRadiusComputed() {
-    String c =
-        """
-        context brakesystem::BrakeDisk inv:
-          let radius = self.diameterInMM / 2 in
-          radius > 0""";
-    ConstraintResult r = eval(c);
+  @ParameterizedTest
+  @MethodSource("cadSatisfiedConstraints")
+  void testCadConstraintSatisfied(String constraint) {
+    ConstraintResult r = evalCad(constraint);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
-  @Test
-  void testCrossMetamodelBothInstancesNonEmpty() {
-    String c =
-        """
-        context brakesystem::BrakeDisk inv:
-          brakesystem::BrakeDisk.allInstances().size() > 0 and
-          cad::Namespace.allInstances().size() > 0""";
-    ConstraintResult r = eval(c);
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  // ── Cross-metamodel shape non-intersection ────────────────────
-
-  @Test
-  void testSphereNoIntersectWithSphere() {
-    String c =
+  static Stream<String> cadSatisfiedConstraints() {
+    return Stream.of(
         """
         context cad::Sphere inv noIntersectWithSphere:
           let foreignShapes =
@@ -223,15 +145,7 @@ class CrossMetamodelNavigationTest {
               let dz = self.center.z - o.center.z in
               let rSum = self.radius + o.radius in
               dx*dx + dy*dy + dz*dz >= rSum * rSum
-            )""";
-    ConstraintResult r = evalCad(c);
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
-  }
-
-  @Test
-  void testSphereNoIntersectWithCylinder() {
-    String c =
+            )""",
         """
         context cad::Sphere inv noIntersectWithCylinder:
           let foreignShapes =
@@ -246,9 +160,7 @@ class CrossMetamodelNavigationTest {
               let dz = self.center.z - o.bottomCenter.z in
               let rSum = self.radius + o.radius in
               dx*dx + dy*dy + dz*dz >= rSum * rSum
-            )""";
-    ConstraintResult r = evalCad(c);
-    assertTrue(r.isSuccess(), r.toDetailedErrorString());
-    assertTrue(r.isSatisfied());
+            )"""
+    );
   }
 }
