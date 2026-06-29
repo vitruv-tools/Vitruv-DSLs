@@ -34,6 +34,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * any → arithmetic - iterate → collect (ERROR — accType is scalar) - collectNested → flatten is
  * ERROR (wrong nesting level) - reject → asSet / asSequence - collect → asSet / asSequence (dedup)
  */
+@SuppressWarnings("java:S125")
 public class ChainingAdditionalTypeTest extends DummyTestSpecification {
 
   protected void compileExpectError(String input) {
@@ -255,19 +256,20 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
 
   @Test
   public void testIterateThenCollectValid() {
-    Value r = compile("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x).collect(x | x)");
-    assertEquals(1, r.size());
+    // iterate() → ¡Integer! (scalar), collect requires explicit collection → error
+    compileExpectError("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x).collect(x | x)");
   }
 
   @Test
   public void testIterateThenSelectValid() {
-    Value r = compile("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x).select(x | x > 2)");
-    assertEquals(1, r.size()); // sum=6 > 2 → kept
+    // iterate() → ¡Integer! (scalar), select requires explicit collection → error
+    compileExpectError("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x).select(x | x > 2)");
   }
 
   @Test
   public void testIterateThenSizeValid() {
-    assertSingleInt(compile("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x).size()"), 1);
+    // iterate() → ¡Integer! (scalar), size() requires explicit collection → error
+    compileExpectError("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x).size()");
   }
 
   @Test
@@ -313,16 +315,14 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
 
   @Test
   public void testOneThenSelectValid() {
-    // one() → ¡Boolean!, select on ¡Boolean! is valid per spec
-    // Set{1,2} has 2 elements > 0 → one() returns false → select(x|x) filters out false → empty
-    Value r = compile("Set{1, 2}.one(x | x > 0).select(x | x)");
-    assertEquals(0, r.size());
+    // one() → ¡Boolean! (scalar), select requires explicit collection → error
+    compileExpectError("Set{1, 2}.one(x | x > 0).select(x | x)");
   }
 
   @Test
   public void testOneThenSizeValid() {
-    // one() → ¡Boolean!, size() on ¡Boolean! is valid per spec → always 1
-    assertSingleInt(compile("Set{1, 2}.one(x | x > 0).size()"), 1);
+    // one() → ¡Boolean! (scalar), size() requires explicit collection → error
+    compileExpectError("Set{1, 2}.one(x | x > 0).size()");
   }
 
   // ── isUnique → logical ★ ─────────────────────────────────────
@@ -339,9 +339,8 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
 
   @Test
   public void testIsUniqueThenSelectValid() {
-    // isUnique() → ¡Boolean!, select on ¡Boolean! is valid per spec
-    Value r = compile("Sequence{1, 2}.isUnique(x | x).select(x | x)");
-    assertEquals(1, r.size()); // Sequence{1,2} unique → isUnique=true → select(x|x) keeps true
+    // isUnique() → ¡Boolean! (scalar), select requires explicit collection → error
+    compileExpectError("Sequence{1, 2}.isUnique(x | x).select(x | x)");
   }
 
   // ── sortedBy → subSequence (ordered result) ★ ─────────────────

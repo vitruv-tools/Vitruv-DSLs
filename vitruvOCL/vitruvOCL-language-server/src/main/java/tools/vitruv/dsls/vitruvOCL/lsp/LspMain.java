@@ -8,6 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL.lsp;
+import java.util.logging.Logger;
 
 import java.io.PrintStream;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
@@ -26,12 +27,15 @@ import org.eclipse.lsp4j.services.LanguageClient;
  */
 public class LspMain {
 
+  private static final Logger LOG = Logger.getLogger(LspMain.class.getName());
+
+  @SuppressWarnings("java:S106")
   public static void main(String[] args) throws Exception {
     // Capture the real stdout before anything else touches it.
-    PrintStream lspOut = System.out;
+    PrintStream lspOut = System.out; // NOSONAR: required for LSP stdio protocol
 
     // Redirect casual prints to stderr so the LSP stream stays clean.
-    System.setOut(System.err);
+    System.setOut(System.err); // NOSONAR: intentional stdout→stderr redirect for LSP
 
     OCLLanguageServer server = new OCLLanguageServer();
 

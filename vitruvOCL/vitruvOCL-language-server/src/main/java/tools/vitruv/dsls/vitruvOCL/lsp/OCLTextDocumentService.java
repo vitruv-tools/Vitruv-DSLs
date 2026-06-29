@@ -8,6 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL.lsp;
+import java.util.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,6 +59,8 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapper;
  * synchronously for hover and completion requests.
  */
 public class OCLTextDocumentService implements TextDocumentService {
+
+  private static final Logger LOG = Logger.getLogger(OCLTextDocumentService.class.getName());
 
   private static final long DEBOUNCE_MS = 200;
 
@@ -248,7 +251,7 @@ public class OCLTextDocumentService implements TextDocumentService {
         client.publishDiagnostics(new PublishDiagnosticsParams(uri, analysis.getDiagnostics()));
       }
     } catch (Exception e) {
-      System.err.println("[OCL-LS] Analysis failed for " + uri + ": " + e.getMessage());
+      LOG.fine("[OCL-LS] Analysis failed for " + uri + ": " + e.getMessage());
     }
   }
 

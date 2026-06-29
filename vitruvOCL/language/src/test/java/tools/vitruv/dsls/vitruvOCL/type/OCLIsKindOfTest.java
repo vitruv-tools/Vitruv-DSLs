@@ -299,7 +299,7 @@ public class OCLIsKindOfTest extends DummyTestSpecification {
 
   /** Tests Spacecraft instance is kind of Spacecraft → {@code [true]}. */
   @Test
-  public void testSpacecraftIsKindOfSpacecraft() throws Exception {
+  public void testSpacecraftIsKindOfSpacecraft() {
     String constraint =
         """
 context spaceMission::Spacecraft inv kindOfSpacecraft:
@@ -318,7 +318,7 @@ context spaceMission::Spacecraft inv kindOfSpacecraft:
 
   /** Tests Spacecraft instance is NOT kind of Satellite → all false. */
   @Test
-  public void testSpacecraftIsNotKindOfSatellite() throws Exception {
+  public void testSpacecraftIsNotKindOfSatellite() {
     String constraint =
         """
 context spaceMission::Spacecraft inv kindOfSatellite:
@@ -337,7 +337,7 @@ context spaceMission::Spacecraft inv kindOfSatellite:
 
   /** Tests Satellite instances are kind of Satellite → all true. */
   @Test
-  public void testSatelliteIsKindOfSatellite() throws Exception {
+  public void testSatelliteIsKindOfSatellite() {
     String constraint =
         """
 context satelliteSystem::Satellite inv kindOfSatellite:
@@ -359,7 +359,7 @@ context satelliteSystem::Satellite inv kindOfSatellite:
    * oclIsKindOf(Spacecraft).
    */
   @Test
-  public void testOclIsKindOfUsedInSelect() throws Exception {
+  public void testOclIsKindOfUsedInSelect() {
     String constraint =
         """
         context spaceMission::Spacecraft inv kindOfInSelect:

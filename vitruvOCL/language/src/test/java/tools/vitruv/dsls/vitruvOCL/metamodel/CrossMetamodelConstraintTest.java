@@ -56,7 +56,7 @@ public class CrossMetamodelConstraintTest {
    * can find matching Satellite by serialNumber.
    */
   @Test
-  public void testCrossMetamodelSerialNumberMatch() throws Exception {
+  public void testCrossMetamodelSerialNumberMatch() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -80,7 +80,7 @@ public class CrossMetamodelConstraintTest {
    * mass values imply matching operational/active status.
    */
   @Test
-  public void testCrossMetamodelMassConsistency() throws Exception {
+  public void testCrossMetamodelMassConsistency() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -105,7 +105,7 @@ public class CrossMetamodelConstraintTest {
    * Spacecraft with SC-001 does not match Satellite with SAT-099.
    */
   @Test
-  public void testCrossMetamodelNoMatchingSerialNumber() throws Exception {
+  public void testCrossMetamodelNoMatchingSerialNumber() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -129,7 +129,7 @@ public class CrossMetamodelConstraintTest {
    * aggregates all instances and select filters correctly.
    */
   @Test
-  public void testMultipleModelsFromBothMetamodels() throws Exception {
+  public void testMultipleModelsFromBothMetamodels() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -158,7 +158,7 @@ public class CrossMetamodelConstraintTest {
    * instances and check matching attributes.
    */
   @Test
-  public void testSatelliteReferencesSpacecraft() throws Exception {
+  public void testSatelliteReferencesSpacecraft() {
     String constraint =
         """
         context satelliteSystem::Satellite inv:
@@ -184,7 +184,7 @@ public class CrossMetamodelConstraintTest {
    * can be compared for distinct serialNumbers.
    */
   @Test
-  public void testSelectWithTwoVariables() throws Exception {
+  public void testSelectWithTwoVariables() {
     String constraint =
         """
         context satelliteSystem::Satellite inv:
@@ -210,7 +210,7 @@ public class CrossMetamodelConstraintTest {
    * from another metamodel.
    */
   @Test
-  public void testCrossMetamodelSizeComparison() throws Exception {
+  public void testCrossMetamodelSizeComparison() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -232,7 +232,7 @@ public class CrossMetamodelConstraintTest {
    * instances match filter condition.
    */
   @Test
-  public void testCrossMetamodelIsEmpty() throws Exception {
+  public void testCrossMetamodelIsEmpty() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -256,7 +256,7 @@ public class CrossMetamodelConstraintTest {
    * exist in another metamodel.
    */
   @Test
-  public void testCrossMetamodelNotEmpty() throws Exception {
+  public void testCrossMetamodelNotEmpty() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -278,7 +278,7 @@ public class CrossMetamodelConstraintTest {
    * values from all Satellite instances.
    */
   @Test
-  public void testCrossMetamodelSumOperation() throws Exception {
+  public void testCrossMetamodelSumOperation() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -302,7 +302,7 @@ public class CrossMetamodelConstraintTest {
    * across Satellite massKg values.
    */
   @Test
-  public void testCrossMetamodelAvgOperation() throws Exception {
+  public void testCrossMetamodelAvgOperation() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -326,7 +326,7 @@ public class CrossMetamodelConstraintTest {
    * most the maximum Satellite mass.
    */
   @Test
-  public void testCrossMetamodelMaxOperation() throws Exception {
+  public void testCrossMetamodelMaxOperation() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -349,7 +349,7 @@ public class CrossMetamodelConstraintTest {
    * is positive.
    */
   @Test
-  public void testCrossMetamodelMinOperation() throws Exception {
+  public void testCrossMetamodelMinOperation() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -373,7 +373,7 @@ public class CrossMetamodelConstraintTest {
    * serialNumbers include Spacecraft serialNumber.
    */
   @Test
-  public void testNestedCollectWithIncludes() throws Exception {
+  public void testNestedCollectWithIncludes() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -397,7 +397,7 @@ public class CrossMetamodelConstraintTest {
    * not contain non-existent value.
    */
   @Test
-  public void testCrossMetamodelExcludes() throws Exception {
+  public void testCrossMetamodelExcludes() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -421,7 +421,7 @@ public class CrossMetamodelConstraintTest {
    * of allInstances() calls produces expected size.
    */
   @Test
-  public void testCrossMetamodelFlatten() throws Exception {
+  public void testCrossMetamodelFlatten() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -445,7 +445,7 @@ public class CrossMetamodelConstraintTest {
    * serialNumber implies same object identity.
    */
   @Test
-  public void testForAllWithTwoVariables() throws Exception {
+  public void testForAllWithTwoVariables() {
     String constraint =
         """
         context satelliteSystem::Satellite inv:
@@ -468,7 +468,7 @@ public class CrossMetamodelConstraintTest {
    * Satellites has different masses.
    */
   @Test
-  public void testExistsWithTwoVariables() throws Exception {
+  public void testExistsWithTwoVariables() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -491,7 +491,7 @@ public class CrossMetamodelConstraintTest {
    * values from all pairs of Satellites.
    */
   @Test
-  public void testCollectWithTwoVariables() throws Exception {
+  public void testCollectWithTwoVariables() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -514,7 +514,7 @@ public class CrossMetamodelConstraintTest {
    * serialNumbers.
    */
   @Test
-  public void testCrossMetamodelStringConcat() throws Exception {
+  public void testCrossMetamodelStringConcat() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -538,7 +538,7 @@ public class CrossMetamodelConstraintTest {
    * case-insensitive comparison across metamodels.
    */
   @Test
-  public void testCrossMetamodelToUpper() throws Exception {
+  public void testCrossMetamodelToUpper() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -561,7 +561,7 @@ public class CrossMetamodelConstraintTest {
    * Satellite serialNumber returns expected prefix.
    */
   @Test
-  public void testCrossMetamodelSubstring() throws Exception {
+  public void testCrossMetamodelSubstring() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -585,7 +585,7 @@ public class CrossMetamodelConstraintTest {
    * empty collection when no models loaded.
    */
   @Test
-  public void testNoSatellitesAvailable() throws Exception {
+  public void testNoSatellitesAvailable() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -607,7 +607,7 @@ public class CrossMetamodelConstraintTest {
    * elements satisfy filter condition.
    */
   @Test
-  public void testForAllOnEmptyCollection() throws Exception {
+  public void testForAllOnEmptyCollection() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -631,7 +631,7 @@ public class CrossMetamodelConstraintTest {
    * filter condition.
    */
   @Test
-  public void testExistsOnEmptyCollection() throws Exception {
+  public void testExistsOnEmptyCollection() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -655,7 +655,7 @@ public class CrossMetamodelConstraintTest {
    * conditions must hold for constraint satisfaction.
    */
   @Test
-  public void testCrossMetamodelAndLogic() throws Exception {
+  public void testCrossMetamodelAndLogic() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -678,7 +678,7 @@ public class CrossMetamodelConstraintTest {
    * constraint satisfied when at least one condition holds.
    */
   @Test
-  public void testCrossMetamodelOrLogic() throws Exception {
+  public void testCrossMetamodelOrLogic() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -701,7 +701,7 @@ public class CrossMetamodelConstraintTest {
    * conditions must be true.
    */
   @Test
-  public void testCrossMetamodelXorLogic() throws Exception {
+  public void testCrossMetamodelXorLogic() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -722,7 +722,7 @@ public class CrossMetamodelConstraintTest {
    * be chained across metamodels.
    */
   @Test
-  public void testLongOperationChain() throws Exception {
+  public void testLongOperationChain() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -747,7 +747,7 @@ public class CrossMetamodelConstraintTest {
    * collect extracts attributes.
    */
   @Test
-  public void testRejectThenCollect() throws Exception {
+  public void testRejectThenCollect() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -771,7 +771,7 @@ public class CrossMetamodelConstraintTest {
    * Satellites, inner exists on Spacecraft with matching criteria.
    */
   @Test
-  public void testNestedExistsAcrossMetamodels() throws Exception {
+  public void testNestedExistsAcrossMetamodels() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -796,7 +796,7 @@ public class CrossMetamodelConstraintTest {
    * matching serialNumbers have matching masses.
    */
   @Test
-  public void testNestedForAllAcrossMetamodels() throws Exception {
+  public void testNestedForAllAcrossMetamodels() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -821,7 +821,7 @@ public class CrossMetamodelConstraintTest {
    * comparison between Satellite and Spacecraft masses.
    */
   @Test
-  public void testCrossMetamodelArithmetic() throws Exception {
+  public void testCrossMetamodelArithmetic() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -844,7 +844,7 @@ public class CrossMetamodelConstraintTest {
    * positive mass after division by 2.
    */
   @Test
-  public void testCrossMetamodelDivision() throws Exception {
+  public void testCrossMetamodelDivision() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -867,7 +867,7 @@ public class CrossMetamodelConstraintTest {
    * instance and checking its serialNumber.
    */
   @Test
-  public void testCrossMetamodelFirst() throws Exception {
+  public void testCrossMetamodelFirst() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -888,7 +888,7 @@ public class CrossMetamodelConstraintTest {
    * instance and checking its mass.
    */
   @Test
-  public void testCrossMetamodelLast() throws Exception {
+  public void testCrossMetamodelLast() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -909,7 +909,7 @@ public class CrossMetamodelConstraintTest {
    * size as original.
    */
   @Test
-  public void testCrossMetamodelReverse() throws Exception {
+  public void testCrossMetamodelReverse() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -932,7 +932,7 @@ public class CrossMetamodelConstraintTest {
    * produces collection of size 4.
    */
   @Test
-  public void testCrossMetamodelIncluding() throws Exception {
+  public void testCrossMetamodelIncluding() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -954,7 +954,7 @@ public class CrossMetamodelConstraintTest {
    * produces collection of size 3.
    */
   @Test
-  public void testCrossMetamodelExcluding() throws Exception {
+  public void testCrossMetamodelExcluding() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -976,7 +976,7 @@ public class CrossMetamodelConstraintTest {
    * itself has size at least as large as original.
    */
   @Test
-  public void testCrossMetamodelUnion() throws Exception {
+  public void testCrossMetamodelUnion() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -999,7 +999,7 @@ public class CrossMetamodelConstraintTest {
    * allInstances() result for reuse in constraint body.
    */
   @Test
-  public void testCrossMetamodelLetExpression() throws Exception {
+  public void testCrossMetamodelLetExpression() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -1022,7 +1022,7 @@ public class CrossMetamodelConstraintTest {
    * second variable references first.
    */
   @Test
-  public void testMultipleLetBindings() throws Exception {
+  public void testMultipleLetBindings() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -1046,7 +1046,7 @@ public class CrossMetamodelConstraintTest {
    * execute based on Satellite collection size.
    */
   @Test
-  public void testCrossMetamodelIfThenElse() throws Exception {
+  public void testCrossMetamodelIfThenElse() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -1070,7 +1070,7 @@ public class CrossMetamodelConstraintTest {
    * than sum of all Satellite masses.
    */
   @Test
-  public void testCrossMetamodelLessThan() throws Exception {
+  public void testCrossMetamodelLessThan() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -1093,7 +1093,7 @@ public class CrossMetamodelConstraintTest {
    * serialNumbers are non-empty strings.
    */
   @Test
-  public void testCrossMetamodelNotEqual() throws Exception {
+  public void testCrossMetamodelNotEqual() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -1116,7 +1116,7 @@ public class CrossMetamodelConstraintTest {
    * correctly evaluates to true when satellites exist.
    */
   @Test
-  public void testCrossMetamodelNegation() throws Exception {
+  public void testCrossMetamodelNegation() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -1138,7 +1138,7 @@ public class CrossMetamodelConstraintTest {
    * are negative for positive masses.
    */
   @Test
-  public void testCrossMetamodelUnaryMinus() throws Exception {
+  public void testCrossMetamodelUnaryMinus() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -1161,7 +1161,7 @@ public class CrossMetamodelConstraintTest {
    * condition is impossible (all satellites having negative mass).
    */
   @Test
-  public void testConstraintViolation() throws Exception {
+  public void testConstraintViolation() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -1185,7 +1185,7 @@ public class CrossMetamodelConstraintTest {
    * when searching for non-existent serialNumber.
    */
   @Test
-  public void testNoMatchingCondition() throws Exception {
+  public void testNoMatchingCondition() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -1209,7 +1209,7 @@ public class CrossMetamodelConstraintTest {
    * Both have serialNumber "ATLAS-V-2002".
    */
   @Test
-  public void testSerialNumberMatchAtlas() throws Exception {
+  public void testSerialNumberMatchAtlas() {
     String constraint =
         """
         context spaceMission::Spacecraft inv serialNumberMatch:
@@ -1239,7 +1239,7 @@ public class CrossMetamodelConstraintTest {
    * matching serialNumber.
    */
   @Test
-  public void testSerialInclusionAtlas() throws Exception {
+  public void testSerialInclusionAtlas() {
     String constraint =
         """
         context spaceMission::Spacecraft inv serialInclusion:
@@ -1268,7 +1268,7 @@ public class CrossMetamodelConstraintTest {
    * Should pass both conditions.
    */
   @Test
-  public void testAndLogicAtlas() throws Exception {
+  public void testAndLogicAtlas() {
     String constraint =
         """
         context spaceMission::Spacecraft inv andLogic:
@@ -1297,7 +1297,7 @@ public class CrossMetamodelConstraintTest {
    * masses are equal even though one is Int and other is Double.
    */
   @Test
-  public void testIntDoubleComparison() throws Exception {
+  public void testIntDoubleComparison() {
     String constraint =
         """
         context satelliteSystem::Satellite inv:

@@ -142,7 +142,7 @@ public class MetamodelIntegrationTest {
    * @throws Exception if metamodel loading fails (file not found, invalid Ecore format, etc.)
    */
   @BeforeEach
-  public void setup() throws Exception {
+  public void setup() {
     MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
 
     specification = new MetamodelWrapper();

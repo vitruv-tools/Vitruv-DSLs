@@ -227,6 +227,18 @@ public abstract class Type {
   }
 
   /**
+   * Returns true only for explicit {@link CollectionType} wrappers (Set, Bag, Sequence,
+   * OrderedSet, Singleton ¡T!, Optional ¿T?).
+   *
+   * <p>Raw primitive types (INTEGER, BOOLEAN, STRING, FLOAT, DOUBLE) return {@code false} even
+   * though they technically have SINGLETON multiplicity. Use this instead of {@link #isSingleton()}
+   * when checking whether collection operations are valid on the receiver.
+   */
+  public boolean isExplicitCollectionType() {
+    return false;
+  }
+
+  /**
    * Checks if this is the ERROR type.
    *
    * <p>Used to suppress cascading type errors during compilation.
@@ -358,11 +370,6 @@ public abstract class Type {
         return true;
       }
 
-      /*
-      if (other.getElementType() == INTEGER) {
-        return true;
-      }
-      */
       return false;
     }
 
@@ -563,6 +570,11 @@ public abstract class Type {
     }
 
     @Override
+    public boolean isExplicitCollectionType() {
+      return true; // metaclass instances are implicitly singleton collections (¡T!)
+    }
+
+    @Override
     public boolean isConformantTo(Type other) {
       if (other == ERROR || other == ANY) {
         return true;
@@ -613,6 +625,11 @@ public abstract class Type {
     public CollectionType(Type elementType, Multiplicity multiplicity) {
       this.elementType = elementType;
       this.multiplicity = multiplicity;
+    }
+
+    @Override
+    public boolean isExplicitCollectionType() {
+      return true;
     }
 
     @Override
@@ -671,6 +688,7 @@ public abstract class Type {
      *
      * @return The collection kind, or null if not a multi-valued collection
      */
+    @Override
     public CollectionKind getCollectionKind() {
       return switch (multiplicity) {
         case SET -> CollectionKind.SET;
@@ -748,6 +766,7 @@ public abstract class Type {
    * @param t2 Second type
    * @return The least common supertype of t1 and t2
    */
+  @SuppressWarnings("java:S3776")
   public static Type commonSuperType(Type t1, Type t2) {
     if (t1.equals(t2)) {
       return t1;
@@ -761,7 +780,7 @@ public abstract class Type {
     boolean t2Primitive =
         (t2 == INTEGER || t2 == STRING || t2 == BOOLEAN || t2 == DOUBLE || t2 == FLOAT);
 
-    if (t1Primitive && t2Primitive && !t1.equals(t2)) {
+    if (t1Primitive && t2Primitive && !t1.equals(t2)) { // NOSONAR S2589: types may equal at runtime
       return ANY;
     }
 

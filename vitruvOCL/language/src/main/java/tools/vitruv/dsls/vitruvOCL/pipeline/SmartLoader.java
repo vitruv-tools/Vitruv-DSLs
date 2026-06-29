@@ -11,6 +11,7 @@
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL.pipeline;
+import java.util.logging.Logger;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,6 +29,12 @@ import java.util.*;
  * resolved via TEST_MODELS_PATH then current working directory.
  */
 public class SmartLoader {
+
+  private static final Logger LOG = Logger.getLogger(SmartLoader.class.getName());
+
+  private static final String PKG_CORRESPONDENCE = "correspondence";
+
+  private SmartLoader() {}
 
   /** Result of loading operation with wrapper, errors, and warnings. */
   public static class LoadResult {
@@ -74,6 +81,7 @@ public class SmartLoader {
    * @param xmiFiles Model instance files (absolute or relative paths)
    * @return Load result with configured wrapper, errors, and warnings
    */
+  @SuppressWarnings("java:S3776")
   public static LoadResult loadForConstraint(
       String constraint, Path[] ecoreFiles, Path[] xmiFiles) {
     MetamodelWrapper wrapper = new MetamodelWrapper();
@@ -148,18 +156,18 @@ public class SmartLoader {
 
     // Always load correspondence instances when present — the ecore is embedded in the JAR
     // and auto-registered, so no explicit .ecore file is required for it.
-    requiredPackages.add("correspondence");
+    requiredPackages.add(PKG_CORRESPONDENCE);
 
-    System.err.println("[DBG-SL] requiredPackages=" + requiredPackages);
-    System.err.println("[DBG-SL] availableEcores=" + availableEcores.keySet());
-    System.err.println("[DBG-SL] xmiPackageNames=" + xmiPackageNames);
+    LOG.fine("[DBG-SL] requiredPackages=" + requiredPackages);
+    LOG.fine("[DBG-SL] availableEcores=" + availableEcores.keySet());
+    LOG.fine("[DBG-SL] xmiPackageNames=" + xmiPackageNames);
 
     // Load only required metamodels and the instances that match them.
     boolean[] loaded = new boolean[xmiOccurrences.size()];
     for (String pkg : requiredPackages) {
       if (!availableEcores.containsKey(pkg)) {
-        // "correspondence" ecore is embedded in the JAR and auto-registered — not an error.
-        if (!pkg.equals("correspondence")) {
+        // PKG_CORRESPONDENCE ecore is embedded in the JAR and auto-registered — not an error.
+        if (!pkg.equals(PKG_CORRESPONDENCE)) {
           fileErrors.add(
               new FileError(
                   null,
@@ -192,18 +200,18 @@ public class SmartLoader {
         loaded[i] = true;
         Path xmi = xmiOccurrences.get(i);
         try {
-          System.err.println("[DBG-SL] Loading XMI: " + xmi.getFileName());
+          LOG.fine("[DBG-SL] Loading XMI: " + xmi.getFileName());
           wrapper.loadModelInstance(xmi);
-          System.err.println("[DBG-SL] XMI loaded OK: " + xmi.getFileName());
+          LOG.fine("[DBG-SL] XMI loaded OK: " + xmi.getFileName());
         } catch (IOException e) {
-          System.err.println("[DBG-SL] IOException loading " + xmi.getFileName() + ": " + e.getMessage());
+          LOG.fine("[DBG-SL] IOException loading " + xmi.getFileName() + ": " + e.getMessage());
           fileErrors.add(
               new FileError(
                   xmi,
                   FileError.FileErrorType.PARSE_ERROR,
                   "Failed to load model: " + e.getMessage()));
         } catch (Exception e) {
-          System.err.println("[DBG-SL] RuntimeException loading " + xmi.getFileName() + ": " + e.getClass().getSimpleName() + ": " + e.getMessage());
+          LOG.fine("[DBG-SL] RuntimeException loading " + xmi.getFileName() + ": " + e.getClass().getSimpleName() + ": " + e.getMessage());
           fileErrors.add(
               new FileError(
                   xmi,
@@ -213,7 +221,7 @@ public class SmartLoader {
       }
 
       // Don't warn for correspondence package if it has no instances
-      if (!foundInstance && !pkg.equals("correspondence")) {
+      if (!foundInstance && !pkg.equals(PKG_CORRESPONDENCE)) {
         warnings.add(
             new Warning(Warning.WarningType.UNUSED_MODEL, "No instances for '" + pkg + "'"));
       }

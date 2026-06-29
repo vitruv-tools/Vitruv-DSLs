@@ -40,6 +40,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  *
  * <p>div/mod: ¡Integer! × ¡Integer! → ¡Integer! only
  */
+@SuppressWarnings("java:S125")
 public class CollectionArgOpsTypeTest extends DummyTestSpecification {
 
   protected void compileExpectError(String input) {
@@ -109,20 +110,20 @@ public class CollectionArgOpsTypeTest extends DummyTestSpecification {
 
   @Test
   public void testIntegerIncludesOnSingleton() {
-    // ¡Integer! includes(1) → the singleton IS 1 → true
-    assertSingleBool(compile("1.includes(1)"), true);
+    // ¡Integer! scalar — includes() requires explicit collection → error
+    compileExpectError("1.includes(1)");
   }
 
   @Test
   public void testBooleanExcludesOnSingleton() {
-    // ¡Boolean! (true) excludes(false) → false is not in singleton → true
-    assertSingleBool(compile("true.excludes(false)"), true);
+    // ¡Boolean! scalar — excludes() requires explicit collection → error
+    compileExpectError("true.excludes(false)");
   }
 
   @Test
   public void testStringIncludesOnSingleton() {
-    // ¡String! ("hello") includes("h") → "h" is not the singleton value → false
-    assertSingleBool(compile("\"hello\".includes(\"h\")"), false);
+    // ¡String! scalar — includes() requires explicit collection → error
+    compileExpectError("\"hello\".includes(\"h\")");
   }
 
   // ══════════════════════════════════════════════════════════════

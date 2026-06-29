@@ -16,11 +16,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.*;
 import org.w3c.dom.*;
 
 /** Validates files and extracts metadata. */
 public class FileValidator {
+
+  private FileValidator() {}
 
   /** Validates file existence and readability. */
   public static Optional<FileError> validateFile(Path path) {
@@ -40,8 +43,7 @@ public class FileValidator {
   /** Extracts the root package name from .ecore file. */
   public static String extractPackageNameFromEcore(Path ecorePath) throws IOException {
     try {
-      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-      DocumentBuilder builder = factory.newDocumentBuilder();
+      DocumentBuilder builder = newSecureDocumentBuilder();
       Document doc = builder.parse(ecorePath.toFile());
       Element root = doc.getDocumentElement();
       String name = root.getAttribute("name");
@@ -63,8 +65,7 @@ public class FileValidator {
    */
   public static Set<String> extractAllPackageNamesFromEcore(Path ecorePath) throws IOException {
     try {
-      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-      DocumentBuilder builder = factory.newDocumentBuilder();
+      DocumentBuilder builder = newSecureDocumentBuilder();
       Document doc = builder.parse(ecorePath.toFile());
       Element root = doc.getDocumentElement();
       String rootName = root.getAttribute("name");
@@ -94,8 +95,7 @@ public class FileValidator {
   /** Extracts package name from .xmi file. */
   public static String extractPackageNameFromXmi(Path xmiPath) throws IOException {
     try {
-      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-      DocumentBuilder builder = factory.newDocumentBuilder();
+      DocumentBuilder builder = newSecureDocumentBuilder();
       Document doc = builder.parse(xmiPath.toFile());
       Element root = doc.getDocumentElement();
       String tagName = root.getTagName();
@@ -133,8 +133,7 @@ public class FileValidator {
    */
   public static Set<String> extractAllPackageNamesFromXmi(Path xmiPath) throws IOException {
     try {
-      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-      DocumentBuilder builder = factory.newDocumentBuilder();
+      DocumentBuilder builder = newSecureDocumentBuilder();
       Document doc = builder.parse(xmiPath.toFile());
       Element root = doc.getDocumentElement();
       String tagName = root.getTagName();
@@ -173,5 +172,21 @@ public class FileValidator {
     }
 
     return errors;
+  }
+
+  /**
+   * Creates a {@link DocumentBuilder} with external entity access disabled to prevent XXE attacks.
+   * All XML parsing in this class must go through this factory method.
+   */
+  private static DocumentBuilder newSecureDocumentBuilder()
+      throws ParserConfigurationException {
+    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+    factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+    factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+    factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+    factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+    factory.setExpandEntityReferences(false);
+    return factory.newDocumentBuilder();
   }
 }

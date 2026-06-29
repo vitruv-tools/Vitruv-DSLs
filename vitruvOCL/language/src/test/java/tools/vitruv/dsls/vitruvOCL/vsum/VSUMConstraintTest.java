@@ -59,14 +59,8 @@ public class VSUMConstraintTest {
 
   private static final Path SPACECRAFT_VOYAGER =
       Path.of("src/test/resources/test-models/spacecraft-voyager.spacemission");
-  private static final Path SPACECRAFT_ATLAS =
-      Path.of("src/test/resources/test-models/spacecraft-atlas.spacemission");
   private static final Path SATELLITE_VOYAGER =
       Path.of("src/test/resources/test-models/satellite-voyager.satellitesystem");
-  private static final Path SATELLITE_ATLAS =
-      Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem");
-  private static final Path SATELLITE_HUBBLE =
-      Path.of("src/test/resources/test-models/satellite-hubble.satellitesystem");
   private static final Path CORRESPONDENCES =
       Path.of("src/test/resources/test-models/correspondences.correspondence");
 
@@ -354,7 +348,7 @@ public class VSUMConstraintTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testEvaluateConstraintsFromFileAgainstVSUM() throws IOException {
+  public void testEvaluateConstraintsFromFileAgainstVSUM() {
     Collection<Resource> resources = loadResources(SPACEMISSION_ECORE, SPACECRAFT_VOYAGER);
     setupMockVsum(resources, mockCorrespondenceModel(List.of()));
     VitruvOCL.registerVSUM(mockVsum);

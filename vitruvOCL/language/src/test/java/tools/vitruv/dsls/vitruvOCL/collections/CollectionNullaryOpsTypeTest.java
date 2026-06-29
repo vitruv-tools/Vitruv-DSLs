@@ -88,23 +88,23 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
 
   @Test
   public void testIntegerSizeOnSingleton() {
-    // ¡Integer! singleton always has size 1
-    assertSingleInt(compile("1.size()"), 1);
+    // ¡Integer! scalar — size() requires explicit collection → error
+    compileExpectError("1.size()");
   }
 
   @Test
   public void testFloatSizeOnSingleton() {
-    assertSingleInt(compile("1.5.size()"), 1);
+    compileExpectError("1.5.size()");
   }
 
   @Test
   public void testDoubleSizeOnSingleton() {
-    assertSingleInt(compile("2.5.size()"), 1);
+    compileExpectError("2.5.size()");
   }
 
   @Test
   public void testBooleanSizeOnSingleton() {
-    assertSingleInt(compile("true.size()"), 1);
+    compileExpectError("true.size()");
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -153,18 +153,18 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
 
   @Test
   public void testIntegerIsEmptyOnSingleton() {
-    // ¡Integer! singleton is never empty
-    assertSingleBool(compile("1.isEmpty()"), false);
+    // ¡Integer! scalar — isEmpty() requires explicit collection → error
+    compileExpectError("1.isEmpty()");
   }
 
   @Test
   public void testBooleanIsEmptyOnSingleton() {
-    assertSingleBool(compile("true.isEmpty()"), false);
+    compileExpectError("true.isEmpty()");
   }
 
   @Test
   public void testStringIsEmptyOnSingleton() {
-    assertSingleBool(compile("\"hello\".isEmpty()"), false);
+    compileExpectError("\"hello\".isEmpty()");
   }
 
   // ══════════════════════════════════════════════════════════════

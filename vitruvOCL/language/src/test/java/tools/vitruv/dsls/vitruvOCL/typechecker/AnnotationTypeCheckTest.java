@@ -38,42 +38,42 @@ public class AnnotationTypeCheckTest {
   }
 
   @Test
-  public void testSeverityCriticalAccepted() throws Exception {
+  public void testSeverityCriticalAccepted() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n    @severity CRITICAL\n    self.diameterInMM > 0");
     assertTrue(result.isSuccess(), "Expected success for @severity CRITICAL: " + result.toDetailedErrorString());
   }
 
   @Test
-  public void testSeverityWarningAccepted() throws Exception {
+  public void testSeverityWarningAccepted() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n    @severity WARNING\n    self.diameterInMM > 0");
     assertTrue(result.isSuccess(), "Expected success for @severity WARNING: " + result.toDetailedErrorString());
   }
 
   @Test
-  public void testSeverityMajorAccepted() throws Exception {
+  public void testSeverityMajorAccepted() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n    @severity MAJOR\n    self.diameterInMM > 0");
     assertTrue(result.isSuccess(), "Expected success for @severity MAJOR: " + result.toDetailedErrorString());
   }
 
   @Test
-  public void testSeverityMinorAccepted() throws Exception {
+  public void testSeverityMinorAccepted() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n    @severity MINOR\n    self.diameterInMM > 0");
     assertTrue(result.isSuccess(), "Expected success for @severity MINOR: " + result.toDetailedErrorString());
   }
 
   @Test
-  public void testSeverityInfoAccepted() throws Exception {
+  public void testSeverityInfoAccepted() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n    @severity INFO\n    self.diameterInMM > 0");
     assertTrue(result.isSuccess(), "Expected success for @severity INFO: " + result.toDetailedErrorString());
   }
 
   @Test
-  public void testInvalidSeverityReportsError() throws Exception {
+  public void testInvalidSeverityReportsError() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n    @severity BLOCKER\n    self.diameterInMM > 0");
     assertFalse(result.isSuccess(), "Expected failure for unknown severity BLOCKER");
@@ -83,7 +83,7 @@ public class AnnotationTypeCheckTest {
   }
 
   @Test
-  public void testMessageAnnotationAccepted() throws Exception {
+  public void testMessageAnnotationAccepted() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n"
             + "    @message \"Brake disk {self.name} is invalid\"\n"
@@ -92,7 +92,7 @@ public class AnnotationTypeCheckTest {
   }
 
   @Test
-  public void testBothAnnotationsAccepted() throws Exception {
+  public void testBothAnnotationsAccepted() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n"
             + "    @severity WARNING\n"
@@ -102,7 +102,7 @@ public class AnnotationTypeCheckTest {
   }
 
   @Test
-  public void testDuplicateSeverityReportsError() throws Exception {
+  public void testDuplicateSeverityReportsError() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n"
             + "    @severity WARNING\n"
@@ -115,7 +115,7 @@ public class AnnotationTypeCheckTest {
   }
 
   @Test
-  public void testDuplicateMessageReportsError() throws Exception {
+  public void testDuplicateMessageReportsError() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n"
             + "    @message \"first\"\n"
@@ -127,7 +127,7 @@ public class AnnotationTypeCheckTest {
         "Error should mention '@message'");
   }
 
-  private ConstraintResult eval(String constraint) throws Exception {
+  private ConstraintResult eval(String constraint) {
     return VitruvOCL.evaluateConstraint(
         constraint,
         new Path[]{BRAKESYSTEM_ECORE},

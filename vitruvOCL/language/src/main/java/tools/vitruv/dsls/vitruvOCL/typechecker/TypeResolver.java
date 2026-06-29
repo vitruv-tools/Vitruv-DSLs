@@ -36,6 +36,8 @@ package tools.vitruv.dsls.vitruvOCL.typechecker;
  */
 public class TypeResolver {
 
+  private static final String OP_IMPLIES = "implies";
+
   private TypeResolver() {} // Pure static utility class
 
   // ==================== Numeric helpers ====================
@@ -104,6 +106,7 @@ public class TypeResolver {
    * @param rightType type of the right operand
    * @return the result type, or {@link Type#ERROR} on type mismatch
    */
+  @SuppressWarnings("java:S3776")
   public static Type resolveBinaryOp(String operator, Type leftType, Type rightType) {
     if (leftType == Type.ERROR || rightType == Type.ERROR) {
       return Type.ERROR;
@@ -113,28 +116,27 @@ public class TypeResolver {
       return switch (operator) {
         case "+", "-", "*" -> Type.INTEGER;
         case "/" -> Type.DOUBLE;
-        case "and", "or", "xor", "implies" -> Type.BOOLEAN;
+        case "and", "or", "xor", OP_IMPLIES -> Type.BOOLEAN;
         case "<", "<=", ">", ">=", "==", "!=" -> Type.BOOLEAN;
         default -> Type.ERROR;
       };
     }
 
     // Collection == / != : compare element-wise without unwrapping
-    if (operator.equals("==") || operator.equals("!=")) {
-      if (leftType.isCollection()
-          && rightType.isCollection()
-          && !leftType.isSingleton()
-          && !rightType.isSingleton()) {
-        Type leftElem = leftType.getElementType();
-        Type rightElem = rightType.getElementType();
-        if (leftElem.isConformantTo(rightElem)
-            || rightElem.isConformantTo(leftElem)
-            || leftElem == Type.ANY
-            || rightElem == Type.ANY) {
-          return Type.BOOLEAN;
-        }
-        return Type.ERROR;
+    if ((operator.equals("==") || operator.equals("!="))
+        && leftType.isCollection()
+        && rightType.isCollection()
+        && !leftType.isSingleton()
+        && !rightType.isSingleton()) {
+      Type leftElem = leftType.getElementType();
+      Type rightElem = rightType.getElementType();
+      if (leftElem.isConformantTo(rightElem)
+          || rightElem.isConformantTo(leftElem)
+          || leftElem == Type.ANY
+          || rightElem == Type.ANY) {
+        return Type.BOOLEAN;
       }
+      return Type.ERROR;
     }
 
     // Unwrap singleton !T! and optional ?T? to their scalar member types
@@ -151,7 +153,7 @@ public class TypeResolver {
       return switch (operator) {
         case "+", "-", "*" -> Type.INTEGER;
         case "/" -> Type.DOUBLE;
-        case "and", "or", "xor", "implies" -> Type.BOOLEAN;
+        case "and", "or", "xor", OP_IMPLIES -> Type.BOOLEAN;
         case "<", "<=", ">", ">=", "==", "!=" -> Type.BOOLEAN;
         default -> Type.ERROR;
       };
@@ -185,7 +187,7 @@ public class TypeResolver {
       }
       return Type.ERROR;
     }
-    if (operator.equals("implies")) {
+    if (operator.equals(OP_IMPLIES)) {
       if (leftType == Type.BOOLEAN && rightType == Type.BOOLEAN) {
         return Type.BOOLEAN;
       }
@@ -282,6 +284,7 @@ public class TypeResolver {
    * @param argumentTypes The types of operation arguments
    * @return The result type or Type.ERROR
    */
+  @SuppressWarnings({"java:S3776", "java:S125"})
   public static Type resolveCollectionOperation(
       Type sourceType, String operationName, Type... argumentTypes) {
 
@@ -335,10 +338,8 @@ public class TypeResolver {
         if (!sourceType.isCollection()) {
           return Type.ERROR;
         }
-        if (argumentTypes.length > 0) {
-          if (!argumentTypes[0].isConformantTo(elementType)) {
-            return Type.ERROR;
-          }
+        if (argumentTypes.length > 0 && !argumentTypes[0].isConformantTo(elementType)) {
+          return Type.ERROR;
         }
         return sourceType;
 

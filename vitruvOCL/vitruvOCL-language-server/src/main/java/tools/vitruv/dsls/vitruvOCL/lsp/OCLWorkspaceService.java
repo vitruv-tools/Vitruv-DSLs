@@ -8,6 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL.lsp;
+import java.util.logging.Logger;
 
 import java.io.IOException;
 import java.net.URI;
@@ -38,6 +39,8 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapper;
  */
 public class OCLWorkspaceService implements WorkspaceService {
 
+  private static final Logger LOG = Logger.getLogger(OCLWorkspaceService.class.getName());
+
   private final MetamodelWrapper wrapper;
   private final OCLTextDocumentService textDocumentService;
 
@@ -61,7 +64,7 @@ public class OCLWorkspaceService implements WorkspaceService {
 
       Path ecorePath = uriToPath(uri);
       if (ecorePath == null) {
-        System.err.println("[OCL-LS] Could not resolve path for URI: " + uri);
+        LOG.fine("[OCL-LS] Could not resolve path for URI: " + uri);
         continue;
       }
 
@@ -70,17 +73,17 @@ public class OCLWorkspaceService implements WorkspaceService {
       if (type == FileChangeType.Deleted) {
         // Remove the metamodel; don't try to load a file that no longer exists.
         wrapper.unloadMetamodel(ecorePath);
-        System.err.println("[OCL-LS] Metamodel deleted, unloaded: " + ecorePath);
+        LOG.fine("[OCL-LS] Metamodel deleted, unloaded: " + ecorePath);
         anyChange = true;
 
       } else if (type == FileChangeType.Created || type == FileChangeType.Changed) {
         // Reload: unload old version (no-op if not yet loaded) then load fresh copy.
         try {
           wrapper.reloadMetamodel(ecorePath);
-          System.err.println("[OCL-LS] Metamodel reloaded: " + ecorePath);
+          LOG.fine("[OCL-LS] Metamodel reloaded: " + ecorePath);
           anyChange = true;
         } catch (IOException e) {
-          System.err.println(
+          LOG.fine(
               "[OCL-LS] Failed to reload metamodel " + ecorePath + ": " + e.getMessage());
         }
       }

@@ -8,6 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL.lsp;
+import java.util.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +40,7 @@ final class LspErrorListener extends BaseErrorListener {
   private final List<Diagnostic> diagnostics = new ArrayList<>();
 
   @Override
+  @SuppressWarnings("java:S3776")
   public void syntaxError(
       Recognizer<?, ?> recognizer,
       Object offendingSymbol,
@@ -65,7 +67,7 @@ final class LspErrorListener extends BaseErrorListener {
             .min(java.util.Comparator.comparingInt(k -> damerauLevenshtein(lower, k)))
             .orElse(null);
         int dist = best == null ? Integer.MAX_VALUE : damerauLevenshtein(lower, best);
-        int threshold = text.length() <= 3 ? 1 : text.length() <= 6 ? 2 : 3;
+        int threshold = editThreshold(text.length());
 
         if (dist <= threshold) {
           msg = "Unknown keyword '" + text + "' — did you mean '" + best + "'?";
@@ -83,9 +85,9 @@ final class LspErrorListener extends BaseErrorListener {
       diag.setData(suggestion); // enables Quick Fix replacement in OCLTextDocumentService
     }
     diagnostics.add(diag);
-    System.err.printf(
-        "[OCL-LS] DIAG syntax-error   L%d:C%d → L%d:C%d  %s%n",
-        lspLine, lspStart, lspLine, lspEnd, msg);
+    LOG.fine(String.format(
+        "[OCL-LS] DIAG syntax-error   L%d:C%d → L%d:C%d  %s",
+        lspLine, lspStart, lspLine, lspEnd, msg));
   }
 
   List<Diagnostic> getDiagnostics() {
@@ -95,6 +97,12 @@ final class LspErrorListener extends BaseErrorListener {
   // ---------------------------------------------------------------------------
   // Damerau-Levenshtein (adjacent transpositions count as distance 1)
   // ---------------------------------------------------------------------------
+
+  private static int editThreshold(int len) {
+    if (len <= 3) return 1;
+    if (len <= 6) return 2;
+    return 3;
+  }
 
   private static int damerauLevenshtein(String a, String b) {
     if (a.equals(b)) return 0;

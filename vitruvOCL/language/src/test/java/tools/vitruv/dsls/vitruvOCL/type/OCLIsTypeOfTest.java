@@ -14,7 +14,6 @@ package tools.vitruv.dsls.vitruvOCL.type;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.List;
 import org.antlr.v4.runtime.CharStreams;
@@ -303,7 +302,7 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests Spacecraft instance is exactly of type Spacecraft → {@code [true]}. */
   @Test
-  public void testSpacecraftIsTypeOfSpacecraft() throws Exception {
+  public void testSpacecraftIsTypeOfSpacecraft() {
     String constraint =
         """
 context spaceMission::Spacecraft inv typeOfSpacecraft:
@@ -322,7 +321,7 @@ context spaceMission::Spacecraft inv typeOfSpacecraft:
 
   /** Tests Spacecraft instance is NOT exactly of type Satellite → all false, constraint fails. */
   @Test
-  public void testSpacecraftIsNotTypeOfSatellite() throws Exception {
+  public void testSpacecraftIsNotTypeOfSatellite() {
     String constraint =
         """
 context spaceMission::Spacecraft inv typeOfSatellite:
@@ -341,7 +340,7 @@ context spaceMission::Spacecraft inv typeOfSatellite:
 
   /** Tests Satellite instances are exactly of type Satellite → all true. */
   @Test
-  public void testSatelliteIsTypeOfSatellite() throws Exception {
+  public void testSatelliteIsTypeOfSatellite() {
     String constraint =
         """
 context satelliteSystem::Satellite inv typeOfSatellite:
@@ -363,7 +362,7 @@ context satelliteSystem::Satellite inv typeOfSatellite:
    * pass oclIsTypeOf(Spacecraft).
    */
   @Test
-  public void testOclIsTypeOfUsedInSelect() throws Exception {
+  public void testOclIsTypeOfUsedInSelect() {
     String constraint =
         """
         context spaceMission::Spacecraft inv typeOfInSelect:
@@ -390,7 +389,7 @@ context satelliteSystem::Satellite inv typeOfSatellite:
   public void testOclIsTypeOfAsSelectPredicate() {
     Value result = compile("Sequence{1, \"hello\", true}.select(p | p.oclIsTypeOf(Integer))");
     assertSize(result, 1);
-    assertTrue(((OCLElement.IntValue) result.getElements().get(0)).value() == 1);
+    assertEquals(1, ((OCLElement.IntValue) result.getElements().get(0)).value());
   }
 
   /**
@@ -413,7 +412,4 @@ context satelliteSystem::Satellite inv typeOfSatellite:
     return new VitruvOCLParser(tokens).infixedExpCS();
   }
 
-  private static Path resourcePath(String name) throws URISyntaxException {
-    return Path.of(OCLIsTypeOfTest.class.getClassLoader().getResource(name).toURI());
-  }
 }

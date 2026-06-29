@@ -15,7 +15,6 @@ package tools.vitruv.dsls.vitruvOCL.symboltable;
 import java.util.ArrayList;
 import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvOCL.common.AbstractPhaseVisitor;
@@ -147,8 +146,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  */
 public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
 
-  /** The symbol table being populated during this pass. */
-  private final SymbolTable symbolTable;
+  private static final String PHASE_TAG = "symbol-table-builder";
 
   /** Utility for annotating parse tree nodes with scope references for Pass 2 lookup. */
   private final ScopeAnnotator scopeAnnotator;
@@ -156,18 +154,17 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
   /**
    * Constructs a SymbolTableBuilder for Phase 1 symbol table construction.
    *
-   * @param symbolTable The symbol table to populate with variable definitions
+   * @param st The symbol table to populate with variable definitions
    * @param wrapper The metamodel wrapper for resolving metamodel types
    * @param errors The error collector for reporting symbol-related errors
    * @param scopeAnnotator The scope annotator for attaching scope info to parse tree nodes
    */
   public SymbolTableBuilder(
-      SymbolTable symbolTable,
+      SymbolTable st,
       MetamodelWrapperInterface wrapper,
       ErrorCollector errors,
       ScopeAnnotator scopeAnnotator) {
-    super(symbolTable, wrapper, errors);
-    this.symbolTable = symbolTable;
+    super(st, wrapper, errors);
     this.scopeAnnotator = scopeAnnotator;
   }
 
@@ -187,7 +184,7 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
         ctx.getStart().getCharPositionInLine(),
         "Undefined symbol in Pass 1: " + name,
         ErrorSeverity.ERROR,
-        "symbol-table-builder");
+        PHASE_TAG);
   }
 
   // ==================== Context Declaration ====================
@@ -246,7 +243,7 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
           ctx.getStart().getCharPositionInLine(),
           "Invalid context declaration",
           ErrorSeverity.ERROR,
-          "symbol-table-builder");
+          PHASE_TAG);
       return null;
     }
 
@@ -256,16 +253,16 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
         String clsName = ctx.className.getText();
         if (!specification.getAvailableMetamodels().contains(mmName)) {
           errors.add(ctx.metamodel, "Unknown metamodel '" + mmName + "'",
-              ErrorSeverity.ERROR, "symbol-table-builder");
+              ErrorSeverity.ERROR, PHASE_TAG);
         } else {
           errors.add(ctx.className,
               "Unknown class '" + clsName + "' in metamodel '" + mmName + "'",
-              ErrorSeverity.ERROR, "symbol-table-builder");
+              ErrorSeverity.ERROR, PHASE_TAG);
         }
       } else if (ctx.contextName != null) {
         errors.add(ctx.contextName,
             "Unknown context type '" + ctx.contextName.getText() + "'",
-            ErrorSeverity.ERROR, "symbol-table-builder");
+            ErrorSeverity.ERROR, PHASE_TAG);
       }
       return null;
     }
@@ -447,7 +444,7 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
           ctx.getStart().getCharPositionInLine(),
           "Variable '" + varName + "' already defined in this scope",
           ErrorSeverity.ERROR,
-          "symbol-table-builder");
+          PHASE_TAG);
       return null;
     }
 
@@ -830,7 +827,7 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
           ctx.getStart().getCharPositionInLine(),
           "Iterator requires at least one variable",
           ErrorSeverity.ERROR,
-          "symbol-table-builder");
+          PHASE_TAG);
       return null;
     }
 

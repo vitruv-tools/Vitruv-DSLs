@@ -313,37 +313,32 @@ public class ChainingTypeTest extends DummyTestSpecification {
 
   @Test
   public void testForAllThenSelectValid() {
-    // forAll() → ¡Boolean!, select on ¡Boolean! is valid per spec
-    Value r = compile("Set{1, 2}.forAll(x | x > 0).select(x | x)");
-    assertEquals(1, r.size()); // ¿Boolean? with one true element
+    // forAll() → ¡Boolean! (scalar), select requires explicit collection → error
+    compileExpectError("Set{1, 2}.forAll(x | x > 0).select(x | x)");
   }
 
   @Test
   public void testExistsThenCollectValid() {
-    // exists() → ¡Boolean!, collect on ¡Boolean! is valid per spec
-    Value r = compile("Set{1, 2}.exists(x | x > 0).collect(x | x)");
-    assertEquals(1, r.size());
+    // exists() → ¡Boolean! (scalar), collect requires explicit collection → error
+    compileExpectError("Set{1, 2}.exists(x | x > 0).collect(x | x)");
   }
 
   @Test
   public void testSizeThenSelectValid() {
-    // size() → ¡Integer!, select on ¡Integer! is valid per spec
-    Value r = compile("Set{1, 2}.size().select(x | x > 0)");
-    assertEquals(1, r.size());
+    // size() → ¡Integer! (scalar), select requires explicit collection → error
+    compileExpectError("Set{1, 2}.size().select(x | x > 0)");
   }
 
   @Test
   public void testIsEmptyThenSelectValid() {
-    // isEmpty() → ¡Boolean!, select on ¡Boolean! is valid per spec
-    Value r = compile("Set{}.isEmpty().select(x | x)");
-    assertEquals(1, r.size()); // ¿Boolean? with one true element
+    // isEmpty() → ¡Boolean! (scalar), select requires explicit collection → error
+    compileExpectError("Set{}.isEmpty().select(x | x)");
   }
 
   @Test
   public void testOneThenSelectValid() {
-    // one() → ¡Boolean!, select on ¡Boolean! is valid per spec
-    Value r = compile("Set{1, 2}.one(x | x > 0).select(x | x)");
-    assertEquals(0, r.size()); // select(x | x) on false → ¿Boolean? empty
+    // one() → ¡Boolean! (scalar), select requires explicit collection → error
+    compileExpectError("Set{1, 2}.one(x | x > 0).select(x | x)");
   }
 
   // ── characters/tokenize → collection ops ★ ───────────────────

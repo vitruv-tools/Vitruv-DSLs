@@ -199,7 +199,7 @@ public class OCLAsTypeTest extends DummyTestSpecification {
 
   /** Tests casting Spacecraft collection to Spacecraft → same instances preserved. */
   @Test
-  public void testSpacecraftAsTypeSpacecraft() throws Exception {
+  public void testSpacecraftAsTypeSpacecraft() {
     String constraint =
         """
 context spaceMission::Spacecraft inv asTypeSpacecraft:
@@ -221,7 +221,7 @@ context spaceMission::Spacecraft inv asTypeSpacecraft:
 
   /** Tests oclAsType used after select in metamodel context. */
   @Test
-  public void testSelectThenAsTypeInMetamodel() throws Exception {
+  public void testSelectThenAsTypeInMetamodel() {
     String constraint =
         """
 context spaceMission::Spacecraft inv selectThenAsType:

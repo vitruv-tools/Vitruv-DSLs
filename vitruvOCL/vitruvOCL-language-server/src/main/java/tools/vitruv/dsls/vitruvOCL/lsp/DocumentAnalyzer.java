@@ -8,6 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL.lsp;
+import java.util.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +46,10 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  */
 public class DocumentAnalyzer {
 
+  private static final Logger LOG = Logger.getLogger(DocumentAnalyzer.class.getName());
+
+  private static final String LANGUAGE_ID = "vitruvOCL";
+
   private final MetamodelWrapper wrapper;
 
   public DocumentAnalyzer(MetamodelWrapper wrapper) {
@@ -57,11 +62,7 @@ public class DocumentAnalyzer {
    * <p>Never throws — all exceptions are swallowed and reported as an internal-error diagnostic so
    * that the language server remains stable even when the document is in an extreme broken state.
    */
-  /**
-   * Strips {@code import} declaration lines (e.g. {@code import model : '...'}) from the
-   * document text before parsing, preserving line numbers by replacing the content with
-   * a comment so that all line offsets stay identical.
-   */
+  /* Strips import declaration lines, preserving line numbers by replacing content with a comment. */
   private static String stripImportLines(String text) {
     StringBuilder sb = new StringBuilder(text.length());
     for (String line : text.split("\n", -1)) {
@@ -75,12 +76,13 @@ public class DocumentAnalyzer {
       sb.append('\n');
     }
     // Remove the trailing '\n' added for the last line if original didn't have it
-    if (!text.endsWith("\n") && sb.length() > 0) {
+    if (!text.endsWith("\n") && !sb.isEmpty()) {
       sb.deleteCharAt(sb.length() - 1);
     }
     return sb.toString();
   }
 
+  @SuppressWarnings("java:S1141")
   public DocumentAnalysis analyze(String documentText) {
     List<Diagnostic> diagnostics = new ArrayList<>();
     VitruvOCLParser.ContextDeclCSContext tree = null;
@@ -126,7 +128,7 @@ public class DocumentAnalyzer {
             new SymbolTableBuilder(symbolTable, wrapper, errors, scopeAnnotator);
         builder.visit(tree);
       } catch (Exception e) {
-        System.err.println("[OCL-LS] SymbolTableBuilder error: " + e.getMessage());
+        LOG.fine("[OCL-LS] SymbolTableBuilder error: " + e.getMessage());
       }
 
       // -----------------------------------------------------------------------
@@ -139,7 +141,7 @@ public class DocumentAnalyzer {
         typeChecker.visit(tree);
         nodeTypes = typeChecker.getNodeTypes();
       } catch (Exception e) {
-        System.err.println("[OCL-LS] TypeCheckVisitor error: " + e.getMessage());
+        LOG.fine("[OCL-LS] TypeCheckVisitor error: " + e.getMessage());
       }
 
       // -----------------------------------------------------------------------
@@ -161,24 +163,24 @@ public class DocumentAnalyzer {
 
         Diagnostic d = toDiagnostic(error);
         diagnostics.add(d);
-        System.err.printf(
-            "[OCL-LS] DIAG type-checker  L%d:C%d → L%d:C%d  %s%n",
+        LOG.fine(String.format(
+            "[OCL-LS] DIAG type-checker  L%d:C%d → L%d:C%d  %s",
             d.getRange().getStart().getLine(),
             d.getRange().getStart().getCharacter(),
             d.getRange().getEnd().getLine(),
             d.getRange().getEnd().getCharacter(),
-            d.getMessage());
+            d.getMessage()));
       }
 
     } catch (Exception e) {
       // Catch-all — return empty analysis with a single internal-error diagnostic.
-      System.err.println("[OCL-LS] Unexpected analysis error: " + e.getMessage());
+      LOG.fine("[OCL-LS] Unexpected analysis error: " + e.getMessage());
       diagnostics.add(
           new Diagnostic(
               new Range(new Position(0, 0), new Position(0, 1)),
               "Internal language server error: " + e.getMessage(),
               DiagnosticSeverity.Error,
-              "vitruvOCL"));
+              LANGUAGE_ID));
     }
 
     return new DocumentAnalysis(tree, nodeTypes, diagnostics);
@@ -199,6 +201,7 @@ public class DocumentAnalyzer {
    * Scans {@code text} for {@code @word} tokens that look like misspellings of
    * {@code @severity} or {@code @message} and appends a diagnostic with a quick-fix suggestion.
    */
+  @SuppressWarnings("java:S3776")
   private static void checkAnnotationKeywordTypos(String text, List<Diagnostic> diagnostics) {
     String[] lines = text.split("\n", -1);
     for (int lineIdx = 0; lineIdx < lines.length; lineIdx++) {
@@ -217,7 +220,7 @@ public class DocumentAnalyzer {
         }
 
         // Only flag if within edit distance 3 (generous — covers @Severity, @severit, @sev, @msg).
-        int threshold = word.length() <= 3 ? 1 : word.length() <= 6 ? 2 : 3;
+        int threshold = editThreshold(word.length());
         if (bestKeyword == null || bestDist > threshold) continue;
 
         int startCol = m.start(); // position of '@'
@@ -229,14 +232,20 @@ public class DocumentAnalyzer {
             new Range(new Position(lineIdx, startCol), new Position(lineIdx, endCol)),
             "Unknown annotation '" + badAnnotation + "'. Did you mean '" + suggestion + "'?",
             DiagnosticSeverity.Error,
-            "vitruvOCL");
+            LANGUAGE_ID);
         d.setData(suggestion); // picked up by the code-action handler for the quick fix
         diagnostics.add(d);
-        System.err.printf(
-            "[OCL-LS] DIAG annotation-typo L%d:C%d  %s → %s%n",
-            lineIdx, startCol, badAnnotation, suggestion);
+        LOG.fine(String.format(
+            "[OCL-LS] DIAG annotation-typo L%d:C%d  %s → %s",
+            lineIdx, startCol, badAnnotation, suggestion));
       }
     }
+  }
+
+  private static int editThreshold(int len) {
+    if (len <= 3) return 1;
+    if (len <= 6) return 2;
+    return 3;
   }
 
   private static int damerauLevenshtein(String a, String b) {
@@ -269,6 +278,7 @@ public class DocumentAnalyzer {
    * {@code invCS} child whose start line is <em>after</em> that syntax error is considered orphaned
    * — it was absorbed by error recovery, not legitimately part of this context.
    */
+  @SuppressWarnings("java:S3776")
   private static List<int[]> findOrphanedInvRanges(
       VitruvOCLParser.ContextDeclCSContext tree, List<Diagnostic> syntaxDiags) {
 
@@ -346,7 +356,7 @@ public class DocumentAnalyzer {
         new Range(new Position(startLine, startCol), new Position(endLine, endCol)),
         error.getMessage(),
         severity,
-        "vitruvOCL");
+        LANGUAGE_ID);
 
     // Attach the quick-fix suggestion as diagnostic data so the codeAction handler
     // can build a WorkspaceEdit without re-analysing the document.

@@ -46,6 +46,10 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
  */
 public class CompletionProvider {
 
+  private static final String OP_ALL_INSTANCES = "allInstances";
+  private static final String OP_ALL_INSTANCES_CALL = "allInstances()";
+  private static final String ANNOTATION_SEVERITY = "@severity";
+
   // Regex patterns for context detection (applied to the text before the cursor).
   private static final Pattern MM_COLON_COLON = Pattern.compile("(\\w+)::$");
   private static final Pattern MM_CLASS_DOT = Pattern.compile("(\\w+)::(\\w+)\\.$");
@@ -82,56 +86,37 @@ public class CompletionProvider {
   private static final List<String> PRIMITIVE_TYPES =
       List.of("Integer", "Real", "String", "Boolean", "OclAny", "OclVoid");
 
-  // OCL# collection operations shown after any collection-typed receiver.
-  private static final List<String> COLLECTION_OPS =
-      List.of(
-          "select",
-          "reject",
-          "collect",
-          "forAll",
-          "exists",
-          "includes",
-          "excludes",
-          "including",
-          "excluding",
-          "isEmpty",
-          "notEmpty",
-          "size",
-          "flatten",
-          "union",
-          "append",
-          "prepend",
-          "sum",
-          "max",
-          "min",
-          "avg",
-          "first",
-          "last",
-          "reverse",
-          "sortedBy",
-          "oclIsKindOf",
-          "oclIsTypeOf",
-          "oclAsType");
-
-  // Top-level keywords always offered when no specific context is detected.
-  private static final List<String> TOP_LEVEL_KEYWORDS =
-      List.of(
-          "self",
-          "allInstances",
-          "let",
-          "in",
-          "if",
-          "then",
-          "else",
-          "endif",
-          "null",
-          "true",
-          "false",
-          "not",
-          "and",
-          "or",
-          "xor",
-          "implies");
+  // OCL# collection operations: name → insert snippet (uses LSP snippet syntax).
+  // Iterator-based operations use "x | $0" to place cursor after the body.
+  private static final java.util.Map<String, String> COLLECTION_OPS =
+      java.util.Map.ofEntries(
+          java.util.Map.entry("select",      "select(${1:x} | $0)"),
+          java.util.Map.entry("reject",      "reject(${1:x} | $0)"),
+          java.util.Map.entry("collect",     "collect(${1:x} | $0)"),
+          java.util.Map.entry("forAll",      "forAll(${1:x} | $0)"),
+          java.util.Map.entry("exists",      "exists(${1:x} | $0)"),
+          java.util.Map.entry("sortedBy",    "sortedBy(${1:x} | $0)"),
+          java.util.Map.entry("includes",    "includes($0)"),
+          java.util.Map.entry("excludes",    "excludes($0)"),
+          java.util.Map.entry("including",   "including($0)"),
+          java.util.Map.entry("excluding",   "excluding($0)"),
+          java.util.Map.entry("union",       "union($0)"),
+          java.util.Map.entry("append",      "append($0)"),
+          java.util.Map.entry("prepend",     "prepend($0)"),
+          java.util.Map.entry("isEmpty",     "isEmpty()"),
+          java.util.Map.entry("notEmpty",    "notEmpty()"),
+          java.util.Map.entry("size",        "size()"),
+          java.util.Map.entry("flatten",     "flatten()"),
+          java.util.Map.entry("sum",         "sum()"),
+          java.util.Map.entry("max",         "max()"),
+          java.util.Map.entry("min",         "min()"),
+          java.util.Map.entry("avg",         "avg()"),
+          java.util.Map.entry("first",       "first()"),
+          java.util.Map.entry("last",        "last()"),
+          java.util.Map.entry("reverse",     "reverse()"),
+          java.util.Map.entry("oclIsKindOf", "oclIsKindOf($0)"),
+          java.util.Map.entry("oclIsTypeOf", "oclIsTypeOf($0)"),
+          java.util.Map.entry("oclAsType",   "oclAsType($0)"));
 
   private final MetamodelWrapper wrapper;
 
@@ -146,6 +131,7 @@ public class CompletionProvider {
    * @param cursor LSP cursor position (0-based line and character)
    * @param lastAnalysis most recent analysis snapshot, or {@code null} on first edit
    */
+  @SuppressWarnings("java:S3776")
   public List<CompletionItem> getCompletions(
       String documentText, Position cursor, DocumentAnalysis lastAnalysis) {
 
@@ -268,7 +254,7 @@ public class CompletionProvider {
     // 4. expr. → look up the type of the receiver from the last analysis
     // -----------------------------------------------------------------------
     if (textBefore.endsWith(".") && lastAnalysis != null && lastAnalysis.getNodeTypes() != null) {
-      List<CompletionItem> fromType = completionsFromType(textBefore, cursor, lastAnalysis);
+      List<CompletionItem> fromType = completionsFromType(cursor, lastAnalysis);
       if (!fromType.isEmpty()) {
         return fromType;
       }
@@ -344,10 +330,19 @@ public class CompletionProvider {
       items.add(item);
     }
 
-    // Also suggest common instance-level operations.
-    for (String op : List.of("oclIsKindOf", "oclIsTypeOf", "oclAsType", "allInstances")) {
-      CompletionItem item = new CompletionItem(op);
+    // Also suggest common instance-level operations with their parameter signatures.
+    // label = readable call form, filterText = bare name so typing "oclAs" still matches.
+    for (var entry : List.of(
+        new String[]{"oclIsKindOf",  "oclIsKindOf($0)",  "oclIsKindOf(type : OclType) : Boolean", "oclIsKindOf(type)"},
+        new String[]{"oclIsTypeOf",  "oclIsTypeOf($0)",  "oclIsTypeOf(type : OclType) : Boolean",  "oclIsTypeOf(type)"},
+        new String[]{"oclAsType",    "oclAsType($0)",    "oclAsType(type : OclType) : T",           "oclAsType(type)"},
+        new String[]{OP_ALL_INSTANCES, OP_ALL_INSTANCES_CALL, "allInstances() : Set(self)", OP_ALL_INSTANCES_CALL})) {
+      CompletionItem item = new CompletionItem(entry[3]);
+      item.setFilterText(entry[0]);
       item.setKind(CompletionItemKind.Method);
+      item.setDetail(entry[2]);
+      item.setInsertText(entry[1]);
+      item.setInsertTextFormat(InsertTextFormat.Snippet);
       items.add(item);
     }
 
@@ -356,9 +351,16 @@ public class CompletionProvider {
 
   private List<CompletionItem> collectionOpItems() {
     List<CompletionItem> items = new ArrayList<>();
-    for (String op : COLLECTION_OPS) {
-      CompletionItem item = new CompletionItem(op);
+    for (var entry : COLLECTION_OPS.entrySet()) {
+      // Label shows the readable signature; filterText ensures typing the name still matches.
+      String label = entry.getValue()
+          .replaceAll("\\$\\{\\d+:([^}]+)\\}", "$1")  // ${1:x} → x
+          .replaceAll("\\$\\d+", "");                  // $0 → (removed)
+      CompletionItem item = new CompletionItem(label);
+      item.setFilterText(entry.getKey());
       item.setKind(CompletionItemKind.Method);
+      item.setInsertText(entry.getValue());
+      item.setInsertTextFormat(InsertTextFormat.Snippet);
       items.add(item);
     }
     return items;
@@ -377,6 +379,7 @@ public class CompletionProvider {
    *   <li>Fully-qualified EClass names ({@code JavaMM::Class}, …) — sort prefix {@code "2"}
    * </ol>
    */
+  @SuppressWarnings("java:S3776")
   private List<CompletionItem> typeItems() {
     List<CompletionItem> items = new ArrayList<>();
 
@@ -438,6 +441,15 @@ public class CompletionProvider {
       items.add(item);
     }
 
+    // ── Group 2b: Top-level OCL operations ──────────────────────────────────
+    CompletionItem allInst = new CompletionItem(OP_ALL_INSTANCES);
+    allInst.setKind(CompletionItemKind.Method);
+    allInst.setDetail("allInstances() : Set(self)");
+    allInst.setInsertText(OP_ALL_INSTANCES_CALL);
+    allInst.setInsertTextFormat(InsertTextFormat.Snippet);
+    allInst.setSortText("2_" + OP_ALL_INSTANCES);
+    items.add(allInst);
+
     // ── Group 3: Boolean literals ────────────────────────────────────────────
     for (String lit : List.of("true", "false")) {
       CompletionItem item = new CompletionItem(lit);
@@ -476,11 +488,11 @@ public class CompletionProvider {
     List<CompletionItem> items = new ArrayList<>();
 
     if (!severityPresent) {
-      CompletionItem severity = new CompletionItem("@severity");
+      CompletionItem severity = new CompletionItem(ANNOTATION_SEVERITY);
       severity.setKind(CompletionItemKind.Keyword);
       severity.setDetail("Set violation severity — type a space to choose level");
-      severity.setFilterText("@severity");
-      severity.setInsertText(includeAt ? "@severity" : "severity");
+      severity.setFilterText(ANNOTATION_SEVERITY);
+      severity.setInsertText(includeAt ? ANNOTATION_SEVERITY : "severity");
       items.add(severity);
     }
 
@@ -518,7 +530,7 @@ public class CompletionProvider {
    * {@code .} and looking up its type in the last analysis.
    */
   private List<CompletionItem> completionsFromType(
-      String textBefore, Position cursor, DocumentAnalysis analysis) {
+      Position cursor, DocumentAnalysis analysis) {
 
     // The cursor is right after '.'. We want the type of the expression that ends just before '.'.
     // Find the parse-tree node at (cursor.line, cursor.character - 2) — just before the dot.

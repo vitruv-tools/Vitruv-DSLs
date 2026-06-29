@@ -124,6 +124,7 @@ final class SignatureHelpProvider {
    * unmatched {@code (}. Returns the operation name and context needed to choose the active
    * parameter, or {@code null} if the cursor is not inside a recognised call.
    */
+  @SuppressWarnings("java:S3776")
   private static ActiveCall findActiveCall(String prefix) {
     int depth = 0; // nesting depth relative to innermost (
     int commas = 0; // commas at depth 0 (between the active ( and cursor)

@@ -102,22 +102,17 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
 
   @Test
   public void testIntegerSelectOnSingleton() {
-    // ¡Integer! select(x | x > 0) → ¿Integer?, 1 > 0 → kept → size=1
-    Value r = compile("1.select(x | x > 0)");
-    assertEquals(1, r.size());
+    compileExpectError("1.select(x | x > 0)");
   }
 
   @Test
   public void testBooleanSelectOnSingleton() {
-    Value r = compile("true.select(x | x)");
-    assertEquals(1, r.size());
+    compileExpectError("true.select(x | x)");
   }
 
   @Test
   public void testStringSelectOnSingleton() {
-    // "hello" != "h" → filtered out → empty
-    Value r = compile("\"hello\".select(x | x == \"h\")");
-    assertEquals(0, r.size());
+    compileExpectError("\"hello\".select(x | x == \"h\")");
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -156,9 +151,7 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
 
   @Test
   public void testIntegerRejectOnSingleton() {
-    // ¡Integer! reject(x | x > 0) → ¿Integer?, 1 > 0 → rejected → empty
-    Value r = compile("1.reject(x | x > 0)");
-    assertEquals(0, r.size());
+    compileExpectError("1.reject(x | x > 0)");
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -199,9 +192,7 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
 
   @Test
   public void testIntegerCollectOnSingleton() {
-    // ¡Integer! collect(x | x) → ¡Integer! with same element
-    Value r = compile("1.collect(x | x)");
-    assertEquals(1, r.size());
+    compileExpectError("1.collect(x | x)");
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -240,8 +231,7 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
 
   @Test
   public void testIntegerForAllOnSingleton() {
-    // ¡Integer! forAll(x | x > 0) → ¡Boolean!, 1 > 0 → true
-    assertSingleBool(compile("1.forAll(x | x > 0)"), true);
+    compileExpectError("1.forAll(x | x > 0)");
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -280,8 +270,7 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
 
   @Test
   public void testIntegerExistsOnSingleton() {
-    // ¡Integer! exists(x | x > 0) → ¡Boolean!, 1 > 0 → true
-    assertSingleBool(compile("1.exists(x | x > 0)"), true);
+    compileExpectError("1.exists(x | x > 0)");
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -360,16 +349,12 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
 
   @Test
   public void testIntegerAnyOnSingleton() {
-    // ¡Integer! any(x | x > 0) → ¿Integer?, 1 > 0 → present → size=1
-    Value r = compile("1.any(x | x > 0)");
-    assertEquals(1, r.size());
+    compileExpectError("1.any(x | x > 0)");
   }
 
   @Test
   public void testStringAnyOnSingleton() {
-    // "hello" != "h" → pred false → empty result
-    Value r = compile("\"hello\".any(x | x == \"h\")");
-    assertEquals(0, r.size());
+    compileExpectError("\"hello\".any(x | x == \"h\")");
   }
 
   // ══════════════════════════════════════════════════════════════

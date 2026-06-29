@@ -58,7 +58,7 @@ public class BrakeSystemConstraintTest {
    * constraint should NOT be satisfied.
    */
   @Test
-  public void testCaliperCoordinatesWithinDiskRadius() throws Exception {
+  public void testCaliperCoordinatesWithinDiskRadius() {
     String constraint =
         """
         context brakesystem::BrakeDisk inv coordinatesWithinRadius:
@@ -86,7 +86,7 @@ public class BrakeSystemConstraintTest {
    * satisfied.
    */
   @Test
-  public void testCaliperCoordinatesOutsideDiskRadius() throws Exception {
+  public void testCaliperCoordinatesOutsideDiskRadius() {
     String constraint =
         """
         context brakesystem::BrakeDisk inv:
@@ -116,7 +116,7 @@ public class BrakeSystemConstraintTest {
    * The caliper namespace has 4 Coordinates and 1 NumericParameter.
    */
   @Test
-  public void testFilterCoordinatesFromMixedParameters() throws Exception {
+  public void testFilterCoordinatesFromMixedParameters() {
     String constraint =
         """
         context brakesystem::BrakeDisk inv onlyCoordinates:
@@ -140,7 +140,7 @@ public class BrakeSystemConstraintTest {
    * Tests that oclIsKindOf finds all Parameter subtypes including Coordinate and NumericParameter.
    */
   @Test
-  public void testFilterAllParameterSubtypes() throws Exception {
+  public void testFilterAllParameterSubtypes() {
     String constraint =
         """
         context brakesystem::BrakeDisk inv allSubtypes:
@@ -163,7 +163,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that oclAsType property access on x-coordinates returns a collection of size 2. */
   @Test
-  public void testOclAsTypePropertyAccessX() throws Exception {
+  public void testOclAsTypePropertyAccessX() {
     String constraint =
         """
         context brakesystem::BrakeDisk inv:
@@ -183,7 +183,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests the original constraint using string concatenation to avoid line-length issues. */
   @Test
-  public void testOriginalConstraintExact() throws Exception {
+  public void testOriginalConstraintExact() {
     String constraint =
         "context brakesystem::BrakeDisk inv:\n"
             + "  let cadDisk = cad::Namespace.allInstances().select(b | b.id == self.id) in\n"
@@ -211,7 +211,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that all Sphere instances have a positive radius. */
   @Test
-  public void testSphereRadiusPositive() throws Exception {
+  public void testSphereRadiusPositive() {
     String constraint =
         """
         context cad::Sphere inv radiusPositive:
@@ -227,7 +227,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that all Cylinder instances have a positive radius. */
   @Test
-  public void testCylinderRadiusPositive() throws Exception {
+  public void testCylinderRadiusPositive() {
     String constraint =
         """
         context cad::Cylinder inv radiusPositive:
@@ -243,7 +243,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that all Cylinder instances have distinct top and bottom center points. */
   @Test
-  public void testCylinderDistinctEndpoints() throws Exception {
+  public void testCylinderDistinctEndpoints() {
     String constraint =
         """
         context cad::Cylinder inv distinctEndpoints:
@@ -261,7 +261,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that all Cone instances have a positive base radius. */
   @Test
-  public void testConeBaseRadiusPositive() throws Exception {
+  public void testConeBaseRadiusPositive() {
     String constraint =
         """
         context cad::Cone inv baseRadiusPositive:
@@ -277,7 +277,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that all Cone instances have distinct base center and apex points. */
   @Test
-  public void testConeDistinctBaseAndApex() throws Exception {
+  public void testConeDistinctBaseAndApex() {
     String constraint =
         """
         context cad::Cone inv distinctBaseAndApex:
@@ -295,7 +295,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that all Tube instances have a positive outer radius. */
   @Test
-  public void testTubeOuterRadiusPositive() throws Exception {
+  public void testTubeOuterRadiusPositive() {
     String constraint =
         """
         context cad::Tube inv outerRadiusPositive:
@@ -311,7 +311,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that all Tube instances have a non-negative inner radius. */
   @Test
-  public void testTubeInnerRadiusNonNegative() throws Exception {
+  public void testTubeInnerRadiusNonNegative() {
     String constraint =
         """
         context cad::Tube inv innerRadiusNonNegative:
@@ -327,7 +327,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that all Tube instances have outer radius strictly larger than inner radius. */
   @Test
-  public void testTubeOuterLargerThanInner() throws Exception {
+  public void testTubeOuterLargerThanInner() {
     String constraint =
         """
         context cad::Tube inv outerLargerThanInner:
@@ -343,7 +343,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that all Tube instances have distinct top and bottom center points. */
   @Test
-  public void testTubeDistinctEndpoints() throws Exception {
+  public void testTubeDistinctEndpoints() {
     String constraint =
         """
         context cad::Tube inv distinctEndpoints:
@@ -361,7 +361,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that all Prism instances have a non-zero extrusion vector. */
   @Test
-  public void testPrismExtrusionNonZero() throws Exception {
+  public void testPrismExtrusionNonZero() {
     String constraint =
         """
         context cad::Prism inv extrusionNonZero:
@@ -379,7 +379,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that all Prism base profiles have at least 3 vertices. */
   @Test
-  public void testPrismBaseProfileHasEnoughVertices() throws Exception {
+  public void testPrismBaseProfileHasEnoughVertices() {
     String constraint =
         """
         context cad::Prism inv baseProfileHasEnoughVertices:
@@ -395,7 +395,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that all Pyramid instances have a defined (non-null) apex. */
   @Test
-  public void testPyramidApexDefined() throws Exception {
+  public void testPyramidApexDefined() {
     String constraint =
         """
         context cad::Pyramid inv apexDefined:
@@ -415,7 +415,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that spheres from different namespaces do not intersect with other spheres. */
   @Test
-  public void testSphereNoIntersectWithSphere() throws Exception {
+  public void testSphereNoIntersectWithSphere() {
     String constraint =
         """
         context cad::Sphere inv noIntersectWithSphere:
@@ -443,7 +443,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that spheres from different namespaces do not intersect with cylinders. */
   @Test
-  public void testSphereNoIntersectWithCylinder() throws Exception {
+  public void testSphereNoIntersectWithCylinder() {
     String constraint =
         """
         context cad::Sphere inv noIntersectWithCylinder:
@@ -479,7 +479,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that spheres from different namespaces do not intersect with cones. */
   @Test
-  public void testSphereNoIntersectWithCone() throws Exception {
+  public void testSphereNoIntersectWithCone() {
     String constraint =
         """
         context cad::Sphere inv noIntersectWithCone:
@@ -515,7 +515,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that spheres from different namespaces do not intersect with tubes. */
   @Test
-  public void testSphereNoIntersectWithTube() throws Exception {
+  public void testSphereNoIntersectWithTube() {
     String constraint =
         """
         context cad::Sphere inv noIntersectWithTube:
@@ -551,7 +551,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that spheres from different namespaces do not intersect with boxes. */
   @Test
-  public void testSphereNoIntersectWithBox() throws Exception {
+  public void testSphereNoIntersectWithBox() {
     String constraint =
         """
         context cad::Sphere inv noIntersectWithBox:
@@ -598,7 +598,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that spheres from different namespaces do not intersect with prisms. */
   @Test
-  public void testSphereNoIntersectWithPrism() throws Exception {
+  public void testSphereNoIntersectWithPrism() {
     String constraint =
         """
         context cad::Sphere inv noIntersectWithPrism:
@@ -650,7 +650,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that spheres from different namespaces do not intersect with pyramids. */
   @Test
-  public void testSphereNoIntersectWithPyramid() throws Exception {
+  public void testSphereNoIntersectWithPyramid() {
     String constraint =
         """
         context cad::Sphere inv noIntersectWithPyramid:
@@ -682,7 +682,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that cylinders from different namespaces do not intersect with other cylinders. */
   @Test
-  public void testCylinderNoIntersectWithCylinder() throws Exception {
+  public void testCylinderNoIntersectWithCylinder() {
     String constraint =
         """
         context cad::Cylinder inv noIntersectWithCylinder:
@@ -727,7 +727,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that cylinders from different namespaces do not intersect with cones. */
   @Test
-  public void testCylinderNoIntersectWithCone() throws Exception {
+  public void testCylinderNoIntersectWithCone() {
     String constraint =
         """
         context cad::Cylinder inv noIntersectWithCone:
@@ -771,7 +771,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that cylinders from different namespaces do not intersect with tubes. */
   @Test
-  public void testCylinderNoIntersectWithTube() throws Exception {
+  public void testCylinderNoIntersectWithTube() {
     String constraint =
         """
         context cad::Cylinder inv noIntersectWithTube:
@@ -815,7 +815,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that cylinders from different namespaces do not intersect with boxes. */
   @Test
-  public void testCylinderNoIntersectWithBox() throws Exception {
+  public void testCylinderNoIntersectWithBox() {
     String constraint =
         """
         context cad::Cylinder inv noIntersectWithBox:
@@ -869,7 +869,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that cylinders from different namespaces do not intersect with prisms. */
   @Test
-  public void testCylinderNoIntersectWithPrism() throws Exception {
+  public void testCylinderNoIntersectWithPrism() {
     String constraint =
         """
         context cad::Cylinder inv noIntersectWithPrism:
@@ -930,7 +930,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that cylinders from different namespaces do not intersect with pyramids. */
   @Test
-  public void testCylinderNoIntersectWithPyramid() throws Exception {
+  public void testCylinderNoIntersectWithPyramid() {
     String constraint =
         """
         context cad::Cylinder inv noIntersectWithPyramid:
@@ -970,7 +970,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that cones from different namespaces do not intersect with other cones. */
   @Test
-  public void testConeNoIntersectWithCone() throws Exception {
+  public void testConeNoIntersectWithCone() {
     String constraint =
         """
         context cad::Cone inv noIntersectWithCone:
@@ -1013,7 +1013,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that cones from different namespaces do not intersect with tubes. */
   @Test
-  public void testConeNoIntersectWithTube() throws Exception {
+  public void testConeNoIntersectWithTube() {
     String constraint =
         """
         context cad::Cone inv noIntersectWithTube:
@@ -1056,7 +1056,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that cones from different namespaces do not intersect with boxes. */
   @Test
-  public void testConeNoIntersectWithBox() throws Exception {
+  public void testConeNoIntersectWithBox() {
     String constraint =
         """
         context cad::Cone inv noIntersectWithBox:
@@ -1110,7 +1110,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that cones from different namespaces do not intersect with prisms. */
   @Test
-  public void testConeNoIntersectWithPrism() throws Exception {
+  public void testConeNoIntersectWithPrism() {
     String constraint =
         """
         context cad::Cone inv noIntersectWithPrism:
@@ -1172,7 +1172,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that cones from different namespaces do not intersect with pyramids. */
   @Test
-  public void testConeNoIntersectWithPyramid() throws Exception {
+  public void testConeNoIntersectWithPyramid() {
     String constraint =
         """
         context cad::Cone inv noIntersectWithPyramid:
@@ -1212,7 +1212,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that tubes from different namespaces do not intersect with other tubes. */
   @Test
-  public void testTubeNoIntersectWithTube() throws Exception {
+  public void testTubeNoIntersectWithTube() {
     String constraint =
         """
         context cad::Tube inv noIntersectWithTube:
@@ -1255,7 +1255,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that tubes from different namespaces do not intersect with boxes. */
   @Test
-  public void testTubeNoIntersectWithBox() throws Exception {
+  public void testTubeNoIntersectWithBox() {
     String constraint =
         """
         context cad::Tube inv noIntersectWithBox:
@@ -1308,7 +1308,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that tubes from different namespaces do not intersect with prisms. */
   @Test
-  public void testTubeNoIntersectWithPrism() throws Exception {
+  public void testTubeNoIntersectWithPrism() {
     String constraint =
         """
         context cad::Tube inv noIntersectWithPrism:
@@ -1369,7 +1369,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that tubes from different namespaces do not intersect with pyramids. */
   @Test
-  public void testTubeNoIntersectWithPyramid() throws Exception {
+  public void testTubeNoIntersectWithPyramid() {
     String constraint =
         """
         context cad::Tube inv noIntersectWithPyramid:
@@ -1409,7 +1409,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that boxes from different namespaces do not intersect with other boxes. */
   @Test
-  public void testBoxNoIntersectWithBox() throws Exception {
+  public void testBoxNoIntersectWithBox() {
     String constraint =
         """
         context cad::Box inv noIntersectWithBox:
@@ -1473,7 +1473,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that boxes from different namespaces do not intersect with prisms. */
   @Test
-  public void testBoxNoIntersectWithPrism() throws Exception {
+  public void testBoxNoIntersectWithPrism() {
     String constraint =
         """
         context cad::Box inv noIntersectWithPrism:
@@ -1545,7 +1545,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that boxes from different namespaces do not intersect with pyramids. */
   @Test
-  public void testBoxNoIntersectWithPyramid() throws Exception {
+  public void testBoxNoIntersectWithPyramid() {
     String constraint =
         """
         context cad::Box inv noIntersectWithPyramid:
@@ -1596,7 +1596,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that prisms from different namespaces do not intersect with other prisms. */
   @Test
-  public void testPrismNoIntersectWithPrism() throws Exception {
+  public void testPrismNoIntersectWithPrism() {
     String constraint =
         """
         context cad::Prism inv noIntersectWithPrism:
@@ -1672,7 +1672,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that prisms from different namespaces do not intersect with pyramids. */
   @Test
-  public void testPrismNoIntersectWithPyramid() throws Exception {
+  public void testPrismNoIntersectWithPyramid() {
     String constraint =
         """
         context cad::Prism inv noIntersectWithPyramid:
@@ -1730,7 +1730,7 @@ public class BrakeSystemConstraintTest {
 
   /** Tests that pyramids from different namespaces do not share the same apex point. */
   @Test
-  public void testPyramidNoIntersectWithPyramid() throws Exception {
+  public void testPyramidNoIntersectWithPyramid() {
     String constraint =
         """
         context cad::Pyramid inv noIntersectWithPyramid:

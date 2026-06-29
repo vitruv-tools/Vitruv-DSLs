@@ -27,23 +27,19 @@ public class OclAsTypeMetamodelTest {
     MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
   }
 
-  private static ConstraintResult eval(String c) throws Exception {
+  private static ConstraintResult eval(String c) {
     return VitruvOCL.evaluateConstraint(
         c, new Path[] {BS_ECORE, CAD_ECORE}, new Path[] {BS_INST, CAD_INST});
   }
 
-  private static ConstraintResult evalCad(String c) throws Exception {
+  private static ConstraintResult evalCad(String c) {
     return VitruvOCL.evaluateConstraint(c, new Path[] {CAD_ECORE}, new Path[] {CAD_INST});
-  }
-
-  private static ConstraintResult evalBrake(String c) throws Exception {
-    return VitruvOCL.evaluateConstraint(c, new Path[] {BS_ECORE}, new Path[] {BS_INST});
   }
 
   // ── Parameter → Coordinate: .x .y .z ────────────────────────
 
   @Test
-  public void testCastParameterToCoordinateX() throws Exception {
+  public void testCastParameterToCoordinateX() {
     String c =
         "context cad::Namespace inv:\n"
             + "  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))\n"
@@ -55,7 +51,7 @@ public class OclAsTypeMetamodelTest {
   }
 
   @Test
-  public void testCastParameterToCoordinateY() throws Exception {
+  public void testCastParameterToCoordinateY() {
     String c =
         "context cad::Namespace inv:\n"
             + "  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))\n"
@@ -66,7 +62,7 @@ public class OclAsTypeMetamodelTest {
   }
 
   @Test
-  public void testCastParameterToCoordinateZ() throws Exception {
+  public void testCastParameterToCoordinateZ() {
     String c =
         "context cad::Namespace inv:\n"
             + "  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))\n"
@@ -77,7 +73,7 @@ public class OclAsTypeMetamodelTest {
   }
 
   @Test
-  public void testCastParameterToCoordinateCollectX() throws Exception {
+  public void testCastParameterToCoordinateCollectX() {
     String c =
         "context cad::Namespace inv:\n"
             + "  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))\n"
@@ -91,7 +87,7 @@ public class OclAsTypeMetamodelTest {
   // ── Shape → Sphere: .radius .center ─────────────────────────
 
   @Test
-  public void testCastShapeToSphereRadius() throws Exception {
+  public void testCastShapeToSphereRadius() {
     String c =
         "context cad::Namespace inv:\n"
             + "  self.shapes.select(s | s.oclIsTypeOf(cad::Sphere))\n"
@@ -102,7 +98,7 @@ public class OclAsTypeMetamodelTest {
   }
 
   @Test
-  public void testCastShapeToSphereCenterX() throws Exception {
+  public void testCastShapeToSphereCenterX() {
     String c =
         "context cad::Namespace inv:\n"
             + "  self.shapes.select(s | s.oclIsTypeOf(cad::Sphere))\n"
@@ -115,7 +111,7 @@ public class OclAsTypeMetamodelTest {
   // ── Shape → Cylinder: .radius .bottomCenter .topCenter ───────
 
   @Test
-  public void testCastShapeToCylinderRadius() throws Exception {
+  public void testCastShapeToCylinderRadius() {
     String c =
         "context cad::Namespace inv:\n"
             + "  self.shapes.select(s | s.oclIsTypeOf(cad::Cylinder))\n"
@@ -126,7 +122,7 @@ public class OclAsTypeMetamodelTest {
   }
 
   @Test
-  public void testCastShapeToCylinderDistinctEndpoints() throws Exception {
+  public void testCastShapeToCylinderDistinctEndpoints() {
     String c =
         "context cad::Namespace inv:\n"
             + "  self.shapes.select(s | s.oclIsTypeOf(cad::Cylinder))\n"
@@ -145,7 +141,7 @@ public class OclAsTypeMetamodelTest {
   // ── Shape → Tube: .outerRadius .innerRadius ──────────────────
 
   @Test
-  public void testCastShapeToTubeOuterRadius() throws Exception {
+  public void testCastShapeToTubeOuterRadius() {
     String c =
         "context cad::Namespace inv:\n"
             + "  self.shapes.select(s | s.oclIsTypeOf(cad::Tube))\n"
@@ -156,7 +152,7 @@ public class OclAsTypeMetamodelTest {
   }
 
   @Test
-  public void testCastShapeToTubeOuterVsInner() throws Exception {
+  public void testCastShapeToTubeOuterVsInner() {
     String c =
         "context cad::Namespace inv:\n"
             + "  self.shapes.select(s | s.oclIsTypeOf(cad::Tube))\n"
@@ -170,7 +166,7 @@ public class OclAsTypeMetamodelTest {
   // ── Singleton cast: ¡T!.oclAsType(U) → ¡U! ──────────────────
 
   @Test
-  public void testSingletonCastPreservesMultiplicity() throws Exception {
+  public void testSingletonCastPreservesMultiplicity() {
     String c =
         "context cad::Namespace inv:\n"
             + "  let firstSphere = self.shapes.select(s | s.oclIsTypeOf(cad::Sphere)).first() in\n"
@@ -182,7 +178,7 @@ public class OclAsTypeMetamodelTest {
   // ── Cast result in arithmetic ────────────────────────────────
 
   @Test
-  public void testCastCoordinateXConstraintFails() throws Exception {
+  public void testCastCoordinateXConstraintFails() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  let radius = self.diameterInMM / 2 in\n"
@@ -196,7 +192,7 @@ public class OclAsTypeMetamodelTest {
   }
 
   @Test
-  public void testCastCoordinateXConstraintSatisfied() throws Exception {
+  public void testCastCoordinateXConstraintSatisfied() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  let radius = self.diameterInMM / 2 in\n"
@@ -210,7 +206,7 @@ public class OclAsTypeMetamodelTest {
   }
 
   @Test
-  public void testCastResultSum() throws Exception {
+  public void testCastResultSum() {
     String c =
         "context cad::Namespace inv:\n"
             + "  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))\n"

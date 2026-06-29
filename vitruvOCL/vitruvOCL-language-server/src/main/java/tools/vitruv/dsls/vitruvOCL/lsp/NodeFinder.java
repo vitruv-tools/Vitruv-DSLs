@@ -32,6 +32,7 @@ final class NodeFinder {
    * @param lspLine 0-based line number from LSP HoverParams / CompletionParams
    * @param lspChar 0-based character offset within the line
    */
+  @SuppressWarnings("java:S3776")
   static ParseTree findAt(ParseTree tree, int lspLine, int lspChar) {
     if (tree == null) return null;
 

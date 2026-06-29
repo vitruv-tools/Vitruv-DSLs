@@ -8,6 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL.lsp;
+import java.util.logging.Logger;
 
 import java.io.IOException;
 import java.net.URI;
@@ -54,6 +55,8 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapper;
  * </ul>
  */
 public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
+
+  private static final Logger LOG = Logger.getLogger(OCLLanguageServer.class.getName());
 
   private LanguageClient client;
   private final MetamodelWrapper wrapper = new MetamodelWrapper();
@@ -127,7 +130,10 @@ public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
   }
 
   @Override
-  public void setTrace(SetTraceParams params) {}
+  @SuppressWarnings("java:S1186")
+  public void setTrace(SetTraceParams params) {
+    // Intentionally empty: trace level changes are not used by this server implementation.
+  }
 
   @Override
   public CompletableFuture<Object> shutdown() {
@@ -163,8 +169,8 @@ public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
       for (WorkspaceFolder folder : folders) {
         scanForEcore(uriToPath(folder.getUri()), ecoreFiles);
       }
-    } else if (params.getRootUri() != null) {
-      scanForEcore(uriToPath(params.getRootUri()), ecoreFiles);
+    } else if (params.getRootPath() != null) {
+      scanForEcore(Path.of(params.getRootPath()), ecoreFiles);
     }
 
     // Before loading: register platform:/plugin/ → local-file mappings so cross-ecore
@@ -174,9 +180,9 @@ public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
     for (Path ecoreFile : ecoreFiles) {
       try {
         wrapper.loadMetamodel(ecoreFile);
-        System.err.println("[OCL-LS] Loaded metamodel: " + ecoreFile);
+        LOG.fine("[OCL-LS] Loaded metamodel: " + ecoreFile);
       } catch (IOException e) {
-        System.err.println("[OCL-LS] Could not load " + ecoreFile + ": " + e.getMessage());
+        LOG.fine("[OCL-LS] Could not load " + ecoreFile + ": " + e.getMessage());
       }
     }
   }
@@ -206,7 +212,7 @@ public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
             }
           });
     } catch (IOException e) {
-      System.err.println("[OCL-LS] Error scanning " + root + ": " + e.getMessage());
+      LOG.fine("[OCL-LS] Error scanning " + root + ": " + e.getMessage());
     }
   }
 

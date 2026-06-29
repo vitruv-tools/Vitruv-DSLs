@@ -88,7 +88,7 @@ public class CorrespondenceOperatorTest {
    * spacecraft. Uses select() to find corresponding satellites.
    */
   @Test
-  public void testBasicCorrespondenceInSelect() throws Exception {
+  public void testBasicCorrespondenceInSelect() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -113,7 +113,7 @@ public class CorrespondenceOperatorTest {
    * false, resulting in an empty select result.
    */
   @Test
-  public void testCorrespondenceReturnsFalseWhenNoMatch() throws Exception {
+  public void testCorrespondenceReturnsFalseWhenNoMatch() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -142,7 +142,7 @@ public class CorrespondenceOperatorTest {
    * ~ spacecraft both return true for the same correspondence.
    */
   @Test
-  public void testBidirectionalCorrespondence() throws Exception {
+  public void testBidirectionalCorrespondence() {
     String spacecraftConstraint =
         """
         context spaceMission::Spacecraft inv:
@@ -187,7 +187,7 @@ public class CorrespondenceOperatorTest {
    * Checks that mass values are consistent between corresponding objects.
    */
   @Test
-  public void testCorrespondenceInForAll() throws Exception {
+  public void testCorrespondenceInForAll() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -213,7 +213,7 @@ public class CorrespondenceOperatorTest {
    * correspondence checks with multiple attribute comparisons.
    */
   @Test
-  public void testCorrespondenceMultiAttributeConsistency() throws Exception {
+  public void testCorrespondenceMultiAttributeConsistency() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -246,7 +246,7 @@ public class CorrespondenceOperatorTest {
    * meets a condition.
    */
   @Test
-  public void testCorrespondenceInExists() throws Exception {
+  public void testCorrespondenceInExists() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -274,7 +274,7 @@ public class CorrespondenceOperatorTest {
    * non-corresponding ones.
    */
   @Test
-  public void testCorrespondenceInReject() throws Exception {
+  public void testCorrespondenceInReject() {
     String constraint =
         """
         context satelliteSystem::Satellite inv:
@@ -301,7 +301,7 @@ public class CorrespondenceOperatorTest {
    * <p>Validates that ~ can be combined with other boolean expressions using and.
    */
   @Test
-  public void testCorrespondenceWithAnd() throws Exception {
+  public void testCorrespondenceWithAnd() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -326,7 +326,7 @@ public class CorrespondenceOperatorTest {
    * checking.
    */
   @Test
-  public void testCorrespondenceInImplication() throws Exception {
+  public void testCorrespondenceInImplication() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -355,7 +355,7 @@ public class CorrespondenceOperatorTest {
    * identifies all of them in select/exists statements.
    */
   @Test
-  public void testMultipleCorrespondences() throws Exception {
+  public void testMultipleCorrespondences() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -381,7 +381,7 @@ public class CorrespondenceOperatorTest {
    * multiple correspondences.
    */
   @Test
-  public void testForAllOnMultipleCorrespondences() throws Exception {
+  public void testForAllOnMultipleCorrespondences() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -409,7 +409,7 @@ public class CorrespondenceOperatorTest {
    * metaclass type.
    */
   @Test
-  public void testCorrespondenceWithInvalidTargetType() throws Exception {
+  public void testCorrespondenceWithInvalidTargetType() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -443,7 +443,7 @@ public class CorrespondenceOperatorTest {
    * correspondences found) for all pairs, rather than failing.
    */
   @Test
-  public void testCorrespondenceWithoutCorrespondenceModel() throws Exception {
+  public void testCorrespondenceWithoutCorrespondenceModel() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -471,7 +471,7 @@ public class CorrespondenceOperatorTest {
    * queries.
    */
   @Test
-  public void testCorrespondenceInNestedIterators() throws Exception {
+  public void testCorrespondenceInNestedIterators() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -500,7 +500,7 @@ public class CorrespondenceOperatorTest {
    * correspondence existence.
    */
   @Test
-  public void testCorrespondenceInConditional() throws Exception {
+  public void testCorrespondenceInConditional() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -528,7 +528,7 @@ public class CorrespondenceOperatorTest {
    * <p>Validates that the NOT operator can be applied to correspondence checks for inverse logic.
    */
   @Test
-  public void testNegatedCorrespondence() throws Exception {
+  public void testNegatedCorrespondence() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -553,7 +553,7 @@ public class CorrespondenceOperatorTest {
    * <p>Validates that ~ can be combined with other predicates in complex boolean expressions.
    */
   @Test
-  public void testCorrespondenceWithAttributeFilter() throws Exception {
+  public void testCorrespondenceWithAttributeFilter() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -580,7 +580,7 @@ public class CorrespondenceOperatorTest {
    * <p>Validates that select(~) correctly filters satellites that correspond to the spacecraft.
    */
   @Test
-  public void testBasicCorrespondenceInSelectSyntacticSugarVersion() throws Exception {
+  public void testBasicCorrespondenceInSelectSyntacticSugarVersion() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -603,7 +603,7 @@ public class CorrespondenceOperatorTest {
    * <p>Validates that when objects are not in the same correspondence, select(~) returns empty.
    */
   @Test
-  public void testCorrespondenceReturnsFalseWhenNoMatchSyntacticSugarVersion() throws Exception {
+  public void testCorrespondenceReturnsFalseWhenNoMatchSyntacticSugarVersion() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -629,7 +629,7 @@ public class CorrespondenceOperatorTest {
    * <p>Validates that exists(~) works in both directions.
    */
   @Test
-  public void testBidirectionalCorrespondenceSyntacticSugarVersion() throws Exception {
+  public void testBidirectionalCorrespondenceSyntacticSugarVersion() {
     String spacecraftConstraint =
         """
         context spaceMission::Spacecraft inv:
@@ -669,7 +669,7 @@ public class CorrespondenceOperatorTest {
    * <p>Validates that reject(~) filters out corresponding objects.
    */
   @Test
-  public void testCorrespondenceInRejectSyntacticSugarVersion() throws Exception {
+  public void testCorrespondenceInRejectSyntacticSugarVersion() {
     String constraint =
         """
         context satelliteSystem::Satellite inv:
@@ -690,7 +690,7 @@ public class CorrespondenceOperatorTest {
 
   /** Tests correspondence combined with AND operator using exists(~). */
   @Test
-  public void testCorrespondenceWithAndSyntacticSugarVersion() throws Exception {
+  public void testCorrespondenceWithAndSyntacticSugarVersion() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -712,7 +712,7 @@ public class CorrespondenceOperatorTest {
 
   /** Tests correspondence with multiple satellites using select(~). */
   @Test
-  public void testMultipleCorrespondencesSyntacticSugarVersion() throws Exception {
+  public void testMultipleCorrespondencesSyntacticSugarVersion() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -733,7 +733,7 @@ public class CorrespondenceOperatorTest {
 
   /** Tests correspondence in if-then-else with exists(~). */
   @Test
-  public void testCorrespondenceInConditionalSyntacticSugarVersion() throws Exception {
+  public void testCorrespondenceInConditionalSyntacticSugarVersion() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:
@@ -757,7 +757,7 @@ public class CorrespondenceOperatorTest {
 
   /** Tests correspondence combined with attribute comparison using select(~). */
   @Test
-  public void testCorrespondenceWithAttributeFilterSyntacticSugarVersion() throws Exception {
+  public void testCorrespondenceWithAttributeFilterSyntacticSugarVersion() {
     String constraint =
         """
         context spaceMission::Spacecraft inv:

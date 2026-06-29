@@ -26,7 +26,10 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.VitruvOCL;
  * Command-line interface for VitruvOCL compiler. Outputs JSON for easy integration with IDEs and
  * tools.
  */
+@SuppressWarnings("java:S106")
 public class VitruvOCLCLI {
+
+  private static final String JSON_KEY_SUCCESS = "\"success\":";
 
   public static void main(String[] args) {
     if (args.length == 0) {
@@ -48,7 +51,7 @@ public class VitruvOCLCLI {
           System.exit(1);
         }
       }
-    } catch (Throwable e) {
+    } catch (Exception e) {
       System.out.println(
           String.format("{\"success\":false,\"error\":%s}", jsonString(e.getClass().getSimpleName() + ": " + e.getMessage())));
       System.exit(1);
@@ -101,7 +104,7 @@ public class VitruvOCLCLI {
         StringBuilder constraintJson = new StringBuilder();
         constraintJson.append("{");
         constraintJson.append("\"name\":").append(jsonString(name)).append(",");
-        constraintJson.append("\"success\":").append(result.isSuccess()).append(",");
+        constraintJson.append(JSON_KEY_SUCCESS).append(result.isSuccess()).append(",");
         constraintJson.append("\"satisfied\":").append(result.isSatisfied());
 
         if (!result.getCompilerErrors().isEmpty()) {
@@ -181,8 +184,7 @@ public class VitruvOCLCLI {
         int invIndex = line.indexOf(" inv ");
         int colonIndex = line.indexOf(":", invIndex);
         if (colonIndex > invIndex) {
-          String name = line.substring(invIndex + 5, colonIndex).trim();
-          return name;
+          return line.substring(invIndex + 5, colonIndex).trim();
         }
       }
     }
@@ -192,7 +194,7 @@ public class VitruvOCLCLI {
   private static String buildCheckJson(ConstraintResult result) {
     StringBuilder json = new StringBuilder();
     json.append("{");
-    json.append("\"success\":").append(result.isSuccess());
+    json.append(JSON_KEY_SUCCESS).append(result.isSuccess());
     json.append(",\"diagnostics\":[");
 
     String diagnostics =
@@ -216,7 +218,7 @@ public class VitruvOCLCLI {
   private static String buildEvalJson(ConstraintResult result) {
     StringBuilder json = new StringBuilder();
     json.append("{");
-    json.append("\"success\":").append(result.isSuccess());
+    json.append(JSON_KEY_SUCCESS).append(result.isSuccess());
     json.append(",\"satisfied\":").append(result.isSatisfied());
 
     json.append(",\"errors\":[");
@@ -260,6 +262,7 @@ public class VitruvOCLCLI {
         + "\"";
   }
 
+  @SuppressWarnings("java:S127")
   private static CLIArgs parseArgs(String[] args) {
     if (args.length < 2) {
       System.err.println("Missing constraint file");
@@ -325,5 +328,6 @@ public class VitruvOCLCLI {
     System.out.println("VitruvOCL 1.0.0");
   }
 
+  @SuppressWarnings("java:S6218")
   record CLIArgs(Path constraintFile, Path[] ecoreFiles, Path[] xmiFiles) {}
 }

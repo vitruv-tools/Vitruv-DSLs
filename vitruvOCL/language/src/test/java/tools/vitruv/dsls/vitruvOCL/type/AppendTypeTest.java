@@ -48,6 +48,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * ¡Boolean!   |    ERROR  |   ERROR  |   ERROR  |  ERROR  |   ERROR  |   ERROR
  * </pre>
  */
+@SuppressWarnings("java:S125")
 public class AppendTypeTest extends DummyTestSpecification {
 
   protected void compileExpectError(String input) {

@@ -170,15 +170,15 @@ final class InlayHintProvider {
      * <p>This is more reliable than annotating the {@code iteratorVarList} node directly because
      * the TypeCheckVisitor puts the variable in scope and annotates its usage sites.
      */
+    @SuppressWarnings("java:S3776")
     private Type findFirstUsageType(ParseTree node, String varName) {
       if (node == null) return null;
 
       // variableExpCS: varName=ID
-      if (node instanceof VitruvOCLParser.VariableExpCSContext ctx) {
-        if (ctx.varName != null && varName.equals(ctx.varName.getText())) {
-          Type t = types.get(ctx);
-          if (t != null && !t.isError()) return t;
-        }
+      if (node instanceof VitruvOCLParser.VariableExpCSContext ctx
+          && ctx.varName != null && varName.equals(ctx.varName.getText())) {
+        Type t = types.get(ctx);
+        if (t != null && !t.isError()) return t;
       }
       // primaryExpCS alternative: # variable  →  wraps variableExpCS
       if (node instanceof VitruvOCLParser.VariableContext ctx
@@ -221,8 +221,7 @@ final class InlayHintProvider {
       int el = range.getEnd().getLine();
       int ec = range.getEnd().getCharacter();
       if (line < sl || (line == sl && col < sc)) return false;
-      if (line > el || (line == el && col > ec)) return false;
-      return true;
+      return !(line > el || (line == el && col > ec));
     }
   }
 }

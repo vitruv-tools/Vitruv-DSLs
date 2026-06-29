@@ -21,6 +21,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
  * <p>Created by {@link DocumentAnalyzer} after every debounced edit and stored per URI in {@link
  * OCLTextDocumentService}. Consumed synchronously by hover and completion requests.
  */
+@SuppressWarnings("java:S6206")
 public final class DocumentAnalysis {
 
   private final VitruvOCLParser.ContextDeclCSContext tree;

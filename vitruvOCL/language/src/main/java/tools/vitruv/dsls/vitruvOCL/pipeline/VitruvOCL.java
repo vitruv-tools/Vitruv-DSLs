@@ -24,10 +24,11 @@ import tools.vitruv.dsls.vitruvOCL.common.CompileError;
 import tools.vitruv.dsls.vitruvOCL.common.ErrorSeverity;
 import tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
-import tools.vitruv.framework.views.ViewSource;
 import tools.vitruv.framework.vsum.VirtualModel;
 
 public class VitruvOCL {
+
+  private VitruvOCL() {}
 
   private static VSUMWrapper vsumWrapper = null;
   private static MetamodelWrapperInterface directWrapper = null;
@@ -206,12 +207,12 @@ public class VitruvOCL {
 
     boolean satisfied = records.isEmpty();
     String constraintName = extractConstraintName(constraint);
-    for (EvaluationVisitor.ViolationRecord record : records) {
-      String sourceFile = wrapper.getSourceFileForInstance(record.instance());
+    for (EvaluationVisitor.ViolationRecord violation : records) {
+      String sourceFile = wrapper.getSourceFileForInstance(violation.instance());
       String filename = sourceFile != null ? sourceFile : "unknown";
-      String instanceLabel = describeInstance(record.instance());
-      String message = record.customMessage() != null ? record.customMessage() : instanceLabel;
-      String block = formatViolationBlock(record.severity(), constraintName, filename, instanceLabel, message);
+      String instanceLabel = describeInstance(violation.instance());
+      String message = violation.customMessage() != null ? violation.customMessage() : instanceLabel;
+      String block = formatViolationBlock(violation.severity(), constraintName, filename, instanceLabel, message);
       warnings.add(new Warning(Warning.WarningType.CONSTRAINT_VIOLATION, block));
     }
 
@@ -329,7 +330,7 @@ public class VitruvOCL {
                 }
                 return false;
               })
-          .collect(Collectors.toList())
+          .toList()
           .toArray(new Path[0]);
     }
   }
@@ -337,7 +338,7 @@ public class VitruvOCL {
   private static Path[] collectAllFiles(Path directory) throws IOException {
     if (!Files.exists(directory) || !Files.isDirectory(directory)) return new Path[0];
     try (Stream<Path> stream = Files.walk(directory)) {
-      return stream.filter(Files::isRegularFile).collect(Collectors.toList()).toArray(new Path[0]);
+      return stream.filter(Files::isRegularFile).toList().toArray(new Path[0]);
     }
   }
 }

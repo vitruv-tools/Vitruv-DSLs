@@ -46,8 +46,9 @@ public sealed interface OCLElement
 
   /**
    * Try to get boolean value; returns {@code null} if not a {@link BoolValue}. Avoids instanceof
-   * checks in calling code.
+   * checks in calling code. Null is the documented "not-a-Boolean" sentinel for this type hierarchy.
    */
+  @SuppressWarnings("java:S2447") // null is intentional sentinel meaning "this element is not a Boolean"
   default Boolean tryGetBool() {
     return null;
   }
@@ -338,6 +339,7 @@ public sealed interface OCLElement
    * @param b second element
    * @return {@code true} if semantically equal
    */
+  @SuppressWarnings("java:S3776")
   static boolean semanticEquals(OCLElement a, OCLElement b) {
     if (a == null && b == null) {
       return true;
@@ -399,6 +401,7 @@ public sealed interface OCLElement
    * @param b second element
    * @return negative if {@code a < b}, zero if equal, positive if {@code a > b}
    */
+  @SuppressWarnings("java:S3776")
   static int compare(OCLElement a, OCLElement b) {
     if (a == b) {
       return 0;

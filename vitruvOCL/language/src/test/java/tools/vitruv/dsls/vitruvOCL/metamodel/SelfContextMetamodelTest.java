@@ -26,23 +26,18 @@ public class SelfContextMetamodelTest {
     MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
   }
 
-  private static ConstraintResult eval(String c) throws Exception {
-    return VitruvOCL.evaluateConstraint(
-        c, new Path[] {BS_ECORE, CAD_ECORE}, new Path[] {BS_INST, CAD_INST});
-  }
-
-  private static ConstraintResult evalCad(String c) throws Exception {
+  private static ConstraintResult evalCad(String c) {
     return VitruvOCL.evaluateConstraint(c, new Path[] {CAD_ECORE}, new Path[] {CAD_INST});
   }
 
-  private static ConstraintResult evalBrake(String c) throws Exception {
+  private static ConstraintResult evalBrake(String c) {
     return VitruvOCL.evaluateConstraint(c, new Path[] {BS_ECORE}, new Path[] {BS_INST});
   }
 
   // ── self : Sphere ────────────────────────────────────────────
 
   @Test
-  public void testSelfSphereRadiusPositive() throws Exception {
+  public void testSelfSphereRadiusPositive() {
     String c = "context cad::Sphere inv:\n" + "  self.radius > 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -50,7 +45,7 @@ public class SelfContextMetamodelTest {
   }
 
   @Test
-  public void testSelfSphereRadiusNegativeFails() throws Exception {
+  public void testSelfSphereRadiusNegativeFails() {
     String c = "context cad::Sphere inv:\n" + "  self.radius >= 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -58,7 +53,7 @@ public class SelfContextMetamodelTest {
   }
 
   @Test
-  public void testSelfSphereCenterNavigationX() throws Exception {
+  public void testSelfSphereCenterNavigationX() {
     String c = "context cad::Sphere inv:\n" + "  self.center.x >= 0 or self.center.x < 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -66,7 +61,7 @@ public class SelfContextMetamodelTest {
   }
 
   @Test
-  public void testSelfSphereCenterNavigationY() throws Exception {
+  public void testSelfSphereCenterNavigationY() {
     String c = "context cad::Sphere inv:\n" + "  self.center.y >= 0 or self.center.y < 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -74,7 +69,7 @@ public class SelfContextMetamodelTest {
   }
 
   @Test
-  public void testSelfSphereCenterNavigationZ() throws Exception {
+  public void testSelfSphereCenterNavigationZ() {
     String c = "context cad::Sphere inv:\n" + "  self.center.z >= 0 or self.center.z < 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -82,7 +77,7 @@ public class SelfContextMetamodelTest {
   }
 
   @Test
-  public void testSelfSphereRadiusInArithmetic() throws Exception {
+  public void testSelfSphereRadiusInArithmetic() {
     String c = "context cad::Sphere inv:\n" + "  self.radius * 2 > 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -92,7 +87,7 @@ public class SelfContextMetamodelTest {
   // ── self : Cylinder ──────────────────────────────────────────
 
   @Test
-  public void testSelfCylinderRadiusPositive() throws Exception {
+  public void testSelfCylinderRadiusPositive() {
     String c = "context cad::Cylinder inv:\n" + "  self.radius > 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -100,7 +95,7 @@ public class SelfContextMetamodelTest {
   }
 
   @Test
-  public void testSelfCylinderBottomTopDistinct() throws Exception {
+  public void testSelfCylinderBottomTopDistinct() {
     String c =
         "context cad::Cylinder inv:\n"
             + "  self.bottomCenter.x != self.topCenter.x or\n"
@@ -112,7 +107,7 @@ public class SelfContextMetamodelTest {
   }
 
   @Test
-  public void testSelfCylinderRadiusArithmetic() throws Exception {
+  public void testSelfCylinderRadiusArithmetic() {
     String c = "context cad::Cylinder inv:\n" + "  self.radius * 2 > 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -122,7 +117,7 @@ public class SelfContextMetamodelTest {
   // ── self : Tube ───────────────────────────────────────────────
 
   @Test
-  public void testSelfTubeOuterRadiusPositive() throws Exception {
+  public void testSelfTubeOuterRadiusPositive() {
     String c = "context cad::Tube inv:\n" + "  self.outerRadius > 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -130,7 +125,7 @@ public class SelfContextMetamodelTest {
   }
 
   @Test
-  public void testSelfTubeOuterVsInner() throws Exception {
+  public void testSelfTubeOuterVsInner() {
     String c = "context cad::Tube inv:\n" + "  self.outerRadius > self.innerRadius";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -138,7 +133,7 @@ public class SelfContextMetamodelTest {
   }
 
   @Test
-  public void testSelfTubeInnerNonNegative() throws Exception {
+  public void testSelfTubeInnerNonNegative() {
     String c = "context cad::Tube inv:\n" + "  self.innerRadius >= 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -148,7 +143,7 @@ public class SelfContextMetamodelTest {
   // ── self : Cone ───────────────────────────────────────────────
 
   @Test
-  public void testSelfConeBaseRadiusPositive() throws Exception {
+  public void testSelfConeBaseRadiusPositive() {
     String c = "context cad::Cone inv:\n" + "  self.baseRadius > 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -156,7 +151,7 @@ public class SelfContextMetamodelTest {
   }
 
   @Test
-  public void testSelfConeBaseAndApexDistinct() throws Exception {
+  public void testSelfConeBaseAndApexDistinct() {
     String c =
         "context cad::Cone inv:\n"
             + "  self.baseCenter.x != self.apex.x or\n"
@@ -170,7 +165,7 @@ public class SelfContextMetamodelTest {
   // ── self : Namespace ─────────────────────────────────────────
 
   @Test
-  public void testSelfNamespaceShapesAccess() throws Exception {
+  public void testSelfNamespaceShapesAccess() {
     String c = "context cad::Namespace inv:\n" + "  self.shapes.size() >= 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -178,7 +173,7 @@ public class SelfContextMetamodelTest {
   }
 
   @Test
-  public void testSelfNamespaceParametersAccess() throws Exception {
+  public void testSelfNamespaceParametersAccess() {
     String c = "context cad::Namespace inv:\n" + "  self.parameters.size() >= 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -186,7 +181,7 @@ public class SelfContextMetamodelTest {
   }
 
   @Test
-  public void testSelfNamespaceShapesForAll() throws Exception {
+  public void testSelfNamespaceShapesForAll() {
     String c = "context cad::Namespace inv:\n" + "  self.shapes.forAll(s | s.notEmpty())";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -196,7 +191,7 @@ public class SelfContextMetamodelTest {
   // ── self : BrakeDisk ─────────────────────────────────────────
 
   @Test
-  public void testSelfBrakeDiskDiameterPositive() throws Exception {
+  public void testSelfBrakeDiskDiameterPositive() {
     String c = "context brakesystem::BrakeDisk inv:\n" + "  self.diameterInMM > 0";
     ConstraintResult r = evalBrake(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -204,7 +199,7 @@ public class SelfContextMetamodelTest {
   }
 
   @Test
-  public void testSelfBrakeDiskDiameterArithmetic() throws Exception {
+  public void testSelfBrakeDiskDiameterArithmetic() {
     String c = "context brakesystem::BrakeDisk inv:\n" + "  self.diameterInMM / 2 > 0";
     ConstraintResult r = evalBrake(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -212,7 +207,7 @@ public class SelfContextMetamodelTest {
   }
 
   @Test
-  public void testSelfBrakeDiskDiameterInLet() throws Exception {
+  public void testSelfBrakeDiskDiameterInLet() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  let radius = self.diameterInMM / 2 in\n"
@@ -225,7 +220,7 @@ public class SelfContextMetamodelTest {
   // ── self : BrakeCaliper ──────────────────────────────────────
 
   @Test
-  public void testSelfBrakeCaliperIdStringOp() throws Exception {
+  public void testSelfBrakeCaliperIdStringOp() {
     String c = "context brakesystem::BrakeCaliper inv:\n" + "  self.id.length() > 0";
     ConstraintResult r = evalBrake(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -235,7 +230,7 @@ public class SelfContextMetamodelTest {
   // ── self in allInstances() context ───────────────────────────
 
   @Test
-  public void testSelfInAllInstancesIncludes() throws Exception {
+  public void testSelfInAllInstancesIncludes() {
     String c = "context cad::Sphere inv:\n" + "  cad::Sphere.allInstances().includes(self)";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -243,7 +238,7 @@ public class SelfContextMetamodelTest {
   }
 
   @Test
-  public void testSelfPropertyInIteratorBody() throws Exception {
+  public void testSelfPropertyInIteratorBody() {
     String c =
         "context cad::Sphere inv:\n"
             + "  cad::Namespace.allInstances().forAll(ns | self.radius > 0)";
@@ -253,7 +248,7 @@ public class SelfContextMetamodelTest {
   }
 
   @Test
-  public void testSelfForeignNamespaceReject() throws Exception {
+  public void testSelfForeignNamespaceReject() {
     String c =
         "context cad::Sphere inv:\n"
             + "  cad::Namespace.allInstances()\n"

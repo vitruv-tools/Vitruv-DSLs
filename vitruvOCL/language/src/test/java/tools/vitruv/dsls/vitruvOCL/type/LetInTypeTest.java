@@ -205,8 +205,8 @@ public class LetInTypeTest extends DummyTestSpecification {
 
   @Test
   public void testLetBodyReturnsCollection() {
-    Value r = compile("let c = Set{1, 2, 3} in c.select(x | x > 1)");
-    assertEquals(2, r.size());
+    Value r = compile("let c = Set{1, 2, 3} in c.reject(x | x > 1)");
+    assertEquals(1, r.size());
   }
 
   @Test

@@ -17,6 +17,27 @@ import java.util.Optional;
 
 public final class OclOperationDocs {
 
+  // S1192 – string-literal constants
+  private static final String T_BOOLEAN = "Boolean";
+  private static final String PARAM_RIGHT = "right";
+  private static final String DESC_SECOND_OPERAND = "The second operand";
+  private static final String PARAM_ITERATOR = "iterator";
+  private static final String DESC_ITERATOR = "The loop variable bound to each element";
+  private static final String PARAM_CONDITION = "condition";
+  private static final String DESC_PREDICATE = "The predicate tested per element";
+  private static final String PARAM_ELEMENT = "element";
+  private static final String PARAM_OTHER = "other";
+  private static final String T_COLLECTION = "Collection<T>";
+  private static final String T_INTEGER = "Integer";
+  private static final String DESC_SCALAR_RECEIVER = "Requires a scalar (singleton) receiver.";
+  private static final String T_OCL_TYPE = "OclType";
+  private static final String T_STRING = "String";
+  private static final String PARAM_PATTERN = "pattern";
+  private static final String DESC_NO_STRING_ORDERING =
+      "String ordering is NOT supported in OCL#.";
+  private static final String ITER_PARAM_PART = ": T | ";
+  private static final String RETURNS_COLL = ": T) → ";
+
   public record OperationDoc(
       String signature, String description, String returnDescription, List<ParamDoc> params) {}
 
@@ -38,43 +59,43 @@ public final class OclOperationDocs {
     m.put(
         "implies",
         op(
-            "Boolean.implies(right: Boolean) → Boolean",
+            T_BOOLEAN + ".implies(" + PARAM_RIGHT + ": " + T_BOOLEAN + ") → " + T_BOOLEAN,
             "Logical implication. Evaluates to `true` whenever the left operand is `false`, "
                 + "or whenever both operands are `true`. Equivalent to `not self or right`.",
             "`true` unless `self` is `true` and `right` is `false`",
-            param("right", "Boolean", "The consequent expression (right-hand side)")));
+            param(PARAM_RIGHT, T_BOOLEAN, "The consequent expression (right-hand side)")));
 
     m.put(
         "and",
         op(
-            "Boolean.and(right: Boolean) → Boolean",
+            T_BOOLEAN + ".and(" + PARAM_RIGHT + ": " + T_BOOLEAN + ") → " + T_BOOLEAN,
             "Logical conjunction. Both operands must be `true` for the result to be `true`.",
             "`true` if and only if both `self` and `right` are `true`",
-            param("right", "Boolean", "The second operand")));
+            param(PARAM_RIGHT, T_BOOLEAN, DESC_SECOND_OPERAND)));
 
     m.put(
         "or",
         op(
-            "Boolean.or(right: Boolean) → Boolean",
+            T_BOOLEAN + ".or(" + PARAM_RIGHT + ": " + T_BOOLEAN + ") → " + T_BOOLEAN,
             "Logical disjunction. At least one operand must be `true`.",
             "`true` if `self` or `right` (or both) are `true`",
-            param("right", "Boolean", "The second operand")));
+            param(PARAM_RIGHT, T_BOOLEAN, DESC_SECOND_OPERAND)));
 
     m.put(
         "xor",
         op(
-            "Boolean.xor(right: Boolean) → Boolean",
+            T_BOOLEAN + ".xor(" + PARAM_RIGHT + ": " + T_BOOLEAN + ") → " + T_BOOLEAN,
             "Exclusive disjunction. Exactly one of the two operands must be `true`.",
             "`true` if exactly one of `self` or `right` is `true`",
-            param("right", "Boolean", "The second operand")));
+            param(PARAM_RIGHT, T_BOOLEAN, DESC_SECOND_OPERAND)));
 
     m.put(
         "not",
         op(
-            "not(operand: Boolean) → Boolean",
+            "not(operand: " + T_BOOLEAN + ") → " + T_BOOLEAN,
             "Logical negation. Inverts the truth value of the operand.",
             "`true` if `operand` is `false`, `false` otherwise",
-            param("operand", "Boolean", "The expression to negate")));
+            param("operand", T_BOOLEAN, "The expression to negate")));
 
     // ------------------------------------------------------------------
     // Iterator operations
@@ -83,99 +104,99 @@ public final class OclOperationDocs {
     m.put(
         "select",
         op(
-            "Collection<T>.select(iterator: T | condition: Boolean) → Collection<T>",
+            T_COLLECTION + ".select(" + PARAM_ITERATOR + ITER_PARAM_PART + PARAM_CONDITION + ": " + T_BOOLEAN + ") → " + T_COLLECTION,
             "Filters a collection to the subset for which the body expression evaluates to `true`. "
                 + "Preserves the collection kind (Set stays Set, Sequence stays Sequence).",
             "A sub-collection containing only the elements that satisfy `condition`",
-            param("iterator", "T", "The loop variable bound to each element"),
-            param("condition", "Boolean", "The filter predicate evaluated per element")));
+            param(PARAM_ITERATOR, "T", DESC_ITERATOR),
+            param(PARAM_CONDITION, T_BOOLEAN, "The filter predicate evaluated per element")));
 
     m.put(
         "reject",
         op(
-            "Collection<T>.reject(iterator: T | condition: Boolean) → Collection<T>",
+            T_COLLECTION + ".reject(" + PARAM_ITERATOR + ITER_PARAM_PART + PARAM_CONDITION + ": " + T_BOOLEAN + ") → " + T_COLLECTION,
             "Filters a collection to the subset for which the body expression evaluates to `false`."
                 + " Complementary to `select`.",
             "A sub-collection of elements for which `condition` is `false`",
-            param("iterator", "T", "The loop variable bound to each element"),
-            param("condition", "Boolean", "Elements matching this are excluded")));
+            param(PARAM_ITERATOR, "T", DESC_ITERATOR),
+            param(PARAM_CONDITION, T_BOOLEAN, "Elements matching this are excluded")));
 
     m.put(
         "collect",
         op(
-            "Collection<T>.collect(iterator: T | expr: V) → Collection<V>",
+            T_COLLECTION + ".collect(" + PARAM_ITERATOR + ": T | expr: V) → Collection<V>",
             "Transforms each element by evaluating `expr` and collects the results into a new "
                 + "collection of the same kind. Equivalent to a map operation.",
             "A new collection of transformed values (type V)",
-            param("iterator", "T", "The loop variable bound to each source element"),
+            param(PARAM_ITERATOR, "T", "The loop variable bound to each source element"),
             param("expr", "V", "The expression that produces the value for each result element")));
 
     m.put(
         "forAll",
         op(
-            "Collection<T>.forAll(iterator: T | condition: Boolean) → Boolean",
+            T_COLLECTION + ".forAll(" + PARAM_ITERATOR + ITER_PARAM_PART + PARAM_CONDITION + ": " + T_BOOLEAN + ") → " + T_BOOLEAN,
             "Universal quantifier. Returns `true` when the body evaluates to `true` for every "
                 + "element. Returns `true` for empty collections (vacuous truth).",
             "`true` if `condition` holds for all elements; `false` as soon as one element fails",
-            param("iterator", "T", "The loop variable bound to each element"),
-            param("condition", "Boolean", "The predicate that must hold for every element")));
+            param(PARAM_ITERATOR, "T", DESC_ITERATOR),
+            param(PARAM_CONDITION, T_BOOLEAN, "The predicate that must hold for every element")));
 
     m.put(
         "exists",
         op(
-            "Collection<T>.exists(iterator: T | condition: Boolean) → Boolean",
+            T_COLLECTION + ".exists(" + PARAM_ITERATOR + ITER_PARAM_PART + PARAM_CONDITION + ": " + T_BOOLEAN + ") → " + T_BOOLEAN,
             "Existential quantifier. Returns `true` when the body evaluates to `true` for at least "
                 + "one element. Returns `false` for empty collections.",
             "`true` if at least one element satisfies `condition`",
-            param("iterator", "T", "The loop variable bound to each element"),
-            param("condition", "Boolean", "The predicate tested per element")));
+            param(PARAM_ITERATOR, "T", DESC_ITERATOR),
+            param(PARAM_CONDITION, T_BOOLEAN, DESC_PREDICATE)));
 
     m.put(
         "one",
         op(
-            "Collection<T>.one(iterator: T | condition: Boolean) → Boolean",
+            T_COLLECTION + ".one(" + PARAM_ITERATOR + ITER_PARAM_PART + PARAM_CONDITION + ": " + T_BOOLEAN + ") → " + T_BOOLEAN,
             "Returns `true` if exactly one element satisfies the predicate.",
             "`true` if exactly one element satisfies `condition`",
-            param("iterator", "T", "The loop variable bound to each element"),
-            param("condition", "Boolean", "The predicate tested per element")));
+            param(PARAM_ITERATOR, "T", DESC_ITERATOR),
+            param(PARAM_CONDITION, T_BOOLEAN, DESC_PREDICATE)));
 
     m.put(
         "any",
         op(
-            "Collection<T>.any(iterator: T | condition: Boolean) → T",
+            T_COLLECTION + ".any(" + PARAM_ITERATOR + ITER_PARAM_PART + PARAM_CONDITION + ": " + T_BOOLEAN + ") → T",
             "Returns an arbitrary element satisfying the predicate. "
                 + "Result is undefined if no element matches.",
             "A singleton containing one matching element, or empty if none found",
-            param("iterator", "T", "The loop variable bound to each element"),
-            param("condition", "Boolean", "The predicate tested per element")));
+            param(PARAM_ITERATOR, "T", DESC_ITERATOR),
+            param(PARAM_CONDITION, T_BOOLEAN, DESC_PREDICATE)));
 
     m.put(
         "isUnique",
         op(
-            "Collection<T>.isUnique(iterator: T | expr: V) → Boolean",
+            T_COLLECTION + ".isUnique(" + PARAM_ITERATOR + ": T | expr: V) → " + T_BOOLEAN,
             "Returns `true` if the body expression evaluates to a distinct value for every"
                 + " element.",
             "`true` if all body results are distinct",
-            param("iterator", "T", "The loop variable bound to each element"),
+            param(PARAM_ITERATOR, "T", DESC_ITERATOR),
             param("expr", "V", "Expression whose values must all be distinct")));
 
     m.put(
         "sortedBy",
         op(
-            "Collection<T>.sortedBy(iterator: T | key: Comparable) → OrderedSet<T>",
+            T_COLLECTION + ".sortedBy(" + PARAM_ITERATOR + ": T | key: Comparable) → OrderedSet<T>",
             "Returns an `OrderedSet` with all elements sorted in ascending order of the key"
                 + " expression. Supports numeric keys and enum keys.",
             "An `OrderedSet<T>` ordered by `key` ascending",
-            param("iterator", "T", "The loop variable"),
+            param(PARAM_ITERATOR, "T", "The loop variable"),
             param("key", "Comparable", "Expression whose value determines the sort order")));
 
     m.put(
         "collectNested",
         op(
-            "Collection<T>.collectNested(iterator: T | expr: V) → Collection<Collection<V>>",
+            T_COLLECTION + ".collectNested(" + PARAM_ITERATOR + ": T | expr: V) → Collection<Collection<V>>",
             "Like `collect` but does NOT flatten — returns a collection of collections.",
             "A collection of collections (not flattened)",
-            param("iterator", "T", "The loop variable bound to each source element"),
+            param(PARAM_ITERATOR, "T", "The loop variable bound to each source element"),
             param("expr", "V", "The expression evaluated per element")));
 
     m.put(
@@ -197,79 +218,79 @@ public final class OclOperationDocs {
     m.put(
         "includes",
         op(
-            "Collection<T>.includes(element: T) → Boolean",
+            T_COLLECTION + ".includes(" + PARAM_ELEMENT + RETURNS_COLL + T_BOOLEAN,
             "Tests whether the collection contains the given element (using equality).",
             "`true` if `element` is present in the collection",
-            param("element", "T", "The value to search for")));
+            param(PARAM_ELEMENT, "T", "The value to search for")));
 
     m.put(
         "excludes",
         op(
-            "Collection<T>.excludes(element: T) → Boolean",
+            T_COLLECTION + ".excludes(" + PARAM_ELEMENT + RETURNS_COLL + T_BOOLEAN,
             "Tests whether the collection does not contain the given element.",
             "`true` if `element` is absent from the collection",
-            param("element", "T", "The value to search for")));
+            param(PARAM_ELEMENT, "T", "The value to search for")));
 
     m.put(
         "includesAll",
         op(
-            "Collection<T>.includesAll(other: Collection<T>) → Boolean",
+            T_COLLECTION + ".includesAll(" + PARAM_OTHER + ": " + T_COLLECTION + ") → " + T_BOOLEAN,
             "Tests whether this collection contains all elements of `other`.",
             "`true` if every element of `other` is present in this collection",
-            param("other", "Collection<T>", "The collection whose elements to look for")));
+            param(PARAM_OTHER, T_COLLECTION, "The collection whose elements to look for")));
 
     m.put(
         "excludesAll",
         op(
-            "Collection<T>.excludesAll(other: Collection<T>) → Boolean",
+            T_COLLECTION + ".excludesAll(" + PARAM_OTHER + ": " + T_COLLECTION + ") → " + T_BOOLEAN,
             "Tests whether this collection contains none of the elements of `other`.",
             "`true` if no element of `other` is present in this collection",
-            param("other", "Collection<T>", "The collection whose elements must be absent")));
+            param(PARAM_OTHER, T_COLLECTION, "The collection whose elements must be absent")));
 
     m.put(
         "count",
         op(
-            "Collection<T>.count(element: T) → Integer",
+            T_COLLECTION + ".count(" + PARAM_ELEMENT + RETURNS_COLL + T_INTEGER,
             "Returns how many times `element` occurs in the collection. "
                 + "For Sets and OrderedSets this is always 0 or 1.",
             "The number of occurrences of `element`",
-            param("element", "T", "The element to count")));
+            param(PARAM_ELEMENT, "T", "The element to count")));
 
     m.put(
         "including",
         op(
-            "Collection<T>.including(element: T) → Collection<T>",
+            T_COLLECTION + ".including(" + PARAM_ELEMENT + RETURNS_COLL + T_COLLECTION,
             "Returns a new collection that contains all elements of the receiver plus `element`. "
                 + "For Sets, if the element already exists it is not duplicated.",
             "A new collection with `element` added",
-            param("element", "T", "The element to add")));
+            param(PARAM_ELEMENT, "T", "The element to add")));
 
     m.put(
         "excluding",
         op(
-            "Collection<T>.excluding(element: T) → Collection<T>",
+            T_COLLECTION + ".excluding(" + PARAM_ELEMENT + RETURNS_COLL + T_COLLECTION,
             "Returns a new collection with all occurrences of `element` removed.",
             "A new collection without `element`",
-            param("element", "T", "The element to remove")));
+            param(PARAM_ELEMENT, "T", "The element to remove")));
 
     m.put(
         "isEmpty",
         op(
-            "Collection<T>.isEmpty() → Boolean",
+            T_COLLECTION + ".isEmpty() → " + T_BOOLEAN,
             "Tests whether the collection contains no elements.",
             "`true` if the collection has zero elements"));
 
     m.put(
         "notEmpty",
         op(
-            "Collection<T>.notEmpty() → Boolean",
+            T_COLLECTION + ".notEmpty() → " + T_BOOLEAN,
             "Tests whether the collection contains at least one element.",
             "`true` if the collection has one or more elements"));
 
     m.put(
         "size",
         op(
-            "Collection<T>.size() → Integer",
+            T_COLLECTION + ".size() → " + T_INTEGER,
             "Returns the number of elements in the collection. "
                 + "Also works on String singletons (¡String!) to return the string length.",
             "The cardinality of the collection as a non-negative integer"));
@@ -284,20 +305,20 @@ public final class OclOperationDocs {
     m.put(
         "union",
         op(
-            "Collection<T>.union(other: Collection<T>) → Collection<T>",
+            T_COLLECTION + ".union(" + PARAM_OTHER + ": " + T_COLLECTION + ") → " + T_COLLECTION,
             "Returns a new collection containing all elements from both collections. "
                 + "For Sets, duplicates are eliminated.",
             "The union of both collections",
-            param("other", "Collection<T>", "The collection to merge with")));
+            param(PARAM_OTHER, T_COLLECTION, "The collection to merge with")));
 
     m.put(
         "intersection",
         op(
-            "Collection<T>.intersection(other: Collection<T>) → Collection<T>",
+            T_COLLECTION + ".intersection(" + PARAM_OTHER + ": " + T_COLLECTION + ") → " + T_COLLECTION,
             "Returns the elements present in both collections. "
                 + "Result is unique if either operand is unique (Set/OrderedSet).",
             "A collection containing elements common to both",
-            param("other", "Collection<T>", "The collection to intersect with")));
+            param(PARAM_OTHER, T_COLLECTION, "The collection to intersect with")));
 
     m.put(
         "symmetricDifference",
@@ -306,7 +327,7 @@ public final class OclOperationDocs {
             "Returns elements present in exactly one of the two sets (not both). "
                 + "Both operands must be Sets (unique collections).",
             "A Set containing elements in either collection but not both",
-            param("other", "Set<T>", "The Set to compute symmetric difference with")));
+            param(PARAM_OTHER, "Set<T>", "The Set to compute symmetric difference with")));
 
     m.put(
         "append",
@@ -314,7 +335,7 @@ public final class OclOperationDocs {
             "Sequence<T>.append(element: T) → Sequence<T>",
             "Appends `element` at the end of the sequence.",
             "A new `Sequence<T>` with `element` as the last item",
-            param("element", "T", "The element to append")));
+            param(PARAM_ELEMENT, "T", "The element to append")));
 
     m.put(
         "prepend",
@@ -322,34 +343,34 @@ public final class OclOperationDocs {
             "Sequence<T>.prepend(element: T) → Sequence<T>",
             "Inserts `element` at the beginning of the sequence.",
             "A new `Sequence<T>` with `element` as the first item",
-            param("element", "T", "The element to prepend")));
+            param(PARAM_ELEMENT, "T", "The element to prepend")));
 
     m.put(
         "insertAt",
         op(
-            "Sequence<T>.insertAt(index: Integer, element: T) → Sequence<T>",
+            "Sequence<T>.insertAt(index: " + T_INTEGER + ", " + PARAM_ELEMENT + ": T) → Sequence<T>",
             "Inserts `element` at the given 1-based `index` in the sequence.",
             "A new `Sequence<T>` with `element` inserted at `index`",
-            param("index", "Integer", "1-based insertion position"),
-            param("element", "T", "The element to insert")));
+            param("index", T_INTEGER, "1-based insertion position"),
+            param(PARAM_ELEMENT, "T", "The element to insert")));
 
     m.put(
         "subSequence",
         op(
-            "Sequence<T>.subSequence(lower: Integer, upper: Integer) → Sequence<T>",
+            "Sequence<T>.subSequence(lower: " + T_INTEGER + ", upper: " + T_INTEGER + ") → Sequence<T>",
             "Returns the sub-sequence from index `lower` to `upper` (1-based, inclusive).",
             "A new `Sequence<T>` with elements from `lower` to `upper`",
-            param("lower", "Integer", "Start index (1-based, inclusive)"),
-            param("upper", "Integer", "End index (1-based, inclusive)")));
+            param("lower", T_INTEGER, "Start index (1-based, inclusive)"),
+            param("upper", T_INTEGER, "End index (1-based, inclusive)")));
 
     m.put(
         "at",
         op(
-            "Sequence<T>.at(index: Integer) → T",
+            "Sequence<T>.at(index: " + T_INTEGER + ") → T",
             "Returns the element at the given 1-based index. "
                 + "Also works on String to return the character at that position.",
             "The element at position `index`",
-            param("index", "Integer", "1-based position")));
+            param("index", T_INTEGER, "1-based position")));
 
     m.put(
         "first",
@@ -449,55 +470,55 @@ public final class OclOperationDocs {
         op(
             "Number.abs() → Number",
             "Returns the absolute value. Preserves the numeric type (Integer stays Integer, "
-                + "Real stays Real). Requires a scalar (singleton) receiver, not a collection.",
+                + "Real stays Real). " + DESC_SCALAR_RECEIVER + " not a collection.",
             "The non-negative magnitude of `self`"));
 
     m.put(
         "floor",
         op(
-            "Real.floor() → Integer",
+            "Real.floor() → " + T_INTEGER,
             "Returns the largest integer less than or equal to `self`. "
-                + "Requires a scalar (singleton) receiver.",
+                + DESC_SCALAR_RECEIVER,
             "The floor of `self` as an `Integer`"));
 
     m.put(
         "ceil",
         op(
-            "Real.ceil() → Integer",
+            "Real.ceil() → " + T_INTEGER,
             "Returns the smallest integer greater than or equal to `self`. "
-                + "Requires a scalar (singleton) receiver.",
+                + DESC_SCALAR_RECEIVER,
             "The ceiling of `self` as an `Integer`"));
 
     m.put(
         "ceiling",
         op(
-            "Real.ceiling() → Integer",
+            "Real.ceiling() → " + T_INTEGER,
             "Alias for `ceil`. Returns the smallest integer greater than or equal to `self`.",
             "The ceiling of `self` as an `Integer`"));
 
     m.put(
         "round",
         op(
-            "Real.round() → Integer",
+            "Real.round() → " + T_INTEGER,
             "Returns `self` rounded to the nearest integer (half rounds up). "
-                + "Requires a scalar (singleton) receiver.",
+                + DESC_SCALAR_RECEIVER,
             "The rounded value as an `Integer`"));
 
     m.put(
         "div",
         op(
-            "Integer.div(divisor: Integer) → Integer",
+            T_INTEGER + ".div(divisor: " + T_INTEGER + ") → " + T_INTEGER,
             "Integer division (truncating). Both operands must be Integer.",
             "The integer quotient of `self` divided by `divisor`",
-            param("divisor", "Integer", "The divisor")));
+            param("divisor", T_INTEGER, "The divisor")));
 
     m.put(
         "mod",
         op(
-            "Integer.mod(divisor: Integer) → Integer",
+            T_INTEGER + ".mod(divisor: " + T_INTEGER + ") → " + T_INTEGER,
             "Integer remainder. Both operands must be Integer.",
             "The remainder of `self` divided by `divisor`",
-            param("divisor", "Integer", "The divisor")));
+            param("divisor", T_INTEGER, "The divisor")));
 
     m.put(
         "lift",
@@ -514,30 +535,30 @@ public final class OclOperationDocs {
     m.put(
         "oclIsKindOf",
         op(
-            "OclAny.oclIsKindOf(type: OclType) → Boolean",
+            "OclAny.oclIsKindOf(type: " + T_OCL_TYPE + ") → " + T_BOOLEAN,
             "Tests whether the object is an instance of `type` or any of its subtypes. "
                 + "Equivalent to Java's `instanceof`.",
             "`true` if `self` conforms to `type`",
-            param("type", "OclType", "The metaclass to test against (e.g. `JavaMM::Class`)")));
+            param("type", T_OCL_TYPE, "The metaclass to test against (e.g. `JavaMM::Class`)")));
 
     m.put(
         "oclIsTypeOf",
         op(
-            "OclAny.oclIsTypeOf(type: OclType) → Boolean",
+            "OclAny.oclIsTypeOf(type: " + T_OCL_TYPE + ") → " + T_BOOLEAN,
             "Tests whether the object is an instance of exactly `type` — not a subtype. "
                 + "Stricter than `oclIsKindOf`.",
             "`true` if the dynamic type of `self` is exactly `type`",
-            param("type", "OclType", "The exact metaclass to test against")));
+            param("type", T_OCL_TYPE, "The exact metaclass to test against")));
 
     m.put(
         "oclAsType",
         op(
-            "OclAny.oclAsType(type: OclType) → ¡T!",
+            "OclAny.oclAsType(type: " + T_OCL_TYPE + ") → ¡T!",
             "Downcasts `self` to `type`, returning a singleton ¡T!. "
                 + "In OCL# everything is a collection, so the result is always a singleton "
                 + "with one element. Use `oclIsKindOf` to guard before casting.",
             "A singleton ¡T! containing the cast object",
-            param("type", "OclType", "The target metaclass (e.g. `JavaMM::Method`)")));
+            param("type", T_OCL_TYPE, "The target metaclass (e.g. `JavaMM::Method`)")));
 
     // ------------------------------------------------------------------
     // Instance-set operation
@@ -576,112 +597,112 @@ public final class OclOperationDocs {
     m.put(
         "concat",
         op(
-            "String.concat(suffix: String) → String",
+            T_STRING + ".concat(suffix: " + T_STRING + ") → " + T_STRING,
             "Concatenates `suffix` to the end of this string.",
             "A new string with `suffix` appended",
-            param("suffix", "String", "The string to append")));
+            param("suffix", T_STRING, "The string to append")));
 
     m.put(
         "toUpper",
         op(
-            "String.toUpper() → String",
+            T_STRING + ".toUpper() → " + T_STRING,
             "Converts all characters in the string to upper case.",
             "The upper-case version of `self`"));
 
     m.put(
         "toLower",
         op(
-            "String.toLower() → String",
+            T_STRING + ".toLower() → " + T_STRING,
             "Converts all characters in the string to lower case.",
             "The lower-case version of `self`"));
 
     m.put(
         "substring",
         op(
-            "String.substring(lower: Integer, upper: Integer) → String",
+            T_STRING + ".substring(lower: " + T_INTEGER + ", upper: " + T_INTEGER + ") → " + T_STRING,
             "Extracts the substring between index `lower` and `upper` (1-based, inclusive).",
             "The extracted substring",
-            param("lower", "Integer", "Start index (1-based, inclusive)"),
-            param("upper", "Integer", "End index (1-based, inclusive)")));
+            param("lower", T_INTEGER, "Start index (1-based, inclusive)"),
+            param("upper", T_INTEGER, "End index (1-based, inclusive)")));
 
     m.put(
         "indexOf",
         op(
-            "String.indexOf(sub: String) → Integer",
+            T_STRING + ".indexOf(sub: " + T_STRING + ") → " + T_INTEGER,
             "Returns the 1-based index of the first occurrence of `sub` within this string, "
                 + "or 0 if not found.",
             "1-based position of `sub`, or 0 if absent",
-            param("sub", "String", "The substring to search for")));
+            param("sub", T_STRING, "The substring to search for")));
 
     m.put(
         "equalsIgnoreCase",
         op(
-            "String.equalsIgnoreCase(other: String) → Boolean",
+            T_STRING + ".equalsIgnoreCase(" + PARAM_OTHER + ": " + T_STRING + ") → " + T_BOOLEAN,
             "Tests whether two strings are equal, ignoring case differences.",
             "`true` if both strings are equal when compared case-insensitively",
-            param("other", "String", "The string to compare against")));
+            param(PARAM_OTHER, T_STRING, "The string to compare against")));
 
     m.put(
         "length",
         op(
-            "String.length() → Integer",
+            T_STRING + ".length() → " + T_INTEGER,
             "Returns the number of characters in the string.",
             "The length of the string as a non-negative integer"));
 
     m.put(
         "toInteger",
         op(
-            "String.toInteger() → Integer",
+            T_STRING + ".toInteger() → " + T_INTEGER,
             "Parses the string as an integer. Undefined if the string is not a valid integer.",
             "The integer value represented by this string"));
 
     m.put(
         "toReal",
         op(
-            "String.toReal() → Real",
+            T_STRING + ".toReal() → Real",
             "Parses the string as a real number. Undefined if the string is not a valid number.",
             "The real value represented by this string"));
 
     m.put(
         "characters",
         op(
-            "String.characters() → Sequence<String>",
+            T_STRING + ".characters() → Sequence<" + T_STRING + ">",
             "Splits the string into a Sequence of single-character strings.",
             "A `Sequence<String>` of individual characters"));
 
     m.put(
         "matches",
         op(
-            "String.matches(pattern: String) → Boolean",
+            T_STRING + ".matches(" + PARAM_PATTERN + ": " + T_STRING + ") → " + T_BOOLEAN,
             "Tests whether the string matches the given regular expression pattern.",
             "`true` if `self` matches `pattern`",
-            param("pattern", "String", "A Java-compatible regular expression")));
+            param(PARAM_PATTERN, T_STRING, "A Java-compatible regular expression")));
 
     m.put(
         "substituteAll",
         op(
-            "String.substituteAll(pattern: String, replacement: String) → String",
+            T_STRING + ".substituteAll(" + PARAM_PATTERN + ": " + T_STRING + ", replacement: " + T_STRING + ") → " + T_STRING,
             "Replaces all occurrences of `pattern` (regex) with `replacement`.",
             "A new string with all matches replaced",
-            param("pattern", "String", "The regex pattern to find"),
-            param("replacement", "String", "The replacement string")));
+            param(PARAM_PATTERN, T_STRING, "The regex pattern to find"),
+            param("replacement", T_STRING, "The replacement string")));
 
     m.put(
         "substituteFirst",
         op(
-            "String.substituteFirst(pattern: String, replacement: String) → String",
+            T_STRING + ".substituteFirst(" + PARAM_PATTERN + ": " + T_STRING + ", replacement: " + T_STRING + ") → " + T_STRING,
             "Replaces the first occurrence of `pattern` (regex) with `replacement`.",
             "A new string with the first match replaced",
-            param("pattern", "String", "The regex pattern to find"),
-            param("replacement", "String", "The replacement string")));
+            param(PARAM_PATTERN, T_STRING, "The regex pattern to find"),
+            param("replacement", T_STRING, "The replacement string")));
 
     m.put(
         "tokenize",
         op(
-            "String.tokenize(delimiter: String) → Sequence<String>",
+            T_STRING + ".tokenize(delimiter: " + T_STRING + ") → Sequence<" + T_STRING + ">",
             "Splits the string by `delimiter` and returns the parts as a Sequence.",
             "A `Sequence<String>` of the split parts",
-            param("delimiter", "String", "The delimiter string or regex to split on")));
+            param("delimiter", T_STRING, "The delimiter string or regex to split on")));
 
     // ------------------------------------------------------------------
     // Ordering comparisons (numeric only in OCL#)
@@ -690,39 +711,39 @@ public final class OclOperationDocs {
     m.put(
         "<",
         op(
-            "Number < Number → Boolean",
+            "Number < Number → " + T_BOOLEAN,
             "Less-than comparison. Only valid for numeric types (Integer, Float, Real). "
-                + "String ordering is NOT supported in OCL#.",
+                + DESC_NO_STRING_ORDERING,
             "`true` if `self` is strictly less than the right operand"));
 
     m.put(
         "<=",
         op(
-            "Number <= Number → Boolean",
+            "Number <= Number → " + T_BOOLEAN,
             "Less-than-or-equal comparison. Only valid for numeric types (Integer, Float, Real). "
-                + "String ordering is NOT supported in OCL#.",
+                + DESC_NO_STRING_ORDERING,
             "`true` if `self` is less than or equal to the right operand"));
 
     m.put(
         ">",
         op(
-            "Number > Number → Boolean",
+            "Number > Number → " + T_BOOLEAN,
             "Greater-than comparison. Only valid for numeric types (Integer, Float, Real). "
-                + "String ordering is NOT supported in OCL#.",
+                + DESC_NO_STRING_ORDERING,
             "`true` if `self` is strictly greater than the right operand"));
 
     m.put(
         ">=",
         op(
-            "Number >= Number → Boolean",
+            "Number >= Number → " + T_BOOLEAN,
             "Greater-than-or-equal comparison. Only valid for numeric types (Integer, Float, Real)."
-                + " String ordering is NOT supported in OCL#.",
+                + " " + DESC_NO_STRING_ORDERING,
             "`true` if `self` is greater than or equal to the right operand"));
 
     m.put(
         "==",
         op(
-            "T == T → Boolean",
+            "T == T → " + T_BOOLEAN,
             "Equality comparison. Works for all types including enums. "
                 + "Enum literals are compared by name within the same enum type.",
             "`true` if both operands are equal"));
@@ -730,7 +751,7 @@ public final class OclOperationDocs {
     m.put(
         "!=",
         op(
-            "T != T → Boolean",
+            "T != T → " + T_BOOLEAN,
             "Inequality comparison. Works for all types including enums.",
             "`true` if the operands are not equal"));
 

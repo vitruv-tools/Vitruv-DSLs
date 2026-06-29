@@ -44,6 +44,7 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.VitruvOCL;
  * <p>Note: Cylinder.radius, Tube.outerRadius, Tube.innerRadius and Cone.baseRadius are also EFloat
  * attributes in cad.ecore.
  */
+@SuppressWarnings("java:S125")
 public class EFloatEcoreAttributeTest {
 
   private static final Path CAD_ECORE = Path.of("src/test/resources/test-metamodels/cad.ecore");
@@ -54,7 +55,7 @@ public class EFloatEcoreAttributeTest {
     MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
   }
 
-  private static ConstraintResult evalCad(String c) throws Exception {
+  private static ConstraintResult evalCad(String c) {
     return VitruvOCL.evaluateConstraint(c, new Path[] {CAD_ECORE}, new Path[] {CAD_INST});
   }
 
@@ -63,7 +64,7 @@ public class EFloatEcoreAttributeTest {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSphereRadiusIsFloat() throws Exception {
+  public void testSphereRadiusIsFloat() {
     // self.radius > 0 — basic EFloat attribute access
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -71,7 +72,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testSphereRadiusEquality() throws Exception {
+  public void testSphereRadiusEquality() {
     // self.radius == self.radius → ¡Boolean! true (EFloat == EFloat)
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius == self.radius");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -79,14 +80,14 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testSphereRadiusComparisonGe() throws Exception {
+  public void testSphereRadiusComparisonGe() {
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius >= 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
   @Test
-  public void testSphereRadiusComparisonNegativeFails() throws Exception {
+  public void testSphereRadiusComparisonNegativeFails() {
     ConstraintResult r =
         VitruvOCL.evaluateConstraint(
             "context cad::Sphere inv:\n  self.radius < 0",
@@ -101,7 +102,7 @@ public class EFloatEcoreAttributeTest {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testFloatPlusIntegerPromotion() throws Exception {
+  public void testFloatPlusIntegerPromotion() {
     // self.radius (¡Float!) + 1 (¡Integer!) → ¡Double!
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius + 1 > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -109,7 +110,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatTimesIntegerPromotion() throws Exception {
+  public void testFloatTimesIntegerPromotion() {
     // self.radius * 2 → ¡Double!
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius * 2 > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -117,7 +118,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatTimesFloatPromotion() throws Exception {
+  public void testFloatTimesFloatPromotion() {
     // self.radius * self.radius → ¡Double! (radius^2)
     ConstraintResult r =
         evalCad("context cad::Sphere inv:\n" + "  let r = self.radius in\n" + "  r * r > 0");
@@ -126,7 +127,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatPlusDoublePromotion() throws Exception {
+  public void testFloatPlusDoublePromotion() {
     // self.radius + 0.5 → ¡Double!
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius + 0.5 > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -134,7 +135,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatDivideIntegerPromotion() throws Exception {
+  public void testFloatDivideIntegerPromotion() {
     // self.radius / 2 → ¡Double!
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius / 2 > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -146,7 +147,7 @@ public class EFloatEcoreAttributeTest {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testFloatAbsPreservesType() throws Exception {
+  public void testFloatAbsPreservesType() {
     // self.radius.abs() → ¡Float!
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius.abs() > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -154,7 +155,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatFloorPromotion() throws Exception {
+  public void testFloatFloorPromotion() {
     // self.radius.floor() → ¡Double! (promoted)
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius.floor() >= 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -162,21 +163,21 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatCeilPromotion() throws Exception {
+  public void testFloatCeilPromotion() {
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius.ceil() > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
   @Test
-  public void testFloatRoundPromotion() throws Exception {
+  public void testFloatRoundPromotion() {
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius.round() >= 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
   @Test
-  public void testFloatCeilingPromotion() throws Exception {
+  public void testFloatCeilingPromotion() {
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius.ceiling() > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -187,7 +188,7 @@ public class EFloatEcoreAttributeTest {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testCollectFloatAttribute() throws Exception {
+  public void testCollectFloatAttribute() {
     // cad::Sphere.allInstances().collect(s | s.radius) → Set{¡Float!}
     ConstraintResult r =
         evalCad(
@@ -198,7 +199,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testSelectOnFloatPredicate() throws Exception {
+  public void testSelectOnFloatPredicate() {
     // select on EFloat attribute
     ConstraintResult r =
         evalCad(
@@ -209,7 +210,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testForAllOnFloatPredicate() throws Exception {
+  public void testForAllOnFloatPredicate() {
     ConstraintResult r =
         evalCad(
             "context cad::Sphere inv:\n" + "  cad::Sphere.allInstances().forAll(s | s.radius > 0)");
@@ -218,7 +219,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testCollectFloatThenMax() throws Exception {
+  public void testCollectFloatThenMax() {
     // max() on a Set{¡Float!}
     ConstraintResult r =
         evalCad(
@@ -229,7 +230,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testCollectFloatThenMin() throws Exception {
+  public void testCollectFloatThenMin() {
     ConstraintResult r =
         evalCad(
             "context cad::Sphere inv:\n"
@@ -239,7 +240,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testCollectFloatThenSum() throws Exception {
+  public void testCollectFloatThenSum() {
     ConstraintResult r =
         evalCad(
             "context cad::Sphere inv:\n"
@@ -253,7 +254,7 @@ public class EFloatEcoreAttributeTest {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testFloatInLetBinding() throws Exception {
+  public void testFloatInLetBinding() {
     ConstraintResult r =
         evalCad("context cad::Sphere inv:\n" + "  let r = self.radius in\n" + "  r > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -261,15 +262,15 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatLetArithmetic() throws Exception {
+  public void testFloatLetArithmetic() {
     ConstraintResult r =
-        evalCad("context cad::Sphere inv:\n" + "  let r = self.radius in\n" + "  r * r > 0");
+        evalCad("context cad::Sphere inv:\n" + "  let r = self.radius in\n" + "  r * 2.0 > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
   @Test
-  public void testFloatLetComparisonToOtherFloat() throws Exception {
+  public void testFloatLetComparisonToOtherFloat() {
     // Tube.outerRadius > Tube.innerRadius (both EFloat)
     ConstraintResult r =
         evalCad(
@@ -286,35 +287,35 @@ public class EFloatEcoreAttributeTest {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testCylinderRadiusIsFloat() throws Exception {
+  public void testCylinderRadiusIsFloat() {
     ConstraintResult r = evalCad("context cad::Cylinder inv:\n  self.radius > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
   @Test
-  public void testTubeOuterRadiusIsFloat() throws Exception {
+  public void testTubeOuterRadiusIsFloat() {
     ConstraintResult r = evalCad("context cad::Tube inv:\n  self.outerRadius > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
   @Test
-  public void testTubeInnerRadiusIsFloat() throws Exception {
+  public void testTubeInnerRadiusIsFloat() {
     ConstraintResult r = evalCad("context cad::Tube inv:\n  self.innerRadius >= 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
   @Test
-  public void testConeBaseRadiusIsFloat() throws Exception {
+  public void testConeBaseRadiusIsFloat() {
     ConstraintResult r = evalCad("context cad::Cone inv:\n  self.baseRadius > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
   @Test
-  public void testTwoFloatAttributesComparison() throws Exception {
+  public void testTwoFloatAttributesComparison() {
     // outerRadius > innerRadius (two EFloat attrs from same object)
     ConstraintResult r =
         evalCad("context cad::Tube inv:\n" + "  self.outerRadius > self.innerRadius");
@@ -327,7 +328,7 @@ public class EFloatEcoreAttributeTest {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testFloatInIfCondition() throws Exception {
+  public void testFloatInIfCondition() {
     ConstraintResult r =
         evalCad("context cad::Sphere inv:\n" + "  if self.radius > 0 then true else false endif");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -335,7 +336,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatInIfThenElseBranches() throws Exception {
+  public void testFloatInIfThenElseBranches() {
     // if cond then EFloat else EFloat → ¡Float! result
     ConstraintResult r =
         evalCad(

@@ -93,7 +93,7 @@ public class VitruviusOCLCLITest {
 
   /** Tests that check command returns success:true for a syntactically valid constraint. */
   @Test
-  public void testCheckValidConstraint(@TempDir Path tempDir) throws Exception {
+  public void testCheckValidConstraint(@TempDir Path tempDir) {
     Path oclFile = tempDir.resolve("test.ocl");
     Files.writeString(oclFile, "context spaceMission::Spacecraft inv:\n  self.mass > 0");
 
@@ -110,7 +110,7 @@ public class VitruviusOCLCLITest {
 
   /** Tests that check command returns success:false for a type error. */
   @Test
-  public void testCheckInvalidConstraint(@TempDir Path tempDir) throws Exception {
+  public void testCheckInvalidConstraint(@TempDir Path tempDir) {
     Path oclFile = tempDir.resolve("invalid.ocl");
     Files.writeString(
         oclFile, "context spaceMission::Spacecraft inv:\n  self.nonExistentProperty > 0");
@@ -128,7 +128,7 @@ public class VitruviusOCLCLITest {
 
   /** Tests that check command includes line number and message in error output. */
   @Test
-  public void testCheckOutputContainsErrorDetails(@TempDir Path tempDir) throws Exception {
+  public void testCheckOutputContainsErrorDetails(@TempDir Path tempDir) {
     Path oclFile = tempDir.resolve("typeerror.ocl");
     Files.writeString(
         oclFile, "context spaceMission::Spacecraft inv:\n  self.nonExistentProperty > 0");
@@ -147,7 +147,7 @@ public class VitruviusOCLCLITest {
 
   /** Tests that check command produces empty diagnostics for valid constraint. */
   @Test
-  public void testCheckValidConstraintEmptyDiagnostics(@TempDir Path tempDir) throws Exception {
+  public void testCheckValidConstraintEmptyDiagnostics(@TempDir Path tempDir) {
     Path oclFile = tempDir.resolve("test.ocl");
     Files.writeString(oclFile, "context spaceMission::Spacecraft inv:\n  self.mass >= 0");
 
@@ -168,7 +168,7 @@ public class VitruviusOCLCLITest {
 
   /** Tests that eval command returns satisfied:true for a satisfied constraint. */
   @Test
-  public void testEvalSatisfiedConstraint(@TempDir Path tempDir) throws Exception {
+  public void testEvalSatisfiedConstraint(@TempDir Path tempDir) {
     Path oclFile = tempDir.resolve("test.ocl");
     Files.writeString(oclFile, "context spaceMission::Spacecraft inv:\n  self.mass > 0");
 
@@ -186,7 +186,7 @@ public class VitruviusOCLCLITest {
 
   /** Tests that eval command returns satisfied:false for a violated constraint. */
   @Test
-  public void testEvalViolatedConstraint(@TempDir Path tempDir) throws Exception {
+  public void testEvalViolatedConstraint(@TempDir Path tempDir) {
     Path oclFile = tempDir.resolve("test.ocl");
     Files.writeString(oclFile, "context spaceMission::Spacecraft inv:\n  self.mass < 0");
 
@@ -204,7 +204,7 @@ public class VitruviusOCLCLITest {
 
   /** Tests that eval command output contains required JSON fields. */
   @Test
-  public void testEvalOutputStructure(@TempDir Path tempDir) throws Exception {
+  public void testEvalOutputStructure(@TempDir Path tempDir) {
     Path oclFile = tempDir.resolve("test.ocl");
     Files.writeString(oclFile, "context spaceMission::Spacecraft inv:\n  self.mass > 0");
 
@@ -224,7 +224,7 @@ public class VitruviusOCLCLITest {
 
   /** Tests that eval with no XMI files produces vacuously true result. */
   @Test
-  public void testEvalWithNoInstances(@TempDir Path tempDir) throws Exception {
+  public void testEvalWithNoInstances(@TempDir Path tempDir) {
     Path oclFile = tempDir.resolve("test.ocl");
     Files.writeString(oclFile, "context spaceMission::Spacecraft inv:\n  self.mass > 0");
 
@@ -242,7 +242,7 @@ public class VitruviusOCLCLITest {
 
   /** Tests that eval works with multiple ecore files for cross-metamodel constraints. */
   @Test
-  public void testEvalWithMultipleEcoreFiles(@TempDir Path tempDir) throws Exception {
+  public void testEvalWithMultipleEcoreFiles(@TempDir Path tempDir) {
     Path oclFile = tempDir.resolve("test.ocl");
     Files.writeString(
         oclFile,
@@ -262,7 +262,7 @@ public class VitruviusOCLCLITest {
 
   /** Tests that eval with named constraint works correctly. */
   @Test
-  public void testEvalWithNamedConstraint(@TempDir Path tempDir) throws Exception {
+  public void testEvalWithNamedConstraint(@TempDir Path tempDir) {
     Path oclFile = tempDir.resolve("test.ocl");
     Files.writeString(
         oclFile, "context spaceMission::Spacecraft inv massIsPositive:\n  self.mass > 0");
@@ -283,7 +283,7 @@ public class VitruviusOCLCLITest {
 
   /** Tests that eval-batch returns array of results for multiple constraints. */
   @Test
-  public void testEvalBatchMultipleConstraints(@TempDir Path tempDir) throws Exception {
+  public void testEvalBatchMultipleConstraints(@TempDir Path tempDir) {
     Path oclFile = tempDir.resolve("batch.ocl");
     Files.writeString(
         oclFile,
@@ -306,7 +306,7 @@ public class VitruviusOCLCLITest {
 
   /** Tests that eval-batch handles mixed satisfied and violated constraints. */
   @Test
-  public void testEvalBatchMixedResults(@TempDir Path tempDir) throws Exception {
+  public void testEvalBatchMixedResults(@TempDir Path tempDir) {
     Path oclFile = tempDir.resolve("mixed.ocl");
     Files.writeString(
         oclFile,
@@ -327,7 +327,7 @@ public class VitruviusOCLCLITest {
 
   /** Tests that eval-batch skips comment lines in constraint files. */
   @Test
-  public void testEvalBatchSkipsComments(@TempDir Path tempDir) throws Exception {
+  public void testEvalBatchSkipsComments(@TempDir Path tempDir) {
     Path oclFile = tempDir.resolve("withcomments.ocl");
     Files.writeString(
         oclFile,
@@ -349,7 +349,7 @@ public class VitruviusOCLCLITest {
 
   /** Tests that eval-batch handles unnamed constraints with 'unknown' fallback. */
   @Test
-  public void testEvalBatchUnnamedConstraint(@TempDir Path tempDir) throws Exception {
+  public void testEvalBatchUnnamedConstraint(@TempDir Path tempDir) {
     Path oclFile = tempDir.resolve("unnamed.ocl");
     Files.writeString(oclFile, "context spaceMission::Spacecraft inv:\n  self.mass > 0\n");
 
@@ -365,7 +365,7 @@ public class VitruviusOCLCLITest {
 
   /** Tests that eval-batch output contains name, success and satisfied fields per constraint. */
   @Test
-  public void testEvalBatchOutputStructure(@TempDir Path tempDir) throws Exception {
+  public void testEvalBatchOutputStructure(@TempDir Path tempDir) {
     Path oclFile = tempDir.resolve("batch.ocl");
     Files.writeString(
         oclFile, "context spaceMission::Spacecraft inv myConstraint:\n  self.mass > 0\n");
@@ -385,7 +385,7 @@ public class VitruviusOCLCLITest {
 
   /** Tests that eval-batch with single constraint returns single result in array. */
   @Test
-  public void testEvalBatchSingleConstraint(@TempDir Path tempDir) throws Exception {
+  public void testEvalBatchSingleConstraint(@TempDir Path tempDir) {
     Path oclFile = tempDir.resolve("single.ocl");
     Files.writeString(oclFile, "context spaceMission::Spacecraft inv onlyOne:\n  self.mass >= 0\n");
 

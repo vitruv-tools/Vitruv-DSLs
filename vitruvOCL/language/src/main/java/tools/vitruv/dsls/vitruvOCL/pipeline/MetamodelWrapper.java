@@ -12,14 +12,17 @@
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL.pipeline;
 
+import java.util.logging.Logger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -48,6 +51,10 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
  * in the evaluation visitor where constraints access model elements.
  */
 public class MetamodelWrapper implements MetamodelWrapperInterface {
+
+  private static final Logger LOG = Logger.getLogger(MetamodelWrapper.class.getName());
+  private static final String FEAT_LEFT_EOBJECTS = "leftEObjects";
+  private static final String FEAT_RIGHT_EOBJECTS = "rightEObjects";
 
   /** Default directory for test model files (legacy support). */
   public static Path TEST_MODELS_PATH = Path.of("test-models");
@@ -128,9 +135,9 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
           URI platformUri = URI.createURI(platformUriStr);
           String filename = platformUri.lastSegment();
           URI localUri = byFilename.get(filename);
-          if (localUri != null && !uriMap.containsKey(platformUri)) {
-            uriMap.put(platformUri, localUri);
-            System.err.println("[OCL-LS] platform:/plugin/ mapped: " + platformUriStr + " -> " + localUri);
+          if (localUri != null) {
+            uriMap.computeIfAbsent(platformUri, k -> localUri);
+            LOG.fine("[OCL-LS] platform:/plugin/ mapped: " + platformUriStr + " -> " + localUri);
           }
         }
       } catch (IOException e) {
@@ -180,7 +187,7 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
       corrPackage = forceInitCorrespondencePackage();
     }
     if (corrPackage == null) {
-      corrPackage = buildBaseCorrespondencePackage(CORR_NS_URI);
+      buildBaseCorrespondencePackage(CORR_NS_URI);
     }
 
     // ReactionsCorrespondence is self-contained: no cross-package supertype.
@@ -240,13 +247,13 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   /** Adds leftEObjects, rightEObjects, and tag features to the given EClass. */
   private static void addCorrespondenceFeatures(EClass cls) {
     EReference leftRef = EcoreFactory.eINSTANCE.createEReference();
-    leftRef.setName("leftEObjects");
+    leftRef.setName(FEAT_LEFT_EOBJECTS);
     leftRef.setEType(EcorePackage.Literals.EOBJECT);
     leftRef.setUpperBound(-1);
     cls.getEStructuralFeatures().add(leftRef);
 
     EReference rightRef = EcoreFactory.eINSTANCE.createEReference();
-    rightRef.setName("rightEObjects");
+    rightRef.setName(FEAT_RIGHT_EOBJECTS);
     rightRef.setEType(EcorePackage.Literals.EOBJECT);
     rightRef.setUpperBound(-1);
     cls.getEStructuralFeatures().add(rightRef);
@@ -434,15 +441,15 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
 
     String filename = xmiPath.getFileName().toString();
 
-    System.err.println("[DBG-MW] Loaded file: " + filename
+    LOG.fine("[DBG-MW] Loaded file: " + filename
         + " | contents=" + resource.getContents().size()
         + " | errors=" + resource.getErrors().size());
     if (!resource.getErrors().isEmpty()) {
-      resource.getErrors().forEach(e -> System.err.println("[DBG-MW]   load-error: " + e.getMessage()));
+      resource.getErrors().forEach(e -> LOG.fine("[DBG-MW]   load-error: " + e.getMessage()));
     }
 
     for (EObject root : resource.getContents()) {
-      System.err.println("[DBG-MW]   root eClass: " + root.eClass().getName()
+      LOG.fine("[DBG-MW]   root eClass: " + root.eClass().getName()
           + " (pkg=" + root.eClass().getEPackage().getNsURI() + ")");
       addInstanceRecursiveInternal(root, filename);
       // Register root as context candidate (one entry per root EObject per file)
@@ -499,7 +506,7 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   public EClass resolveEClass(String metamodelName, String className) {
     EPackage ePackage = metamodelRegistry.get(metamodelName);
     if (ePackage == null) {
-      System.err.println("MetaModelRegistry: " + metamodelRegistry);
+      LOG.fine("MetaModelRegistry: " + metamodelRegistry);
       return null;
     }
 
@@ -711,12 +718,11 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    * child hrefs are resolved to absolute EMF URIs relative to the correspondence file location
    * and stored bidirectionally in {@link #correspondenceUriMap}.
    */
+  @SuppressWarnings("java:S3776")
   private void loadCorrespondenceViaDOM(Path corrPath) {
     URI baseUri = URI.createFileURI(corrPath.toAbsolutePath().toString());
     try {
-      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-      factory.setNamespaceAware(false);
-      DocumentBuilder builder = factory.newDocumentBuilder();
+      DocumentBuilder builder = newSecureDocumentBuilder();
       builder.setErrorHandler(null); // suppress SAX warnings
       Document doc = builder.parse(corrPath.toFile());
 
@@ -727,10 +733,10 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
         // Support two XMI serialisation styles:
         //   (a) inline attributes:  <correspondences leftEObjects="..." rightEObjects="..."/>
         //   (b) child elements:     <correspondences><leftEObjects href="..."/></correspondences>
-        List<String> lefts = collectHrefsFromAttr(corrEl, "leftEObjects", baseUri);
-        if (lefts.isEmpty()) lefts = collectHrefsFromChildElements(corrEl, "leftEObjects", baseUri);
-        List<String> rights = collectHrefsFromAttr(corrEl, "rightEObjects", baseUri);
-        if (rights.isEmpty()) rights = collectHrefsFromChildElements(corrEl, "rightEObjects", baseUri);
+        List<String> lefts = collectHrefsFromAttr(corrEl, FEAT_LEFT_EOBJECTS, baseUri);
+        if (lefts.isEmpty()) lefts = collectHrefsFromChildElements(corrEl, FEAT_LEFT_EOBJECTS, baseUri);
+        List<String> rights = collectHrefsFromAttr(corrEl, FEAT_RIGHT_EOBJECTS, baseUri);
+        if (rights.isEmpty()) rights = collectHrefsFromChildElements(corrEl, FEAT_RIGHT_EOBJECTS, baseUri);
         for (String l : lefts) {
           for (String r : rights) {
             correspondenceUriMap.computeIfAbsent(l, k -> new LinkedHashSet<>()).add(r);
@@ -744,10 +750,10 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
           }
         }
       }
-      System.err.println("[DBG-MW] Loaded correspondence (DOM): " + corrPath.getFileName()
+      LOG.fine("[DBG-MW] Loaded correspondence (DOM): " + corrPath.getFileName()
           + " | entries=" + correspondenceUriMap.size());
     } catch (Exception e) {
-      System.err.println("[DBG-MW] Failed to load correspondence via DOM: " + e.getMessage());
+      LOG.fine("[DBG-MW] Failed to load correspondence via DOM: " + e.getMessage());
     }
   }
 
@@ -822,16 +828,15 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
     return tags != null && tags.contains(tag);
   }
 
-  /**
-   * Safely retrieves a structural feature value from an EObject by feature name.
-   *
-   * @param obj the EObject to read from
-   * @param featureName the feature name
-   * @return the feature value, or null if the feature does not exist
-   */
-  private Object safeGet(EObject obj, String featureName) {
-    EStructuralFeature feature = obj.eClass().getEStructuralFeature(featureName);
-    if (feature == null) return null;
-    return obj.eGet(feature);
+  private static DocumentBuilder newSecureDocumentBuilder() throws ParserConfigurationException {
+    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    factory.setNamespaceAware(false);
+    factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+    factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+    factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+    factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+    factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+    factory.setExpandEntityReferences(false);
+    return factory.newDocumentBuilder();
   }
 }

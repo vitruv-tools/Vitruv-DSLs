@@ -80,6 +80,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * Direction::NORTH == Status::ACTIVE | ERROR | ✗ different enums
  * </pre>
  */
+@SuppressWarnings("java:S125")
 public class EnumTypeTest extends DummyTestSpecification {
 
   private static final org.eclipse.emf.ecore.EPackage STATUS_PACKAGE;
@@ -822,7 +823,7 @@ public class EnumTypeTest extends DummyTestSpecification {
   @Test
   public void testEnumSetSelectThenFirst() {
     // select on Set → Set (unordered) → need asSequence() before first()
-    Value r = compile("Set{Status::ACTIVE, Status::INACTIVE}.select(e | e.notEmpty()).asSequence().first()");
+    Value r = compile("Set{Status::ACTIVE, Status::INACTIVE}.select(e | e == Status::ACTIVE).asSequence().first()");
     assertEquals(1, r.size());
   }
 

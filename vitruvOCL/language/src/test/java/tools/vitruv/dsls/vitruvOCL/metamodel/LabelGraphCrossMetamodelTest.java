@@ -112,7 +112,7 @@ public class LabelGraphCrossMetamodelTest {
    * <p>Expected: satisfied, because every LG1 name suffix appears exactly once in LG2.
    */
   @Test
-  public void testExistsCorrespondentByNameSuffix() throws Exception {
+  public void testExistsCorrespondentByNameSuffix() {
     String constraint =
         """
         context Labelgraph1::SimpleNode inv:
@@ -151,7 +151,7 @@ public class LabelGraphCrossMetamodelTest {
    * <p>Expected: satisfied, because each three-digit suffix is unique within LG2.
    */
   @Test
-  public void testCorrespondenceIsUnique() throws Exception {
+  public void testCorrespondenceIsUnique() {
     String constraint =
         """
         context Labelgraph1::SimpleNode inv:
@@ -193,7 +193,7 @@ public class LabelGraphCrossMetamodelTest {
    * it produces a singleton label collection, so {@code size() == 1}.
    */
   @Test
-  public void testCorrespondentLabelCollectionSizeIsOne() throws Exception {
+  public void testCorrespondentLabelCollectionSizeIsOne() {
     String constraint =
         """
         context Labelgraph1::SimpleNode inv:
@@ -231,7 +231,7 @@ public class LabelGraphCrossMetamodelTest {
    * every corresponding node pair.
    */
   @Test
-  public void testCorrespondentLabelsMatch() throws Exception {
+  public void testCorrespondentLabelsMatch() {
     String constraint =
         """
         context Labelgraph1::SimpleNode inv:
@@ -265,7 +265,7 @@ public class LabelGraphCrossMetamodelTest {
    * never evaluated.
    */
   @Test
-  public void testForAllVacuouslyTrueWithoutLG2Instances() throws Exception {
+  public void testForAllVacuouslyTrueWithoutLG2Instances() {
     String constraint =
         """
         context Labelgraph1::SimpleNode inv:
@@ -299,7 +299,7 @@ public class LabelGraphCrossMetamodelTest {
    * <p>Expected: not satisfied, because the LG2 model is absent.
    */
   @Test
-  public void testExistsFailsWithoutLG2Instances() throws Exception {
+  public void testExistsFailsWithoutLG2Instances() {
     String constraint =
         """
         context Labelgraph1::SimpleNode inv:

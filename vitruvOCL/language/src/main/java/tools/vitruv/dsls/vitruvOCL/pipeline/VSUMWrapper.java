@@ -129,10 +129,6 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
                 .flatMap(root -> getAllContentsRecursive(root).stream())
                 .filter(obj -> eClass.isSuperTypeOf(obj.eClass()))
                 .toList();
-    result.forEach(
-        obj -> {
-          var nameFeature = obj.eClass().getEStructuralFeature("name");
-        });
     return result;
   }
 
@@ -202,11 +198,9 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
    * @return set of corresponding objects that are instances of {@code targetType}; empty if none
    */
   public Set<EObject> getCorrespondingObjects(EObject source, EClass targetType) {
-    Set<EObject> result =
-        correspondenceModel.getCorrespondingEObjects(source).stream()
-            .filter(obj -> targetType.isSuperTypeOf(obj.eClass()))
-            .collect(Collectors.toSet());
-    return result;
+    return correspondenceModel.getCorrespondingEObjects(source).stream()
+        .filter(obj -> targetType.isSuperTypeOf(obj.eClass()))
+        .collect(Collectors.toSet());
   }
 
   // ---------------------------------------------------------------------------

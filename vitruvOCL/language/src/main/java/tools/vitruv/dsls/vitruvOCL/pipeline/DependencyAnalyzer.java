@@ -28,6 +28,8 @@ import tools.vitruv.dsls.vitruvOCL.*;
  */
 public class DependencyAnalyzer {
 
+  private DependencyAnalyzer() {}
+
   /**
    * Extracts all package names referenced in a constraint.
    *
@@ -52,13 +54,9 @@ public class DependencyAnalyzer {
         Token next = tokenList.get(i + 1);
 
         // Pattern: ID followed by ::
-        if (next.getType() == VitruvOCLLexer.COLONCOLON) {
-          // Skip if the preceding non-hidden token is a comparison or logical operator —
-          // that means the ID is an enum name (e.g. "Unit" in "p.unit == Unit::MM"),
-          // not a metamodel package qualifier.
-          if (!isPrecededByComparisonOrLogicalOp(tokenList, i)) {
-            requiredPackages.add(current.getText());
-          }
+        if (next.getType() == VitruvOCLLexer.COLONCOLON
+            && !isPrecededByComparisonOrLogicalOp(tokenList, i)) {
+          requiredPackages.add(current.getText());
         }
       }
 

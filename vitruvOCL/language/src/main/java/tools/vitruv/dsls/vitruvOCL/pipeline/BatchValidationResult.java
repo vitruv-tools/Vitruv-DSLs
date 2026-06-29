@@ -149,7 +149,7 @@ public class BatchValidationResult {
 
     for (int i = 0; i < results.size(); i++) {
       ConstraintResult result = results.get(i);
-      sb.append(String.format("Constraint %d:\n", i + 1));
+      sb.append(String.format("Constraint %d:%n", i + 1));
       sb.append(result.toString());
       if (i < results.size() - 1) {
         sb.append("\n\n");

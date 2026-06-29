@@ -502,11 +502,7 @@ public class ComparisonTypeTest extends DummyTestSpecification {
   // ==================== Helper ====================
 
   private void assertTypeError(String input) {
-    try {
-      compile(input);
-      fail("Expected type error for: " + input);
-    } catch (AssertionError | NumberFormatException e) {
-      // expected
-    }
+    assertThrows(AssertionError.class, () -> compile(input),
+        "Expected type error for: " + input);
   }
 }

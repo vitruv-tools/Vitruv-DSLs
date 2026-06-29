@@ -50,9 +50,12 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
  */
 public class HoverProvider {
 
+  private static final String MD_CODE_HEADER = "### `";
+
   /** Maximum number of inherited features shown before a "+N more" line is added. */
   private static final int MAX_INHERITED_SHOWN = 8;
 
+  @SuppressWarnings("java:S3776")
   public Hover getHover(Position cursor, DocumentAnalysis analysis) {
     if (analysis == null || analysis.getTree() == null) return null;
 
@@ -132,7 +135,7 @@ public class HoverProvider {
     String pkg = eClass.getEPackage() != null ? eClass.getEPackage().getName() : "?";
 
     // ── Header ──────────────────────────────────────────────────────────────
-    sb.append("### `").append(pkg).append("::").append(eClass.getName()).append("`");
+    sb.append(MD_CODE_HEADER).append(pkg).append("::").append(eClass.getName()).append("`");
     if (eClass.isInterface()) {
       sb.append(" *interface*");
     } else if (eClass.isAbstract()) {
@@ -170,7 +173,7 @@ public class HoverProvider {
     List<EStructuralFeature> inherited =
         eClass.getEAllStructuralFeatures().stream()
             .filter(f -> f.getEContainingClass() != eClass)
-            .collect(Collectors.toList());
+            .toList();
     if (!inherited.isEmpty()) {
       sb.append("\n**Inherited Features:**\n");
       int shown = Math.min(inherited.size(), MAX_INHERITED_SHOWN);
@@ -236,7 +239,7 @@ public class HoverProvider {
   private static Hover buildOperationHover(OperationDoc doc) {
     StringBuilder sb = new StringBuilder();
 
-    sb.append("### `").append(doc.signature()).append("`\n\n");
+    sb.append(MD_CODE_HEADER).append(doc.signature()).append("`\n\n");
     sb.append(doc.description()).append("\n");
 
     if (!doc.params().isEmpty()) {
@@ -278,7 +281,7 @@ public class HoverProvider {
   private static Hover buildAnnotationHover(
       String keyword, String description, String details, String example) {
     String md =
-        "### `" + keyword + "`\n\n"
+        MD_CODE_HEADER + keyword + "`\n\n"
             + description + "\n\n"
             + details + "\n\n"
             + "**Example:**\n```ocl\n" + example + "\n```";
@@ -307,9 +310,7 @@ public class HoverProvider {
     if (cursor.getLine() < start.getLine() || cursor.getLine() > end.getLine()) return false;
     if (cursor.getLine() == start.getLine() && cursor.getCharacter() < start.getCharacter())
       return false;
-    if (cursor.getLine() == end.getLine() && cursor.getCharacter() >= end.getCharacter())
-      return false;
-    return true;
+    return !(cursor.getLine() == end.getLine() && cursor.getCharacter() >= end.getCharacter());
   }
 
   // ---------------------------------------------------------------------------

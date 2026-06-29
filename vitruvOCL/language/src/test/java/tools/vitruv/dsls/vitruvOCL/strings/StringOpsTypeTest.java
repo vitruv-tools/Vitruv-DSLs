@@ -144,22 +144,21 @@ public class StringOpsTypeTest extends DummyTestSpecification {
     compileExpectError("Set{\"a\"}.toLower()");
   }
 
-  // ── size() on singleton — collection size, always 1 ──────────
+  // ── size() on scalar — must fail (size() requires a multi-valued collection) ──
 
   @Test
   public void testStringSizeOnSingleton() {
-    // ¡String! is a singleton, size() returns 1; use length() for character count
-    assertSingleInt(compile("\"hello\".size()"), 1);
+    compileExpectError("\"hello\".size()");
   }
 
   @Test
   public void testIntegerSizeOnSingleton() {
-    assertSingleInt(compile("1.size()"), 1);
+    compileExpectError("1.size()");
   }
 
   @Test
   public void testBooleanSizeOnSingleton() {
-    assertSingleInt(compile("true.size()"), 1);
+    compileExpectError("true.size()");
   }
 
   // ── substring(i, j) ───────────────────────────────────────────

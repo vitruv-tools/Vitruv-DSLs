@@ -117,11 +117,6 @@ public class Value {
     return elements;
   }
 
-  /** Legacy getter - returns the elements list for OCL compatibility. */
-  public Object getValue() {
-    return elements;
-  }
-
   /** Returns the runtime type. */
   public Type getRuntimeType() {
     return runtimeType;

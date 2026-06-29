@@ -8,6 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvOCL.lsp;
+import java.util.logging.Logger;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,6 +36,8 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.Type;
  * shows its default "no definition found" message.
  */
 public class DefinitionProvider {
+
+  private static final Logger LOG = Logger.getLogger(DefinitionProvider.class.getName());
 
   /**
    * Returns the definition {@link Location} for the token at {@code cursor}, or {@code null} if no
@@ -106,7 +109,7 @@ public class DefinitionProvider {
         }
       }
     } catch (IOException e) {
-      System.err.println(
+      LOG.fine(
           "[OCL-LS] Could not read ecore file for definition: "
               + ecoreFile
               + ": "

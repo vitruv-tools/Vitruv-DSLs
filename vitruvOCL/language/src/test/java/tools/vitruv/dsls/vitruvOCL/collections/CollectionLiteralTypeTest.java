@@ -48,6 +48,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  *   Sequence: duplicate integers kept, order preserved
  * </pre>
  */
+@SuppressWarnings("java:S125")
 public class CollectionLiteralTypeTest extends DummyTestSpecification {
 
   protected void compileExpectError(String input) {

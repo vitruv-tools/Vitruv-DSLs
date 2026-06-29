@@ -63,6 +63,15 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  */
 public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
+  private static final String PHASE_TAG = "evaluator";
+
+  private static OCLElement unwrapNestedCollection(OCLElement e) {
+    if (e instanceof OCLElement.NestedCollection nc && !nc.value().getElements().isEmpty()) {
+      return nc.value().getElements().get(0);
+    }
+    return e;
+  }
+
   // ==================== Instance Fields ====================
 
   /**
@@ -96,9 +105,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   /* Cache for allInstances() results to avoid redundant metamodel queries during evaluation. */
   private final java.util.Map<EClass, Value> allInstancesCache = new java.util.HashMap<>();
 
-  /** Token stream for potential future use (e.g., accessing comments or whitespace). */
-  private org.antlr.v4.runtime.TokenStream tokens;
-
   /**
    * Stack of receiver values for navigation chains.
    *
@@ -126,11 +132,11 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    * @param nodeTypes Pre-computed type information from the type checking phase
    */
   public EvaluationVisitor(
-      SymbolTable symbolTable,
+      SymbolTable st,
       MetamodelWrapperInterface specification,
       ErrorCollector errors,
       ParseTreeProperty<Type> nodeTypes) {
-    super(symbolTable, specification, errors);
+    super(st, specification, errors);
     this.nodeTypes = nodeTypes;
   }
 
@@ -151,27 +157,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         ctx.getStart().getCharPositionInLine(),
         "Variable not bound: " + name,
         ErrorSeverity.ERROR,
-        "evaluator");
-  }
-
-  /**
-   * Reports a runtime error and returns an error value.
-   *
-   * <p>Convenience method for reporting errors with source location and returning {@code
-   * Value.empty(Type.ERROR)}.
-   *
-   * @param message The error message
-   * @param ctx The parse tree context where the error occurred
-   * @return An empty error value
-   */
-  private Value error(String message, org.antlr.v4.runtime.ParserRuleContext ctx) {
-    errors.add(
-        ctx.getStart().getLine(),
-        ctx.getStart().getCharPositionInLine(),
-        message,
-        ErrorSeverity.ERROR,
-        "evaluator");
-    return Value.empty(Type.ERROR);
+        PHASE_TAG);
   }
 
   // ==================== Context Declaration (Entry Point) ====================
@@ -226,6 +212,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    * @return A bag containing one boolean result per instance
    */
   @Override
+  @SuppressWarnings("java:S3776")
   public Value visitClassifierContextCS(VitruvOCLParser.ClassifierContextCSContext ctx) {
     Type contextType = nodeTypes.get(ctx);
 
@@ -328,10 +315,11 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return null;
   }
 
+  @SuppressWarnings("java:S125")
   private String interpolateTemplate(String template, EObject instance) {
     // Replace {self.attr}
     java.util.regex.Matcher m =
-        java.util.regex.Pattern.compile("\\{self\\.([a-zA-Z_][a-zA-Z0-9_]*)\\}")
+        java.util.regex.Pattern.compile("\\{self\\.([a-zA-Z_]\\w*)\\}")
             .matcher(template);
     StringBuffer sb = new StringBuffer();
     while (m.find()) {
@@ -724,17 +712,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     // Unwrap nested collections/singletons to get primitive values
     List<OCLElement> elements =
         receiver.getElements().stream()
-            .map(
-                e ->
-                    e instanceof OCLElement.NestedCollection nc
-                        ? (nc.value().getElements().isEmpty() ? e : nc.value().getElements().get(0))
-                        : e)
+            .map(e -> unwrapNestedCollection(e))
             .toList();
 
-    boolean hasReal =
-        elements.stream()
-            .anyMatch(
-                e -> e instanceof OCLElement.DoubleValue || e instanceof OCLElement.FloatValue);
     double max = Double.NEGATIVE_INFINITY;
     for (OCLElement elem : elements) {
       if (!OCLElement.isNumeric(elem)) {
@@ -767,17 +747,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     // Unwrap nested collections/singletons to get primitive values
     List<OCLElement> elements =
         receiver.getElements().stream()
-            .map(
-                e ->
-                    e instanceof OCLElement.NestedCollection nc
-                        ? (nc.value().getElements().isEmpty() ? e : nc.value().getElements().get(0))
-                        : e)
+            .map(e -> unwrapNestedCollection(e))
             .toList();
-
-    boolean hasReal =
-        elements.stream()
-            .anyMatch(
-                e -> e instanceof OCLElement.DoubleValue || e instanceof OCLElement.FloatValue);
 
     double min = Double.POSITIVE_INFINITY;
     for (OCLElement elem : elements) {
@@ -916,9 +887,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       if (elem.tryGetInt() != null) {
         results.add(elem); // no-op for integers
       } else if (elem.tryGetFloat() != null) {
-        results.add(new OCLElement.DoubleValue((double) Math.round(elem.tryGetFloat())));
+        results.add(new OCLElement.DoubleValue(Math.round(elem.tryGetFloat())));
       } else if (elem.tryGetDouble() != null) {
-        results.add(new OCLElement.DoubleValue((double) Math.round(elem.tryGetDouble())));
+        results.add(new OCLElement.DoubleValue(Math.round(elem.tryGetDouble())));
       }
     }
     return Value.of(results, receiver.getRuntimeType());
@@ -1260,6 +1231,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    *     is declared
    */
   @Override
+  @SuppressWarnings("java:S3776")
   public Value visitIsUniqueOp(VitruvOCLParser.IsUniqueOpContext ctx) {
     Value receiver = receiverStack.peek();
     List<String> iterVars = new ArrayList<>();
@@ -1598,6 +1570,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    * @return The receiver elements re-wrapped with the target element type
    */
   @Override
+  @SuppressWarnings("java:S3776")
   public Value visitOclAsTypeOp(VitruvOCLParser.OclAsTypeOpContext ctx) {
     Value receiver = receiverStack.peek();
     Type targetType = nodeTypes.get(ctx);
@@ -1802,7 +1775,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
     try {
       List<OCLElement> results = new ArrayList<>();
-      for (OCLElement elem : receiver.getElements()) {}
       for (OCLElement elem : receiver.getElements()) {
         // Bind current element as singleton ¡T!
         VariableSymbol iterSymbol = new VariableSymbol(iterVar, iterVarType, iterScope, true);
@@ -2403,6 +2375,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    * @return A singleton numeric value
    */
   @Override
+  @SuppressWarnings("java:S3776")
   public Value visitMultiplicative(VitruvOCLParser.MultiplicativeContext ctx) {
     Value leftValue = visit(ctx.left);
     Value rightValue = visit(ctx.right);
@@ -2507,7 +2480,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitEqualityComparison(VitruvOCLParser.EqualityComparisonContext ctx) {
     return evaluateBinaryComparison(
-        ctx.left, ctx.right, ctx, (left, right) -> OCLElement.semanticEquals(left, right));
+        ctx.left, ctx.right, ctx, OCLElement::semanticEquals);
   }
 
   /**
@@ -2615,7 +2588,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           errorCtx.getStart().getCharPositionInLine(),
           "Comparison requires singleton operands",
           ErrorSeverity.ERROR,
-          "evaluator");
+          PHASE_TAG);
       return Value.boolValue(false);
     }
 
@@ -2642,7 +2615,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   @Override
   public Value visitLogicalAnd(VitruvOCLParser.LogicalAndContext ctx) {
-    return evaluateBinaryLogical(ctx.left, ctx.right, ctx, (left, right) -> left && right);
+    return evaluateBinaryLogical(ctx.left, ctx.right, (left, right) -> left && right);
   }
 
   /**
@@ -2655,7 +2628,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   @Override
   public Value visitLogicalOr(VitruvOCLParser.LogicalOrContext ctx) {
-    return evaluateBinaryLogical(ctx.left, ctx.right, ctx, (left, right) -> left || right);
+    return evaluateBinaryLogical(ctx.left, ctx.right, (left, right) -> left || right);
   }
 
   /**
@@ -2668,7 +2641,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   @Override
   public Value visitLogicalXor(VitruvOCLParser.LogicalXorContext ctx) {
-    return evaluateBinaryLogical(ctx.left, ctx.right, ctx, (left, right) -> left ^ right);
+    return evaluateBinaryLogical(ctx.left, ctx.right, (left, right) -> left ^ right);
   }
 
   /**
@@ -2684,7 +2657,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   private Value evaluateBinaryLogical(
       ParserRuleContext leftCtx,
       ParserRuleContext rightCtx,
-      ParserRuleContext errorCtx,
       BiFunction<Boolean, Boolean, Boolean> logicalFn) {
 
     Value leftValue = visit(leftCtx);
@@ -2966,6 +2938,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    * @param receiver The receiver value (must contain metaclass instances)
    * @return Collection of property values from all receiver instances
    */
+  @SuppressWarnings("java:S3776")
   private Value visitPropertyAccessWithReceiver(
       VitruvOCLParser.PropertyAccessContext ctx, Value receiver) {
     String propertyName = ctx.propertyName.getText();
@@ -3365,6 +3338,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    * @return The element(s) represented by this part
    */
   @Override
+  @SuppressWarnings("java:S3776")
   public Value visitCollectionLiteralPartCS(VitruvOCLParser.CollectionLiteralPartCSContext ctx) {
     Value firstValue = visit(ctx.expCS(0));
 
@@ -3738,58 +3712,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return specification.getCorrespondingObjects(obj2).contains(obj1);
   }
 
-  /**
-   * Checks if a Correspondence object contains both obj1 and obj2.
-   *
-   * <p>A Correspondence has leftEObjects and rightEObjects features. This method checks if (obj1 in
-   * left AND obj2 in right) OR (obj2 in left AND obj1 in right).
-   *
-   * @param correspondence The Correspondence object to check
-   * @param obj1 First object
-   * @param obj2 Second object
-   * @return true if correspondence relates obj1 and obj2
-   */
-  private boolean correspondenceContainsBoth(EObject correspondence, EObject obj1, EObject obj2) {
-    EStructuralFeature leftFeature = correspondence.eClass().getEStructuralFeature("leftEObjects");
-    EStructuralFeature rightFeature =
-        correspondence.eClass().getEStructuralFeature("rightEObjects");
-
-    if (leftFeature == null || rightFeature == null) {
-      return false;
-    }
-
-    Object leftValue = correspondence.eGet(leftFeature);
-    Object rightValue = correspondence.eGet(rightFeature);
-
-    if (!(leftValue instanceof List) || !(rightValue instanceof List)) {
-      return false;
-    }
-
-    @SuppressWarnings("unchecked")
-    List<EObject> leftObjects = (List<EObject>) leftValue;
-    @SuppressWarnings("unchecked")
-    List<EObject> rightObjects = (List<EObject>) rightValue;
-
-    // CRITICAL: Resolve proxies!
-    List<EObject> resolvedLeft = new ArrayList<>();
-    for (EObject obj : leftObjects) {
-      EObject resolved = org.eclipse.emf.ecore.util.EcoreUtil.resolve(obj, correspondence);
-      resolvedLeft.add(resolved);
-    }
-
-    List<EObject> resolvedRight = new ArrayList<>();
-    for (EObject obj : rightObjects) {
-      EObject resolved = org.eclipse.emf.ecore.util.EcoreUtil.resolve(obj, correspondence);
-      resolvedRight.add(resolved);
-    }
-
-    // Check both directions with resolved objects
-    boolean forwardMatch = resolvedLeft.contains(obj1) && resolvedRight.contains(obj2);
-    boolean reverseMatch = resolvedLeft.contains(obj2) && resolvedRight.contains(obj1);
-
-    return forwardMatch || reverseMatch;
-  }
-
   // ==================== Not Yet Implemented Features ====================
   /**
    * Placeholder for message operator (^).
@@ -3921,60 +3843,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
   // ==================== Utility Methods ====================
 
-  /**
-   * Sets the token stream for potential future use.
-   *
-   * @param tokens The ANTLR token stream
-   */
-  public void setTokenStream(org.antlr.v4.runtime.TokenStream tokens) {
-    this.tokens = tokens;
-  }
-
-  /**
-   * Normalizes a type to its singleton ctype.
-   *
-   * <p>Every expression has a ctype χ = τ[l,r](μ,ω). Bare primitive types (INTEGER, STRING, etc.)
-   * and bare metaclass types are implicitly ¡T![1,1]. This method makes that wrapping explicit so
-   * all downstream operations can rely on it.
-   *
-   * <p>Multi-valued collections ({T}, [T], etc.) are returned unchanged.
-   *
-   * @param t the type to normalize
-   * @return ¡t! if t is a bare scalar, t unchanged if already wrapped
-   */
-  private Type normalizeToSingleton(Type t) {
-    if (t == Type.ERROR || t == Type.ANY) {
-      return t;
-    }
-    if (t.isCollection()) {
-      return t;
-    } // {T}, [T], <T>, {{T}} — already proper ctype
-    if (t.isSingleton()) {
-      return t;
-    } // !T! — already wrapped
-    if (t.isOptional()) {
-      return t;
-    } // ?T? — already wrapped
-    return Type.singleton(t); // bare INTEGER, STRING, cad::Sphere → !T!
-  }
-
-  /**
-   * Unwraps one level of collection/singleton to get the scalar member type.
-   *
-   * <p>Used when an operation needs to work on the member type τ of a ctype χ = τ[l,r].
-   *
-   * @param t the ctype to unwrap
-   * @return the member type τ, or t if it has no wrapper
-   */
-  private Type unwrapOne(Type t) {
-    if (t == Type.ERROR || t == Type.ANY) {
-      return t;
-    }
-    if (t.isCollection() || t.isSingleton() || t.isOptional()) {
-      return t.getElementType();
-    }
-    return t; // bare type — already scalar
-  }
+  /** No-op — token stream is not used by the evaluator. */
+  @SuppressWarnings("java:S1186")
+  public void setTokenStream(org.antlr.v4.runtime.TokenStream tokens) {}
 
   /**
    * Evaluates the {@code asSet()} conversion operation on a collection receiver.

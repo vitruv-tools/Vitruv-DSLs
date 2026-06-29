@@ -449,7 +449,7 @@ public class VitruvOCLErrorHandlingTest {
 
   /** Tests that constraints can be loaded from a file with semicolon or newline separation. */
   @Test
-  public void testEvaluateFromFile() throws IOException {
+  public void testEvaluateFromFile() {
     Path tempFile = Files.createTempFile("constraints", ".ocl");
     Files.writeString(
         tempFile,
@@ -466,7 +466,7 @@ public class VitruvOCLErrorHandlingTest {
 
   /** Tests project-based evaluation using convention-over-configuration directory structure. */
   @Test
-  public void testEvaluateProject() throws IOException {
+  public void testEvaluateProject() {
     Path projectDir = Path.of("src/test/resources/test-project");
 
     BatchValidationResult result = VitruvOCL.evaluateProject(projectDir);
@@ -492,7 +492,7 @@ public class VitruvOCLErrorHandlingTest {
    * is validated.
    */
   @Test
-  public void testProjectStructureValidation() throws IOException {
+  public void testProjectStructureValidation() {
     Path projectDir = Path.of("src/test/resources/test-project");
     Path mainDir = projectDir.resolve("model/src/main");
 
@@ -518,7 +518,7 @@ public class VitruvOCLErrorHandlingTest {
 
   /** Tests that projects without metamodels directory fail with appropriate error messages. */
   @Test
-  public void testProjectMissingMetamodelsDir() throws IOException {
+  public void testProjectMissingMetamodelsDir() {
     Path tempProject = Files.createTempDirectory("test-project");
     Path mainDir = tempProject.resolve("model/src/main");
     Files.createDirectories(mainDir);
@@ -536,14 +536,14 @@ public class VitruvOCLErrorHandlingTest {
             p -> {
               try {
                 Files.delete(p);
-              } catch (Exception e) {
+              } catch (Exception e) { // ignore cleanup errors
               }
             });
   }
 
   /** Tests that projects without model instances can still evaluate (vacuously true). */
   @Test
-  public void testProjectMissingInstancesDir() throws IOException {
+  public void testProjectMissingInstancesDir() {
     Path tempProject = Files.createTempDirectory("test-project");
     Path mainDir = tempProject.resolve("model/src/main");
     Files.createDirectories(mainDir);
@@ -562,14 +562,14 @@ public class VitruvOCLErrorHandlingTest {
             p -> {
               try {
                 Files.delete(p);
-              } catch (Exception e) {
+              } catch (Exception e) { // ignore cleanup errors
               }
             });
   }
 
   /** Tests that empty constraints files result in zero evaluated constraints. */
   @Test
-  public void testProjectEmptyConstraintsFile() throws IOException {
+  public void testProjectEmptyConstraintsFile() {
     Path tempProject = Files.createTempDirectory("test-project");
     Path mainDir = tempProject.resolve("model/src/main");
     Files.createDirectories(mainDir);
@@ -587,7 +587,7 @@ public class VitruvOCLErrorHandlingTest {
             p -> {
               try {
                 Files.delete(p);
-              } catch (Exception e) {
+              } catch (Exception e) { // ignore cleanup errors
               }
             });
   }
@@ -1116,16 +1116,6 @@ public class VitruvOCLErrorHandlingTest {
     String errors = result.toDetailedErrorString();
     assertTrue(errors.contains("did you mean") && errors.contains(expected),
         "Expected suggestion '" + expected + "' for typo '" + typo + "', got: " + errors);
-  }
-
-  private void assertNoSuggestion(String typo) {
-    ConstraintResult result = VitruvOCL.evaluateConstraint(
-        "context spaceMission::Spacecraft inv: self." + typo + "() == true",
-        new Path[] {SPACEMISSION_ECORE}, new Path[] {});
-    assertFalse(result.isSuccess());
-    String errors = result.toDetailedErrorString();
-    assertFalse(errors.contains("did you mean"),
-        "Expected no suggestion for '" + typo + "', got: " + errors);
   }
 
   @Test public void testSuggest_selet_to_select()         { assertSuggests("selet",         "select"); }
