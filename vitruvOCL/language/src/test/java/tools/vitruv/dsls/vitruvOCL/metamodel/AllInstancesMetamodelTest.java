@@ -247,10 +247,10 @@ class AllInstancesMetamodelTest {
 
   @Test
   void testAllInstancesCrossMetamodel() {
-    String c =
-        "context brakesystem::BrakeDisk inv:\n"
-            + "  brakesystem::BrakeDisk.allInstances().size() > 0 and\n"
-            + "  cad::Namespace.allInstances().size() > 0";
+    String c = """
+        context brakesystem::BrakeDisk inv:
+          brakesystem::BrakeDisk.allInstances().size() > 0 and
+          cad::Namespace.allInstances().size() > 0""";
     ConstraintResult r = eval(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -279,10 +279,10 @@ class AllInstancesMetamodelTest {
 
   @Test
   void testAllInstancesThenOne() {
-    String c =
-        "context cad::Sphere inv:\n"
-            + "  cad::Sphere.allInstances().one(s | s.radius > 0) or\n"
-            + "  cad::Sphere.allInstances().size() != 1";
+    String c = """
+        context cad::Sphere inv:
+          cad::Sphere.allInstances().one(s | s.radius > 0) or
+          cad::Sphere.allInstances().size() != 1""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());

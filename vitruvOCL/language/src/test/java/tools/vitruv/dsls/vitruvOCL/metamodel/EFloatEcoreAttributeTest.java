@@ -285,10 +285,11 @@ class EFloatEcoreAttributeTest {
     // Tube.outerRadius > Tube.innerRadius (both EFloat)
     ConstraintResult r =
         evalCad(
-            "context cad::Tube inv:\n"
-                + "  let outer = self.outerRadius in\n"
-                + "  let inner = self.innerRadius in\n"
-                + "  outer > inner");
+            """
+            context cad::Tube inv:
+              let outer = self.outerRadius in
+              let inner = self.innerRadius in
+              outer > inner""");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
@@ -353,11 +354,12 @@ class EFloatEcoreAttributeTest {
     // if cond then EFloat else EFloat → ¡Float! result
     ConstraintResult r =
         evalCad(
-            "context cad::Tube inv:\n"
-                + "  if self.outerRadius > self.innerRadius\n"
-                + "  then self.outerRadius\n"
-                + "  else self.innerRadius\n"
-                + "  endif > 0");
+            """
+            context cad::Tube inv:
+              if self.outerRadius > self.innerRadius
+              then self.outerRadius
+              else self.innerRadius
+              endif > 0""");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
