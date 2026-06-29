@@ -104,7 +104,7 @@ public class VitruvOCLFileParsingTest {
    */
   @ParameterizedTest
   @ValueSource(strings = {"test-inputs/valid/simple.ocl", "test-inputs/valid/collections.ocl"})
-  public void testParseValidFiles(String fileName) {
+  public void testParseValidFiles(String fileName) throws java.io.IOException {
     String fullPath = "src/test/resources/" + fileName;
     CharStream cs = CharStreams.fromPath(Paths.get(fullPath));
 
@@ -161,7 +161,7 @@ public class VitruvOCLFileParsingTest {
    * @throws IOException if file cannot be read from filesystem
    */
   @Test
-  public void testParseComplexFile() {
+  public void testParseComplexFile() throws java.io.IOException {
     String fileName = "test-inputs/valid/simple.ocl";
     String fullPath = "src/test/resources/" + fileName;
     CharStream cs = CharStreams.fromPath(Paths.get(fullPath));

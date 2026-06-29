@@ -432,7 +432,7 @@ public class VitruvOCLErrorHandlingTest {
 
   /** Tests that duplicate constraints in batch evaluation are detected and warned about. */
   @Test
-  public void testDuplicateConstraintDetection() {
+  public void testDuplicateConstraintDetection() throws java.io.IOException {
     List<String> constraints =
         List.of(
             "context spaceMission::Spacecraft inv: true",
@@ -449,7 +449,7 @@ public class VitruvOCLErrorHandlingTest {
 
   /** Tests that constraints can be loaded from a file with semicolon or newline separation. */
   @Test
-  public void testEvaluateFromFile() {
+  public void testEvaluateFromFile() throws java.io.IOException {
     Path tempFile = Files.createTempFile("constraints", ".ocl");
     Files.writeString(
         tempFile,
@@ -466,7 +466,7 @@ public class VitruvOCLErrorHandlingTest {
 
   /** Tests project-based evaluation using convention-over-configuration directory structure. */
   @Test
-  public void testEvaluateProject() {
+  public void testEvaluateProject() throws java.io.IOException {
     Path projectDir = Path.of("src/test/resources/test-project");
 
     BatchValidationResult result = VitruvOCL.evaluateProject(projectDir);
@@ -492,7 +492,7 @@ public class VitruvOCLErrorHandlingTest {
    * is validated.
    */
   @Test
-  public void testProjectStructureValidation() {
+  public void testProjectStructureValidation() throws java.io.IOException {
     Path projectDir = Path.of("src/test/resources/test-project");
     Path mainDir = projectDir.resolve("model/src/main");
 
@@ -506,7 +506,7 @@ public class VitruvOCLErrorHandlingTest {
 
   /** Tests that missing constraints.ocl file causes appropriate exception. */
   @Test
-  public void testProjectMissingConstraintsFile() {
+  public void testProjectMissingConstraintsFile() throws java.io.IOException {
     Path projectDir = Path.of("src/test/resources/test-project-invalid");
 
     assertThrows(
@@ -518,7 +518,7 @@ public class VitruvOCLErrorHandlingTest {
 
   /** Tests that projects without metamodels directory fail with appropriate error messages. */
   @Test
-  public void testProjectMissingMetamodelsDir() {
+  public void testProjectMissingMetamodelsDir() throws java.io.IOException {
     Path tempProject = Files.createTempDirectory("test-project");
     Path mainDir = tempProject.resolve("model/src/main");
     Files.createDirectories(mainDir);
@@ -543,7 +543,7 @@ public class VitruvOCLErrorHandlingTest {
 
   /** Tests that projects without model instances can still evaluate (vacuously true). */
   @Test
-  public void testProjectMissingInstancesDir() {
+  public void testProjectMissingInstancesDir() throws java.io.IOException {
     Path tempProject = Files.createTempDirectory("test-project");
     Path mainDir = tempProject.resolve("model/src/main");
     Files.createDirectories(mainDir);
@@ -569,7 +569,7 @@ public class VitruvOCLErrorHandlingTest {
 
   /** Tests that empty constraints files result in zero evaluated constraints. */
   @Test
-  public void testProjectEmptyConstraintsFile() {
+  public void testProjectEmptyConstraintsFile() throws java.io.IOException {
     Path tempProject = Files.createTempDirectory("test-project");
     Path mainDir = tempProject.resolve("model/src/main");
     Files.createDirectories(mainDir);

@@ -574,7 +574,7 @@ public class AnnotationSyntaxAndSemanticsTest {
 
     @Test
     @DisplayName("Default severity is WARNING when @severity is absent")
-    void defaultSeverityIsWarning() {
+    void defaultSeverityIsWarning() throws Exception {
       List<EvaluationVisitor.ViolationRecord> records = getRecords(
           "context brakesystem::BrakeDisk inv:\n    0 > 0");
       assertFalse(records.isEmpty(), "There should be at least one violation");
@@ -585,7 +585,7 @@ public class AnnotationSyntaxAndSemanticsTest {
 
     @Test
     @DisplayName("@severity CRITICAL is stored in the ViolationRecord")
-    void severityCriticalInRecord() {
+    void severityCriticalInRecord() throws Exception {
       List<EvaluationVisitor.ViolationRecord> records = getRecords(
           "context brakesystem::BrakeDisk inv:\n    @severity CRITICAL\n    0 > 0");
       assertFalse(records.isEmpty());
@@ -596,7 +596,7 @@ public class AnnotationSyntaxAndSemanticsTest {
 
     @Test
     @DisplayName("@severity MINOR is stored in the ViolationRecord")
-    void severityMinorInRecord() {
+    void severityMinorInRecord() throws Exception {
       List<EvaluationVisitor.ViolationRecord> records = getRecords(
           "context brakesystem::BrakeDisk inv:\n    @severity MINOR\n    0 > 0");
       assertFalse(records.isEmpty());
@@ -607,7 +607,7 @@ public class AnnotationSyntaxAndSemanticsTest {
 
     @Test
     @DisplayName("customMessage is null when @message annotation is absent")
-    void noAnnotationGivesNullCustomMessage() {
+    void noAnnotationGivesNullCustomMessage() throws Exception {
       List<EvaluationVisitor.ViolationRecord> records = getRecords(
           "context brakesystem::BrakeDisk inv BD_AlwaysFails:\n    0 > 0");
       assertFalse(records.isEmpty());
@@ -618,7 +618,7 @@ public class AnnotationSyntaxAndSemanticsTest {
 
     @Test
     @DisplayName("@message plain text is stored verbatim in customMessage")
-    void plainMessageInCustomMessage() {
+    void plainMessageInCustomMessage() throws Exception {
       List<EvaluationVisitor.ViolationRecord> records = getRecords(
           "context brakesystem::BrakeDisk inv:\n"
               + "    @message \"Diameter constraint violated\"\n"
@@ -631,7 +631,7 @@ public class AnnotationSyntaxAndSemanticsTest {
 
     @Test
     @DisplayName("@message with {self.attr} is interpolated — placeholder is resolved")
-    void selfAttrInterpolation() {
+    void selfAttrInterpolation() throws Exception {
       List<EvaluationVisitor.ViolationRecord> records = getRecords(
           "context brakesystem::BrakeDisk inv:\n"
               + "    @message \"Disk {self.name} is invalid\"\n"
@@ -648,7 +648,7 @@ public class AnnotationSyntaxAndSemanticsTest {
 
     @Test
     @DisplayName("@severity and @message both appear correctly in the same ViolationRecord")
-    void severityAndMessageBothPresent() {
+    void severityAndMessageBothPresent() throws Exception {
       List<EvaluationVisitor.ViolationRecord> records = getRecords(
           "context brakesystem::BrakeDisk inv:\n"
               + "    @severity INFO\n"

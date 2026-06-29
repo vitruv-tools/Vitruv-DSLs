@@ -910,11 +910,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitMultiEqualsOp(VitruvOCLParser.MultiEqualsOpContext ctx) {
     visit(ctx.left);
     visit(ctx.right);
-    org.antlr.v4.runtime.Token tok = ctx.op;
     errors.add(new CompileError(
-        tok.getLine(), tok.getCharPositionInLine(),
-        tok.getLine(), tok.getCharPositionInLine() + tok.getText().length(),
-        "Invalid operator '" + tok.getText() + "' — did you mean '=='?",
+        ctx.op.getLine(), ctx.op.getCharPositionInLine(),
+        ctx.op.getLine(), ctx.op.getCharPositionInLine() + ctx.op.getText().length(),
+        "Invalid operator '" + ctx.op.getText() + "' — did you mean '=='?",
         ErrorSeverity.ERROR, PHASE_TAG, null, "=="));
     nodeTypes.put(ctx, Type.ERROR);
     return Type.ERROR;
@@ -1714,7 +1713,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   private void collectEClasses(EPackage pkg, List<EClass> result, Set<EPackage> visited) {
     if (!visited.add(pkg)) return;
     for (EClassifier c : pkg.getEClassifiers()) {
-      if (c instanceof EClass) result.add((EClass) c);
+      if (c instanceof EClass eClass) result.add(eClass);
     }
     for (EPackage sub : pkg.getESubpackages()) {
       collectEClasses(sub, result, visited);

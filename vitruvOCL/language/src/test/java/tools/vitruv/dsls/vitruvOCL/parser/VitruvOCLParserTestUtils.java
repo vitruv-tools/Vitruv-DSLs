@@ -193,7 +193,7 @@ public class VitruvOCLParserTestUtils {
    * @throws IllegalStateException if the file contains syntax errors
    * @see #parseString For parsing constraints from strings
    */
-  public static ParseTree parseFile(String fileName) {
+  public static ParseTree parseFile(String fileName) throws java.io.IOException {
     String fullPath = "src/test/resources/" + fileName;
     CharStream cs = CharStreams.fromPath(Paths.get(fullPath));
     return parse(cs);
