@@ -67,12 +67,12 @@ public class Value {
 
   /** Wraps a Java object as an OCLElement (for legacy compatibility). */
   private OCLElement wrapAsElement(Object obj) {
-    if (obj instanceof Integer) {
-      return new OCLElement.IntValue((Integer) obj);
-    } else if (obj instanceof Boolean) {
-      return new OCLElement.BoolValue((Boolean) obj);
-    } else if (obj instanceof String) {
-      return new OCLElement.StringValue((String) obj);
+    if (obj instanceof Integer i) {
+      return new OCLElement.IntValue(i);
+    } else if (obj instanceof Boolean b) {
+      return new OCLElement.BoolValue(b);
+    } else if (obj instanceof String s) {
+      return new OCLElement.StringValue(s);
     } else {
       throw new IllegalArgumentException("Cannot wrap " + obj.getClass() + " as OCLElement");
     }

@@ -424,8 +424,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitIsEmptyOp(VitruvOCLParser.IsEmptyOpContext ctx) {
     Value receiver = receiverStack.peek();
-    Value result = Value.boolValue(receiver.isEmpty());
-    return result;
+    return Value.boolValue(receiver.isEmpty());
   }
 
   /**
@@ -2572,7 +2571,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       ParserRuleContext leftCtx,
       ParserRuleContext rightCtx,
       ParserRuleContext errorCtx,
-      BiFunction<OCLElement, OCLElement, Boolean> comparisonFn) {
+      java.util.function.BiPredicate<OCLElement, OCLElement> comparisonFn) {
 
     Value leftValue = visit(leftCtx);
     Value rightValue = visit(rightCtx);
@@ -2595,7 +2594,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     OCLElement leftElem = leftValue.getElements().get(0);
     OCLElement rightElem = rightValue.getElements().get(0);
 
-    boolean result = comparisonFn.apply(leftElem, rightElem);
+    boolean result = comparisonFn.test(leftElem, rightElem);
     return Value.boolValue(result);
   }
 
@@ -2657,7 +2656,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   private Value evaluateBinaryLogical(
       ParserRuleContext leftCtx,
       ParserRuleContext rightCtx,
-      BiFunction<Boolean, Boolean, Boolean> logicalFn) {
+      java.util.function.BiPredicate<Boolean, Boolean> logicalFn) {
 
     Value leftValue = visit(leftCtx);
     Value rightValue = visit(rightCtx);
@@ -2673,7 +2672,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
     if (left == null || right == null) return Value.boolValue(false);
 
-    boolean result = logicalFn.apply(left, right);
+    boolean result = logicalFn.test(left, right);
     return Value.boolValue(result);
   }
 
@@ -3069,8 +3068,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
 
     Type resultType = nodeTypes.get(ctx);
-    Value result = Value.of(results, resultType != null ? resultType : Type.set(Type.BOOLEAN));
-    return result;
+    return Value.of(results, resultType != null ? resultType : Type.set(Type.BOOLEAN));
   }
 
   /**

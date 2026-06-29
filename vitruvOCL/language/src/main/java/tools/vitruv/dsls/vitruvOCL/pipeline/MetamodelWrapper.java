@@ -511,7 +511,7 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
     }
 
     EClassifier classifier = ePackage.getEClassifier(className);
-    return (classifier instanceof EClass) ? (EClass) classifier : null;
+    return (classifier instanceof EClass ec) ? ec : null;
   }
 
   /**

@@ -32,9 +32,10 @@ class OclIsTypeOfMetamodelTest {
   @Test
   void testCoordinateIsTypeOfCoordinate() {
     String c =
-        "context cad::Namespace inv:\n"
-            + "  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))\n"
-            + "    .forAll(p | p.oclIsTypeOf(cad::Coordinate))";
+        """
+        context cad::Namespace inv:
+          self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+            .forAll(p | p.oclIsTypeOf(cad::Coordinate))""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -43,9 +44,10 @@ class OclIsTypeOfMetamodelTest {
   @Test
   void testNumericParameterIsTypeOfNumericParameter() {
     String c =
-        "context cad::Namespace inv:\n"
-            + "  self.parameters.select(p | p.oclIsTypeOf(cad::NumericParameter))\n"
-            + "    .forAll(p | p.oclIsTypeOf(cad::NumericParameter))";
+        """
+        context cad::Namespace inv:
+          self.parameters.select(p | p.oclIsTypeOf(cad::NumericParameter))
+            .forAll(p | p.oclIsTypeOf(cad::NumericParameter))""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -53,7 +55,9 @@ class OclIsTypeOfMetamodelTest {
 
   @Test
   void testSphereIsTypeOfSphere() {
-    String c = "context cad::Sphere inv:\n" + "  self.oclIsTypeOf(cad::Sphere)";
+    String c = """
+        context cad::Sphere inv:
+          self.oclIsTypeOf(cad::Sphere)""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -61,7 +65,9 @@ class OclIsTypeOfMetamodelTest {
 
   @Test
   void testCylinderIsTypeOfCylinder() {
-    String c = "context cad::Cylinder inv:\n" + "  self.oclIsTypeOf(cad::Cylinder)";
+    String c = """
+        context cad::Cylinder inv:
+          self.oclIsTypeOf(cad::Cylinder)""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -69,7 +75,9 @@ class OclIsTypeOfMetamodelTest {
 
   @Test
   void testNamespaceIsTypeOfNamespace() {
-    String c = "context cad::Namespace inv:\n" + "  self.oclIsTypeOf(cad::Namespace)";
+    String c = """
+        context cad::Namespace inv:
+          self.oclIsTypeOf(cad::Namespace)""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -80,9 +88,10 @@ class OclIsTypeOfMetamodelTest {
   @Test
   void testCoordinateIsNotTypeOfParameter() {
     String c =
-        "context cad::Namespace inv:\n"
-            + "  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))\n"
-            + "    .forAll(p | p.oclIsTypeOf(cad::Parameter) == false)";
+        """
+        context cad::Namespace inv:
+          self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+            .forAll(p | p.oclIsTypeOf(cad::Parameter) == false)""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied(), "Coordinate.oclIsTypeOf(Parameter) = false (not exact)");
@@ -90,7 +99,9 @@ class OclIsTypeOfMetamodelTest {
 
   @Test
   void testSphereIsNotTypeOfShape() {
-    String c = "context cad::Sphere inv:\n" + "  self.oclIsTypeOf(cad::Shape) == false";
+    String c = """
+        context cad::Sphere inv:
+          self.oclIsTypeOf(cad::Shape) == false""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied(), "Sphere.oclIsTypeOf(Shape) = false");
@@ -98,7 +109,9 @@ class OclIsTypeOfMetamodelTest {
 
   @Test
   void testCylinderIsNotTypeOfShape() {
-    String c = "context cad::Cylinder inv:\n" + "  self.oclIsTypeOf(cad::Shape) == false";
+    String c = """
+        context cad::Cylinder inv:
+          self.oclIsTypeOf(cad::Shape) == false""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -109,9 +122,10 @@ class OclIsTypeOfMetamodelTest {
   @Test
   void testCoordinateIsNotTypeOfNumericParameter() {
     String c =
-        "context cad::Namespace inv:\n"
-            + "  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))\n"
-            + "    .forAll(p | p.oclIsTypeOf(cad::NumericParameter) == false)";
+        """
+        context cad::Namespace inv:
+          self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+            .forAll(p | p.oclIsTypeOf(cad::NumericParameter) == false)""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -119,7 +133,9 @@ class OclIsTypeOfMetamodelTest {
 
   @Test
   void testSphereIsNotTypeOfCylinder() {
-    String c = "context cad::Sphere inv:\n" + "  self.oclIsTypeOf(cad::Cylinder) == false";
+    String c = """
+        context cad::Sphere inv:
+          self.oclIsTypeOf(cad::Cylinder) == false""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -130,9 +146,10 @@ class OclIsTypeOfMetamodelTest {
   @Test
   void testFilterExactCoordinateCount() {
     String c =
-        "context cad::Namespace inv:\n"
-            + "  self.name == \"id3_front_left_caliper_namespace\" implies\n"
-            + "  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size() == 4";
+        """
+        context cad::Namespace inv:
+          self.name == "id3_front_left_caliper_namespace" implies
+          self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size() == 4""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied(), "Caliper namespace has exactly 4 Coordinates");
@@ -141,9 +158,10 @@ class OclIsTypeOfMetamodelTest {
   @Test
   void testTypeOfCountLessThanKindOfCount() {
     String c =
-        "context cad::Namespace inv:\n"
-            + "  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size()\n"
-            + "    < self.parameters.select(p | p.oclIsKindOf(cad::Parameter)).size()";
+        """
+        context cad::Namespace inv:
+          self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size()
+            < self.parameters.select(p | p.oclIsKindOf(cad::Parameter)).size()""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -152,10 +170,11 @@ class OclIsTypeOfMetamodelTest {
   @Test
   void testTypeOfThenOclAsTypePipeline() {
     String c =
-        "context cad::Namespace inv:\n"
-            + "  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))\n"
-            + "    .collect(p | p.oclAsType(cad::Coordinate).x)\n"
-            + "    .forAll(x | x >= 0 or x < 0)";
+        """
+        context cad::Namespace inv:
+          self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+            .collect(p | p.oclAsType(cad::Coordinate).x)
+            .forAll(x | x >= 0 or x < 0)""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -164,9 +183,10 @@ class OclIsTypeOfMetamodelTest {
   @Test
   void testSphereFilterByTypeOfFromShapes() {
     String c =
-        "context cad::Namespace inv:\n"
-            + "  self.shapes.select(s | s.oclIsTypeOf(cad::Sphere))\n"
-            + "    .forAll(s | s.oclIsTypeOf(cad::Cylinder) == false)";
+        """
+        context cad::Namespace inv:
+          self.shapes.select(s | s.oclIsTypeOf(cad::Sphere))
+            .forAll(s | s.oclIsTypeOf(cad::Cylinder) == false)""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());

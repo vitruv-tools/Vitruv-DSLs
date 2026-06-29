@@ -892,8 +892,8 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     // Walk children to find the '=' terminal
     for (int i = 0; i < ctx.getChildCount(); i++) {
       org.antlr.v4.runtime.tree.ParseTree child = ctx.getChild(i);
-      if (child instanceof org.antlr.v4.runtime.tree.TerminalNode) {
-        org.antlr.v4.runtime.Token t = ((org.antlr.v4.runtime.tree.TerminalNode) child).getSymbol();
+      if (child instanceof org.antlr.v4.runtime.tree.TerminalNode tn) {
+        org.antlr.v4.runtime.Token t = tn.getSymbol();
         if ("=".equals(t.getText())) { eq = t; break; }
       }
     }
@@ -5102,7 +5102,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
   /** Helper for asSet/asBag/asSequence/asOrderedSet — all follow the same pattern. */
   private Type visitCollectionConversionOp(
-      ParserRuleContext ctx, String opName, java.util.function.Function<Type, Type> factory) {
+      ParserRuleContext ctx, String opName, java.util.function.UnaryOperator<Type> factory) {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
@@ -6231,7 +6231,8 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (a.isEmpty()) return b.length();
     if (b.isEmpty()) return a.length();
 
-    int la = a.length(), lb = b.length();
+    int la = a.length();
+    int lb = b.length();
     int[][] d = new int[la + 1][lb + 1];
 
     for (int i = 0; i <= la; i++) d[i][0] = i;
@@ -6258,8 +6259,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   /** Recursively checks whether any node in the subtree is an ANTLR {@link ErrorNode}. */
   private static boolean hasErrorNode(ParseTree tree) {
     if (tree instanceof ErrorNode) return true;
-    if (tree instanceof org.antlr.v4.runtime.ParserRuleContext
-        && ((org.antlr.v4.runtime.ParserRuleContext) tree).exception != null) return true;
+    if (tree instanceof org.antlr.v4.runtime.ParserRuleContext prc && prc.exception != null) return true;
     for (int i = 0; i < tree.getChildCount(); i++) {
       if (hasErrorNode(tree.getChild(i))) return true;
     }
@@ -6304,8 +6304,8 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     this.tokens = tokens;
     // Eagerly fill the token buffer so all tokens are accessible by index,
     // even tokens that ANTLR's error recovery consumed (or skipped) during parsing.
-    if (tokens instanceof org.antlr.v4.runtime.BufferedTokenStream) {
-      ((org.antlr.v4.runtime.BufferedTokenStream) tokens).fill();
+    if (tokens instanceof org.antlr.v4.runtime.BufferedTokenStream bts) {
+      bts.fill();
     }
   }
 
@@ -6364,10 +6364,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return true;
     }
     // ?T? conforms to T  (optional binding, e.g. null comparison context)
-    if (initType.isOptional() && initType.getElementType().isConformantTo(declared)) {
-      return true;
-    }
-    return false;
+    return initType.isOptional() && initType.getElementType().isConformantTo(declared);
   }
 }
 

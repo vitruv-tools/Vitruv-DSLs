@@ -298,17 +298,13 @@ public class TypeResolver {
 
     switch (operationName) {
       // Universally allowed: ¡T!, ¿T?, and all collection types
-      case "includes":
-      case "excludes":
-      case "isEmpty":
-      case "notEmpty":
+      case "includes", "excludes", "isEmpty", "notEmpty":
         return Type.BOOLEAN;
 
       case "size":
         return Type.INTEGER;
 
-      case "select":
-      case "reject":
+      case "select", "reject":
         // ¡T! filtered → ¿T?; others preserve type
         if (sourceType.isSingleton()) {
           return Type.optional(elementType);
@@ -328,13 +324,11 @@ public class TypeResolver {
       case "any":
         return Type.optional(elementType);
 
-      case "forAll":
-      case "exists":
+      case "forAll", "exists":
         return Type.BOOLEAN;
 
       // Including/Excluding → only on multi-valued collections
-      case "including":
-      case "excluding":
+      case "including", "excluding":
         if (!sourceType.isCollection()) {
           return Type.ERROR;
         }
@@ -344,8 +338,7 @@ public class TypeResolver {
         return sourceType;
 
       // Element extraction → only on Seq/OrderedSet
-      case "first":
-      case "last":
+      case "first", "last":
         if (!sourceType.isCollection()) {
           return Type.ERROR;
         }
@@ -361,8 +354,7 @@ public class TypeResolver {
         }
         return sourceType;
 
-      case "union":
-      case "intersection":
+      case "union", "intersection":
         if (!sourceType.isCollection()) {
           return Type.ERROR;
         }
@@ -392,9 +384,7 @@ public class TypeResolver {
       case "asSet":
         return Type.set(elementType);
 
-      case "asSequence":
-      case "asBag":
-      case "asOrderedSet":
+      case "asSequence", "asBag", "asOrderedSet":
         return Type.sequence(elementType);
 
       default:

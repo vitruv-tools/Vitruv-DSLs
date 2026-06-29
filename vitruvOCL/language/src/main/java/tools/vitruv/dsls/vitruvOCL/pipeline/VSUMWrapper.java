@@ -107,7 +107,7 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
     EPackage ePackage = metamodelRegistry.get(metamodelName);
     if (ePackage == null) return null;
     EClassifier classifier = ePackage.getEClassifier(className);
-    return (classifier instanceof EClass) ? (EClass) classifier : null;
+    return (classifier instanceof EClass ec) ? ec : null;
   }
 
   /**
@@ -122,14 +122,12 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
    */
   @Override
   public List<EObject> getAllInstances(EClass eClass) {
-    var result =
-        ((ViewSource) vsum)
-            .getViewSourceModels().stream()
-                .flatMap(r -> r.getContents().stream())
-                .flatMap(root -> getAllContentsRecursive(root).stream())
-                .filter(obj -> eClass.isSuperTypeOf(obj.eClass()))
-                .toList();
-    return result;
+    return ((ViewSource) vsum)
+        .getViewSourceModels().stream()
+            .flatMap(r -> r.getContents().stream())
+            .flatMap(root -> getAllContentsRecursive(root).stream())
+            .filter(obj -> eClass.isSuperTypeOf(obj.eClass()))
+            .toList();
   }
 
   /**

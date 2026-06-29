@@ -137,8 +137,7 @@ public class SymbolTableImpl implements SymbolTable {
     switch (typeName) {
       case "Integer":
         return Type.INTEGER;
-      case "Double":
-      case "Real":
+      case "Double", "Real":
         return Type.DOUBLE;
       case "Float":
         return Type.FLOAT;

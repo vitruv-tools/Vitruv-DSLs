@@ -41,8 +41,9 @@ class CrossMetamodelNavigationTest {
   @Test
   void testDiskIdJoinToNamespace() {
     String c =
-        "context brakesystem::BrakeDisk inv:\n"
-            + "  cad::Namespace.allInstances().select(ns | ns.id == self.id).notEmpty()";
+        """
+        context brakesystem::BrakeDisk inv:
+          cad::Namespace.allInstances().select(ns | ns.id == self.id).notEmpty()""";
     ConstraintResult r = eval(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied(), "Each BrakeDisk has a matching CAD Namespace");
@@ -51,8 +52,9 @@ class CrossMetamodelNavigationTest {
   @Test
   void testCaliperIdJoinToNamespace() {
     String c =
-        "context brakesystem::BrakeCaliper inv:\n"
-            + "  cad::Namespace.allInstances().select(ns | ns.id == self.id).notEmpty()";
+        """
+        context brakesystem::BrakeCaliper inv:
+          cad::Namespace.allInstances().select(ns | ns.id == self.id).notEmpty()""";
     ConstraintResult r = eval(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -61,8 +63,9 @@ class CrossMetamodelNavigationTest {
   @Test
   void testDiskIdJoinExactlyOne() {
     String c =
-        "context brakesystem::BrakeDisk inv:\n"
-            + "  cad::Namespace.allInstances().select(ns | ns.id == self.id).size() == 1";
+        """
+        context brakesystem::BrakeDisk inv:
+          cad::Namespace.allInstances().select(ns | ns.id == self.id).size() == 1""";
     ConstraintResult r = eval(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -73,9 +76,10 @@ class CrossMetamodelNavigationTest {
   @Test
   void testLetCadNamespaceFromBrakeDisk() {
     String c =
-        "context brakesystem::BrakeDisk inv:\n"
-            + "  let cadDisk = cad::Namespace.allInstances().select(ns | ns.id == self.id) in\n"
-            + "  cadDisk.size() == 1";
+        """
+        context brakesystem::BrakeDisk inv:
+          let cadDisk = cad::Namespace.allInstances().select(ns | ns.id == self.id) in
+          cadDisk.size() == 1""";
     ConstraintResult r = eval(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -84,9 +88,10 @@ class CrossMetamodelNavigationTest {
   @Test
   void testLetCadShapesFromBrakeDisk() {
     String c =
-        "context brakesystem::BrakeDisk inv:\n"
-            + "  let cadDisk = cad::Namespace.allInstances().select(ns | ns.id == self.id) in\n"
-            + "  cadDisk.shapes.size() >= 0";
+        """
+        context brakesystem::BrakeDisk inv:
+          let cadDisk = cad::Namespace.allInstances().select(ns | ns.id == self.id) in
+          cadDisk.shapes.size() >= 0""";
     ConstraintResult r = eval(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -95,11 +100,11 @@ class CrossMetamodelNavigationTest {
   @Test
   void testLetChainedCrossMetamodel() {
     String c =
-        "context brakesystem::BrakeDisk inv:\n"
-            + "  let caliper = brakesystem::BrakeCaliper.allInstances().first() in\n"
-            + "  let cadCaliper = cad::Namespace.allInstances().select(ns | ns.id == caliper.id)"
-            + " in\n"
-            + "  cadCaliper.notEmpty()";
+        """
+        context brakesystem::BrakeDisk inv:
+          let caliper = brakesystem::BrakeCaliper.allInstances().first() in
+          let cadCaliper = cad::Namespace.allInstances().select(ns | ns.id == caliper.id) in
+          cadCaliper.notEmpty()""";
     ConstraintResult r = eval(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -110,9 +115,10 @@ class CrossMetamodelNavigationTest {
   @Test
   void testCrossMetamodelShapesAccess() {
     String c =
-        "context brakesystem::BrakeDisk inv:\n"
-            + "  cad::Namespace.allInstances().select(ns | ns.id == self.id)\n"
-            + "    .shapes.forAll(s | s.notEmpty())";
+        """
+        context brakesystem::BrakeDisk inv:
+          cad::Namespace.allInstances().select(ns | ns.id == self.id)
+            .shapes.forAll(s | s.notEmpty())""";
     ConstraintResult r = eval(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -121,10 +127,11 @@ class CrossMetamodelNavigationTest {
   @Test
   void testCrossMetamodelParametersCount() {
     String c =
-        "context brakesystem::BrakeDisk inv:\n"
-            + "  let cadCaliper = cad::Namespace.allInstances()\n"
-            + "    .select(ns | ns.id == brakesystem::BrakeCaliper.allInstances().first().id) in\n"
-            + "  cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size() == 4";
+        """
+        context brakesystem::BrakeDisk inv:
+          let cadCaliper = cad::Namespace.allInstances()
+            .select(ns | ns.id == brakesystem::BrakeCaliper.allInstances().first().id) in
+          cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size() == 4""";
     ConstraintResult r = eval(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -133,10 +140,11 @@ class CrossMetamodelNavigationTest {
   @Test
   void testCrossMetamodelAllParameterSubtypes() {
     String c =
-        "context brakesystem::BrakeDisk inv:\n"
-            + "  let cadCaliper = cad::Namespace.allInstances()\n"
-            + "    .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in\n"
-            + "  cadCaliper.parameters.select(p | p.oclIsKindOf(cad::Parameter)).size() == 5";
+        """
+        context brakesystem::BrakeDisk inv:
+          let cadCaliper = cad::Namespace.allInstances()
+            .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
+          cadCaliper.parameters.select(p | p.oclIsKindOf(cad::Parameter)).size() == 5""";
     ConstraintResult r = eval(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied(), "5 total parameters (4 Coordinates + 1 NumericParameter)");
@@ -147,11 +155,12 @@ class CrossMetamodelNavigationTest {
   @Test
   void testFullPipelineCrossMetamodelFails() {
     String c =
-        "context brakesystem::BrakeDisk inv:\n"
-            + "  let cadCaliper = cad::Namespace.allInstances()\n"
-            + "    .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in\n"
-            + "  cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))\n"
-            + "    .forAll(p | p.oclAsType(cad::Coordinate).x <= self.diameterInMM / 2)";
+        """
+        context brakesystem::BrakeDisk inv:
+          let cadCaliper = cad::Namespace.allInstances()
+            .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
+          cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+            .forAll(p | p.oclAsType(cad::Coordinate).x <= self.diameterInMM / 2)""";
     ConstraintResult r = eval(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertFalse(r.isSatisfied(), "x=175 > radius=165 should fail");
@@ -160,11 +169,12 @@ class CrossMetamodelNavigationTest {
   @Test
   void testFullPipelineCrossMetamodelSatisfied() {
     String c =
-        "context brakesystem::BrakeDisk inv:\n"
-            + "  let cadCaliper = cad::Namespace.allInstances()\n"
-            + "    .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in\n"
-            + "  cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))\n"
-            + "    .forAll(p | p.oclAsType(cad::Coordinate).x >= self.diameterInMM / 2)";
+        """
+        context brakesystem::BrakeDisk inv:
+          let cadCaliper = cad::Namespace.allInstances()
+            .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
+          cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+            .forAll(p | p.oclAsType(cad::Coordinate).x >= self.diameterInMM / 2)""";
     ConstraintResult r = eval(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied(), "x=165 and x=175 both >= radius=165");
@@ -173,9 +183,10 @@ class CrossMetamodelNavigationTest {
   @Test
   void testCrossMetamodelArithmeticRadiusComputed() {
     String c =
-        "context brakesystem::BrakeDisk inv:\n"
-            + "  let radius = self.diameterInMM / 2 in\n"
-            + "  radius > 0";
+        """
+        context brakesystem::BrakeDisk inv:
+          let radius = self.diameterInMM / 2 in
+          radius > 0""";
     ConstraintResult r = eval(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -184,9 +195,10 @@ class CrossMetamodelNavigationTest {
   @Test
   void testCrossMetamodelBothInstancesNonEmpty() {
     String c =
-        "context brakesystem::BrakeDisk inv:\n"
-            + "  brakesystem::BrakeDisk.allInstances().size() > 0 and\n"
-            + "  cad::Namespace.allInstances().size() > 0";
+        """
+        context brakesystem::BrakeDisk inv:
+          brakesystem::BrakeDisk.allInstances().size() > 0 and
+          cad::Namespace.allInstances().size() > 0""";
     ConstraintResult r = eval(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -197,20 +209,21 @@ class CrossMetamodelNavigationTest {
   @Test
   void testSphereNoIntersectWithSphere() {
     String c =
-        "context cad::Sphere inv noIntersectWithSphere:\n"
-            + "  let foreignShapes =\n"
-            + "    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))\n"
-            + "      .collect(ns | ns.shapes).flatten()\n"
-            + "  in\n"
-            + "  foreignShapes.select(s | s.oclIsTypeOf(cad::Sphere))\n"
-            + "    .forAll(other |\n"
-            + "      let o = other.oclAsType(cad::Sphere) in\n"
-            + "      let dx = self.center.x - o.center.x in\n"
-            + "      let dy = self.center.y - o.center.y in\n"
-            + "      let dz = self.center.z - o.center.z in\n"
-            + "      let rSum = self.radius + o.radius in\n"
-            + "      dx*dx + dy*dy + dz*dz >= rSum * rSum\n"
-            + "    )";
+        """
+        context cad::Sphere inv noIntersectWithSphere:
+          let foreignShapes =
+            cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+              .collect(ns | ns.shapes).flatten()
+          in
+          foreignShapes.select(s | s.oclIsTypeOf(cad::Sphere))
+            .forAll(other |
+              let o = other.oclAsType(cad::Sphere) in
+              let dx = self.center.x - o.center.x in
+              let dy = self.center.y - o.center.y in
+              let dz = self.center.z - o.center.z in
+              let rSum = self.radius + o.radius in
+              dx*dx + dy*dy + dz*dz >= rSum * rSum
+            )""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -219,20 +232,21 @@ class CrossMetamodelNavigationTest {
   @Test
   void testSphereNoIntersectWithCylinder() {
     String c =
-        "context cad::Sphere inv noIntersectWithCylinder:\n"
-            + "  let foreignShapes =\n"
-            + "    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))\n"
-            + "      .collect(ns | ns.shapes).flatten()\n"
-            + "  in\n"
-            + "  foreignShapes.select(s | s.oclIsTypeOf(cad::Cylinder))\n"
-            + "    .forAll(other |\n"
-            + "      let o = other.oclAsType(cad::Cylinder) in\n"
-            + "      let dx = self.center.x - o.bottomCenter.x in\n"
-            + "      let dy = self.center.y - o.bottomCenter.y in\n"
-            + "      let dz = self.center.z - o.bottomCenter.z in\n"
-            + "      let rSum = self.radius + o.radius in\n"
-            + "      dx*dx + dy*dy + dz*dz >= rSum * rSum\n"
-            + "    )";
+        """
+        context cad::Sphere inv noIntersectWithCylinder:
+          let foreignShapes =
+            cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+              .collect(ns | ns.shapes).flatten()
+          in
+          foreignShapes.select(s | s.oclIsTypeOf(cad::Cylinder))
+            .forAll(other |
+              let o = other.oclAsType(cad::Cylinder) in
+              let dx = self.center.x - o.bottomCenter.x in
+              let dy = self.center.y - o.bottomCenter.y in
+              let dz = self.center.z - o.bottomCenter.z in
+              let rSum = self.radius + o.radius in
+              dx*dx + dy*dy + dz*dz >= rSum * rSum
+            )""";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());

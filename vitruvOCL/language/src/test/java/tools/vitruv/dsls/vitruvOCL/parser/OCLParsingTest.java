@@ -157,10 +157,10 @@ class OCLParsingTest {
   @Test
   @DisplayName("Should parse @message annotation")
   void testMessageAnnotation() {
-    String input =
-        "context Pkg::Foo inv Bar:\n"
-            + "    @message \"Foo {self.name} violated\"\n"
-            + "    self.x > 0";
+    String input = """
+        context Pkg::Foo inv Bar:
+            @message "Foo {self.name} violated"
+            self.x > 0""";
     VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
     CommonTokenStream tokens = new CommonTokenStream(lexer);
     VitruvOCLParser parser = new VitruvOCLParser(tokens);
@@ -174,11 +174,11 @@ class OCLParsingTest {
   @Test
   @DisplayName("Should parse both @severity and @message annotations")
   void testBothAnnotations() {
-    String input =
-        "context Pkg::Foo inv Bar:\n"
-            + "    @severity WARNING\n"
-            + "    @message \"Object {self.name} failed\"\n"
-            + "    self.x > 0";
+    String input = """
+        context Pkg::Foo inv Bar:
+            @severity WARNING
+            @message "Object {self.name} failed"
+            self.x > 0""";
     VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
     CommonTokenStream tokens = new CommonTokenStream(lexer);
     VitruvOCLParser parser = new VitruvOCLParser(tokens);

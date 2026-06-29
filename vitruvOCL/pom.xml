@@ -19,6 +19,14 @@
         <module>vitruvOCL-language-server</module>
     </modules>
 
+    <properties>
+        <sonar.host.url>http://localhost:9000</sonar.host.url>
+        <!-- sonar.token is passed via -Dsonar.token=... on the CLI, not stored here -->
+        <sonar.projectKey>vitruvOCL</sonar.projectKey>
+        <sonar.projectName>VitruvOCL</sonar.projectName>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    </properties>
+
     <build>
         <plugins>
             <plugin>

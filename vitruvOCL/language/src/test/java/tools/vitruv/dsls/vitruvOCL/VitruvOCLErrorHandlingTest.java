@@ -432,7 +432,7 @@ class VitruvOCLErrorHandlingTest {
 
   /** Tests that duplicate constraints in batch evaluation are detected and warned about. */
   @Test
-  void testDuplicateConstraintDetection() throws java.io.IOException {
+  void testDuplicateConstraintDetection() {
     List<String> constraints =
         List.of(
             "context spaceMission::Spacecraft inv: true",
@@ -506,7 +506,7 @@ class VitruvOCLErrorHandlingTest {
 
   /** Tests that missing constraints.ocl file causes appropriate exception. */
   @Test
-  void testProjectMissingConstraintsFile() throws java.io.IOException {
+  void testProjectMissingConstraintsFile() {
     Path projectDir = Path.of("src/test/resources/test-project-invalid");
 
     assertThrows(

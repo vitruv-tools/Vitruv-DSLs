@@ -235,7 +235,8 @@ public class CompletionProvider {
       Matcher ctxMatcher = CONTEXT_DECL.matcher(documentText);
       // Find the last context declaration before the cursor offset.
       int cursorOffset = offsetOf(documentText, cursor);
-      String matchedPkg = null, matchedClass = null;
+      String matchedPkg = null;
+      String matchedClass = null;
       while (ctxMatcher.find()) {
         if (ctxMatcher.start() <= cursorOffset) {
           matchedPkg = ctxMatcher.group(1);

@@ -121,7 +121,10 @@ class EFloatEcoreAttributeTest {
   void testFloatTimesFloatPromotion() {
     // self.radius * self.radius → ¡Double! (radius^2)
     ConstraintResult r =
-        evalCad("context cad::Sphere inv:\n" + "  let r = self.radius in\n" + "  r * r > 0");
+        evalCad("""
+            context cad::Sphere inv:
+              let r = self.radius in
+              r * r > 0""");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
@@ -213,7 +216,9 @@ class EFloatEcoreAttributeTest {
   void testForAllOnFloatPredicate() {
     ConstraintResult r =
         evalCad(
-            "context cad::Sphere inv:\n" + "  cad::Sphere.allInstances().forAll(s | s.radius > 0)");
+            """
+            context cad::Sphere inv:
+              cad::Sphere.allInstances().forAll(s | s.radius > 0)""");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
@@ -256,7 +261,10 @@ class EFloatEcoreAttributeTest {
   @Test
   void testFloatInLetBinding() {
     ConstraintResult r =
-        evalCad("context cad::Sphere inv:\n" + "  let r = self.radius in\n" + "  r > 0");
+        evalCad("""
+            context cad::Sphere inv:
+              let r = self.radius in
+              r > 0""");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
@@ -264,7 +272,10 @@ class EFloatEcoreAttributeTest {
   @Test
   void testFloatLetArithmetic() {
     ConstraintResult r =
-        evalCad("context cad::Sphere inv:\n" + "  let r = self.radius in\n" + "  r * 2.0 > 0");
+        evalCad("""
+            context cad::Sphere inv:
+              let r = self.radius in
+              r * 2.0 > 0""");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
@@ -318,7 +329,9 @@ class EFloatEcoreAttributeTest {
   void testTwoFloatAttributesComparison() {
     // outerRadius > innerRadius (two EFloat attrs from same object)
     ConstraintResult r =
-        evalCad("context cad::Tube inv:\n" + "  self.outerRadius > self.innerRadius");
+        evalCad("""
+            context cad::Tube inv:
+              self.outerRadius > self.innerRadius""");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }

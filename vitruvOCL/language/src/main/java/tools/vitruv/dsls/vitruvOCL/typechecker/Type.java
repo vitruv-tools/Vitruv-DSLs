@@ -366,11 +366,7 @@ public abstract class Type {
       if (other == ERROR) {
         return true;
       }
-      if (other == ANY) {
-        return true;
-      }
-
-      return false;
+      return other == ANY;
     }
 
     @Override
@@ -403,11 +399,7 @@ public abstract class Type {
         return true;
       }
 
-      if (other.getElementType() == BOOLEAN) {
-        return true;
-      }
-
-      return false;
+      return other.getElementType() == BOOLEAN;
     }
 
     @Override
@@ -440,11 +432,7 @@ public abstract class Type {
         return true;
       }
 
-      if (other.getElementType() == DOUBLE) {
-        return true;
-      }
-
-      return false;
+      return other.getElementType() == DOUBLE;
     }
 
     @Override
@@ -484,11 +472,7 @@ public abstract class Type {
       if (other.getElementType() == FLOAT) {
         return true;
       }
-      if (other.getElementType() == DOUBLE) {
-        return true;
-      }
-
-      return false;
+      return other.getElementType() == DOUBLE;
     }
 
     @Override
@@ -516,11 +500,7 @@ public abstract class Type {
         return true;
       }
 
-      if (other.getElementType() == STRING) {
-        return true;
-      }
-
-      return false;
+      return other.getElementType() == STRING;
     }
 
     @Override

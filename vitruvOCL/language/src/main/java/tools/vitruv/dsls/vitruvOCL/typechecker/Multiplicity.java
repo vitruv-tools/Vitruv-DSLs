@@ -152,11 +152,7 @@ public enum Multiplicity {
     }
 
     // Sequence <: Bag (ordered non-unique is a subtype of unordered non-unique)
-    if (this == SEQUENCE && other == BAG) {
-      return true;
-    }
-
-    return false;
+    return this == SEQUENCE && other == BAG;
   }
 }
 

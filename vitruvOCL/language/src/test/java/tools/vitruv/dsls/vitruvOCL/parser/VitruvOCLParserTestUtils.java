@@ -277,8 +277,7 @@ public class VitruvOCLParserTestUtils {
           }
         });
 
-    ParseTree tree = parser.contextDeclCS();
-    return tree;
+    return parser.contextDeclCS();
   }
 
   /**

@@ -111,7 +111,8 @@ final class LspErrorListener extends BaseErrorListener {
     if (a.equals(b)) return 0;
     if (a.isEmpty()) return b.length();
     if (b.isEmpty()) return a.length();
-    int la = a.length(), lb = b.length();
+    int la = a.length();
+    int lb = b.length();
     int[][] d = new int[la + 1][lb + 1];
     for (int i = 0; i <= la; i++) d[i][0] = i;
     for (int j = 0; j <= lb; j++) d[0][j] = j;

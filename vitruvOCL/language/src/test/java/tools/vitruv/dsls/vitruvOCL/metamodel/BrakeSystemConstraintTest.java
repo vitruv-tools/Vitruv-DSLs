@@ -185,13 +185,13 @@ class BrakeSystemConstraintTest {
   @Test
   void testOriginalConstraintExact() {
     String constraint =
-        "context brakesystem::BrakeDisk inv:\n"
-            + "  let cadDisk = cad::Namespace.allInstances().select(b | b.id == self.id) in\n"
-            + "  let brakeCaliper = brakesystem::BrakeCaliper.allInstances().first() in\n"
-            + "  let cadCaliper = cad::Namespace.allInstances()"
-            + ".select(b | b.id == brakeCaliper.id) in\n"
-            + "  cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).forAll(p |"
-            + " p.oclAsType(cad::Coordinate).x <= self.diameterInMM / 2)";
+        """
+        context brakesystem::BrakeDisk inv:
+          let cadDisk = cad::Namespace.allInstances().select(b | b.id == self.id) in
+          let brakeCaliper = brakesystem::BrakeCaliper.allInstances().first() in
+          let cadCaliper = cad::Namespace.allInstances().select(b | b.id == brakeCaliper.id) in
+          cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).forAll(p |\
+ p.oclAsType(cad::Coordinate).x <= self.diameterInMM / 2)""";
 
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(

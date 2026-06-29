@@ -67,7 +67,7 @@ class VitruviusOCLCLITest {
 
   /** Restores stdout and stderr after each test. */
   @AfterEach
-  void restoreOutput() throws java.io.IOException {
+  void restoreOutput() {
     System.setOut(originalOut);
     System.setErr(originalErr);
   }
@@ -82,7 +82,7 @@ class VitruviusOCLCLITest {
 
   /** Tests that the version command prints version information. */
   @Test
-  void testVersionCommand() throws java.io.IOException {
+  void testVersionCommand() {
     VitruvOCLCLI.main(new String[] {"version"});
     assertTrue(output().contains("OCL"), "Version output should contain 'OCL'");
   }
@@ -287,8 +287,13 @@ class VitruviusOCLCLITest {
     Path oclFile = tempDir.resolve("batch.ocl");
     Files.writeString(
         oclFile,
-        "context spaceMission::Spacecraft inv massPositive:\n  self.mass > 0\n\n"
-            + "context spaceMission::Spacecraft inv massNotNegative:\n  self.mass >= 0\n");
+        """
+        context spaceMission::Spacecraft inv massPositive:
+          self.mass > 0
+
+        context spaceMission::Spacecraft inv massNotNegative:
+          self.mass >= 0
+        """);
 
     VitruvOCLCLI.main(
         new String[] {
@@ -310,8 +315,13 @@ class VitruviusOCLCLITest {
     Path oclFile = tempDir.resolve("mixed.ocl");
     Files.writeString(
         oclFile,
-        "context spaceMission::Spacecraft inv satisfied:\n  self.mass > 0\n\n"
-            + "context spaceMission::Spacecraft inv violated:\n  self.mass < 0\n");
+        """
+        context spaceMission::Spacecraft inv satisfied:
+          self.mass > 0
+
+        context spaceMission::Spacecraft inv violated:
+          self.mass < 0
+        """);
 
     VitruvOCLCLI.main(
         new String[] {
@@ -331,9 +341,11 @@ class VitruviusOCLCLITest {
     Path oclFile = tempDir.resolve("withcomments.ocl");
     Files.writeString(
         oclFile,
-        "-- This is a comment\n"
-            + "context spaceMission::Spacecraft inv myConstraint:\n"
-            + "  self.mass > 0\n");
+        """
+        -- This is a comment
+        context spaceMission::Spacecraft inv myConstraint:
+          self.mass > 0
+        """);
 
     VitruvOCLCLI.main(
         new String[] {

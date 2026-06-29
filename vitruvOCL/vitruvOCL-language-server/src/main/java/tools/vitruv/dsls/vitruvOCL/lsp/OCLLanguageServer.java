@@ -160,6 +160,7 @@ public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
   // Ecore scanning
   // ---------------------------------------------------------------------------
 
+  @SuppressWarnings("java:S1874")
   private void loadEcoreFiles(InitializeParams params) {
     List<Path> ecoreFiles = new ArrayList<>();
 
