@@ -382,30 +382,28 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       Type specType = visit(spec);
       boolean newErrorsInSpec = errors.getErrors().size() > errorsBefore;
 
-      // If the spec already has errors, an error node, or produced new errors, skip the
-      // Boolean-conformance check — it would only produce misleading follow-up diagnostics.
-      if (specType.equals(Type.ERROR) || hasErrorNode(spec) || newErrorsInSpec) continue;
-
-      // Check whether the spec was cut short by a missing operand: if the token immediately
-      // after spec.getStop() is a comparison/arithmetic operator, the right-hand side of an
-      // expression was never parsed — report on that operator instead of cascading to inv.
-      if (reportMissingOperandAfter(spec)) { resultType = Type.ERROR; continue; }
-
-      // Check for a forgotten logical operator between two expressions
-      // e.g.  self.a == "x"  persons::Foo.allInstances()...
-      if (reportMissingOperatorBetweenExpressions(spec)) { resultType = Type.ERROR; continue; }
-
-      // Check Boolean conformance (handles both Boolean and !Boolean!)
-      Type checkType =
-          specType.isSingleton() || specType.isCollection() ? specType.getElementType() : specType;
-      if (!checkType.isConformantTo(Type.BOOLEAN)) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "Invariant must be Boolean, got " + specType,
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+      // If the spec already has errors, an error node, or produced new errors, skip further checks.
+      if (specType.equals(Type.ERROR) || hasErrorNode(spec) || newErrorsInSpec) {
+        // skip — would only produce misleading follow-up diagnostics
+      } else if (reportMissingOperandAfter(spec)) {
+        // Spec was cut short by a missing operand (operator token follows immediately)
         resultType = Type.ERROR;
+      } else if (reportMissingOperatorBetweenExpressions(spec)) {
+        // Forgotten logical operator between two expressions
+        resultType = Type.ERROR;
+      } else {
+        // Check Boolean conformance (handles both Boolean and !Boolean!)
+        Type checkType =
+            specType.isSingleton() || specType.isCollection() ? specType.getElementType() : specType;
+        if (!checkType.isConformantTo(Type.BOOLEAN)) {
+          errors.add(
+              ctx.getStart().getLine(),
+              ctx.getStart().getCharPositionInLine(),
+              "Invariant must be Boolean, got " + specType,
+              ErrorSeverity.ERROR,
+              PHASE_TAG);
+          resultType = Type.ERROR;
+        }
       }
     }
 
@@ -1699,12 +1697,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     for (EClass candidate : allClasses) {
       if (candidate == abstractClass || !abstractClass.isSuperTypeOf(candidate)) continue;
       EStructuralFeature f = candidate.getEStructuralFeature(propName);
-      if (f == null) continue;
-      if (found == null) {
-        found = f;
-      } else if (found.getEType() != f.getEType() || found.isMany() != f.isMany()) {
-        // Ambiguous: same feature name but different types on different subtypes — reject
-        return null;
+      if (f != null) {
+        if (found == null) {
+          found = f;
+        } else if (found.getEType() != f.getEType() || found.isMany() != f.isMany()) {
+          // Ambiguous: same feature name but different types on different subtypes — reject
+          return null;
+        }
       }
     }
     return found;

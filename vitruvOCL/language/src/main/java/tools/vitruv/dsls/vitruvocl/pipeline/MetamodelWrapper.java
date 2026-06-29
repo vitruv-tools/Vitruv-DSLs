@@ -57,7 +57,17 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   private static final String FEAT_RIGHT_EOBJECTS = "rightEObjects";
 
   /** Default directory for test model files (legacy support). */
-  public static Path TEST_MODELS_PATH = Path.of("test-models");
+  private static Path testModelsPath = Path.of("test-models");
+
+  /** Returns the current test models path. */
+  public static Path getTestModelsPath() {
+    return testModelsPath;
+  }
+
+  /** Sets the test models path (for test setup). */
+  public static void setTestModelsPath(Path path) {
+    testModelsPath = path;
+  }
 
   /** Maps package names to loaded EPackages. */
   private final Map<String, EPackage> metamodelRegistry = new HashMap<>();
@@ -479,7 +489,7 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    * @throws IOException If file cannot be read
    */
   public void loadModelInstance(String xmiFileName) throws IOException {
-    loadModelInstance(TEST_MODELS_PATH.resolve(xmiFileName));
+    loadModelInstance(testModelsPath.resolve(xmiFileName));
   }
 
   /**

@@ -92,6 +92,7 @@ public class CompileError {
    * @param source Source file or context identifier
    * @param errorCode Optional error code (may be null)
    */
+  @SuppressWarnings("java:S107")
   public CompileError(
       int line,
       int column,
@@ -109,6 +110,7 @@ public class CompileError {
    *
    * @param suggestion Replacement text for a "did you mean?" quick fix, or {@code null}
    */
+  @SuppressWarnings("java:S107")
   public CompileError(
       int line,
       int column,

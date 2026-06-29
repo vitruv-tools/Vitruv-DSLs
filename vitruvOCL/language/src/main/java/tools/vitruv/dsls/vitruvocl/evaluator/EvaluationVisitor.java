@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BiFunction;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;

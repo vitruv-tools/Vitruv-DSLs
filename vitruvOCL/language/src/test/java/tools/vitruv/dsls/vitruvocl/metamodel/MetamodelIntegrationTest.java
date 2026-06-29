@@ -143,7 +143,7 @@ class MetamodelIntegrationTest {
    */
   @BeforeEach
   void setup() throws java.io.IOException {
-    MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
+    MetamodelWrapper.setTestModelsPath(Path.of("src/test/resources/test-models"));
 
     specification = new MetamodelWrapper();
     specification.loadMetamodel(Path.of("src/test/resources/test-metamodels/spaceMission.ecore"));

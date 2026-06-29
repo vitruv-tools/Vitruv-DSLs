@@ -577,6 +577,18 @@ public abstract class Type {
     public String getTypeName() {
       return eClass.getEPackage().getName() + "::" + eClass.getName();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) return true;
+      if (!(obj instanceof MetaclassType other)) return false;
+      return eClass.equals(other.eClass);
+    }
+
+    @Override
+    public int hashCode() {
+      return eClass.hashCode();
+    }
   }
 
   // ==================== Collection Type Implementation ====================
@@ -677,6 +689,18 @@ public abstract class Type {
         case ORDERED_SET -> CollectionKind.ORDERED_SET;
         default -> null;
       };
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) return true;
+      if (!(obj instanceof CollectionType other)) return false;
+      return elementType.equals(other.elementType) && multiplicity == other.multiplicity;
+    }
+
+    @Override
+    public int hashCode() {
+      return 31 * elementType.hashCode() + multiplicity.hashCode();
     }
   }
 
@@ -814,6 +838,18 @@ public abstract class Type {
     public String getTypeName() {
       return eEnum.getName();
     }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) return true;
+      if (!(obj instanceof EnumType other)) return false;
+      return eEnum.equals(other.eEnum);
+    }
+
+    @Override
+    public int hashCode() {
+      return eEnum.hashCode();
+    }
   }
 
   // Factory-Methode:
@@ -877,9 +913,7 @@ public abstract class Type {
   @Override
   public boolean equals(Object obj) {
     if (this == obj) return true;
-    if (obj == null || !(obj instanceof Type)) return false;
-
-    Type other = (Type) obj;
+    if (!(obj instanceof Type other)) return false;
 
     if (!this.getTypeName().equals(other.getTypeName())) {
       return false;

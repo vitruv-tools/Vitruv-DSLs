@@ -87,7 +87,10 @@ final class LspErrorListener extends BaseErrorListener {
       diag.setData(suggestion); // enables Quick Fix replacement in OCLTextDocumentService
     }
     diagnostics.add(diag);
-    final int capLine = lspLine; final int capStart = lspStart; final int capEnd = lspEnd; final String capMsg = msg;
+    final int capLine = lspLine;
+    final int capStart = lspStart;
+    final int capEnd = lspEnd;
+    final String capMsg = msg;
     LOG.fine(() -> String.format(
         "[OCL-LS] DIAG syntax-error   L%d:C%d → L%d:C%d  %s",
         capLine, capStart, capLine, capEnd, capMsg));

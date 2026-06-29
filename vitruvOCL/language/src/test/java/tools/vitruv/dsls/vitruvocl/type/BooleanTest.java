@@ -12,8 +12,6 @@
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvocl.type;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.junit.jupiter.api.Test;
 import tools.vitruv.dsls.vitruvocl.DummyTestSpecification;

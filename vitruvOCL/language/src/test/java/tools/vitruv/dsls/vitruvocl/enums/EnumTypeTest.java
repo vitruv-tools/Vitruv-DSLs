@@ -162,19 +162,16 @@ class EnumTypeTest extends DummyTestSpecification {
 
       @Override
       public String getSourceFileForInstance(EObject instance) {
-        // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'getSourceFileForInstance'");
       }
 
       @Override
       public Set<EObject> getCorrespondingObjects(EObject source) {
-        // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'getCorrespondingObjects'");
       }
 
       @Override
       public boolean correspondenceHasTag(EObject obj1, EObject obj2, String tag) {
-        // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'correspondenceHasTag'");
       }
     };

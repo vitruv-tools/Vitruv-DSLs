@@ -51,7 +51,7 @@ class VitruviusOCLCLITest {
   /** Sets up the test model path before all tests. */
   @BeforeAll
   static void setupPaths() {
-    MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
+    MetamodelWrapper.setTestModelsPath(Path.of("src/test/resources/test-models"));
   }
 
   /** Redirects stdout and stderr before each test to capture CLI output. */

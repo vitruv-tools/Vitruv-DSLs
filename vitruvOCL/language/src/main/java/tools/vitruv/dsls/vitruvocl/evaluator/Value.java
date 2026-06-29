@@ -206,15 +206,11 @@ public class Value {
     boolean foundFirst = false;
 
     for (OCLElement elem : elements) {
-      if (OCLElement.semanticEquals(elem, element)) {
-        if (isUnique) {
-          continue; // Skip all
-        } else if (!foundFirst) {
-          foundFirst = true;
-          continue; // Skip first
-        }
+      if (OCLElement.semanticEquals(elem, element) && (isUnique || !foundFirst)) {
+        if (!isUnique) foundFirst = true;
+      } else {
+        result.add(elem);
       }
-      result.add(elem);
     }
 
     return new Value(result, runtimeType);

@@ -59,6 +59,7 @@ import tools.vitruv.dsls.vitruvocl.parser.VitruvOCLParserTestUtils;
  * @see VitruvOCLParser ANTLR-generated parser
  * @see VitruvOCLParserTestUtils Parse tree visualization utilities
  */
+@SuppressWarnings("java:S5786") // class must be public — referenced from tools.vitruv.dsls.vitruvocl.parser package
 public class VitruvOCLFileParsingTest {
 
   /**

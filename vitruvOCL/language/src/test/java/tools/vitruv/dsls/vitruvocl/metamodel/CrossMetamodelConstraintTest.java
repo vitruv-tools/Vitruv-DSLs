@@ -48,7 +48,7 @@ class CrossMetamodelConstraintTest {
 
   @BeforeAll
   static void setupPaths() {
-    MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
+    MetamodelWrapper.setTestModelsPath(Path.of("src/test/resources/test-models"));
   }
 
   /**

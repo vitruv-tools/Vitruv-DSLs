@@ -456,12 +456,10 @@ public class TypeResolver {
     // Numeric operations — preserve the concrete numeric type (INTEGER / FLOAT / DOUBLE)
     if (isNumeric(sourceType)) {
       return switch (operationName) {
-        // abs/floor/ceil/round preserve the type
         case "abs" -> sourceType;
         case "floor", "ceil", "round" -> sourceType;
-        // min/max with a same-type argument preserve the type;
-        // with a different numeric type, widen
         case "min", "max" -> {
+          // same-type: preserved; different numeric type: widened
           if (argumentTypes.length > 0 && isNumeric(argumentTypes[0])) {
             yield widenNumeric(sourceType, argumentTypes[0]);
           }

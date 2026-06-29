@@ -192,12 +192,10 @@ public class SmartLoader {
           continue;
         }
         foundInstance = true;
-        if (loaded[i]) {
+        if (!loaded[i]) {
           // Already loaded for a different package name found in the same occurrence
           // (e.g. a repository:Repository root with nested xsi:type="seff:..." elements).
-          continue;
-        }
-        loaded[i] = true;
+          loaded[i] = true;
         Path xmi = xmiOccurrences.get(i);
         try {
           LOG.fine(() -> "[DBG-SL] Loading XMI: " + xmi.getFileName());
@@ -217,6 +215,7 @@ public class SmartLoader {
                   xmi,
                   FileError.FileErrorType.PARSE_ERROR,
                   "Failed to load model (runtime error): " + e.getMessage()));
+        }
         }
       }
 
@@ -250,7 +249,7 @@ public class SmartLoader {
     }
 
     // Try TEST_MODELS_PATH first
-    Path testPath = MetamodelWrapper.TEST_MODELS_PATH.resolve(path);
+    Path testPath = MetamodelWrapper.getTestModelsPath().resolve(path);
     if (Files.exists(testPath)) {
       return testPath;
     }

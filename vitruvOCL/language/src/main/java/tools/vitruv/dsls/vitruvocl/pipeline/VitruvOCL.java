@@ -265,10 +265,11 @@ public class VitruvOCL {
     StringBuilder sb = new StringBuilder(instance.eClass().getName()).append("(");
     List<String> parts = new ArrayList<>();
     for (EStructuralFeature feature : instance.eClass().getEAllStructuralFeatures()) {
-      if (feature.isMany()) continue;
-      Object value = instance.eGet(feature);
-      if (value instanceof String || value instanceof Integer || value instanceof Boolean) {
-        parts.add(feature.getName() + "=\"" + value + "\"");
+      if (!feature.isMany()) {
+        Object value = instance.eGet(feature);
+        if (value instanceof String || value instanceof Integer || value instanceof Boolean) {
+          parts.add(feature.getName() + "=\"" + value + "\"");
+        }
       }
       if (parts.size() >= 3) break;
     }
