@@ -32,55 +32,55 @@ import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
  * @see tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor Evaluates arithmetic expressions
  * @see tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor Type checks arithmetic expressions
  */
-public class SimpleMathTest extends DummyTestSpecification {
+class SimpleMathTest extends DummyTestSpecification {
 
   // ==================== Arithmetic Operations ====================
 
   /** Tests addition: {@code 1+2} → {@code [3]}. */
   @Test
-  public void testOnePlusTwo() {
+  void testOnePlusTwo() {
     assertSingleInt(compile("1+2"), 3);
   }
 
   /** Tests subtraction: {@code 5-3} → {@code [2]}. */
   @Test
-  public void testFiveMinusThree() {
+  void testFiveMinusThree() {
     assertSingleInt(compile("5-3"), 2);
   }
 
   /** Tests multiplication: {@code 4*5} → {@code [20]}. */
   @Test
-  public void testMultiplication() {
+  void testMultiplication() {
     assertSingleInt(compile("4*5"), 20);
   }
 
   /** Tests division: {@code 20/4} → {@code [5.0]} (Real result). */
   @Test
-  public void testDivision() {
+  void testDivision() {
     assertSingleReal(compile("20/4"), 5.0);
   }
 
   /** Tests chained operations: {@code 10+20-5} → {@code [25]}. */
   @Test
-  public void testChainedOperations() {
+  void testChainedOperations() {
     assertSingleInt(compile("10+20-5"), 25);
   }
 
   /** Tests operator precedence: {@code 2+3*4} → {@code [14]} (multiplication first). */
   @Test
-  public void testOperatorPrecedence() {
+  void testOperatorPrecedence() {
     assertSingleInt(compile("2+3*4"), 14);
   }
 
   /** Tests unary minus: {@code -5} → {@code [-5]}. */
   @Test
-  public void testUnaryMinus() {
+  void testUnaryMinus() {
     assertSingleInt(compile("-5"), -5);
   }
 
   /** Tests unary minus in expression: {@code 10 + -5} → {@code [5]}. */
   @Test
-  public void testUnaryMinusInExpression() {
+  void testUnaryMinusInExpression() {
     assertSingleInt(compile("10 + -5"), 5);
   }
 
@@ -88,55 +88,55 @@ public class SimpleMathTest extends DummyTestSpecification {
 
   /** Tests less-than (true): {@code 3 < 5} → {@code [true]}. */
   @Test
-  public void testLessThan() {
+  void testLessThan() {
     assertSingleBool(compile("3 < 5"), true);
   }
 
   /** Tests less-than (false): {@code 5 < 3} → {@code [false]}. */
   @Test
-  public void testLessThanFalse() {
+  void testLessThanFalse() {
     assertSingleBool(compile("5 < 3"), false);
   }
 
   /** Tests less-than-or-equal (equality case): {@code 3 <= 3} → {@code [true]}. */
   @Test
-  public void testLessThanOrEqual() {
+  void testLessThanOrEqual() {
     assertSingleBool(compile("3 <= 3"), true);
   }
 
   /** Tests greater-than (true): {@code 10 > 5} → {@code [true]}. */
   @Test
-  public void testGreaterThan() {
+  void testGreaterThan() {
     assertSingleBool(compile("10 > 5"), true);
   }
 
   /** Tests greater-than-or-equal (equality case): {@code 5 >= 5} → {@code [true]}. */
   @Test
-  public void testGreaterThanOrEqual() {
+  void testGreaterThanOrEqual() {
     assertSingleBool(compile("5 >= 5"), true);
   }
 
   /** Tests real division in comparison: {@code 331/2 <= 165} → {@code [false]}. */
   @Test
-  public void testRealDivisionInComparison() {
+  void testRealDivisionInComparison() {
     assertSingleBool(compile("331/2 <= 165"), false);
   }
 
   /** Tests equality (true): {@code 5 == 5} → {@code [true]}. */
   @Test
-  public void testEquality() {
+  void testEquality() {
     assertSingleBool(compile("5 == 5"), true);
   }
 
   /** Tests inequality (true): {@code 5 != 3} → {@code [true]}. */
   @Test
-  public void testInequality() {
+  void testInequality() {
     assertSingleBool(compile("5 != 3"), true);
   }
 
   /** Tests inequality (false): {@code 5 != 5} → {@code [false]}. */
   @Test
-  public void testInequalityFalse() {
+  void testInequalityFalse() {
     assertSingleBool(compile("5 != 5"), false);
   }
 
@@ -144,7 +144,7 @@ public class SimpleMathTest extends DummyTestSpecification {
 
   /** Tests sum() on various collections. */
   @Test
-  public void testSum() {
+  void testSum() {
     assertSingleInt(compile("Set{1,2,3,4,5}.sum()"), 15);
     assertSingleInt(compile("Set{10,20,30}.sum()"), 60);
     assertSingleInt(compile("Sequence{1,2,3}.sum()"), 6);
@@ -152,13 +152,13 @@ public class SimpleMathTest extends DummyTestSpecification {
 
   /** Tests sum() on empty collection → {@code [0]}. */
   @Test
-  public void testSumEmptyCollection() {
+  void testSumEmptyCollection() {
     assertSingleInt(compile("Set{}.sum()"), 0);
   }
 
   /** Tests max() on various collections. */
   @Test
-  public void testMax() {
+  void testMax() {
     assertSingleInt(compile("Set{1,5,3,9,2}.max()"), 9);
     assertSingleInt(compile("Sequence{100,50,200,75}.max()"), 200);
     assertSingleInt(compile("Set{-5,-10,-1}.max()"), -1);
@@ -166,20 +166,20 @@ public class SimpleMathTest extends DummyTestSpecification {
 
   /** Tests max() on Real collections. */
   @Test
-  public void testMaxReal() {
+  void testMaxReal() {
     assertSingleReal(compile("Bag{1.5, 3.0, 2.7}.max()"), 3.0);
     assertSingleReal(compile("Sequence{-1.1, -0.5, -2.8}.max()"), -0.5);
   }
 
   /** Tests max() on empty collection → empty. */
   @Test
-  public void testMaxEmptyCollection() {
+  void testMaxEmptyCollection() {
     assertSize(compile("Set{}.max()"), 0);
   }
 
   /** Tests min() on various collections. */
   @Test
-  public void testMin() {
+  void testMin() {
     assertSingleInt(compile("Set{1,5,3,9,2}.min()"), 1);
     assertSingleInt(compile("Sequence{100,50,200,75}.min()"), 50);
     assertSingleInt(compile("Set{-5,-10,-1}.min()"), -10);
@@ -187,20 +187,20 @@ public class SimpleMathTest extends DummyTestSpecification {
 
   /** Tests min() on Real collections. */
   @Test
-  public void testMinReal() {
+  void testMinReal() {
     assertSingleReal(compile("Bag{1.5, 3.0, 2.7}.min()"), 1.5);
     assertSingleReal(compile("Sequence{-1.1, -0.5, -2.8}.min()"), -2.8);
   }
 
   /** Tests min() on empty collection → empty. */
   @Test
-  public void testMinEmptyCollection() {
+  void testMinEmptyCollection() {
     assertSize(compile("Set{}.min()"), 0);
   }
 
   /** Tests avg() on various collections. */
   @Test
-  public void testAvg() {
+  void testAvg() {
     assertSingleDouble(compile("Set{1,2,3,4,5}.avg()"), 3.0);
     assertSingleDouble(compile("Sequence{10,20,30}.avg()"), 20.0);
     assertSingleDouble(compile("Set{100,200}.avg()"), 150.0);
@@ -208,13 +208,13 @@ public class SimpleMathTest extends DummyTestSpecification {
 
   /** Tests avg() on empty collection → empty. */
   @Test
-  public void testAvgEmptyCollection() {
+  void testAvgEmptyCollection() {
     assertSize(compile("Set{}.avg()"), 0);
   }
 
   /** Tests abs() element-wise transformation. */
   @Test
-  public void testAbs() {
+  void testAbs() {
     assertCollection(compile("Set{-1,-2,-3}.collect(x | x.abs())"), 1, 2, 3);
     assertCollection(compile("Sequence{-5,10,-15}.collect(x | x.abs())"), 5, 10, 15);
     assertCollection(compile("Set{1,2,3}..collect(x | x.abs())"), 1, 2, 3);
@@ -222,28 +222,28 @@ public class SimpleMathTest extends DummyTestSpecification {
 
   /** Tests floor() on integers (no-op). */
   @Test
-  public void testFloor() {
+  void testFloor() {
     assertCollection(compile("Set{1,2,3}.collect(x | x.floor())"), 1, 2, 3);
     assertCollection(compile("Sequence{10,20,30}.collect(x | x.floor())"), 10, 20, 30);
   }
 
   /** Tests ceil() on integers (no-op). */
   @Test
-  public void testCeil() {
+  void testCeil() {
     assertCollection(compile("Set{1,2,3}.collect(x | x.ceil())"), 1, 2, 3);
     assertCollection(compile("Sequence{10,20,30}.collect(x | x.ceil())"), 10, 20, 30);
   }
 
   /** Tests round() on integers (no-op). */
   @Test
-  public void testRound() {
+  void testRound() {
     assertCollection(compile("Set{1,2,3}.collect(x | x.round())"), 1, 2, 3);
     assertCollection(compile("Sequence{10,20,30}.collect(x | x.round())"), 10, 20, 30);
   }
 
   /** Tests lift(): {@code Set{1,2,3}.lift()} → singleton containing collection of size 3. */
   @Test
-  public void testLift() {
+  void testLift() {
     Value result = compile("Set{1,2,3}.lift()");
     assertSize(result, 1);
     OCLElement elem = result.getElements().get(0);
@@ -256,20 +256,20 @@ public class SimpleMathTest extends DummyTestSpecification {
 
   /** Tests lift().flatten() is identity: → {1,2,3}. */
   @Test
-  public void testLiftThenFlatten() {
+  void testLiftThenFlatten() {
     assertCollection(compile("Set{1,2,3}.lift().flatten()"), 1, 2, 3);
   }
 
   /** Tests arithmetic chaining across aggregate results. */
   @Test
-  public void testArithmeticChaining() {
+  void testArithmeticChaining() {
     assertSingleInt(compile("Set{1,2,3,4,5}.sum() + Set{10,20}.sum()"), 45);
     assertSingleInt(compile("Set{10,20,30}.max() - Set{1,2,3}.min()"), 29);
   }
 
   /** Tests complex combinations of transformations and aggregations. */
   @Test
-  public void testComplexArithmetic() {
+  void testComplexArithmetic() {
     assertSingleInt(compile("Set{-5,-10,15,20}.collect(x | x.abs()).max()"), 20);
     assertSingleInt(compile("Set{-1,-2,-3}.collect(x | x.abs()).sum()"), 6);
     assertSingleReal(compile("Sequence{5,10,15,20}.sum() / Set{2,4}.max()"), 12.5);

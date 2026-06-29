@@ -41,7 +41,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * <p>div/mod: ¡Integer! × ¡Integer! → ¡Integer! only
  */
 @SuppressWarnings("java:S125")
-public class CollectionArgOpsTypeTest extends DummyTestSpecification {
+class CollectionArgOpsTypeTest extends DummyTestSpecification {
 
   protected void compileExpectError(String input) {
     ParseTree tree = parse(input);
@@ -69,59 +69,59 @@ public class CollectionArgOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetIncludesIntegerFound() {
+  void testSetIncludesIntegerFound() {
     assertSingleBool(compile("Set{1, 2, 3}.includes(2)"), true);
   }
 
   @Test
-  public void testSetIncludesIntegerNotFound() {
+  void testSetIncludesIntegerNotFound() {
     assertSingleBool(compile("Set{1, 2, 3}.includes(5)"), false);
   }
 
   @Test
-  public void testSequenceIncludesInteger() {
+  void testSequenceIncludesInteger() {
     assertSingleBool(compile("Sequence{1, 2, 3}.includes(2)"), true);
   }
 
   @Test
-  public void testBagIncludesInteger() {
+  void testBagIncludesInteger() {
     assertSingleBool(compile("Bag{1, 1, 2}.includes(1)"), true);
   }
 
   @Test
-  public void testOrderedSetIncludesInteger() {
+  void testOrderedSetIncludesInteger() {
     assertSingleBool(compile("OrderedSet{1, 2, 3}.includes(3)"), true);
   }
 
   @Test
-  public void testSetIncludesString() {
+  void testSetIncludesString() {
     assertSingleBool(compile("Set{\"a\", \"b\"}.includes(\"a\")"), true);
   }
 
   @Test
-  public void testSetExcludesIntegerFound() {
+  void testSetExcludesIntegerFound() {
     assertSingleBool(compile("Set{1, 2, 3}.excludes(5)"), true);
   }
 
   @Test
-  public void testSetExcludesIntegerNotFound() {
+  void testSetExcludesIntegerNotFound() {
     assertSingleBool(compile("Set{1, 2, 3}.excludes(2)"), false);
   }
 
   @Test
-  public void testIntegerIncludesOnSingleton() {
+  void testIntegerIncludesOnSingleton() {
     // ¡Integer! scalar — includes() requires explicit collection → error
     compileExpectError("1.includes(1)");
   }
 
   @Test
-  public void testBooleanExcludesOnSingleton() {
+  void testBooleanExcludesOnSingleton() {
     // ¡Boolean! scalar — excludes() requires explicit collection → error
     compileExpectError("true.excludes(false)");
   }
 
   @Test
-  public void testStringIncludesOnSingleton() {
+  void testStringIncludesOnSingleton() {
     // ¡String! scalar — includes() requires explicit collection → error
     compileExpectError("\"hello\".includes(\"h\")");
   }
@@ -131,52 +131,52 @@ public class CollectionArgOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetIncludesAllSetTrue() {
+  void testSetIncludesAllSetTrue() {
     assertSingleBool(compile("Set{1, 2, 3}.includesAll(Set{1, 2})"), true);
   }
 
   @Test
-  public void testSetIncludesAllSetFalse() {
+  void testSetIncludesAllSetFalse() {
     assertSingleBool(compile("Set{1, 2}.includesAll(Set{1, 2, 3})"), false);
   }
 
   @Test
-  public void testSetIncludesAllEmpty() {
+  void testSetIncludesAllEmpty() {
     assertSingleBool(compile("Set{1, 2}.includesAll(Set{})"), true);
   }
 
   @Test
-  public void testSequenceIncludesAllSequence() {
+  void testSequenceIncludesAllSequence() {
     assertSingleBool(compile("Sequence{1, 2, 3}.includesAll(Sequence{1, 3})"), true);
   }
 
   @Test
-  public void testBagIncludesAllBag() {
+  void testBagIncludesAllBag() {
     assertSingleBool(compile("Bag{1, 2, 3}.includesAll(Bag{2})"), true);
   }
 
   @Test
-  public void testOrderedSetIncludesAllSet() {
+  void testOrderedSetIncludesAllSet() {
     assertSingleBool(compile("OrderedSet{1, 2, 3}.includesAll(Set{1, 2})"), true);
   }
 
   @Test
-  public void testSetExcludesAllSetTrue() {
+  void testSetExcludesAllSetTrue() {
     assertSingleBool(compile("Set{1, 2}.excludesAll(Set{3, 4})"), true);
   }
 
   @Test
-  public void testSetExcludesAllSetFalse() {
+  void testSetExcludesAllSetFalse() {
     assertSingleBool(compile("Set{1, 2, 3}.excludesAll(Set{2, 4})"), false);
   }
 
   @Test
-  public void testIntegerIncludesAllFails() {
+  void testIntegerIncludesAllFails() {
     compileExpectError("1.includesAll(Set{1})");
   }
 
   @Test
-  public void testSetIncludesAllIntegerFails() {
+  void testSetIncludesAllIntegerFails() {
     compileExpectError("Set{1}.includesAll(1)");
   }
 
@@ -185,42 +185,42 @@ public class CollectionArgOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetCountPresent() {
+  void testSetCountPresent() {
     assertSingleInt(compile("Set{1, 2, 3}.count(2)"), 1);
   }
 
   @Test
-  public void testSetCountAbsent() {
+  void testSetCountAbsent() {
     assertSingleInt(compile("Set{1, 2, 3}.count(5)"), 0);
   }
 
   @Test
-  public void testBagCountDuplicates() {
+  void testBagCountDuplicates() {
     assertSingleInt(compile("Bag{1, 1, 1, 2}.count(1)"), 3);
   }
 
   @Test
-  public void testBagCountAbsent() {
+  void testBagCountAbsent() {
     assertSingleInt(compile("Bag{1, 2}.count(5)"), 0);
   }
 
   @Test
-  public void testSequenceCountDuplicates() {
+  void testSequenceCountDuplicates() {
     assertSingleInt(compile("Sequence{1, 2, 1, 3}.count(1)"), 2);
   }
 
   @Test
-  public void testOrderedSetCount() {
+  void testOrderedSetCount() {
     assertSingleInt(compile("OrderedSet{1, 2, 3}.count(2)"), 1);
   }
 
   @Test
-  public void testIntegerCountFails() {
+  void testIntegerCountFails() {
     compileExpectError("1.count(1)");
   }
 
   @Test
-  public void testStringCountFails() {
+  void testStringCountFails() {
     compileExpectError("\"hello\".count(\"h\")");
   }
 
@@ -229,49 +229,49 @@ public class CollectionArgOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetIncluding() {
+  void testSetIncluding() {
     Value r = compile("Set{1, 2}.including(3)");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSetExcluding() {
+  void testSetExcluding() {
     Value r = compile("Set{1, 2, 3}.excluding(2)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSequenceIncluding() {
+  void testSequenceIncluding() {
     Value r = compile("Sequence{1, 2}.including(3)");
     assertEquals(3, r.size());
     assertEquals(3, ((OCLElement.IntValue) r.getElements().get(2)).value());
   }
 
   @Test
-  public void testSequenceExcluding() {
+  void testSequenceExcluding() {
     Value r = compile("Sequence{1, 2, 3}.excluding(2)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testBagIncluding() {
+  void testBagIncluding() {
     Value r = compile("Bag{1, 1}.including(1)");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testOrderedSetIncluding() {
+  void testOrderedSetIncluding() {
     Value r = compile("OrderedSet{1, 2}.including(3)");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testIntegerIncludingFails() {
+  void testIntegerIncludingFails() {
     compileExpectError("1.including(2)");
   }
 
   @Test
-  public void testBooleanExcludingFails() {
+  void testBooleanExcludingFails() {
     compileExpectError("true.excluding(false)");
   }
 
@@ -280,7 +280,7 @@ public class CollectionArgOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSequencePrepend() {
+  void testSequencePrepend() {
     Value r = compile("Sequence{2, 3}.prepend(1)");
     assertEquals(3, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -288,24 +288,24 @@ public class CollectionArgOpsTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testOrderedSetPrepend() {
+  void testOrderedSetPrepend() {
     Value r = compile("OrderedSet{2, 3}.prepend(1)");
     assertEquals(3, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSetPrependFails() {
+  void testSetPrependFails() {
     compileExpectError("Set{1, 2}.prepend(0)");
   }
 
   @Test
-  public void testBagPrependFails() {
+  void testBagPrependFails() {
     compileExpectError("Bag{1, 2}.prepend(0)");
   }
 
   @Test
-  public void testIntegerPrependFails() {
+  void testIntegerPrependFails() {
     compileExpectError("1.prepend(0)");
   }
 
@@ -314,39 +314,39 @@ public class CollectionArgOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSequenceInsertAtStart() {
+  void testSequenceInsertAtStart() {
     Value r = compile("Sequence{2, 3}.insertAt(1, 1)");
     assertEquals(3, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSequenceInsertAtMiddle() {
+  void testSequenceInsertAtMiddle() {
     Value r = compile("Sequence{1, 3}.insertAt(2, 2)");
     assertEquals(3, r.size());
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(1)).value());
   }
 
   @Test
-  public void testSequenceInsertAtEnd() {
+  void testSequenceInsertAtEnd() {
     Value r = compile("Sequence{1, 2}.insertAt(3, 3)");
     assertEquals(3, r.size());
     assertEquals(3, ((OCLElement.IntValue) r.getElements().get(2)).value());
   }
 
   @Test
-  public void testOrderedSetInsertAt() {
+  void testOrderedSetInsertAt() {
     Value r = compile("OrderedSet{1, 3}.insertAt(2, 2)");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSetInsertAtFails() {
+  void testSetInsertAtFails() {
     compileExpectError("Set{1, 2}.insertAt(1, 0)");
   }
 
   @Test
-  public void testBagInsertAtFails() {
+  void testBagInsertAtFails() {
     compileExpectError("Bag{1, 2}.insertAt(1, 0)");
   }
 
@@ -355,42 +355,42 @@ public class CollectionArgOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetUnionSet() {
+  void testSetUnionSet() {
     Value r = compile("Set{1, 2}.union(Set{2, 3})");
     assertEquals(3, r.size()); // Set removes duplicate 2
   }
 
   @Test
-  public void testSetUnionBag() {
+  void testSetUnionBag() {
     Value r = compile("Set{1, 2}.union(Bag{2, 3})");
     assertTrue(r.size() >= 3);
   }
 
   @Test
-  public void testSequenceUnionSequence() {
+  void testSequenceUnionSequence() {
     Value r = compile("Sequence{1, 2}.union(Sequence{3, 4})");
     assertEquals(4, r.size());
   }
 
   @Test
-  public void testBagUnionBag() {
+  void testBagUnionBag() {
     Value r = compile("Bag{1, 1}.union(Bag{1, 2})");
     assertEquals(4, r.size());
   }
 
   @Test
-  public void testOrderedSetUnionSet() {
+  void testOrderedSetUnionSet() {
     Value r = compile("OrderedSet{1, 2}.union(Set{3})");
     assertTrue(r.size() >= 3);
   }
 
   @Test
-  public void testIntegerUnionFails() {
+  void testIntegerUnionFails() {
     compileExpectError("1.union(Set{1})");
   }
 
   @Test
-  public void testSetUnionIntegerFails() {
+  void testSetUnionIntegerFails() {
     compileExpectError("Set{1}.union(1)");
   }
 
@@ -399,42 +399,42 @@ public class CollectionArgOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetIntersectionSetOverlap() {
+  void testSetIntersectionSetOverlap() {
     Value r = compile("Set{1, 2, 3}.intersection(Set{2, 3, 4})");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSetIntersectionSetEmpty() {
+  void testSetIntersectionSetEmpty() {
     Value r = compile("Set{1, 2}.intersection(Set{3, 4})");
     assertEquals(0, r.size());
   }
 
   @Test
-  public void testSequenceIntersectionSequence() {
+  void testSequenceIntersectionSequence() {
     Value r = compile("Sequence{1, 2, 3}.intersection(Sequence{2, 3, 4})");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testBagIntersectionBag() {
+  void testBagIntersectionBag() {
     Value r = compile("Bag{1, 1, 2}.intersection(Bag{1, 2, 2})");
     assertTrue(r.size() >= 1);
   }
 
   @Test
-  public void testOrderedSetIntersectionSet() {
+  void testOrderedSetIntersectionSet() {
     Value r = compile("OrderedSet{1, 2, 3}.intersection(Set{2, 3})");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testIntegerIntersectionFails() {
+  void testIntegerIntersectionFails() {
     compileExpectError("1.intersection(Set{1})");
   }
 
   @Test
-  public void testSetIntersectionIntegerFails() {
+  void testSetIntersectionIntegerFails() {
     compileExpectError("Set{1}.intersection(1)");
   }
 
@@ -443,36 +443,36 @@ public class CollectionArgOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetSymmetricDifferenceSetOverlap() {
+  void testSetSymmetricDifferenceSetOverlap() {
     Value r = compile("Set{1, 2, 3}.symmetricDifference(Set{2, 3, 4})");
     assertEquals(2, r.size()); // {1, 4}
   }
 
   @Test
-  public void testSetSymmetricDifferenceSetDisjoint() {
+  void testSetSymmetricDifferenceSetDisjoint() {
     Value r = compile("Set{1, 2}.symmetricDifference(Set{3, 4})");
     assertEquals(4, r.size());
   }
 
   @Test
-  public void testSetSymmetricDifferenceSetEmpty() {
+  void testSetSymmetricDifferenceSetEmpty() {
     Value r = compile("Set{1, 2}.symmetricDifference(Set{1, 2})");
     assertEquals(0, r.size());
   }
 
   @Test
-  public void testOrderedSetSymmetricDifferenceSetFails() {
+  void testOrderedSetSymmetricDifferenceSetFails() {
     // symmetricDifference defined for Sets only (both must be unique)
     compileExpectError("Sequence{1, 2}.symmetricDifference(Sequence{2, 3})");
   }
 
   @Test
-  public void testBagSymmetricDifferenceFails() {
+  void testBagSymmetricDifferenceFails() {
     compileExpectError("Bag{1, 2}.symmetricDifference(Bag{2, 3})");
   }
 
   @Test
-  public void testIntegerSymmetricDifferenceFails() {
+  void testIntegerSymmetricDifferenceFails() {
     compileExpectError("1.symmetricDifference(Set{1})");
   }
 
@@ -481,82 +481,82 @@ public class CollectionArgOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testIntegerDivBasic() {
+  void testIntegerDivBasic() {
     assertSingleInt(compile("7.div(2)"), 3);
   }
 
   @Test
-  public void testIntegerDivTruncates() {
+  void testIntegerDivTruncates() {
     assertSingleInt(compile("10.div(3)"), 3);
   }
 
   @Test
-  public void testIntegerDivExact() {
+  void testIntegerDivExact() {
     assertSingleInt(compile("6.div(2)"), 3);
   }
 
   @Test
-  public void testIntegerDivNegative() {
+  void testIntegerDivNegative() {
     assertSingleInt(compile("(-7).div(2)"), -3);
   }
 
   @Test
-  public void testFloatDivFails() {
+  void testFloatDivFails() {
     compileExpectError("1.5.div(2)");
   }
 
   @Test
-  public void testDoubleDivFails() {
+  void testDoubleDivFails() {
     compileExpectError("2.5.div(2)");
   }
 
   @Test
-  public void testIntegerDivFloatFails() {
+  void testIntegerDivFloatFails() {
     compileExpectError("7.div(2.0)");
   }
 
   @Test
-  public void testStringDivFails() {
+  void testStringDivFails() {
     compileExpectError("\"hello\".div(1)");
   }
 
   @Test
-  public void testSetDivFails() {
+  void testSetDivFails() {
     compileExpectError("Set{1}.div(1)");
   }
 
   @Test
-  public void testIntegerModBasic() {
+  void testIntegerModBasic() {
     assertSingleInt(compile("7.mod(3)"), 1);
   }
 
   @Test
-  public void testIntegerModZero() {
+  void testIntegerModZero() {
     assertSingleInt(compile("6.mod(3)"), 0);
   }
 
   @Test
-  public void testIntegerModNegative() {
+  void testIntegerModNegative() {
     assertSingleInt(compile("(-7).mod(3)"), -1);
   }
 
   @Test
-  public void testFloatModFails() {
+  void testFloatModFails() {
     compileExpectError("1.5.mod(2)");
   }
 
   @Test
-  public void testIntegerModFloatFails() {
+  void testIntegerModFloatFails() {
     compileExpectError("7.mod(2.0)");
   }
 
   @Test
-  public void testStringModFails() {
+  void testStringModFails() {
     compileExpectError("\"hello\".mod(2)");
   }
 
   @Test
-  public void testSetModFails() {
+  void testSetModFails() {
     compileExpectError("Set{1}.mod(1)");
   }
 }

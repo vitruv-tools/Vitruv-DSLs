@@ -51,7 +51,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * Invalid: any non-numeric × anything → ERROR
  * </pre>
  */
-public class ArithmeticTypeTest extends DummyTestSpecification {
+class ArithmeticTypeTest extends DummyTestSpecification {
 
   /**
    * Compiles an OCL expression and asserts that type checking rejects it with an error. Used for
@@ -95,22 +95,22 @@ public class ArithmeticTypeTest extends DummyTestSpecification {
   // ── Integer × Integer ─────────────────────────────────────────
 
   @Test
-  public void testIntegerPlusInteger() {
+  void testIntegerPlusInteger() {
     assertSingleInt(compile("3 + 4"), 7);
   }
 
   @Test
-  public void testIntegerMinusInteger() {
+  void testIntegerMinusInteger() {
     assertSingleInt(compile("10 - 3"), 7);
   }
 
   @Test
-  public void testIntegerTimesInteger() {
+  void testIntegerTimesInteger() {
     assertSingleInt(compile("3 * 4"), 12);
   }
 
   @Test
-  public void testIntegerDividesInteger() {
+  void testIntegerDividesInteger() {
     // Integer / Integer → Double in OCL#
     assertSingleDouble(compile("10 / 2"), 5.0);
   }
@@ -118,324 +118,324 @@ public class ArithmeticTypeTest extends DummyTestSpecification {
   // ── Integer × Float ───────────────────────────────────────────
 
   @Test
-  public void testIntegerPlusFloat() {
+  void testIntegerPlusFloat() {
     assertSingleDouble(compile("3 + 1.5"), 4.5);
   }
 
   @Test
-  public void testIntegerMinusFloat() {
+  void testIntegerMinusFloat() {
     assertSingleDouble(compile("5 - 1.5"), 3.5);
   }
 
   @Test
-  public void testIntegerTimesFloat() {
+  void testIntegerTimesFloat() {
     assertSingleDouble(compile("3 * 1.5"), 4.5);
   }
 
   @Test
-  public void testIntegerDividesFloat() {
+  void testIntegerDividesFloat() {
     assertSingleDouble(compile("3 / 2.0"), 1.5);
   }
 
   // ── Integer × Double ──────────────────────────────────────────
 
   @Test
-  public void testIntegerPlusDouble() {
+  void testIntegerPlusDouble() {
     assertSingleDouble(compile("3 + 2.5"), 5.5);
   }
 
   @Test
-  public void testIntegerMinusDouble() {
+  void testIntegerMinusDouble() {
     assertSingleDouble(compile("5 - 2.5"), 2.5);
   }
 
   @Test
-  public void testIntegerTimesDouble() {
+  void testIntegerTimesDouble() {
     assertSingleDouble(compile("4 * 2.5"), 10.0);
   }
 
   @Test
-  public void testIntegerDividesDouble() {
+  void testIntegerDividesDouble() {
     assertSingleDouble(compile("5 / 2.0"), 2.5);
   }
 
   // ── Float × Integer ───────────────────────────────────────────
 
   @Test
-  public void testFloatPlusInteger() {
+  void testFloatPlusInteger() {
     assertSingleDouble(compile("1.5 + 3"), 4.5);
   }
 
   @Test
-  public void testFloatMinusInteger() {
+  void testFloatMinusInteger() {
     assertSingleDouble(compile("3.5 - 1"), 2.5);
   }
 
   @Test
-  public void testFloatTimesInteger() {
+  void testFloatTimesInteger() {
     assertSingleDouble(compile("2.0 * 3"), 6.0);
   }
 
   @Test
-  public void testFloatDividesInteger() {
+  void testFloatDividesInteger() {
     assertSingleDouble(compile("6.0 / 2"), 3.0);
   }
 
   // ── Float × Float ─────────────────────────────────────────────
 
   @Test
-  public void testFloatPlusFloat() {
+  void testFloatPlusFloat() {
     assertSingleDouble(compile("1.5 + 2.5"), 4.0);
   }
 
   @Test
-  public void testFloatMinusFloat() {
+  void testFloatMinusFloat() {
     assertSingleDouble(compile("3.5 - 1.5"), 2.0);
   }
 
   @Test
-  public void testFloatTimesFloat() {
+  void testFloatTimesFloat() {
     assertSingleDouble(compile("2.0 * 3.0"), 6.0);
   }
 
   @Test
-  public void testFloatDividesFloat() {
+  void testFloatDividesFloat() {
     assertSingleDouble(compile("6.0 / 2.0"), 3.0);
   }
 
   // ── Float × Double ────────────────────────────────────────────
 
   @Test
-  public void testFloatPlusDouble() {
+  void testFloatPlusDouble() {
     assertSingleDouble(compile("1.5 + 2.5"), 4.0);
   }
 
   @Test
-  public void testFloatMinusDouble() {
+  void testFloatMinusDouble() {
     assertSingleDouble(compile("3.5 - 1.5"), 2.0);
   }
 
   @Test
-  public void testFloatTimesDouble() {
+  void testFloatTimesDouble() {
     assertSingleDouble(compile("2.0 * 3.0"), 6.0);
   }
 
   @Test
-  public void testFloatDividesDouble() {
+  void testFloatDividesDouble() {
     assertSingleDouble(compile("9.0 / 3.0"), 3.0);
   }
 
   // ── Double × Integer ──────────────────────────────────────────
 
   @Test
-  public void testDoublePlusInteger() {
+  void testDoublePlusInteger() {
     assertSingleDouble(compile("2.5 + 3"), 5.5);
   }
 
   @Test
-  public void testDoubleMinusInteger() {
+  void testDoubleMinusInteger() {
     assertSingleDouble(compile("5.5 - 2"), 3.5);
   }
 
   @Test
-  public void testDoubleTimesInteger() {
+  void testDoubleTimesInteger() {
     assertSingleDouble(compile("2.5 * 4"), 10.0);
   }
 
   @Test
-  public void testDoubleDividesInteger() {
+  void testDoubleDividesInteger() {
     assertSingleDouble(compile("9.0 / 3"), 3.0);
   }
 
   // ── Double × Float ────────────────────────────────────────────
 
   @Test
-  public void testDoublePlusFloat() {
+  void testDoublePlusFloat() {
     assertSingleDouble(compile("2.5 + 1.5"), 4.0);
   }
 
   @Test
-  public void testDoubleMinusFloat() {
+  void testDoubleMinusFloat() {
     assertSingleDouble(compile("5.5 - 2.5"), 3.0);
   }
 
   @Test
-  public void testDoubleTimesFloat() {
+  void testDoubleTimesFloat() {
     assertSingleDouble(compile("2.5 * 2.0"), 5.0);
   }
 
   @Test
-  public void testDoubleDividesFloat() {
+  void testDoubleDividesFloat() {
     assertSingleDouble(compile("6.0 / 2.0"), 3.0);
   }
 
   // ── Double × Double ───────────────────────────────────────────
 
   @Test
-  public void testDoublePlusDouble() {
+  void testDoublePlusDouble() {
     assertSingleDouble(compile("2.5 + 2.5"), 5.0);
   }
 
   @Test
-  public void testDoubleMinusDouble() {
+  void testDoubleMinusDouble() {
     assertSingleDouble(compile("5.5 - 2.5"), 3.0);
   }
 
   @Test
-  public void testDoubleTimesDouble() {
+  void testDoubleTimesDouble() {
     assertSingleDouble(compile("2.5 * 2.0"), 5.0);
   }
 
   @Test
-  public void testDoubleDividesDouble() {
+  void testDoubleDividesDouble() {
     assertSingleDouble(compile("9.0 / 3.0"), 3.0);
   }
 
   // ── ERROR: String receiver ────────────────────────────────────
 
   @Test
-  public void testStringPlusIntegerFails() {
+  void testStringPlusIntegerFails() {
     compileExpectError("\"hello\" + 1");
   }
 
   @Test
-  public void testStringMinusIntegerFails() {
+  void testStringMinusIntegerFails() {
     compileExpectError("\"hello\" - 1");
   }
 
   @Test
-  public void testStringTimesIntegerFails() {
+  void testStringTimesIntegerFails() {
     compileExpectError("\"hello\" * 1");
   }
 
   @Test
-  public void testStringDividesIntegerFails() {
+  void testStringDividesIntegerFails() {
     compileExpectError("\"hello\" / 1");
   }
 
   @Test
-  public void testStringPlusFloatFails() {
+  void testStringPlusFloatFails() {
     compileExpectError("\"hello\" + 1.5");
   }
 
   @Test
-  public void testStringPlusDoubleFails() {
+  void testStringPlusDoubleFails() {
     compileExpectError("\"hello\" + 2.5");
   }
 
   @Test
-  public void testStringPlusStringFails() {
+  void testStringPlusStringFails() {
     compileExpectError("\"hello\" + \"world\"");
   }
 
   @Test
-  public void testStringPlusBooleanFails() {
+  void testStringPlusBooleanFails() {
     compileExpectError("\"hello\" + true");
   }
 
   // ── ERROR: Boolean receiver ───────────────────────────────────
 
   @Test
-  public void testBooleanPlusIntegerFails() {
+  void testBooleanPlusIntegerFails() {
     compileExpectError("true + 1");
   }
 
   @Test
-  public void testBooleanPlusFloatFails() {
+  void testBooleanPlusFloatFails() {
     compileExpectError("true + 1.5");
   }
 
   @Test
-  public void testBooleanPlusDoubleFails() {
+  void testBooleanPlusDoubleFails() {
     compileExpectError("true + 2.5");
   }
 
   @Test
-  public void testBooleanPlusStringFails() {
+  void testBooleanPlusStringFails() {
     compileExpectError("true + \"hello\"");
   }
 
   @Test
-  public void testBooleanPlusBooleanFails() {
+  void testBooleanPlusBooleanFails() {
     compileExpectError("true + false");
   }
 
   // ── ERROR: Integer × non-numeric ─────────────────────────────
 
   @Test
-  public void testIntegerPlusStringFails() {
+  void testIntegerPlusStringFails() {
     compileExpectError("1 + \"hello\"");
   }
 
   @Test
-  public void testIntegerPlusBooleanFails() {
+  void testIntegerPlusBooleanFails() {
     compileExpectError("1 + true");
   }
 
   @Test
-  public void testIntegerMinusStringFails() {
+  void testIntegerMinusStringFails() {
     compileExpectError("1 - \"hello\"");
   }
 
   @Test
-  public void testIntegerMinusBooleanFails() {
+  void testIntegerMinusBooleanFails() {
     compileExpectError("1 - false");
   }
 
   // ── ERROR: Collection operands ────────────────────────────────
 
   @Test
-  public void testSetPlusIntegerFails() {
+  void testSetPlusIntegerFails() {
     compileExpectError("Set{1, 2} + 3");
   }
 
   @Test
-  public void testSetPlusSetFails() {
+  void testSetPlusSetFails() {
     compileExpectError("Set{1} + Set{2}");
   }
 
   @Test
-  public void testSequencePlusIntegerFails() {
+  void testSequencePlusIntegerFails() {
     compileExpectError("Sequence{1, 2} + 3");
   }
 
   @Test
-  public void testBagPlusIntegerFails() {
+  void testBagPlusIntegerFails() {
     compileExpectError("Bag{1, 2} + 3");
   }
 
   @Test
-  public void testOrderedSetPlusIntegerFails() {
+  void testOrderedSetPlusIntegerFails() {
     compileExpectError("OrderedSet{1, 2} + 3");
   }
 
   @Test
-  public void testIntegerPlusSetFails() {
+  void testIntegerPlusSetFails() {
     compileExpectError("3 + Set{1, 2}");
   }
 
   @Test
-  public void testIntegerPlusSequenceFails() {
+  void testIntegerPlusSequenceFails() {
     compileExpectError("3 + Sequence{1, 2}");
   }
 
   @Test
-  public void testIntegerPlusBagFails() {
+  void testIntegerPlusBagFails() {
     compileExpectError("3 + Bag{1, 2}");
   }
 
   @Test
-  public void testIntegerPlusOrderedSetFails() {
+  void testIntegerPlusOrderedSetFails() {
     compileExpectError("3 + OrderedSet{1, 2}");
   }
 
   @Test
-  public void testSetTimesSetFails() {
+  void testSetTimesSetFails() {
     compileExpectError("Set{1} * Set{2}");
   }
 
   @Test
-  public void testSequenceMinusSequenceFails() {
+  void testSequenceMinusSequenceFails() {
     compileExpectError("Sequence{1} - Sequence{2}");
   }
 
@@ -465,14 +465,14 @@ public class ArithmeticTypeTest extends DummyTestSpecification {
   // ── Unary minus on ¡Float! → stays ¡Float! (no promotion) ────
 
   @Test
-  public void testUnaryMinusFloatKeepsFloatType() {
+  void testUnaryMinusFloatKeepsFloatType() {
     // -(¡Float!) → ¡Float!  (abs() rule: type preserved, no widening)
     Value result = compile("-(1.5)");
     assertSingleDouble(result, -1.5);
   }
 
   @Test
-  public void testUnaryMinusFloatZero() {
+  void testUnaryMinusFloatZero() {
     Value result = compile("-(0.0)");
     // 0.0 literal parsed as Double in grammar — Float comes from Ecore attr
     // This tests the promotion path
@@ -482,46 +482,46 @@ public class ArithmeticTypeTest extends DummyTestSpecification {
   // ── Float arithmetic promotion rules (9×9 coverage supplement) ─
 
   @Test
-  public void testFloatPlusIntegerPromotesToDouble() {
+  void testFloatPlusIntegerPromotesToDouble() {
     // ¡Float! + ¡Integer! → ¡Double! (promotion, NOT ¡Float!)
     Value result = compile("1.5 + 3");
     assertSingleDouble(result, 4.5);
   }
 
   @Test
-  public void testFloatMinusIntegerPromotesToDouble() {
+  void testFloatMinusIntegerPromotesToDouble() {
     Value result = compile("3.5 - 1");
     assertSingleDouble(result, 2.5);
   }
 
   @Test
-  public void testFloatTimesIntegerPromotesToDouble() {
+  void testFloatTimesIntegerPromotesToDouble() {
     Value result = compile("2.0 * 3");
     assertSingleDouble(result, 6.0);
   }
 
   @Test
-  public void testFloatDividesIntegerPromotesToDouble() {
+  void testFloatDividesIntegerPromotesToDouble() {
     Value result = compile("6.0 / 2");
     assertSingleDouble(result, 3.0);
   }
 
   @Test
-  public void testIntegerPlusFloatPromotesToDouble() {
+  void testIntegerPlusFloatPromotesToDouble() {
     // ¡Integer! + ¡Float! → ¡Double! (symmetric)
     Value result = compile("3 + 1.5");
     assertSingleDouble(result, 4.5);
   }
 
   @Test
-  public void testFloatPlusDoubleIsDouble() {
+  void testFloatPlusDoubleIsDouble() {
     // ¡Float! + ¡Double! → ¡Double!
     Value result = compile("1.5 + 2.5");
     assertSingleDouble(result, 4.0);
   }
 
   @Test
-  public void testDoublePlusFloatIsDouble() {
+  void testDoublePlusFloatIsDouble() {
     // ¡Double! + ¡Float! → ¡Double! (symmetric)
     Value result = compile("2.5 + 1.5");
     assertSingleDouble(result, 4.0);
@@ -530,13 +530,13 @@ public class ArithmeticTypeTest extends DummyTestSpecification {
   // ── Float result type NOT ¡Float! after arithmetic (sanity check) ─
 
   @Test
-  public void testFloatTimesFloatResultIsDouble() {
+  void testFloatTimesFloatResultIsDouble() {
     Value result = compile("1.5 * 2.0");
     assertSingleDouble(result, 3.0);
   }
 
   @Test
-  public void testFloatDivideFloatResultIsDouble() {
+  void testFloatDivideFloatResultIsDouble() {
     Value result = compile("9.0 / 3.0");
     assertSingleDouble(result, 3.0);
   }

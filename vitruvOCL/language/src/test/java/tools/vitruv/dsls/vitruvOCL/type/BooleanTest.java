@@ -37,19 +37,19 @@ import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
  * @see tools.vitruv.dsls.vitruvOCL.evaluator.OCLElement.BoolValue Boolean element wrapper
  * @see tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor Evaluates boolean expressions
  */
-public class BooleanTest extends DummyTestSpecification {
+class BooleanTest extends DummyTestSpecification {
 
   // ==================== Boolean Literals ====================
 
   /** Tests evaluation of the {@code true} literal. */
   @Test
-  public void testTrueLiteral() {
+  void testTrueLiteral() {
     assertSingleBool(compile("true"), true);
   }
 
   /** Tests evaluation of the {@code false} literal. */
   @Test
-  public void testFalseLiteral() {
+  void testFalseLiteral() {
     assertSingleBool(compile("false"), false);
   }
 
@@ -57,19 +57,19 @@ public class BooleanTest extends DummyTestSpecification {
 
   /** Tests negation of {@code true}. Truth table: ¬T = F. */
   @Test
-  public void testNotTrue() {
+  void testNotTrue() {
     assertSingleBool(compile("not true"), false);
   }
 
   /** Tests negation of {@code false}. Truth table: ¬F = T. */
   @Test
-  public void testNotFalse() {
+  void testNotFalse() {
     assertSingleBool(compile("not false"), true);
   }
 
   /** Tests double negation. Logical law: ¬¬A = A. */
   @Test
-  public void testDoubleNegation() {
+  void testDoubleNegation() {
     assertSingleBool(compile("not not true"), true);
   }
 
@@ -77,19 +77,19 @@ public class BooleanTest extends DummyTestSpecification {
 
   /** Truth table: T ∧ T = T. */
   @Test
-  public void testTrueAndTrue() {
+  void testTrueAndTrue() {
     assertSingleBool(compile("true and true"), true);
   }
 
   /** Truth table: T ∧ F = F. */
   @Test
-  public void testTrueAndFalse() {
+  void testTrueAndFalse() {
     assertSingleBool(compile("true and false"), false);
   }
 
   /** Truth table: F ∧ F = F. */
   @Test
-  public void testFalseAndFalse() {
+  void testFalseAndFalse() {
     assertSingleBool(compile("false and false"), false);
   }
 
@@ -97,19 +97,19 @@ public class BooleanTest extends DummyTestSpecification {
 
   /** Truth table: T ∨ F = T. */
   @Test
-  public void testTrueOrFalse() {
+  void testTrueOrFalse() {
     assertSingleBool(compile("true or false"), true);
   }
 
   /** Truth table: F ∨ F = F. */
   @Test
-  public void testFalseOrFalse() {
+  void testFalseOrFalse() {
     assertSingleBool(compile("false or false"), false);
   }
 
   /** Truth table: T ∨ T = T. */
   @Test
-  public void testTrueOrTrue() {
+  void testTrueOrTrue() {
     assertSingleBool(compile("true or true"), true);
   }
 
@@ -117,19 +117,19 @@ public class BooleanTest extends DummyTestSpecification {
 
   /** Truth table: T ⊕ F = T. */
   @Test
-  public void testTrueXorFalse() {
+  void testTrueXorFalse() {
     assertSingleBool(compile("true xor false"), true);
   }
 
   /** Truth table: T ⊕ T = F. */
   @Test
-  public void testTrueXorTrue() {
+  void testTrueXorTrue() {
     assertSingleBool(compile("true xor true"), false);
   }
 
   /** Truth table: F ⊕ F = F. */
   @Test
-  public void testFalseXorFalse() {
+  void testFalseXorFalse() {
     assertSingleBool(compile("false xor false"), false);
   }
 
@@ -137,25 +137,25 @@ public class BooleanTest extends DummyTestSpecification {
 
   /** Truth table: T → T = T. */
   @Test
-  public void testTrueImpliesTrue() {
+  void testTrueImpliesTrue() {
     assertSingleBool(compile("true implies true"), true);
   }
 
   /** Truth table: T → F = F. */
   @Test
-  public void testTrueImpliesFalse() {
+  void testTrueImpliesFalse() {
     assertSingleBool(compile("true implies false"), false);
   }
 
   /** Truth table: F → T = T (vacuous truth). */
   @Test
-  public void testFalseImpliesTrue() {
+  void testFalseImpliesTrue() {
     assertSingleBool(compile("false implies true"), true);
   }
 
   /** Truth table: F → F = T (vacuous truth). */
   @Test
-  public void testFalseImpliesFalse() {
+  void testFalseImpliesFalse() {
     assertSingleBool(compile("false implies false"), true);
   }
 
@@ -167,7 +167,7 @@ public class BooleanTest extends DummyTestSpecification {
    * <p><b>Input:</b> {@code true and (false or true)}
    */
   @Test
-  public void testComplexBooleanExpressionDebug() {
+  void testComplexBooleanExpressionDebug() {
     assertSingleBool(compile("true and (false or true)"), true);
   }
 
@@ -178,7 +178,7 @@ public class BooleanTest extends DummyTestSpecification {
    * true} → {@code true}
    */
   @Test
-  public void testNotAndOr() {
+  void testNotAndOr() {
     assertSingleBool(compile("not (true and false) or true"), true);
   }
 
@@ -188,7 +188,7 @@ public class BooleanTest extends DummyTestSpecification {
    * <p>Breakdown: {@code 5 > 3} → true; {@code 10 < 20} → true; {@code true and true} → true
    */
   @Test
-  public void testComparisonInBoolean() {
+  void testComparisonInBoolean() {
     assertSingleBool(compile("5 == 5"), true);
   }
 

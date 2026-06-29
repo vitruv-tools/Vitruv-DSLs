@@ -40,54 +40,54 @@ import tools.vitruv.dsls.vitruvOCL.symboltable.SymbolTableImpl;
  * @see TypeCheckVisitor
  * @see Type
  */
-public class TypeCheckerTest extends DummyTestSpecification {
+class TypeCheckerTest extends DummyTestSpecification {
 
   // ==================== Literals ====================
 
   @Test
-  public void testIntegerLiteralType() {
+  void testIntegerLiteralType() {
     Type type = getType("42");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testStringLiteralType() {
+  void testStringLiteralType() {
     Type type = getType("\"hello\"");
     assertEquals(Type.STRING, type);
   }
 
   @Test
-  public void testBooleanTrueLiteralType() {
+  void testBooleanTrueLiteralType() {
     Type type = getType("true");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testBooleanFalseLiteralType() {
+  void testBooleanFalseLiteralType() {
     Type type = getType("false");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testDoubleLiteralType() {
+  void testDoubleLiteralType() {
     Type type = getType("3.14");
     assertEquals(Type.DOUBLE, type);
   }
 
   @Test
-  public void testNegativeIntegerType() {
+  void testNegativeIntegerType() {
     Type type = getType("-42");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testNegativeDoubleType() {
+  void testNegativeDoubleType() {
     Type type = getType("-3.14");
     assertEquals(Type.DOUBLE, type);
   }
 
   @Test
-  public void testEmptyStringType() {
+  void testEmptyStringType() {
     Type type = getType("\"\"");
     assertEquals(Type.STRING, type);
   }
@@ -95,266 +95,266 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== Arithmetic Operations ====================
 
   @Test
-  public void testIntegerAdditionType() {
+  void testIntegerAdditionType() {
     Type type = getType("5 + 3");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testIntegerSubtractionType() {
+  void testIntegerSubtractionType() {
     Type type = getType("10 - 3");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testIntegerMultiplicationType() {
+  void testIntegerMultiplicationType() {
     Type type = getType("4 * 7");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testIntegerDivisionType() {
+  void testIntegerDivisionType() {
     Type type = getType("20 / 4");
     assertEquals(Type.DOUBLE, type);
   }
 
   @Test
-  public void testDoubleAdditionType() {
+  void testDoubleAdditionType() {
     Type type = getType("3.5 + 2.1");
     assertEquals(Type.DOUBLE, type);
   }
 
   @Test
-  public void testMixedIntegerDoubleAdditionType() {
+  void testMixedIntegerDoubleAdditionType() {
     Type type = getType("5 + 3.14");
     assertEquals(Type.DOUBLE, type);
   }
 
   @Test
-  public void testMixedDoubleIntegerAdditionType() {
+  void testMixedDoubleIntegerAdditionType() {
     Type type = getType("3.14 + 5");
     assertEquals(Type.DOUBLE, type);
   }
 
   @Test
-  public void testChainedArithmeticType() {
+  void testChainedArithmeticType() {
     Type type = getType("1 + 2 + 3");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testComplexArithmeticType() {
+  void testComplexArithmeticType() {
     Type type = getType("(5 + 3) * 2 - 1");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testArithmeticWithNegativesType() {
+  void testArithmeticWithNegativesType() {
     Type type = getType("-5 + 10");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testInvalidStringPlusIntegerError() {
+  void testInvalidStringPlusIntegerError() {
     assertTypeError("\"text\" + 5");
   }
 
   @Test
-  public void testInvalidIntegerPlusStringError() {
+  void testInvalidIntegerPlusStringError() {
     assertTypeError("5 + \"text\"");
   }
 
   @Test
-  public void testInvalidBooleanPlusIntegerError() {
+  void testInvalidBooleanPlusIntegerError() {
     assertTypeError("true + 5");
   }
 
   @Test
-  public void testInvalidStringMultiplyError() {
+  void testInvalidStringMultiplyError() {
     assertTypeError("\"hello\" * 3");
   }
 
   // ==================== Comparison Operations ====================
 
   @Test
-  public void testEqualityComparisonType() {
+  void testEqualityComparisonType() {
     Type type = getType("5 == 3");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testInequalityComparisonType() {
+  void testInequalityComparisonType() {
     Type type = getType("5 != 3");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testLessThanComparisonType() {
+  void testLessThanComparisonType() {
     Type type = getType("5 < 10");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testGreaterThanComparisonType() {
+  void testGreaterThanComparisonType() {
     Type type = getType("10 > 5");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testLessOrEqualComparisonType() {
+  void testLessOrEqualComparisonType() {
     Type type = getType("5 <= 10");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testGreaterOrEqualComparisonType() {
+  void testGreaterOrEqualComparisonType() {
     Type type = getType("10 >= 5");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testStringEqualityType() {
+  void testStringEqualityType() {
     Type type = getType("\"hello\" == \"world\"");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testBooleanEqualityType() {
+  void testBooleanEqualityType() {
     Type type = getType("true == false");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testDoubleComparisonType() {
+  void testDoubleComparisonType() {
     Type type = getType("3.14 < 2.71");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testMixedIntegerDoubleComparisonType() {
+  void testMixedIntegerDoubleComparisonType() {
     Type type = getType("5 < 3.14");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testInvalidIntegerStringComparisonError() {
+  void testInvalidIntegerStringComparisonError() {
     assertTypeError("5 < \"text\"");
   }
 
   @Test
-  public void testInvalidBooleanIntegerComparisonError() {
+  void testInvalidBooleanIntegerComparisonError() {
     assertTypeError("true < 5");
   }
 
   // ==================== Boolean Operations ====================
 
   @Test
-  public void testLogicalAndType() {
+  void testLogicalAndType() {
     Type type = getType("true and false");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testLogicalOrType() {
+  void testLogicalOrType() {
     Type type = getType("true or false");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testLogicalXorType() {
+  void testLogicalXorType() {
     Type type = getType("true xor false");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testLogicalNotType() {
+  void testLogicalNotType() {
     Type type = getType("not true");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testComplexBooleanExpressionType() {
+  void testComplexBooleanExpressionType() {
     Type type = getType("(true and false) or (not true)");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testChainedAndType() {
+  void testChainedAndType() {
     Type type = getType("true and true and false");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testChainedOrType() {
+  void testChainedOrType() {
     Type type = getType("false or false or true");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testComparisonInBooleanExpressionType() {
+  void testComparisonInBooleanExpressionType() {
     Type type = getType("(5 > 3) and (10 < 20)");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testInvalidIntegerAndBooleanError() {
+  void testInvalidIntegerAndBooleanError() {
     assertTypeError("5 and true");
   }
 
   @Test
-  public void testInvalidBooleanAndIntegerError() {
+  void testInvalidBooleanAndIntegerError() {
     assertTypeError("true and 5");
   }
 
   @Test
-  public void testInvalidStringOrBooleanError() {
+  void testInvalidStringOrBooleanError() {
     assertTypeError("\"text\" or true");
   }
 
   @Test
-  public void testInvalidNotIntegerError() {
+  void testInvalidNotIntegerError() {
     assertTypeError("not 5");
   }
 
   // ==================== Collection Literals ====================
 
   @Test
-  public void testEmptySetType() {
+  void testEmptySetType() {
     Type type = getType("Set{}");
     assertNotNull(type);
     assertTrue(type.isCollection());
   }
 
   @Test
-  public void testIntegerSetType() {
+  void testIntegerSetType() {
     Type type = getType("Set{1, 2, 3}");
     assertTrue(type.isCollection());
     assertEquals(Type.INTEGER, type.getElementType());
   }
 
   @Test
-  public void testStringSetType() {
+  void testStringSetType() {
     Type type = getType("Set{\"a\", \"b\", \"c\"}");
     assertTrue(type.isCollection());
     assertEquals(Type.STRING, type.getElementType());
   }
 
   @Test
-  public void testBooleanSetType() {
+  void testBooleanSetType() {
     Type type = getType("Set{true, false}");
     assertTrue(type.isCollection());
     assertEquals(Type.BOOLEAN, type.getElementType());
   }
 
   @Test
-  public void testSingleElementSetType() {
+  void testSingleElementSetType() {
     Type type = getType("Set{42}");
     assertTrue(type.isCollection());
     assertEquals(Type.INTEGER, type.getElementType());
   }
 
   @Test
-  public void testSequenceLiteralType() {
+  void testSequenceLiteralType() {
     Type type = getType("Sequence{1, 2, 3}");
     assertTrue(type.isCollection());
     assertTrue(type.isOrdered());
@@ -362,14 +362,14 @@ public class TypeCheckerTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testBagLiteralType() {
+  void testBagLiteralType() {
     Type type = getType("Bag{1, 2, 2, 3}");
     assertTrue(type.isCollection());
     assertEquals(Type.INTEGER, type.getElementType());
   }
 
   @Test
-  public void testOrderedSetLiteralType() {
+  void testOrderedSetLiteralType() {
     Type type = getType("OrderedSet{1, 2, 3}");
     assertTrue(type.isCollection());
     assertTrue(type.isOrdered());
@@ -380,44 +380,44 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== Collection Operations ====================
 
   @Test
-  public void testSizeOperationType() {
+  void testSizeOperationType() {
     Type type = getType("Set{1, 2, 3}.size()");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testIsEmptyOperationType() {
+  void testIsEmptyOperationType() {
     Type type = getType("Set{1, 2}.isEmpty()");
     assertEquals(Type.BOOLEAN, type.getElementType());
   }
 
   @Test
-  public void testNotEmptyOperationType() {
+  void testNotEmptyOperationType() {
     Type type = getType("Set{1, 2}.notEmpty()");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testIncludesOperationType() {
+  void testIncludesOperationType() {
     Type type = getType("Set{1, 2, 3}.includes(2)");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testExcludesOperationType() {
+  void testExcludesOperationType() {
     Type type = getType("Set{1, 2, 3}.excludes(5)");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testUnionOperationType() {
+  void testUnionOperationType() {
     Type type = getType("Set{1, 2}.union(Set{3, 4})");
     assertTrue(type.isCollection());
     assertEquals(Type.INTEGER, type.getElementType());
   }
 
   @Test
-  public void testChainedSizeType() {
+  void testChainedSizeType() {
     Type type = getType("Set{Set{1}}.size()");
     assertEquals(Type.INTEGER, type);
   }
@@ -425,311 +425,311 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== Iterator Expressions ====================
 
   @Test
-  public void testSelectIteratorType() {
+  void testSelectIteratorType() {
     Type type = getType("Set{1, 2, 3, 4}.select(x | x > 2)");
     assertTrue(type.isCollection());
     assertEquals(Type.INTEGER, type.getElementType());
   }
 
   @Test
-  public void testRejectIteratorType() {
+  void testRejectIteratorType() {
     Type type = getType("Set{1, 2, 3, 4}.reject(x | x > 2)");
     assertTrue(type.isCollection());
     assertEquals(Type.INTEGER, type.getElementType());
   }
 
   @Test
-  public void testCollectIteratorType() {
+  void testCollectIteratorType() {
     Type type = getType("Set{1, 2, 3}.collect(x | x * 2)");
     assertTrue(type.isCollection());
     assertEquals(Type.INTEGER, type.getElementType());
   }
 
   @Test
-  public void testCollectBooleanType() {
+  void testCollectBooleanType() {
     Type type = getType("Set{1, 2, 3}.collect(x | x > 1)");
     assertTrue(type.isCollection());
     assertEquals(Type.BOOLEAN, type.getElementType());
   }
 
   @Test
-  public void testCollectStringType() {
+  void testCollectStringType() {
     Type type = getType("Set{1, 2}.collect(x | \"item\")");
     assertTrue(type.isCollection());
     assertEquals(Type.STRING, type.getElementType());
   }
 
   @Test
-  public void testForAllIteratorType() {
+  void testForAllIteratorType() {
     Type type = getType("Set{1, 2, 3}.forAll(x | x > 0)");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testExistsIteratorType() {
+  void testExistsIteratorType() {
     Type type = getType("Set{1, 2, 3}.exists(x | x > 2)");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testNestedSelectType() {
+  void testNestedSelectType() {
     Type type = getType("Set{1, 2, 3}.select(x | x > 1).select(y | y < 3)");
     assertTrue(type.isCollection());
     assertEquals(Type.INTEGER, type.getElementType());
   }
 
   @Test
-  public void testSelectThenCollectType() {
+  void testSelectThenCollectType() {
     Type type = getType("Set{1, 2, 3}.select(x | x > 1).collect(y | y * 2)");
     assertTrue(type.isCollection());
     assertEquals(Type.INTEGER, type.getElementType());
   }
 
   @Test
-  public void testCollectThenSelectType() {
+  void testCollectThenSelectType() {
     Type type = getType("Set{1, 2, 3}.collect(x | x > 1).select(b | b)");
     assertTrue(type.isCollection());
     assertEquals(Type.BOOLEAN, type.getElementType());
   }
 
   @Test
-  public void testForAllNonBooleanBodyError() {
+  void testForAllNonBooleanBodyError() {
     assertTypeError("Set{1, 2, 3}.forAll(x | x * 2)");
   }
 
   @Test
-  public void testExistsNonBooleanBodyError() {
+  void testExistsNonBooleanBodyError() {
     assertTypeError("Set{1, 2, 3}.exists(x | x + 5)");
   }
 
   // ==================== Let Expressions ====================
 
   @Test
-  public void testSimpleLetIntegerType() {
+  void testSimpleLetIntegerType() {
     Type type = getType("let x = 5 in x + 10");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testSimpleLetStringType() {
+  void testSimpleLetStringType() {
     Type type = getType("let s = \"hello\" in s.concat(\" world\")");
     assertEquals(Type.STRING, type);
   }
 
   @Test
-  public void testSimpleLetBooleanType() {
+  void testSimpleLetBooleanType() {
     Type type = getType("let b = true in b and false");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testLetWithArithmeticType() {
+  void testLetWithArithmeticType() {
     Type type = getType("let x = 5 in let y = 10 in x + y");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testLetWithComparisonType() {
+  void testLetWithComparisonType() {
     Type type = getType("let x = 5 in x > 3");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testLetWithCollectionType() {
+  void testLetWithCollectionType() {
     Type type = getType("let s = Set{1, 2, 3} in s.size()");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testNestedLetType() {
+  void testNestedLetType() {
     Type type = getType("let x = 5 in (let y = x + 10 in y * 2)");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testLetShadowingType() {
+  void testLetShadowingType() {
     Type type = getType("let x = 5 in (let x = 10 in x)");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testLetInIteratorType() {
+  void testLetInIteratorType() {
     Type type = getType("let threshold = 5 in Set{1, 2, 10}.select(x | x > threshold)");
     assertTrue(type.isCollection());
     assertEquals(Type.INTEGER, type.getElementType());
   }
 
   @Test
-  public void testLetIntegerUsedAsStringError() {
+  void testLetIntegerUsedAsStringError() {
     assertTypeError("let x = 5 in x.concat(\"text\")");
   }
 
   @Test
-  public void testLetStringUsedInArithmeticError() {
+  void testLetStringUsedInArithmeticError() {
     assertTypeError("let s = \"hello\" in s + 5");
   }
 
   @Test
-  public void testLetBooleanUsedInArithmeticError() {
+  void testLetBooleanUsedInArithmeticError() {
     assertTypeError("let b = true in b * 2");
   }
 
   // ==================== If-Then-Else ====================
 
   @Test
-  public void testSimpleIfThenElseIntegerType() {
+  void testSimpleIfThenElseIntegerType() {
     Type type = getType("if true then 5 else 10 endif");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testSimpleIfThenElseStringType() {
+  void testSimpleIfThenElseStringType() {
     Type type = getType("if false then \"yes\" else \"no\" endif");
     assertEquals(Type.STRING, type);
   }
 
   @Test
-  public void testSimpleIfThenElseBooleanType() {
+  void testSimpleIfThenElseBooleanType() {
     Type type = getType("if true then true else false endif");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testIfWithComparisonConditionType() {
+  void testIfWithComparisonConditionType() {
     Type type = getType("if 5 > 3 then 100 else 0 endif");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testIfWithBooleanOperationConditionType() {
+  void testIfWithBooleanOperationConditionType() {
     Type type = getType("if true and false then 1 else 2 endif");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testNestedIfThenElseType() {
+  void testNestedIfThenElseType() {
     Type type = getType("if true then (if false then 1 else 2 endif) else 3 endif");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testIfWithArithmeticBranchesType() {
+  void testIfWithArithmeticBranchesType() {
     Type type = getType("if true then 5 + 3 else 10 * 2 endif");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testIfWithCollectionType() {
+  void testIfWithCollectionType() {
     Type type = getType("if true then Set{1, 2} else Set{3, 4} endif");
     assertTrue(type.isCollection());
     assertEquals(Type.INTEGER, type.getElementType());
   }
 
   @Test
-  public void testIfNonBooleanConditionError() {
+  void testIfNonBooleanConditionError() {
     assertTypeError("if 5 then 10 else 20 endif");
   }
 
   @Test
-  public void testIfStringConditionError() {
+  void testIfStringConditionError() {
     assertTypeError("if \"yes\" then 1 else 2 endif");
   }
 
   @Test
-  public void testIfIncompatibleBranchesError() {
+  void testIfIncompatibleBranchesError() {
     assertTypeError("if true then 5 else \"text\" endif");
   }
 
   @Test
-  public void testIfIntegerBooleanBranchesError() {
+  void testIfIntegerBooleanBranchesError() {
     assertTypeError("if true then 42 else true endif");
   }
 
   @Test
-  public void testIfStringBooleanBranchesError() {
+  void testIfStringBooleanBranchesError() {
     assertTypeError("if false then \"hello\" else false endif");
   }
 
   // ==================== String Operations ====================
 
   @Test
-  public void testConcatOperationType() {
+  void testConcatOperationType() {
     Type type = getType("\"hello\".concat(\" world\")");
     assertEquals(Type.STRING, type);
   }
 
   @Test
-  public void testToUpperOperationType() {
+  void testToUpperOperationType() {
     Type type = getType("\"hello\".toUpper()");
     assertEquals(Type.STRING, type);
   }
 
   @Test
-  public void testToLowerOperationType() {
+  void testToLowerOperationType() {
     Type type = getType("\"HELLO\".toLower()");
     assertEquals(Type.STRING, type);
   }
 
   @Test
-  public void testSubstringOperationType() {
+  void testSubstringOperationType() {
     Type type = getType("\"hello\".substring(1, 3)");
     assertEquals(Type.STRING, type);
   }
 
   @Test
-  public void testChainedStringOperationsType() {
+  void testChainedStringOperationsType() {
     Type type = getType("\"hello\".toUpper().concat(\" WORLD\")");
     assertEquals(Type.STRING, type);
   }
 
   @Test
-  public void testConcatOnIntegerError() {
+  void testConcatOnIntegerError() {
     assertTypeError("42.concat(\"text\")");
   }
 
   @Test
-  public void testToUpperOnIntegerError() {
+  void testToUpperOnIntegerError() {
     assertTypeError("42.toUpper()");
   }
 
   @Test
-  public void testToLowerOnBooleanError() {
+  void testToLowerOnBooleanError() {
     assertTypeError("true.toLower()");
   }
 
   @Test
-  public void testSubstringOnIntegerError() {
+  void testSubstringOnIntegerError() {
     assertTypeError("123.substring(1, 2)");
   }
 
   // ==================== Parenthesized Expressions ====================
 
   @Test
-  public void testParenthesizedIntegerType() {
+  void testParenthesizedIntegerType() {
     Type type = getType("(42)");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testParenthesizedArithmeticType() {
+  void testParenthesizedArithmeticType() {
     Type type = getType("(5 + 3) * 2");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testParenthesizedBooleanType() {
+  void testParenthesizedBooleanType() {
     Type type = getType("(true and false) or true");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testNestedParenthesesType() {
+  void testNestedParenthesesType() {
     Type type = getType("((5 + 3))");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testParenthesizedComparisonType() {
+  void testParenthesizedComparisonType() {
     Type type = getType("(5 > 3)");
     assertEquals(Type.BOOLEAN, type);
   }
@@ -737,31 +737,31 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== Complex Expressions ====================
 
   @Test
-  public void testComplexNestedExpression() {
+  void testComplexNestedExpression() {
     Type type = getType("let x = Set{1, 2, 3}.select(n | n > 1) in x.size()");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testComplexChainedOperations() {
+  void testComplexChainedOperations() {
     Type type = getType("Set{1, 2, 3, 4}.select(x | x > 1).collect(y | y * 2).includes(4)");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testComplexIfWithIterators() {
+  void testComplexIfWithIterators() {
     Type type = getType("if Set{1, 2, 3}.forAll(x | x > 0) then 100 else 0 endif");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testComplexLetWithMultipleBindings() {
+  void testComplexLetWithMultipleBindings() {
     Type type = getType("let x = 5 in let y = 10 in let z = x + y in z * 2");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testComplexBooleanWithComparisons() {
+  void testComplexBooleanWithComparisons() {
     Type type = getType("(5 > 3 and 10 < 20) or (false and true)");
     assertEquals(Type.BOOLEAN, type);
   }
@@ -769,68 +769,68 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== Edge Cases ====================
 
   @Test
-  public void testZeroIntegerType() {
+  void testZeroIntegerType() {
     Type type = getType("0");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testZeroDoubleType() {
+  void testZeroDoubleType() {
     Type type = getType("0.0");
     assertEquals(Type.DOUBLE, type);
   }
 
   @Test
-  public void testLargeIntegerType() {
+  void testLargeIntegerType() {
     Type type = getType("999999999");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testVerySmallDoubleType() {
+  void testVerySmallDoubleType() {
     Type type = getType("0.0001");
     assertEquals(Type.DOUBLE, type);
   }
 
   @Test
-  public void testSingleCharStringType() {
+  void testSingleCharStringType() {
     Type type = getType("\"a\"");
     assertEquals(Type.STRING, type);
   }
 
   @Test
-  public void testStringWithSpecialCharsType() {
+  void testStringWithSpecialCharsType() {
     Type type = getType("\"hello\\nworld\"");
     assertEquals(Type.STRING, type);
   }
 
   @Test
-  public void testDivisionByZeroType() {
+  void testDivisionByZeroType() {
     // Type checking doesn't catch runtime errors, should type correctly
     Type type = getType("10 / 0");
     assertEquals(Type.DOUBLE, type);
   }
 
   @Test
-  public void testEmptyCollectionOperationType() {
+  void testEmptyCollectionOperationType() {
     Type type = getType("Set{}.isEmpty()");
     assertEquals(Type.BOOLEAN, type.getElementType());
   }
 
   @Test
-  public void testSingleElementCollectionSizeType() {
+  void testSingleElementCollectionSizeType() {
     Type type = getType("Set{42}.size()");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testIdentityComparisonType() {
+  void testIdentityComparisonType() {
     Type type = getType("5 == 5");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testNotEqualsIdentityType() {
+  void testNotEqualsIdentityType() {
     Type type = getType("5 != 5");
     assertEquals(Type.BOOLEAN, type);
   }
@@ -838,7 +838,7 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== Nested Collection Types ====================
 
   @Test
-  public void testNestedSetType() {
+  void testNestedSetType() {
     Type type = getType("Set{Set{1, 2}}");
     assertTrue(type.isCollection());
     assertTrue(type.getElementType().isCollection());
@@ -846,7 +846,7 @@ public class TypeCheckerTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testCollectToNestedCollectionType() {
+  void testCollectToNestedCollectionType() {
     Type type = getType("Set{1, 2}.collect(x | Set{x})");
     assertTrue(type.isCollection());
     assertTrue(type.getElementType().isCollection());
@@ -855,19 +855,19 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== Multiple Let Bindings ====================
 
   @Test
-  public void testMultipleLetBindingsType() {
+  void testMultipleLetBindingsType() {
     Type type = getType("let x = 5, y = 10 in x + y");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testLetBindingDependencyType() {
+  void testLetBindingDependencyType() {
     Type type = getType("let x = 5, y = x + 10 in y");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testLetBindingDifferentTypesType() {
+  void testLetBindingDifferentTypesType() {
     Type type = getType("let x = 5, s = \"hello\" in s");
     assertEquals(Type.STRING, type);
   }
@@ -875,34 +875,34 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== Complex Iterator Nesting ====================
 
   @Test
-  public void testTripleNestedSelectType() {
+  void testTripleNestedSelectType() {
     Type type = getType("Set{1,2,3,4,5}.select(x|x>1).select(y|y<5).select(z|z!=3)");
     assertTrue(type.isCollection());
     assertEquals(Type.INTEGER, type.getElementType());
   }
 
   @Test
-  public void testSelectWithLetType() {
+  void testSelectWithLetType() {
     Type type = getType("let threshold = 5 in Set{1,2,10}.select(x | x > threshold)");
     assertTrue(type.isCollection());
     assertEquals(Type.INTEGER, type.getElementType());
   }
 
   @Test
-  public void testCollectWithComplexBodyType() {
+  void testCollectWithComplexBodyType() {
     Type type = getType("Set{1,2,3}.collect(x | if x > 1 then x * 2 else x endif)");
     assertTrue(type.isCollection());
     assertEquals(Type.INTEGER, type.getElementType());
   }
 
   @Test
-  public void testForAllWithLetType() {
+  void testForAllWithLetType() {
     Type type = getType("let minimum = 0 in Set{1,2,3}.forAll(x | x > minimum)");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testExistsWithComparisonType() {
+  void testExistsWithComparisonType() {
     Type type = getType("Set{1,2,3}.exists(x | x == 2)");
     assertEquals(Type.BOOLEAN, type);
   }
@@ -910,7 +910,7 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== Nested If-Then-Else ====================
 
   @Test
-  public void testDoubleNestedIfType() {
+  void testDoubleNestedIfType() {
     Type type =
         getType(
             "if true then (if false then 1 else 2 endif) else (if true then 3 else 4 endif) endif");
@@ -918,13 +918,13 @@ public class TypeCheckerTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testIfWithLetInConditionType() {
+  void testIfWithLetInConditionType() {
     Type type = getType("if let x = 5 in x > 3 then 100 else 0 endif");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testIfWithIteratorInConditionType() {
+  void testIfWithIteratorInConditionType() {
     Type type = getType("if Set{1,2,3}.forAll(x | x > 0) then \"yes\" else \"no\" endif");
     assertEquals(Type.STRING, type);
   }
@@ -932,25 +932,25 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== Collection Operation Chaining ====================
 
   @Test
-  public void testSizeAfterSelectType() {
+  void testSizeAfterSelectType() {
     Type type = getType("Set{1,2,3,4}.select(x | x > 2).size()");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testIsEmptyAfterRejectType() {
+  void testIsEmptyAfterRejectType() {
     Type type = getType("Set{1,2,3}.reject(x | x > 5).isEmpty()");
     assertEquals(Type.BOOLEAN, type.getElementType());
   }
 
   @Test
-  public void testIncludesAfterCollectType() {
+  void testIncludesAfterCollectType() {
     Type type = getType("Set{1,2,3}.collect(x | x * 2).includes(4)");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testNotEmptyAfterSelectType() {
+  void testNotEmptyAfterSelectType() {
     Type type = getType("Set{1,2,3}.select(x | x > 1).notEmpty()");
     assertEquals(Type.BOOLEAN, type);
   }
@@ -958,19 +958,19 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== Boolean Expression Complexity ====================
 
   @Test
-  public void testComplexBooleanWithNotType() {
+  void testComplexBooleanWithNotType() {
     Type type = getType("not (true and false) or (true xor false)");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testBooleanWithMultipleComparisonsType() {
+  void testBooleanWithMultipleComparisonsType() {
     Type type = getType("(5 > 3) and (10 < 20) and (\"a\" == \"a\")");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testBooleanWithIteratorResultsType() {
+  void testBooleanWithIteratorResultsType() {
     Type type = getType("Set{1,2,3}.forAll(x|x>0) and Set{4,5}.exists(y|y==4)");
     assertEquals(Type.BOOLEAN, type);
   }
@@ -978,13 +978,13 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== String Operation Chaining ====================
 
   @Test
-  public void testTripleStringChainType() {
+  void testTripleStringChainType() {
     Type type = getType("\"hello\".toUpper().concat(\" WORLD\").toLower()");
     assertEquals(Type.STRING, type);
   }
 
   @Test
-  public void testStringConcatMultipleType() {
+  void testStringConcatMultipleType() {
     Type type = getType("\"a\".concat(\"b\").concat(\"c\")");
     assertEquals(Type.STRING, type);
   }
@@ -992,25 +992,25 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== Arithmetic Expression Complexity ====================
 
   @Test
-  public void testComplexArithmeticPrecedenceType() {
+  void testComplexArithmeticPrecedenceType() {
     Type type = getType("5 + 3 * 2 - 1");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testArithmeticWithParenthesesType() {
+  void testArithmeticWithParenthesesType() {
     Type type = getType("(5 + 3) * (2 - 1)");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testMixedArithmeticChainType() {
+  void testMixedArithmeticChainType() {
     Type type = getType("5 + 3.14 - 2.0 * 1.5");
     assertEquals(Type.DOUBLE, type);
   }
 
   @Test
-  public void testNegativeInArithmeticType() {
+  void testNegativeInArithmeticType() {
     Type type = getType("-5 + 10 - (-3)");
     assertEquals(Type.INTEGER, type);
   }
@@ -1018,68 +1018,68 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== Type Error Edge Cases ====================
 
   @Test
-  public void testSelectNonBooleanBodyError() {
+  void testSelectNonBooleanBodyError() {
     assertTypeError("Set{1,2,3}.select(x | x + 1)");
   }
 
   @Test
-  public void testRejectNonBooleanBodyError() {
+  void testRejectNonBooleanBodyError() {
     assertTypeError("Set{1,2,3}.reject(x | x * 2)");
   }
 
   @Test
-  public void testIfConditionFromArithmeticError() {
+  void testIfConditionFromArithmeticError() {
     assertTypeError("if 5 + 3 then 1 else 2 endif");
   }
 
   @Test
-  public void testLetUsedWithWrongTypeError() {
+  void testLetUsedWithWrongTypeError() {
     assertTypeError("let x = true in x + 5");
   }
 
   @Test
-  public void testBooleanOperationOnCollectionError() {
+  void testBooleanOperationOnCollectionError() {
     assertTypeError("Set{1,2,3} and true");
   }
 
   @Test
-  public void testArithmeticOnBooleanError() {
+  void testArithmeticOnBooleanError() {
     assertTypeError("true + false");
   }
 
   @Test
-  public void testStringComparisonWithNumberError() {
+  void testStringComparisonWithNumberError() {
     assertTypeError("\"hello\" < 5");
   }
 
   @Test
-  public void testNotOnIntegerError() {
+  void testNotOnIntegerError() {
     assertTypeError("not 42");
   }
 
   @Test
-  public void testXorOnStringError() {
+  void testXorOnStringError() {
     assertTypeError("\"true\" xor \"false\"");
   }
 
   // ==================== Collection Type Preservation ====================
 
   @Test
-  public void testSelectPreservesSetType() {
+  void testSelectPreservesSetType() {
     Type type = getType("Set{1,2,3}.select(x | x > 1)");
     assertTrue(type.isCollection());
     assertTrue(type.isUnique());
   }
 
   @Test
-  public void testRejectPreservesSequenceType() {
+  void testRejectPreservesSequenceType() {
     Type type = getType("Sequence{1,2,3}.reject(x | x > 5)");
     assertTrue(type.isCollection());
     assertTrue(type.isOrdered());
   }
 
   @Test
-  public void testCollectFromSetToBagType() {
+  void testCollectFromSetToBagType() {
     Type type = getType("Set{1,2,3}.collect(x | x * 2)");
     assertTrue(type.isCollection());
     // collect from Set produces Bag
@@ -1088,25 +1088,25 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== Comparison Operation Variations ====================
 
   @Test
-  public void testStringInequalityType() {
+  void testStringInequalityType() {
     Type type = getType("\"hello\" != \"world\"");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testBooleanInequalityType() {
+  void testBooleanInequalityType() {
     Type type = getType("true != false");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testDoubleLessOrEqualType() {
+  void testDoubleLessOrEqualType() {
     Type type = getType("3.14 <= 2.71");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testDoubleGreaterOrEqualType() {
+  void testDoubleGreaterOrEqualType() {
     Type type = getType("3.14 >= 2.71");
     assertEquals(Type.BOOLEAN, type);
   }
@@ -1114,19 +1114,19 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== Empty Collection Edge Cases ====================
 
   @Test
-  public void testEmptySetSizeType() {
+  void testEmptySetSizeType() {
     Type type = getType("Set{}.size()");
     assertEquals(Type.INTEGER, type);
   }
 
   @Test
-  public void testEmptySequenceNotEmptyType() {
+  void testEmptySequenceNotEmptyType() {
     Type type = getType("Sequence{}.notEmpty()");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testSelectFromEmptySetType() {
+  void testSelectFromEmptySetType() {
     Type type = getType("Set{}.select(x | x > 0)");
     assertTrue(type.isCollection());
   }
@@ -1134,13 +1134,13 @@ public class TypeCheckerTest extends DummyTestSpecification {
   // ==================== Parenthesized Complex Expressions ====================
 
   @Test
-  public void testParenthesizedBooleanComplexType() {
+  void testParenthesizedBooleanComplexType() {
     Type type = getType("((true and false) or true)");
     assertEquals(Type.BOOLEAN, type);
   }
 
   @Test
-  public void testParenthesizedArithmeticComplexType() {
+  void testParenthesizedArithmeticComplexType() {
     Type type = getType("((5 + 3) * 2) - ((10 / 2) + 1)");
     assertEquals(Type.DOUBLE, type);
   }

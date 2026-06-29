@@ -15,7 +15,7 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapper;
 import tools.vitruv.dsls.vitruvOCL.pipeline.VitruvOCL;
 
 /** Type Matrix: cross-metamodel navigation (allInstances + let + oclAsType) */
-public class CrossMetamodelNavigationTest {
+class CrossMetamodelNavigationTest {
   private static final Path BS_ECORE =
       Path.of("src/test/resources/test-metamodels/brakesystem.ecore");
   private static final Path CAD_ECORE = Path.of("src/test/resources/test-metamodels/cad.ecore");
@@ -23,7 +23,7 @@ public class CrossMetamodelNavigationTest {
   private static final Path CAD_INST = Path.of("brake_disc_and_caliper_plate.cad");
 
   @BeforeAll
-  public static void setupPaths() {
+  static void setupPaths() {
     MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
   }
 
@@ -39,7 +39,7 @@ public class CrossMetamodelNavigationTest {
   // ── allInstances() cross-metamodel: id-based join ────────────
 
   @Test
-  public void testDiskIdJoinToNamespace() {
+  void testDiskIdJoinToNamespace() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  cad::Namespace.allInstances().select(ns | ns.id == self.id).notEmpty()";
@@ -49,7 +49,7 @@ public class CrossMetamodelNavigationTest {
   }
 
   @Test
-  public void testCaliperIdJoinToNamespace() {
+  void testCaliperIdJoinToNamespace() {
     String c =
         "context brakesystem::BrakeCaliper inv:\n"
             + "  cad::Namespace.allInstances().select(ns | ns.id == self.id).notEmpty()";
@@ -59,7 +59,7 @@ public class CrossMetamodelNavigationTest {
   }
 
   @Test
-  public void testDiskIdJoinExactlyOne() {
+  void testDiskIdJoinExactlyOne() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  cad::Namespace.allInstances().select(ns | ns.id == self.id).size() == 1";
@@ -71,7 +71,7 @@ public class CrossMetamodelNavigationTest {
   // ── let bindings with cross-metamodel values ─────────────────
 
   @Test
-  public void testLetCadNamespaceFromBrakeDisk() {
+  void testLetCadNamespaceFromBrakeDisk() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  let cadDisk = cad::Namespace.allInstances().select(ns | ns.id == self.id) in\n"
@@ -82,7 +82,7 @@ public class CrossMetamodelNavigationTest {
   }
 
   @Test
-  public void testLetCadShapesFromBrakeDisk() {
+  void testLetCadShapesFromBrakeDisk() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  let cadDisk = cad::Namespace.allInstances().select(ns | ns.id == self.id) in\n"
@@ -93,7 +93,7 @@ public class CrossMetamodelNavigationTest {
   }
 
   @Test
-  public void testLetChainedCrossMetamodel() {
+  void testLetChainedCrossMetamodel() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  let caliper = brakesystem::BrakeCaliper.allInstances().first() in\n"
@@ -108,7 +108,7 @@ public class CrossMetamodelNavigationTest {
   // ── Property navigation across metamodel boundary ────────────
 
   @Test
-  public void testCrossMetamodelShapesAccess() {
+  void testCrossMetamodelShapesAccess() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  cad::Namespace.allInstances().select(ns | ns.id == self.id)\n"
@@ -119,7 +119,7 @@ public class CrossMetamodelNavigationTest {
   }
 
   @Test
-  public void testCrossMetamodelParametersCount() {
+  void testCrossMetamodelParametersCount() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  let cadCaliper = cad::Namespace.allInstances()\n"
@@ -131,7 +131,7 @@ public class CrossMetamodelNavigationTest {
   }
 
   @Test
-  public void testCrossMetamodelAllParameterSubtypes() {
+  void testCrossMetamodelAllParameterSubtypes() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  let cadCaliper = cad::Namespace.allInstances()\n"
@@ -145,7 +145,7 @@ public class CrossMetamodelNavigationTest {
   // ── Full pipeline: allInstances + oclIsTypeOf + oclAsType ─────
 
   @Test
-  public void testFullPipelineCrossMetamodelFails() {
+  void testFullPipelineCrossMetamodelFails() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  let cadCaliper = cad::Namespace.allInstances()\n"
@@ -158,7 +158,7 @@ public class CrossMetamodelNavigationTest {
   }
 
   @Test
-  public void testFullPipelineCrossMetamodelSatisfied() {
+  void testFullPipelineCrossMetamodelSatisfied() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  let cadCaliper = cad::Namespace.allInstances()\n"
@@ -171,7 +171,7 @@ public class CrossMetamodelNavigationTest {
   }
 
   @Test
-  public void testCrossMetamodelArithmeticRadiusComputed() {
+  void testCrossMetamodelArithmeticRadiusComputed() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  let radius = self.diameterInMM / 2 in\n"
@@ -182,7 +182,7 @@ public class CrossMetamodelNavigationTest {
   }
 
   @Test
-  public void testCrossMetamodelBothInstancesNonEmpty() {
+  void testCrossMetamodelBothInstancesNonEmpty() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  brakesystem::BrakeDisk.allInstances().size() > 0 and\n"
@@ -195,7 +195,7 @@ public class CrossMetamodelNavigationTest {
   // ── Cross-metamodel shape non-intersection ────────────────────
 
   @Test
-  public void testSphereNoIntersectWithSphere() {
+  void testSphereNoIntersectWithSphere() {
     String c =
         "context cad::Sphere inv noIntersectWithSphere:\n"
             + "  let foreignShapes =\n"
@@ -217,7 +217,7 @@ public class CrossMetamodelNavigationTest {
   }
 
   @Test
-  public void testSphereNoIntersectWithCylinder() {
+  void testSphereNoIntersectWithCylinder() {
     String c =
         "context cad::Sphere inv noIntersectWithCylinder:\n"
             + "  let foreignShapes =\n"

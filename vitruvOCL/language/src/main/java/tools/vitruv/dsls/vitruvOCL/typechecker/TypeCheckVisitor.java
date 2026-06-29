@@ -1372,10 +1372,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     List<VitruvOCLParser.NavigationChainCSContext> navChain = ctx.navigationChainCS();
     receiverStack.push(currentType);
     for (VitruvOCLParser.NavigationChainCSContext nav : navChain) {
-      LOG.fine("[DBG] nav target: " + nav.navigationTargetCS().getClass().getSimpleName()
+      LOG.fine(() -> "[DBG] nav target: " + nav.navigationTargetCS().getClass().getSimpleName()
           + " text='" + nav.getText() + "'");
       Type resultType = visit(nav);
-      LOG.fine("[DBG] nav result: " + resultType);
+      LOG.fine(() -> "[DBG] nav result: " + resultType);
       receiverStack.pop();
       receiverStack.push(resultType);
       currentType = resultType;
@@ -1598,7 +1598,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitOperationNav(VitruvOCLParser.OperationNavContext ctx) {
-    LOG.fine("[DBG] visitOperationNav: text='" + ctx.getText()
+    LOG.fine(() -> "[DBG] visitOperationNav: text='" + ctx.getText()
         + "' opCall class=" + ctx.operationCall().getClass().getSimpleName()
         + " children=" + ctx.operationCall().getChildCount());
     return visit(ctx.operationCall());
@@ -3409,7 +3409,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   @SuppressWarnings("java:S3776")
   public Type visitExistsOp(VitruvOCLParser.ExistsOpContext ctx) {
-    LOG.fine("[DBG] visitExistsOp: iteratorVars=" + ctx.iteratorVars
+    LOG.fine(() -> "[DBG] visitExistsOp: iteratorVars=" + ctx.iteratorVars
         + " body=" + ctx.body
         + " bodyChildCount=" + (ctx.body == null ? "null" : ctx.body.getChildCount())
         + " bodyException=" + (ctx.body == null ? "null" : ctx.body.exception));

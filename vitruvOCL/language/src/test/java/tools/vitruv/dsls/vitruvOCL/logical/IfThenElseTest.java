@@ -46,7 +46,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * @see tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor Evaluates if-then-else expressions
  * @see tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor Type checks conditional branches
  */
-public class IfThenElseTest extends DummyTestSpecification {
+class IfThenElseTest extends DummyTestSpecification {
 
   // ==================== Basic If-Then-Else Tests ====================
 
@@ -54,7 +54,7 @@ public class IfThenElseTest extends DummyTestSpecification {
    * Tests true condition selects then-branch: {@code if true then 1 else 2 endif} → {@code [1]}.
    */
   @Test
-  public void testSimpleIfThenElse_TrueBranch() {
+  void testSimpleIfThenElse_TrueBranch() {
     assertSingleInt(compile("if true then 1 else 2 endif"), 1);
   }
 
@@ -62,13 +62,13 @@ public class IfThenElseTest extends DummyTestSpecification {
    * Tests false condition selects else-branch: {@code if false then 1 else 2 endif} → {@code [2]}.
    */
   @Test
-  public void testSimpleIfThenElse_FalseBranch() {
+  void testSimpleIfThenElse_FalseBranch() {
     assertSingleInt(compile("if false then 1 else 2 endif"), 2);
   }
 
   /** Tests comparison as condition: {@code if 5 > 3 then 10 else 20 endif} → {@code [10]}. */
   @Test
-  public void testIfThenElse_BooleanCondition() {
+  void testIfThenElse_BooleanCondition() {
     assertSingleInt(compile("if 5 > 3 then 10 else 20 endif"), 10);
   }
 
@@ -76,7 +76,7 @@ public class IfThenElseTest extends DummyTestSpecification {
    * Tests arithmetic condition: {@code if (3 + 2) == 5 then 100 else 200 endif} → {@code [100]}.
    */
   @Test
-  public void testIfThenElse_ComplexCondition() {
+  void testIfThenElse_ComplexCondition() {
     assertSingleInt(compile("if (3 + 2) == 5 then 100 else 200 endif"), 100);
   }
 
@@ -85,7 +85,7 @@ public class IfThenElseTest extends DummyTestSpecification {
    * [200]}.
    */
   @Test
-  public void testIfThenElse_FalseCondition() {
+  void testIfThenElse_FalseCondition() {
     assertSingleInt(compile("if 5 > 10 then 100 else 200 endif"), 200);
   }
 
@@ -93,37 +93,37 @@ public class IfThenElseTest extends DummyTestSpecification {
 
   /** Tests type inference for Integer branches. */
   @Test
-  public void testIfThenElse_TypeCheck_Integer() {
+  void testIfThenElse_TypeCheck_Integer() {
     assertEquals(Type.INTEGER, typeCheck("if true then 1 else 2 endif"));
   }
 
   /** Tests type inference for Boolean branches. */
   @Test
-  public void testIfThenElse_TypeCheck_Boolean() {
+  void testIfThenElse_TypeCheck_Boolean() {
     assertEquals(Type.BOOLEAN, typeCheck("if true then true else false endif"));
   }
 
   /** Tests type inference for String branches. */
   @Test
-  public void testIfThenElse_TypeCheck_String() {
+  void testIfThenElse_TypeCheck_String() {
     assertEquals(Type.STRING, typeCheck("if true then \"hello\" else \"world\" endif"));
   }
 
   /** Tests Boolean branches with true condition → {@code [true]}. */
   @Test
-  public void testIfThenElse_BooleanBranches() {
+  void testIfThenElse_BooleanBranches() {
     assertSingleBool(compile("if true then true else false endif"), true);
   }
 
   /** Tests String branches with true condition → {@code ["hello"]}. */
   @Test
-  public void testIfThenElse_StringBranches() {
+  void testIfThenElse_StringBranches() {
     assertSingleString(compile("if true then \"hello\" else \"world\" endif"), "hello");
   }
 
   /** Tests String branches with false condition → {@code ["world"]}. */
   @Test
-  public void testIfThenElse_StringBranches_FalseBranch() {
+  void testIfThenElse_StringBranches_FalseBranch() {
     assertSingleString(compile("if false then \"hello\" else \"world\" endif"), "world");
   }
 
@@ -131,31 +131,31 @@ public class IfThenElseTest extends DummyTestSpecification {
 
   /** Tests nested if in then-branch: outer true, inner true → {@code [1]}. */
   @Test
-  public void testNestedIfThenElse_InThenBranch() {
+  void testNestedIfThenElse_InThenBranch() {
     assertSingleInt(compile("if true then (if true then 1 else 2 endif) else 3 endif"), 1);
   }
 
   /** Tests nested if in else-branch: outer false, inner true → {@code [2]}. */
   @Test
-  public void testNestedIfThenElse_InElseBranch() {
+  void testNestedIfThenElse_InElseBranch() {
     assertSingleInt(compile("if false then 1 else (if true then 2 else 3 endif) endif"), 2);
   }
 
   /** Tests nested if as condition: inner true → outer then-branch → {@code [10]}. */
   @Test
-  public void testNestedIfThenElse_InCondition() {
+  void testNestedIfThenElse_InCondition() {
     assertSingleInt(compile("if (if true then true else false endif) then 10 else 20 endif"), 10);
   }
 
   /** Debug test: type-checks nested if in condition without evaluation. */
   @Test
-  public void testNestedIfThenElse_InCondition_Debug() {
+  void testNestedIfThenElse_InCondition_Debug() {
     typeCheck("if (if true then true else false endif) then 10 else 20 endif");
   }
 
   /** Tests 3 levels of nesting: true → false → true → {@code [2]}. */
   @Test
-  public void testDeeplyNestedIfThenElse() {
+  void testDeeplyNestedIfThenElse() {
     assertSingleInt(
         compile(
             "if true then (if false then 1 else (if true then 2 else 3 endif) endif) else 4 endif"),
@@ -164,7 +164,7 @@ public class IfThenElseTest extends DummyTestSpecification {
 
   /** Tests 3 levels all false → deepest else → {@code [4]}. */
   @Test
-  public void testDeeplyNestedIfThenElse_AllFalse() {
+  void testDeeplyNestedIfThenElse_AllFalse() {
     assertSingleInt(
         compile(
             "if false then 1 else (if false then 2 else (if false then 3 else 4 endif) endif)"
@@ -179,7 +179,7 @@ public class IfThenElseTest extends DummyTestSpecification {
    * [8]}.
    */
   @Test
-  public void testIfThenElse_ArithmeticInBranches() {
+  void testIfThenElse_ArithmeticInBranches() {
     assertSingleInt(compile("if true then (5 + 3) else (10 * 2) endif"), 8);
   }
 
@@ -188,7 +188,7 @@ public class IfThenElseTest extends DummyTestSpecification {
    * [20]}.
    */
   @Test
-  public void testIfThenElse_ArithmeticInBranches_FalseBranch() {
+  void testIfThenElse_ArithmeticInBranches_FalseBranch() {
     assertSingleInt(compile("if false then (5 + 3) else (10 * 2) endif"), 20);
   }
 
@@ -196,7 +196,7 @@ public class IfThenElseTest extends DummyTestSpecification {
    * Tests AND in condition (false): {@code if (true and false) then 1 else 2 endif} → {@code [2]}.
    */
   @Test
-  public void testIfThenElse_BooleanOperationsInCondition() {
+  void testIfThenElse_BooleanOperationsInCondition() {
     assertSingleInt(compile("if (true and false) then 1 else 2 endif"), 2);
   }
 
@@ -204,13 +204,13 @@ public class IfThenElseTest extends DummyTestSpecification {
    * Tests AND in condition (true): {@code if (true and true) then 1 else 2 endif} → {@code [1]}.
    */
   @Test
-  public void testIfThenElse_BooleanOperationsInCondition_True() {
+  void testIfThenElse_BooleanOperationsInCondition_True() {
     assertSingleInt(compile("if (true and true) then 1 else 2 endif"), 1);
   }
 
   /** Tests OR in condition: {@code if (false or true) then 10 else 20 endif} → {@code [10]}. */
   @Test
-  public void testIfThenElse_OrInCondition() {
+  void testIfThenElse_OrInCondition() {
     assertSingleInt(compile("if (false or true) then 10 else 20 endif"), 10);
   }
 
@@ -219,7 +219,7 @@ public class IfThenElseTest extends DummyTestSpecification {
    * {@code [20]}.
    */
   @Test
-  public void testIfThenElse_ImpliesInCondition() {
+  void testIfThenElse_ImpliesInCondition() {
     assertSingleInt(compile("if (true implies false) then 10 else 20 endif"), 20);
   }
 
@@ -228,7 +228,7 @@ public class IfThenElseTest extends DummyTestSpecification {
    * endif} → {@code [10]}.
    */
   @Test
-  public void testIfThenElse_ImpliesInCondition_TrueCase() {
+  void testIfThenElse_ImpliesInCondition_TrueCase() {
     assertSingleInt(compile("if (false implies true) then 10 else 20 endif"), 10);
   }
 
@@ -237,7 +237,7 @@ public class IfThenElseTest extends DummyTestSpecification {
    * ["yes"]}.
    */
   @Test
-  public void testIfThenElse_ComparisonInCondition() {
+  void testIfThenElse_ComparisonInCondition() {
     assertSingleString(compile("if (10 >= 5) then \"yes\" else \"no\" endif"), "yes");
   }
 
@@ -246,7 +246,7 @@ public class IfThenElseTest extends DummyTestSpecification {
    * ["no"]}.
    */
   @Test
-  public void testIfThenElse_ComparisonInCondition_False() {
+  void testIfThenElse_ComparisonInCondition_False() {
     assertSingleString(compile("if (10 <= 5) then \"yes\" else \"no\" endif"), "no");
   }
 
@@ -254,7 +254,7 @@ public class IfThenElseTest extends DummyTestSpecification {
 
   /** Tests collection in then-branch (true): returns {1,2,3}. */
   @Test
-  public void testIfThenElse_CollectionBranches() {
+  void testIfThenElse_CollectionBranches() {
     Value result = compile("if true then Set{1, 2, 3} else Set{4, 5, 6} endif");
     assertSize(result, 3);
     assertIncludes(result, 1);
@@ -264,7 +264,7 @@ public class IfThenElseTest extends DummyTestSpecification {
 
   /** Tests collection in else-branch (false): returns {4,5,6}. */
   @Test
-  public void testIfThenElse_CollectionBranches_FalseBranch() {
+  void testIfThenElse_CollectionBranches_FalseBranch() {
     Value result = compile("if false then Set{1, 2, 3} else Set{4, 5, 6} endif");
     assertSize(result, 3);
     assertIncludes(result, 4);
@@ -274,51 +274,51 @@ public class IfThenElseTest extends DummyTestSpecification {
 
   /** Tests collection operation in then-branch: {@code Set{1,2}.including(3)} → 3 elements. */
   @Test
-  public void testIfThenElse_CollectionOperation() {
+  void testIfThenElse_CollectionOperation() {
     assertSize(compile("if true then Set{1, 2}.including(3) else Set{5, 6} endif"), 3);
   }
 
   /** Tests collection includes() in condition (true): → {@code [100]}. */
   @Test
-  public void testSimpleIfThenElseWithOperation() {
+  void testSimpleIfThenElseWithOperation() {
     assertSingleInt(compile("if Set{1, 2}.includes(1) then 100 else 200 endif"), 100);
   }
 
   /** Tests collection includes() in condition (true): → {@code [100]}. */
   @Test
-  public void testIfThenElse_CollectionOperationInCondition() {
+  void testIfThenElse_CollectionOperationInCondition() {
     assertSingleInt(compile("if Set{1, 2}.includes(1) then 100 else 200 endif"), 100);
   }
 
   /** Tests collection includes() in condition (false): → {@code [200]}. */
   @Test
-  public void testIfThenElse_CollectionOperationInCondition_False() {
+  void testIfThenElse_CollectionOperationInCondition_False() {
     assertSingleInt(compile("if Set{1, 2}.includes(5) then 100 else 200 endif"), 200);
   }
 
   /** Tests size() > 2 in condition (true): → {@code ["large"]}. */
   @Test
-  public void testIfThenElse_CollectionSizeInCondition() {
+  void testIfThenElse_CollectionSizeInCondition() {
     assertSingleString(
         compile("if Sequence{1, 2, 3}.size() > 2 then \"large\" else \"small\" endif"), "large");
   }
 
   /** Tests size() > 2 in condition (false): → {@code ["small"]}. */
   @Test
-  public void testIfThenElse_CollectionSizeInCondition_False() {
+  void testIfThenElse_CollectionSizeInCondition_False() {
     assertSingleString(
         compile("if Sequence{1}.size() > 2 then \"large\" else \"small\" endif"), "small");
   }
 
   /** Tests isEmpty() in condition (true): → {@code [1]}. */
   @Test
-  public void testIfThenElse_EmptyCollectionInCondition() {
+  void testIfThenElse_EmptyCollectionInCondition() {
     assertSingleInt(compile("if Set{}.isEmpty() then 1 else 2 endif"), 1);
   }
 
   /** Tests notEmpty() in condition (true): → {@code [1]}. */
   @Test
-  public void testIfThenElse_NotEmptyCollectionInCondition() {
+  void testIfThenElse_NotEmptyCollectionInCondition() {
     assertSingleInt(compile("if Set{1, 2}.notEmpty() then 1 else 2 endif"), 1);
   }
 
@@ -326,37 +326,37 @@ public class IfThenElseTest extends DummyTestSpecification {
 
   /** Tests {@code not false} in condition → {@code [1]}. */
   @Test
-  public void testIfThenElse_UnaryNotInCondition() {
+  void testIfThenElse_UnaryNotInCondition() {
     assertSingleInt(compile("if not false then 1 else 2 endif"), 1);
   }
 
   /** Tests {@code not true} in condition → {@code [2]}. */
   @Test
-  public void testIfThenElse_UnaryNotInCondition_False() {
+  void testIfThenElse_UnaryNotInCondition_False() {
     assertSingleInt(compile("if not true then 1 else 2 endif"), 2);
   }
 
   /** Tests unary minus in then-branch: {@code if true then -5 else -10 endif} → {@code [-5]}. */
   @Test
-  public void testIfThenElse_UnaryMinusInBranches() {
+  void testIfThenElse_UnaryMinusInBranches() {
     assertSingleInt(compile("if true then -5 else -10 endif"), -5);
   }
 
   /** Tests unary minus in else-branch: {@code if false then -5 else -10 endif} → {@code [-10]}. */
   @Test
-  public void testIfThenElse_UnaryMinusInBranches_FalseBranch() {
+  void testIfThenElse_UnaryMinusInBranches_FalseBranch() {
     assertSingleInt(compile("if false then -5 else -10 endif"), -10);
   }
 
   /** Tests empty collection in else-branch (false): → {@code [1]}. */
   @Test
-  public void testIfThenElse_EmptyCollectionBranches() {
+  void testIfThenElse_EmptyCollectionBranches() {
     assertSingleInt(compile("if false then Set{} else Set{1} endif"), 1);
   }
 
   /** Tests empty collection in then-branch (true): → empty. */
   @Test
-  public void testIfThenElse_EmptyCollectionBranches_TrueBranch() {
+  void testIfThenElse_EmptyCollectionBranches_TrueBranch() {
     Value result = compile("if true then Set{} else Set{1} endif");
     assertSize(result, 0);
     assertTrue(result.isEmpty());
@@ -364,19 +364,19 @@ public class IfThenElseTest extends DummyTestSpecification {
 
   /** Tests multiple expressions in condition: last expression (2==2) used → {@code [10]}. */
   @Test
-  public void testIfThenElse_MultipleExpressionsInCondition() {
+  void testIfThenElse_MultipleExpressionsInCondition() {
     assertSingleInt(compile("if (1 + 1 2 == 2) then 10 else 20 endif"), 10);
   }
 
   /** Tests multiple expressions in then-branch: last value (3) used → {@code [3]}. */
   @Test
-  public void testIfThenElse_MultipleExpressionsInBranches() {
+  void testIfThenElse_MultipleExpressionsInBranches() {
     assertSingleInt(compile("if true then (1 2 3) else (4 5 6) endif"), 3);
   }
 
   /** Tests multiple expressions in else-branch: last value (6) used → {@code [6]}. */
   @Test
-  public void testIfThenElse_MultipleExpressionsInBranches_FalseBranch() {
+  void testIfThenElse_MultipleExpressionsInBranches_FalseBranch() {
     assertSingleInt(compile("if false then (1 2 3) else (4 5 6) endif"), 6);
   }
 
@@ -384,7 +384,7 @@ public class IfThenElseTest extends DummyTestSpecification {
 
   /** Tests grade B: 85 >= 90 false, 85 >= 80 true → {@code ["B"]}. */
   @Test
-  public void testIfThenElse_GradeCalculation() {
+  void testIfThenElse_GradeCalculation() {
     assertSingleString(
         compile("if 85 >= 90 then \"A\" else (if 85 >= 80 then \"B\" else \"C\" endif) endif"),
         "B");
@@ -392,7 +392,7 @@ public class IfThenElseTest extends DummyTestSpecification {
 
   /** Tests grade A: 95 >= 90 → {@code ["A"]}. */
   @Test
-  public void testIfThenElse_GradeCalculation_A() {
+  void testIfThenElse_GradeCalculation_A() {
     assertSingleString(
         compile("if 95 >= 90 then \"A\" else (if 95 >= 80 then \"B\" else \"C\" endif) endif"),
         "A");
@@ -400,7 +400,7 @@ public class IfThenElseTest extends DummyTestSpecification {
 
   /** Tests grade C: 70 < 80 → {@code ["C"]}. */
   @Test
-  public void testIfThenElse_GradeCalculation_C() {
+  void testIfThenElse_GradeCalculation_C() {
     assertSingleString(
         compile("if 70 >= 90 then \"A\" else (if 70 >= 80 then \"B\" else \"C\" endif) endif"),
         "C");
@@ -408,31 +408,31 @@ public class IfThenElseTest extends DummyTestSpecification {
 
   /** Tests max(10, 20): 10 > 20 false → {@code [20]}. */
   @Test
-  public void testIfThenElse_MaxFunction() {
+  void testIfThenElse_MaxFunction() {
     assertSingleInt(compile("if 10 > 20 then 10 else 20 endif"), 20);
   }
 
   /** Tests max(30, 20): 30 > 20 true → {@code [30]}. */
   @Test
-  public void testIfThenElse_MaxFunction_FirstLarger() {
+  void testIfThenElse_MaxFunction_FirstLarger() {
     assertSingleInt(compile("if 30 > 20 then 30 else 20 endif"), 30);
   }
 
   /** Tests abs(-5): -5 < 0 true → {@code [5]}. */
   @Test
-  public void testIfThenElse_AbsoluteValue() {
+  void testIfThenElse_AbsoluteValue() {
     assertSingleInt(compile("if -5 < 0 then (-1 * -5) else -5 endif"), 5);
   }
 
   /** Tests abs(5): 5 < 0 false → {@code [5]}. */
   @Test
-  public void testIfThenElse_AbsoluteValue_Positive() {
+  void testIfThenElse_AbsoluteValue_Positive() {
     assertSingleInt(compile("if 5 < 0 then (-1 * 5) else 5 endif"), 5);
   }
 
   /** Tests conditional collection extension: size > 0 → including(4) → {1,2,3,4}. */
   @Test
-  public void testIfThenElse_CollectionFiltering() {
+  void testIfThenElse_CollectionFiltering() {
     Value result =
         compile("if Set{1, 2, 3}.size() > 0 then Set{1, 2, 3}.including(4) else Set{} endif");
     assertSize(result, 4);
@@ -444,7 +444,7 @@ public class IfThenElseTest extends DummyTestSpecification {
 
   /** Tests conditional collection extension: empty input → empty output. */
   @Test
-  public void testIfThenElse_CollectionFiltering_EmptyCase() {
+  void testIfThenElse_CollectionFiltering_EmptyCase() {
     Value result = compile("if Set{}.size() > 0 then Set{1, 2, 3}.including(4) else Set{} endif");
     assertSize(result, 0);
     assertTrue(result.isEmpty());
@@ -452,7 +452,7 @@ public class IfThenElseTest extends DummyTestSpecification {
 
   /** Tests collection union in then-branch: → {1,2,3,4}. */
   @Test
-  public void testIfThenElse_CollectionUnion() {
+  void testIfThenElse_CollectionUnion() {
     Value result = compile("if true then Set{1, 2}.union(Set{3, 4}) else Set{5, 6} endif");
     assertSize(result, 4);
     assertIncludes(result, 1);

@@ -35,7 +35,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * ERROR (wrong nesting level) - reject → asSet / asSequence - collect → asSet / asSequence (dedup)
  */
 @SuppressWarnings("java:S125")
-public class ChainingAdditionalTypeTest extends DummyTestSpecification {
+class ChainingAdditionalTypeTest extends DummyTestSpecification {
 
   protected void compileExpectError(String input) {
     ParseTree tree = parse(input);
@@ -61,7 +61,7 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
   // ── reject → first/last ───────────────────────────────────────
 
   @Test
-  public void testRejectThenFirstOnSequence() {
+  void testRejectThenFirstOnSequence() {
     // reject on Sequence → Sequence → first() valid
     Value r = compile("Sequence{1, 2, 3, 4}.reject(x | x > 2).first()");
     assertEquals(1, r.size());
@@ -69,45 +69,45 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testRejectThenLastOnSequence() {
+  void testRejectThenLastOnSequence() {
     Value r = compile("Sequence{1, 2, 3, 4}.reject(x | x > 2).last()");
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testRejectThenFirstOnSetFails() {
+  void testRejectThenFirstOnSetFails() {
     // Set is unordered → reject returns Set → first() not allowed
     compileExpectError("Set{1, 2, 3}.reject(x | x > 1).first()");
   }
 
   @Test
-  public void testRejectThenLastOnBagFails() {
+  void testRejectThenLastOnBagFails() {
     // Bag is unordered → reject returns Bag → last() not allowed
     compileExpectError("Bag{1, 2, 3}.reject(x | x > 1).last()");
   }
 
   @Test
-  public void testRejectThenFirstOnOrderedSet() {
+  void testRejectThenFirstOnOrderedSet() {
     Value r = compile("OrderedSet{1, 2, 3, 4}.reject(x | x > 2).first()");
     assertEquals(1, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testRejectThenAsSet() {
+  void testRejectThenAsSet() {
     Value r = compile("Sequence{1, 2, 2, 3}.reject(x | x > 2).asSet()");
     // reject keeps 1,2,2 → asSet dedup → 1,2
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testRejectThenAsSequence() {
+  void testRejectThenAsSequence() {
     Value r = compile("Set{1, 2, 3}.reject(x | x > 1).asSequence()");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testRejectThenSortedBy() {
+  void testRejectThenSortedBy() {
     Value r = compile("Set{3, 1, 2}.reject(x | x > 2).sortedBy(x | x)");
     assertEquals(2, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -116,44 +116,44 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
   // ── collect → first/last ──────────────────────────────────────
 
   @Test
-  public void testCollectThenFirstOnSequence() {
+  void testCollectThenFirstOnSequence() {
     Value r = compile("Sequence{1, 2, 3}.collect(x | x * 10).first()");
     assertEquals(10, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testCollectThenLastOnSequence() {
+  void testCollectThenLastOnSequence() {
     Value r = compile("Sequence{1, 2, 3}.collect(x | x * 10).last()");
     assertEquals(30, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testCollectThenFirstOnSetFails() {
+  void testCollectThenFirstOnSetFails() {
     // Set.collect → Set (unordered) → first() not allowed
     compileExpectError("Set{1, 2}.collect(x | x * 2).first()");
   }
 
   @Test
-  public void testCollectThenLastOnBagFails() {
+  void testCollectThenLastOnBagFails() {
     // Bag.collect → Bag (unordered) → last() not allowed
     compileExpectError("Bag{1, 2}.collect(x | x * 2).last()");
   }
 
   @Test
-  public void testCollectThenFirstOnOrderedSet() {
+  void testCollectThenFirstOnOrderedSet() {
     Value r = compile("OrderedSet{1, 2, 3}.collect(x | x * 2).first()");
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testCollectThenAsSet() {
+  void testCollectThenAsSet() {
     // collect on Sequence{1,2,2} → Sequence{2,4,4} → asSet → {2,4}
     Value r = compile("Sequence{1, 2, 2}.collect(x | x * 2).asSet()");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testCollectThenAsSequence() {
+  void testCollectThenAsSequence() {
     Value r = compile("Set{1, 2, 3}.collect(x | x + 1).asSequence()");
     assertEquals(3, r.size());
   }
@@ -161,19 +161,19 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
   // ── asOrderedSet → first/last (ordered → valid) ★ ─────────────
 
   @Test
-  public void testAsOrderedSetThenFirst() {
+  void testAsOrderedSetThenFirst() {
     Value r = compile("Bag{3, 1, 2}.asOrderedSet().first()");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testAsOrderedSetThenLast() {
+  void testAsOrderedSetThenLast() {
     Value r = compile("Bag{3, 1, 2}.asOrderedSet().last()");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testAsOrderedSetThenAt() {
+  void testAsOrderedSetThenAt() {
     Value r = compile("Set{1, 2, 3}.asOrderedSet().at(1)");
     assertEquals(1, r.size());
   }
@@ -181,42 +181,42 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
   // ── asBag → first/last (unordered → ERROR) ★ ─────────────────
 
   @Test
-  public void testAsBagThenFirstFails() {
+  void testAsBagThenFirstFails() {
     compileExpectError("Set{1, 2, 3}.asBag().first()");
   }
 
   @Test
-  public void testAsBagThenLastFails() {
+  void testAsBagThenLastFails() {
     compileExpectError("Sequence{1, 2, 3}.asBag().last()");
   }
 
   @Test
-  public void testAsBagThenAtFails() {
+  void testAsBagThenAtFails() {
     compileExpectError("Set{1, 2}.asBag().at(1)");
   }
 
   // ── asSet → first/last (unordered → ERROR) ─────────────────────
 
   @Test
-  public void testAsSetThenFirstFails() {
+  void testAsSetThenFirstFails() {
     compileExpectError("Sequence{1, 2, 3}.asSet().first()");
   }
 
   @Test
-  public void testAsSetThenLastFails() {
+  void testAsSetThenLastFails() {
     compileExpectError("Sequence{1, 2, 3}.asSet().last()");
   }
 
   // ── asSequence → first/last (ordered → valid) ★ ───────────────
 
   @Test
-  public void testAsSequenceThenFirst() {
+  void testAsSequenceThenFirst() {
     Value r = compile("Set{1, 2, 3}.asSequence().first()");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testAsSequenceThenLast() {
+  void testAsSequenceThenLast() {
     Value r = compile("Set{1, 2, 3}.asSequence().last()");
     assertEquals(1, r.size());
   }
@@ -224,29 +224,29 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
   // ── any → arithmetic / comparison ★ ───────────────────────────
 
   @Test
-  public void testAnyThenComparison() {
+  void testAnyThenComparison() {
     assertSingleBool(compile("Set{1, 2, 3}.any(x | x > 2) == 3"), true);
   }
 
   @Test
-  public void testAnyThenArithmetic() {
+  void testAnyThenArithmetic() {
     assertSingleInt(compile("Set{1, 2, 3}.any(x | x > 2) + 10"), 13);
   }
 
   @Test
-  public void testAnyThenArithmeticNested() {
+  void testAnyThenArithmeticNested() {
     assertSingleInt(compile("Set{2, 4, 6}.any(x | x > 3) + Set{1, 2}.any(x | x == 1)"), 5);
   }
 
   @Test
-  public void testAnyThenSelectValid() {
+  void testAnyThenSelectValid() {
     // any() → ¿T?, select on ¿T? is valid per spec
     Value r = compile("Set{1, 2, 3}.any(x | x > 1).select(x | x > 1)");
     assertEquals(1, r.size()); // the matched element passes the filter
   }
 
   @Test
-  public void testAnyThenSizeValid() {
+  void testAnyThenSizeValid() {
     // any() → ¿T?, size() on ¿T? is valid per spec
     assertSingleInt(compile("Set{1, 2, 3}.any(x | x > 1).size()"), 1);
   }
@@ -255,72 +255,72 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
   // iterate() → ¡T!, collection ops on ¡T! are allowed per spec
 
   @Test
-  public void testIterateThenCollectValid() {
+  void testIterateThenCollectValid() {
     // iterate() → ¡Integer! (scalar), collect requires explicit collection → error
     compileExpectError("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x).collect(x | x)");
   }
 
   @Test
-  public void testIterateThenSelectValid() {
+  void testIterateThenSelectValid() {
     // iterate() → ¡Integer! (scalar), select requires explicit collection → error
     compileExpectError("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x).select(x | x > 2)");
   }
 
   @Test
-  public void testIterateThenSizeValid() {
+  void testIterateThenSizeValid() {
     // iterate() → ¡Integer! (scalar), size() requires explicit collection → error
     compileExpectError("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x).size()");
   }
 
   @Test
-  public void testIterateThenArithmetic() {
+  void testIterateThenArithmetic() {
     // iterate → ¡Integer! → arithmetic valid
     assertSingleInt(compile("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x) * 2"), 12);
   }
 
   @Test
-  public void testIterateThenComparison() {
+  void testIterateThenComparison() {
     assertSingleBool(compile("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x) > 5"), true);
   }
 
   // ── collectNested → size / flatten ★ ─────────────────────────
 
   @Test
-  public void testCollectNestedThenSize() {
+  void testCollectNestedThenSize() {
     // collectNested produces a collection of nested values — size = num elements
     assertSingleInt(compile("Set{1, 2, 3}.collectNested(x | x * 2).size()"), 3);
   }
 
   @Test
-  public void testCollectNestedThenIsEmpty() {
+  void testCollectNestedThenIsEmpty() {
     assertSingleBool(compile("Set{}.collectNested(x | x).isEmpty()"), true);
   }
 
   // ── one → logical / comparison ★ ─────────────────────────────
 
   @Test
-  public void testOneThenAndLogical() {
+  void testOneThenAndLogical() {
     assertSingleBool(compile("Set{1, 2, 3}.one(x | x > 2) and true"), true);
   }
 
   @Test
-  public void testOneThenOrLogical() {
+  void testOneThenOrLogical() {
     assertSingleBool(compile("Set{1, 2}.one(x | x > 5) or true"), true);
   }
 
   @Test
-  public void testOneThenEquality() {
+  void testOneThenEquality() {
     assertSingleBool(compile("Set{1, 2, 3}.one(x | x > 2) == true"), true);
   }
 
   @Test
-  public void testOneThenSelectValid() {
+  void testOneThenSelectValid() {
     // one() → ¡Boolean! (scalar), select requires explicit collection → error
     compileExpectError("Set{1, 2}.one(x | x > 0).select(x | x)");
   }
 
   @Test
-  public void testOneThenSizeValid() {
+  void testOneThenSizeValid() {
     // one() → ¡Boolean! (scalar), size() requires explicit collection → error
     compileExpectError("Set{1, 2}.one(x | x > 0).size()");
   }
@@ -328,17 +328,17 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
   // ── isUnique → logical ★ ─────────────────────────────────────
 
   @Test
-  public void testIsUniqueThenAndLogical() {
+  void testIsUniqueThenAndLogical() {
     assertSingleBool(compile("Sequence{1, 2, 3}.isUnique(x | x) and true"), true);
   }
 
   @Test
-  public void testIsUniqueThenNotLogical() {
+  void testIsUniqueThenNotLogical() {
     assertSingleBool(compile("not Sequence{1, 1, 2}.isUnique(x | x)"), true);
   }
 
   @Test
-  public void testIsUniqueThenSelectValid() {
+  void testIsUniqueThenSelectValid() {
     // isUnique() → ¡Boolean! (scalar), select requires explicit collection → error
     compileExpectError("Sequence{1, 2}.isUnique(x | x).select(x | x)");
   }
@@ -346,7 +346,7 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
   // ── sortedBy → subSequence (ordered result) ★ ─────────────────
 
   @Test
-  public void testSortedByThenSubSequence() {
+  void testSortedByThenSubSequence() {
     Value r = compile("Set{3, 1, 2}.sortedBy(x | x).subSequence(1, 2)");
     assertEquals(2, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -354,13 +354,13 @@ public class ChainingAdditionalTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testSortedByThenAt() {
+  void testSortedByThenAt() {
     Value r = compile("Set{3, 1, 2}.sortedBy(x | x).at(1)");
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSortedByThenReverse() {
+  void testSortedByThenReverse() {
     Value r = compile("Set{1, 2, 3}.sortedBy(x | x).reverse()");
     assertEquals(3, r.size());
     assertEquals(3, ((OCLElement.IntValue) r.getElements().get(0)).value());

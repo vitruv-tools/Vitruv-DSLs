@@ -64,7 +64,7 @@ public class OCLWorkspaceService implements WorkspaceService {
 
       Path ecorePath = uriToPath(uri);
       if (ecorePath == null) {
-        LOG.fine("[OCL-LS] Could not resolve path for URI: " + uri);
+        LOG.fine(() -> "[OCL-LS] Could not resolve path for URI: " + uri);
         continue;
       }
 
@@ -73,17 +73,17 @@ public class OCLWorkspaceService implements WorkspaceService {
       if (type == FileChangeType.Deleted) {
         // Remove the metamodel; don't try to load a file that no longer exists.
         wrapper.unloadMetamodel(ecorePath);
-        LOG.fine("[OCL-LS] Metamodel deleted, unloaded: " + ecorePath);
+        LOG.fine(() -> "[OCL-LS] Metamodel deleted, unloaded: " + ecorePath);
         anyChange = true;
 
       } else if (type == FileChangeType.Created || type == FileChangeType.Changed) {
         // Reload: unload old version (no-op if not yet loaded) then load fresh copy.
         try {
           wrapper.reloadMetamodel(ecorePath);
-          LOG.fine("[OCL-LS] Metamodel reloaded: " + ecorePath);
+          LOG.fine(() -> "[OCL-LS] Metamodel reloaded: " + ecorePath);
           anyChange = true;
         } catch (IOException e) {
-          LOG.fine(
+          LOG.fine(() -> 
               "[OCL-LS] Failed to reload metamodel " + ecorePath + ": " + e.getMessage());
         }
       }

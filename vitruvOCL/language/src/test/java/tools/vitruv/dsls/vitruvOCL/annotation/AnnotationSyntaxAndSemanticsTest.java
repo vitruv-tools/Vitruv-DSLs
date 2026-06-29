@@ -50,7 +50,7 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.VitruvOCLCompiler;
  * {@code visitInvCS} is actually reached.
  */
 @DisplayName("@severity and @message annotation tests")
-public class AnnotationSyntaxAndSemanticsTest {
+class AnnotationSyntaxAndSemanticsTest {
 
   // ---------------------------------------------------------------------------
   // Shared metamodel paths (brakesystem provides BrakeDisk with diameterInMM)

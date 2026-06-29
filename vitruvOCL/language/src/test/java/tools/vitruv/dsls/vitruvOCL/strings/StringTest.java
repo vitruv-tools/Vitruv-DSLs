@@ -33,25 +33,25 @@ import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
  * @see tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor Evaluates string expressions
  * @see tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor Type checks string expressions
  */
-public class StringTest extends DummyTestSpecification {
+class StringTest extends DummyTestSpecification {
 
   // ==================== String Literals ====================
 
   /** Tests basic string literal: {@code "hello"} → {@code ["hello"]}. */
   @Test
-  public void testSimpleString() {
+  void testSimpleString() {
     assertSingleString(compile("\"hello\""), "hello");
   }
 
   /** Tests empty string literal: {@code ""} → singleton {@code [""]} (not empty collection). */
   @Test
-  public void testEmptyString() {
+  void testEmptyString() {
     assertSingleString(compile("\"\""), "");
   }
 
   /** Tests string with spaces: {@code "hello world"} → {@code ["hello world"]}. */
   @Test
-  public void testStringWithSpaces() {
+  void testStringWithSpaces() {
     assertSingleString(compile("\"hello world\""), "hello world");
   }
 
@@ -59,19 +59,19 @@ public class StringTest extends DummyTestSpecification {
 
   /** Tests string equality (true): {@code "hello" == "hello"} → {@code [true]}. */
   @Test
-  public void testStringEquality() {
+  void testStringEquality() {
     assertSingleBool(compile("\"hello\" == \"hello\""), true);
   }
 
   /** Tests string inequality (true): {@code "hello" != "world"} → {@code [true]}. */
   @Test
-  public void testStringInequalityTrue() {
+  void testStringInequalityTrue() {
     assertSingleBool(compile("\"hello\" != \"world\""), true);
   }
 
   /** Tests string inequality (false): {@code "test" != "test"} → {@code [false]}. */
   @Test
-  public void testStringInequalityFalse() {
+  void testStringInequalityFalse() {
     assertSingleBool(compile("\"test\" != \"test\""), false);
   }
 
@@ -79,7 +79,7 @@ public class StringTest extends DummyTestSpecification {
 
   /** Tests Set with string elements: {@code Set{"a","b","c"}} → 3 elements. */
   @Test
-  public void testStringSet() {
+  void testStringSet() {
     Value result = compile("Set{\"a\", \"b\", \"c\"}");
     assertSize(result, 3);
     assertTrue(result.includes(new OCLElement.StringValue("a")));
@@ -89,7 +89,7 @@ public class StringTest extends DummyTestSpecification {
 
   /** Tests size() on string Set: {@code Set{"hello","world"}.size()} → {@code [2]}. */
   @Test
-  public void testStringSetSize() {
+  void testStringSetSize() {
     assertSingleInt(compile("Set{\"hello\", \"world\"}.size()"), 2);
   }
 
@@ -98,7 +98,7 @@ public class StringTest extends DummyTestSpecification {
    * [true]}.
    */
   @Test
-  public void testStringSetIncludes() {
+  void testStringSetIncludes() {
     assertSingleBool(compile("Set{\"apple\", \"banana\"}.includes(\"apple\")"), true);
   }
 

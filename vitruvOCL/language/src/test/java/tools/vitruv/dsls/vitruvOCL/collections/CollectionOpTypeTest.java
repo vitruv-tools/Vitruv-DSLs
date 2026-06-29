@@ -38,7 +38,7 @@ import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
  * * = only valid when T is numeric (Integer, Float, Double)
  * </pre>
  */
-public class CollectionOpTypeTest extends DummyTestSpecification {
+class CollectionOpTypeTest extends DummyTestSpecification {
 
   @Override
   protected ParseTree parse(String input) {
@@ -51,163 +51,163 @@ public class CollectionOpTypeTest extends DummyTestSpecification {
   // ==================== size() ====================
 
   @Test
-  public void testSetIntSize() {
+  void testSetIntSize() {
     assertSingleInt(compile("Set{1,2,3}.size()"), 3);
   }
 
   @Test
-  public void testSequenceIntSize() {
+  void testSequenceIntSize() {
     assertSingleInt(compile("Sequence{1,2,3}.size()"), 3);
   }
 
   @Test
-  public void testBagIntSize() {
+  void testBagIntSize() {
     assertSingleInt(compile("Bag{1,2,2,3}.size()"), 4);
   }
 
   @Test
-  public void testSetStringSize() {
+  void testSetStringSize() {
     assertSingleInt(compile("Set{\"a\",\"b\",\"c\"}.size()"), 3);
   }
 
   @Test
-  public void testSetBoolSize() {
+  void testSetBoolSize() {
     assertSingleInt(compile("Set{true,false}.size()"), 2);
   }
 
   @Test
-  public void testEmptySetSize() {
+  void testEmptySetSize() {
     assertSingleInt(compile("Set{}.size()"), 0);
   }
 
   @Test
-  public void testIntSizeOnScalarFails() {
+  void testIntSizeOnScalarFails() {
     assertTypeError("3.size()");
   }
 
   // ==================== isEmpty / notEmpty ====================
 
   @Test
-  public void testEmptySetIsEmpty() {
+  void testEmptySetIsEmpty() {
     assertSingleBool(compile("Set{}.isEmpty()"), true);
   }
 
   @Test
-  public void testNonEmptySetIsEmpty() {
+  void testNonEmptySetIsEmpty() {
     assertSingleBool(compile("Set{1}.isEmpty()"), false);
   }
 
   @Test
-  public void testEmptySetNotEmpty() {
+  void testEmptySetNotEmpty() {
     assertSingleBool(compile("Set{}.notEmpty()"), false);
   }
 
   @Test
-  public void testNonEmptySetNotEmpty() {
+  void testNonEmptySetNotEmpty() {
     assertSingleBool(compile("Set{1,2}.notEmpty()"), true);
   }
 
   @Test
-  public void testSequenceIsEmpty() {
+  void testSequenceIsEmpty() {
     assertSingleBool(compile("Sequence{}.isEmpty()"), true);
   }
 
   @Test
-  public void testBagIsEmpty() {
+  void testBagIsEmpty() {
     assertSingleBool(compile("Bag{}.isEmpty()"), true);
   }
 
   @Test
-  public void testIntIsEmptyFails() {
+  void testIntIsEmptyFails() {
     assertTypeError("3.isEmpty()");
   }
 
   @Test
-  public void testStringIsEmptyFails() {
+  void testStringIsEmptyFails() {
     assertTypeError("\"hello\".isEmpty()");
   }
 
   // ==================== includes / excludes ====================
 
   @Test
-  public void testSetIncludesIntFound() {
+  void testSetIncludesIntFound() {
     assertSingleBool(compile("Set{1,2,3}.includes(2)"), true);
   }
 
   @Test
-  public void testSetIncludesIntNotFound() {
+  void testSetIncludesIntNotFound() {
     assertSingleBool(compile("Set{1,2,3}.includes(5)"), false);
   }
 
   @Test
-  public void testSequenceIncludesInt() {
+  void testSequenceIncludesInt() {
     assertSingleBool(compile("Sequence{1,2,3}.includes(3)"), true);
   }
 
   @Test
-  public void testBagIncludesInt() {
+  void testBagIncludesInt() {
     assertSingleBool(compile("Bag{1,2,2}.includes(2)"), true);
   }
 
   @Test
-  public void testSetIncludesStringFound() {
+  void testSetIncludesStringFound() {
     assertSingleBool(compile("Set{\"a\",\"b\"}.includes(\"a\")"), true);
   }
 
   @Test
-  public void testSetExcludesIntFound() {
+  void testSetExcludesIntFound() {
     assertSingleBool(compile("Set{1,2,3}.excludes(5)"), true);
   }
 
   @Test
-  public void testSetExcludesIntNotFound() {
+  void testSetExcludesIntNotFound() {
     assertSingleBool(compile("Set{1,2,3}.excludes(2)"), false);
   }
 
   // ==================== including / excluding ====================
 
   @Test
-  public void testSetIncluding() {
+  void testSetIncluding() {
     Value result = compile("Set{1,2}.including(3)");
     assertSize(result, 3);
     assertIncludes(result, 3);
   }
 
   @Test
-  public void testSetIncludingDuplicate() {
+  void testSetIncludingDuplicate() {
     // Set: adding duplicate should not increase size
     Value result = compile("Set{1,2}.including(2)");
     assertSize(result, 2);
   }
 
   @Test
-  public void testSequenceIncluding() {
+  void testSequenceIncluding() {
     Value result = compile("Sequence{1,2}.including(3)");
     assertSize(result, 3);
   }
 
   @Test
-  public void testBagIncluding() {
+  void testBagIncluding() {
     Value result = compile("Bag{1,2}.including(2)");
     assertSize(result, 3); // Bag allows duplicates
   }
 
   @Test
-  public void testSetExcluding() {
+  void testSetExcluding() {
     Value result = compile("Set{1,2,3}.excluding(2)");
     assertSize(result, 2);
     assertExcludes(result, 2);
   }
 
   @Test
-  public void testSetExcludingNonExistent() {
+  void testSetExcludingNonExistent() {
     // excluding element not in set → unchanged
     Value result = compile("Set{1,2,3}.excluding(5)");
     assertSize(result, 3);
   }
 
   @Test
-  public void testSequenceExcluding() {
+  void testSequenceExcluding() {
     Value result = compile("Sequence{1,2,3}.excluding(2)");
     assertSize(result, 2);
   }
@@ -215,98 +215,98 @@ public class CollectionOpTypeTest extends DummyTestSpecification {
   // ==================== first / last (Sequence only) ====================
 
   @Test
-  public void testSequenceFirst() {
+  void testSequenceFirst() {
     assertSingleInt(compile("Sequence{10,20,30}.first()"), 10);
   }
 
   @Test
-  public void testSequenceLast() {
+  void testSequenceLast() {
     assertSingleInt(compile("Sequence{10,20,30}.last()"), 30);
   }
 
   @Test
-  public void testSequenceFirstSingleton() {
+  void testSequenceFirstSingleton() {
     assertSingleInt(compile("Sequence{42}.first()"), 42);
   }
 
   // ==================== sum (numeric collections only) ====================
 
   @Test
-  public void testSetIntSum() {
+  void testSetIntSum() {
     assertSingleInt(compile("Set{1,2,3}.sum()"), 6);
   }
 
   @Test
-  public void testSequenceIntSum() {
+  void testSequenceIntSum() {
     assertSingleInt(compile("Sequence{1,2,3,4}.sum()"), 10);
   }
 
   @Test
-  public void testBagIntSum() {
+  void testBagIntSum() {
     assertSingleInt(compile("Bag{1,2,2}.sum()"), 5);
   }
 
   @Test
-  public void testEmptySetSum() {
+  void testEmptySetSum() {
     assertSingleInt(compile("Set{}.sum()"), 0);
   }
 
   @Test
-  public void testSetStringSumFails() {
+  void testSetStringSumFails() {
     assertTypeError("Set{\"a\",\"b\"}.sum()");
   }
 
   @Test
-  public void testSetBoolSumFails() {
+  void testSetBoolSumFails() {
     assertTypeError("Set{true,false}.sum()");
   }
 
   // ==================== max / min (numeric collections only) ====================
 
   @Test
-  public void testSetIntMax() {
+  void testSetIntMax() {
     assertSingleInt(compile("Set{3,1,4,1,5}.max()"), 5);
   }
 
   @Test
-  public void testSetIntMin() {
+  void testSetIntMin() {
     assertSingleInt(compile("Set{3,1,4,1,5}.min()"), 1);
   }
 
   @Test
-  public void testSequenceIntMax() {
+  void testSequenceIntMax() {
     assertSingleInt(compile("Sequence{10,30,20}.max()"), 30);
   }
 
   @Test
-  public void testSequenceIntMin() {
+  void testSequenceIntMin() {
     assertSingleInt(compile("Sequence{10,30,20}.min()"), 10);
   }
 
   @Test
-  public void testSetStringMaxFails() {
+  void testSetStringMaxFails() {
     assertTypeError("Set{\"a\",\"b\"}.max()");
   }
 
   @Test
-  public void testSetBoolMinFails() {
+  void testSetBoolMinFails() {
     assertTypeError("Set{true,false}.min()");
   }
 
   // ==================== avg (numeric, returns Double) ====================
 
   @Test
-  public void testSetIntAvg() {
+  void testSetIntAvg() {
     assertSingleDouble(compile("Set{2,4,6}.avg()"), 4.0);
   }
 
   @Test
-  public void testSequenceIntAvg() {
+  void testSequenceIntAvg() {
     assertSingleDouble(compile("Sequence{1,2,3,4}.avg()"), 2.5);
   }
 
   @Test
-  public void testSetStringAvgFails() {
+  void testSetStringAvgFails() {
     assertTypeError("Set{\"a\",\"b\"}.avg()");
   }
 
@@ -315,201 +315,201 @@ public class CollectionOpTypeTest extends DummyTestSpecification {
   // Calling flatten() on a flat collection (Set{Integer}) is a type error.
 
   @Test
-  public void testSetFlattenOnNestedFails() {
+  void testSetFlattenOnNestedFails() {
     assertTypeError("Set{1,2,3}.flatten()");
   }
 
   @Test
-  public void testSequenceFlattenOnNestedFails() {
+  void testSequenceFlattenOnNestedFails() {
     assertTypeError("Sequence{1,2,3}.flatten()");
   }
 
   @Test
-  public void testBagFlattenOnNestedFails() {
+  void testBagFlattenOnNestedFails() {
     assertTypeError("Bag{1,2,2}.flatten()");
   }
 
   // ==================== abs / floor / ceil / round (scalar numeric) ====================
 
   @Test
-  public void testIntAbsPositive() {
+  void testIntAbsPositive() {
     assertSingleInt(compile("5.abs()"), 5);
   }
 
   @Test
-  public void testIntAbsNegative() {
+  void testIntAbsNegative() {
     assertSingleInt(compile("(-5).abs()"), 5);
   }
 
   @Test
-  public void testIntFloor() {
+  void testIntFloor() {
     assertSingleInt(compile("5.floor()"), 5);
   }
 
   @Test
-  public void testIntCeil() {
+  void testIntCeil() {
     assertSingleInt(compile("5.ceil()"), 5);
   }
 
   @Test
-  public void testIntRound() {
+  void testIntRound() {
     assertSingleInt(compile("5.round()"), 5);
   }
 
   @Test
-  public void testDoubleFloor() {
+  void testDoubleFloor() {
     assertSingleDouble(compile("2.7.floor()"), 2.0);
   }
 
   @Test
-  public void testDoubleCeil() {
+  void testDoubleCeil() {
     assertSingleDouble(compile("2.3.ceil()"), 3.0);
   }
 
   @Test
-  public void testDoubleRoundUp() {
+  void testDoubleRoundUp() {
     assertSingleDouble(compile("2.5.round()"), 3.0);
   }
 
   @Test
-  public void testDoubleRoundDown() {
+  void testDoubleRoundDown() {
     assertSingleDouble(compile("2.4.round()"), 2.0);
   }
 
   @Test
-  public void testDoubleAbs() {
+  void testDoubleAbs() {
     assertSingleDouble(compile("2.5.abs()"), 2.5);
   }
 
   @Test
-  public void testStringAbsFails() {
+  void testStringAbsFails() {
     assertTypeError("\"hello\".abs()");
   }
 
   @Test
-  public void testBoolFloorFails() {
+  void testBoolFloorFails() {
     assertTypeError("true.floor()");
   }
 
   @Test
-  public void testSetAbsFails() {
+  void testSetAbsFails() {
     assertTypeError("Set{1,2}.abs()");
   }
 
   // ==================== sum/max/min on Float/Double collections ====================
 
   @Test
-  public void testSetDoubleSum() {
+  void testSetDoubleSum() {
     assertSingleDouble(compile("Set{1.0,2.0,3.0}.sum()"), 6.0);
   }
 
   @Test
-  public void testSequenceDoubleSum() {
+  void testSequenceDoubleSum() {
     assertSingleDouble(compile("Sequence{1.0,2.0,3.0}.sum()"), 6.0);
   }
 
   @Test
-  public void testSetDoubleMax() {
+  void testSetDoubleMax() {
     assertSingleDouble(compile("Set{1.5,3.5,2.0}.max()"), 3.5);
   }
 
   @Test
-  public void testSetDoubleMin() {
+  void testSetDoubleMin() {
     assertSingleDouble(compile("Set{1.5,3.5,2.0}.min()"), 1.5);
   }
 
   // ==================== including/excluding with wrong arg type → ERROR ====================
 
   @Test
-  public void testSetIntIncludingStringFails() {
+  void testSetIntIncludingStringFails() {
     assertTypeError("Set{1,2}.including(\"hello\")");
   }
 
   @Test
-  public void testSetIntIncludingBoolFails() {
+  void testSetIntIncludingBoolFails() {
     assertTypeError("Set{1,2}.including(true)");
   }
 
   @Test
-  public void testSetStringIncludingIntFails() {
+  void testSetStringIncludingIntFails() {
     assertTypeError("Set{\"a\",\"b\"}.including(3)");
   }
 
   // ==================== size() on Float/Double receiver → ERROR ====================
 
   @Test
-  public void testFloatSizeOnScalarFails() {
+  void testFloatSizeOnScalarFails() {
     assertTypeError("1.5.size()");
   }
 
   @Test
-  public void testDoubleSizeOnScalarFails() {
+  void testDoubleSizeOnScalarFails() {
     assertTypeError("2.5.size()");
   }
 
   // ==================== Bag max/min/avg ====================
 
   @Test
-  public void testBagIntMax() {
+  void testBagIntMax() {
     assertSingleInt(compile("Bag{3,1,4,1,5}.max()"), 5);
   }
 
   @Test
-  public void testBagIntMin() {
+  void testBagIntMin() {
     assertSingleInt(compile("Bag{3,1,4,1,5}.min()"), 1);
   }
 
   @Test
-  public void testBagIntAvg() {
+  void testBagIntAvg() {
     assertSingleDouble(compile("Bag{2,4,6}.avg()"), 4.0);
   }
 
   // ==================== first/last on Set/Bag → ERROR ====================
 
   @Test
-  public void testSetFirstFails() {
+  void testSetFirstFails() {
     assertTypeError("Set{1,2,3}.first()");
   }
 
   @Test
-  public void testSetLastFails() {
+  void testSetLastFails() {
     assertTypeError("Set{1,2,3}.last()");
   }
 
   @Test
-  public void testBagFirstFails() {
+  void testBagFirstFails() {
     assertTypeError("Bag{1,2,3}.first()");
   }
 
   @Test
-  public void testBagLastFails() {
+  void testBagLastFails() {
     assertTypeError("Bag{1,2,3}.last()");
   }
 
   // ==================== abs/floor/ceil/round on Collection → ERROR ====================
 
   @Test
-  public void testSequenceAbsFails() {
+  void testSequenceAbsFails() {
     assertTypeError("Sequence{1,2,3}.abs()");
   }
 
   @Test
-  public void testBagAbsFails() {
+  void testBagAbsFails() {
     assertTypeError("Bag{1,2,3}.abs()");
   }
 
   @Test
-  public void testSequenceFloorFails() {
+  void testSequenceFloorFails() {
     assertTypeError("Sequence{1,2,3}.floor()");
   }
 
   @Test
-  public void testBagCeilFails() {
+  void testBagCeilFails() {
     assertTypeError("Bag{1,2,3}.ceil()");
   }
 
   @Test
-  public void testSequenceRoundFails() {
+  void testSequenceRoundFails() {
     assertTypeError("Sequence{1,2,3}.round()");
   }
 

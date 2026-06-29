@@ -37,7 +37,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * ¡T! (one element) sortedBy: result = OrderedSet{T} collectNested: result = same coll kind, no
  * flattening iterate: result = accumulator type
  */
-public class IteratorOpsTypeTest extends DummyTestSpecification {
+class IteratorOpsTypeTest extends DummyTestSpecification {
 
   protected void compileExpectError(String input) {
     ParseTree tree = parse(input);
@@ -65,53 +65,53 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetSelectFilter() {
+  void testSetSelectFilter() {
     Value r = compile("Set{1, 2, 3, 4}.select(x | x > 2)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSetSelectEmpty() {
+  void testSetSelectEmpty() {
     Value r = compile("Set{1, 2, 3}.select(x | x > 10)");
     assertEquals(0, r.size());
   }
 
   @Test
-  public void testSetSelectAll() {
+  void testSetSelectAll() {
     Value r = compile("Set{1, 2, 3}.select(x | x > 0)");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSequenceSelectFilter() {
+  void testSequenceSelectFilter() {
     Value r = compile("Sequence{1, 2, 3, 4}.select(x | x > 2)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testBagSelectFilter() {
+  void testBagSelectFilter() {
     Value r = compile("Bag{1, 1, 2, 3}.select(x | x > 1)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testOrderedSetSelectFilter() {
+  void testOrderedSetSelectFilter() {
     Value r = compile("OrderedSet{1, 2, 3, 4}.select(x | x > 2)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testIntegerSelectOnSingleton() {
+  void testIntegerSelectOnSingleton() {
     compileExpectError("1.select(x | x > 0)");
   }
 
   @Test
-  public void testBooleanSelectOnSingleton() {
+  void testBooleanSelectOnSingleton() {
     compileExpectError("true.select(x | x)");
   }
 
   @Test
-  public void testStringSelectOnSingleton() {
+  void testStringSelectOnSingleton() {
     compileExpectError("\"hello\".select(x | x == \"h\")");
   }
 
@@ -120,37 +120,37 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetRejectFilter() {
+  void testSetRejectFilter() {
     Value r = compile("Set{1, 2, 3, 4}.reject(x | x > 2)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSetRejectAll() {
+  void testSetRejectAll() {
     Value r = compile("Set{1, 2, 3}.reject(x | x > 0)");
     assertEquals(0, r.size());
   }
 
   @Test
-  public void testSequenceRejectFilter() {
+  void testSequenceRejectFilter() {
     Value r = compile("Sequence{1, 2, 3, 4}.reject(x | x > 2)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testBagRejectFilter() {
+  void testBagRejectFilter() {
     Value r = compile("Bag{1, 1, 2, 3}.reject(x | x > 1)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testOrderedSetRejectFilter() {
+  void testOrderedSetRejectFilter() {
     Value r = compile("OrderedSet{1, 2, 3, 4}.reject(x | x > 2)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testIntegerRejectOnSingleton() {
+  void testIntegerRejectOnSingleton() {
     compileExpectError("1.reject(x | x > 0)");
   }
 
@@ -159,19 +159,19 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetCollectInt() {
+  void testSetCollectInt() {
     Value r = compile("Set{1, 2, 3}.collect(x | x * 2)");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSetCollectString() {
+  void testSetCollectString() {
     Value r = compile("Set{1, 2}.collect(x | x > 1)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSequenceCollectInt() {
+  void testSequenceCollectInt() {
     Value r = compile("Sequence{1, 2, 3}.collect(x | x * 2)");
     assertEquals(3, r.size());
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -179,19 +179,19 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testBagCollectInt() {
+  void testBagCollectInt() {
     Value r = compile("Bag{1, 2, 3}.collect(x | x + 10)");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testOrderedSetCollectInt() {
+  void testOrderedSetCollectInt() {
     Value r = compile("OrderedSet{1, 2, 3}.collect(x | x * 3)");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testIntegerCollectOnSingleton() {
+  void testIntegerCollectOnSingleton() {
     compileExpectError("1.collect(x | x)");
   }
 
@@ -200,37 +200,37 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetForAllTrue() {
+  void testSetForAllTrue() {
     assertSingleBool(compile("Set{2, 4, 6}.forAll(x | x > 0)"), true);
   }
 
   @Test
-  public void testSetForAllFalse() {
+  void testSetForAllFalse() {
     assertSingleBool(compile("Set{1, 2, 3}.forAll(x | x > 2)"), false);
   }
 
   @Test
-  public void testSetForAllEmpty() {
+  void testSetForAllEmpty() {
     assertSingleBool(compile("Set{}.forAll(x | x > 0)"), true);
   }
 
   @Test
-  public void testSequenceForAllTrue() {
+  void testSequenceForAllTrue() {
     assertSingleBool(compile("Sequence{1, 2, 3}.forAll(x | x > 0)"), true);
   }
 
   @Test
-  public void testBagForAllTrue() {
+  void testBagForAllTrue() {
     assertSingleBool(compile("Bag{2, 4, 6}.forAll(x | x > 0)"), true);
   }
 
   @Test
-  public void testOrderedSetForAllTrue() {
+  void testOrderedSetForAllTrue() {
     assertSingleBool(compile("OrderedSet{1, 2, 3}.forAll(x | x > 0)"), true);
   }
 
   @Test
-  public void testIntegerForAllOnSingleton() {
+  void testIntegerForAllOnSingleton() {
     compileExpectError("1.forAll(x | x > 0)");
   }
 
@@ -239,37 +239,37 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetExistsTrue() {
+  void testSetExistsTrue() {
     assertSingleBool(compile("Set{1, 2, 3}.exists(x | x > 2)"), true);
   }
 
   @Test
-  public void testSetExistsFalse() {
+  void testSetExistsFalse() {
     assertSingleBool(compile("Set{1, 2, 3}.exists(x | x > 10)"), false);
   }
 
   @Test
-  public void testSetExistsEmpty() {
+  void testSetExistsEmpty() {
     assertSingleBool(compile("Set{}.exists(x | x > 0)"), false);
   }
 
   @Test
-  public void testSequenceExistsTrue() {
+  void testSequenceExistsTrue() {
     assertSingleBool(compile("Sequence{1, 2, 3}.exists(x | x == 2)"), true);
   }
 
   @Test
-  public void testBagExistsTrue() {
+  void testBagExistsTrue() {
     assertSingleBool(compile("Bag{1, 1, 2}.exists(x | x > 1)"), true);
   }
 
   @Test
-  public void testOrderedSetExistsTrue() {
+  void testOrderedSetExistsTrue() {
     assertSingleBool(compile("OrderedSet{1, 2, 3}.exists(x | x > 2)"), true);
   }
 
   @Test
-  public void testIntegerExistsOnSingleton() {
+  void testIntegerExistsOnSingleton() {
     compileExpectError("1.exists(x | x > 0)");
   }
 
@@ -278,42 +278,42 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetOneMatch() {
+  void testSetOneMatch() {
     assertSingleBool(compile("Set{1, 2, 3}.one(x | x > 2)"), true);
   }
 
   @Test
-  public void testSetOneNoMatch() {
+  void testSetOneNoMatch() {
     assertSingleBool(compile("Set{1, 2, 3}.one(x | x > 10)"), false);
   }
 
   @Test
-  public void testSetOneMultipleMatches() {
+  void testSetOneMultipleMatches() {
     assertSingleBool(compile("Set{1, 2, 3}.one(x | x > 1)"), false);
   }
 
   @Test
-  public void testSequenceOneMatch() {
+  void testSequenceOneMatch() {
     assertSingleBool(compile("Sequence{1, 2, 3}.one(x | x == 2)"), true);
   }
 
   @Test
-  public void testBagOneMatch() {
+  void testBagOneMatch() {
     assertSingleBool(compile("Bag{1, 2, 3}.one(x | x > 2)"), true);
   }
 
   @Test
-  public void testOrderedSetOneMatch() {
+  void testOrderedSetOneMatch() {
     assertSingleBool(compile("OrderedSet{1, 2, 3}.one(x | x > 2)"), true);
   }
 
   @Test
-  public void testIntegerOneFails() {
+  void testIntegerOneFails() {
     compileExpectError("1.one(x | x > 0)");
   }
 
   @Test
-  public void testStringOneFails() {
+  void testStringOneFails() {
     compileExpectError("\"hello\".one(x | x == \"h\")");
   }
 
@@ -322,38 +322,38 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetAnyFound() {
+  void testSetAnyFound() {
     Value r = compile("Set{1, 2, 3}.any(x | x > 2)");
     assertEquals(1, r.size());
     assertEquals(3, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSequenceAnyFound() {
+  void testSequenceAnyFound() {
     Value r = compile("Sequence{1, 2, 3}.any(x | x > 1)");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testBagAnyFound() {
+  void testBagAnyFound() {
     Value r = compile("Bag{1, 2, 3}.any(x | x > 0)");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testOrderedSetAnyFound() {
+  void testOrderedSetAnyFound() {
     Value r = compile("OrderedSet{1, 2, 3}.any(x | x == 2)");
     assertEquals(1, r.size());
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testIntegerAnyOnSingleton() {
+  void testIntegerAnyOnSingleton() {
     compileExpectError("1.any(x | x > 0)");
   }
 
   @Test
-  public void testStringAnyOnSingleton() {
+  void testStringAnyOnSingleton() {
     compileExpectError("\"hello\".any(x | x == \"h\")");
   }
 
@@ -362,37 +362,37 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetIsUniqueTrue() {
+  void testSetIsUniqueTrue() {
     assertSingleBool(compile("Set{1, 2, 3}.isUnique(x | x)"), true);
   }
 
   @Test
-  public void testSequenceIsUniqueTrue() {
+  void testSequenceIsUniqueTrue() {
     assertSingleBool(compile("Sequence{1, 2, 3}.isUnique(x | x)"), true);
   }
 
   @Test
-  public void testSequenceIsUniqueFalse() {
+  void testSequenceIsUniqueFalse() {
     assertSingleBool(compile("Sequence{1, 2, 1}.isUnique(x | x)"), false);
   }
 
   @Test
-  public void testBagIsUniqueTrue() {
+  void testBagIsUniqueTrue() {
     assertSingleBool(compile("Bag{1, 2, 3}.isUnique(x | x)"), true);
   }
 
   @Test
-  public void testBagIsUniqueFalse() {
+  void testBagIsUniqueFalse() {
     assertSingleBool(compile("Bag{1, 1, 2}.isUnique(x | x)"), false);
   }
 
   @Test
-  public void testOrderedSetIsUniqueTrue() {
+  void testOrderedSetIsUniqueTrue() {
     assertSingleBool(compile("OrderedSet{1, 2, 3}.isUnique(x | x)"), true);
   }
 
   @Test
-  public void testIntegerIsUniqueFails() {
+  void testIntegerIsUniqueFails() {
     compileExpectError("1.isUnique(x | x)");
   }
 
@@ -401,7 +401,7 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetSortedByInt() {
+  void testSetSortedByInt() {
     Value r = compile("Set{3, 1, 2}.sortedBy(x | x)");
     assertEquals(3, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -410,33 +410,33 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testSequenceSortedByInt() {
+  void testSequenceSortedByInt() {
     Value r = compile("Sequence{3, 1, 4, 1, 5}.sortedBy(x | x)");
     assertEquals(5, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testBagSortedByInt() {
+  void testBagSortedByInt() {
     Value r = compile("Bag{3, 1, 2}.sortedBy(x | x)");
     assertEquals(3, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testOrderedSetSortedByInt() {
+  void testOrderedSetSortedByInt() {
     Value r = compile("OrderedSet{3, 1, 2}.sortedBy(x | x)");
     assertEquals(3, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testIntegerSortedByFails() {
+  void testIntegerSortedByFails() {
     compileExpectError("1.sortedBy(x | x)");
   }
 
   @Test
-  public void testStringSortedByFails() {
+  void testStringSortedByFails() {
     compileExpectError("\"hello\".sortedBy(x | x)");
   }
 
@@ -445,32 +445,32 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetCollectNested() {
+  void testSetCollectNested() {
     Value r = compile("Set{1, 2, 3}.collectNested(x | x * 2)");
     assertEquals(3, r.size());
     // Each element is a NestedCollection wrapping a single value
   }
 
   @Test
-  public void testSequenceCollectNested() {
+  void testSequenceCollectNested() {
     Value r = compile("Sequence{1, 2}.collectNested(x | x + 10)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testBagCollectNested() {
+  void testBagCollectNested() {
     Value r = compile("Bag{1, 2}.collectNested(x | x > 1)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testOrderedSetCollectNested() {
+  void testOrderedSetCollectNested() {
     Value r = compile("OrderedSet{1, 2, 3}.collectNested(x | x)");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testIntegerCollectNestedFails() {
+  void testIntegerCollectNestedFails() {
     compileExpectError("1.collectNested(x | x)");
   }
 
@@ -479,38 +479,38 @@ public class IteratorOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetIterateSum() {
+  void testSetIterateSum() {
     assertSingleInt(compile("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x)"), 6);
   }
 
   @Test
-  public void testSetIterateConcat() {
+  void testSetIterateConcat() {
     Value r = compile("Set{\"a\"}.iterate(x; acc : String = \"\" | acc.concat(x))");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testSequenceIterateProduct() {
+  void testSequenceIterateProduct() {
     assertSingleInt(compile("Sequence{1, 2, 3, 4}.iterate(x; acc : Integer = 1 | acc * x)"), 24);
   }
 
   @Test
-  public void testBagIterateSum() {
+  void testBagIterateSum() {
     assertSingleInt(compile("Bag{1, 1, 2}.iterate(x; acc : Integer = 0 | acc + x)"), 4);
   }
 
   @Test
-  public void testOrderedSetIterateSum() {
+  void testOrderedSetIterateSum() {
     assertSingleInt(compile("OrderedSet{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x)"), 6);
   }
 
   @Test
-  public void testIntegerIterateFails() {
+  void testIntegerIterateFails() {
     compileExpectError("1.iterate(x; acc : Integer = 0 | acc + x)");
   }
 
   @Test
-  public void testStringIterateFails() {
+  void testStringIterateFails() {
     compileExpectError("\"hello\".iterate(x; acc : Integer = 0 | acc + 1)");
   }
 }

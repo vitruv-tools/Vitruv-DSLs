@@ -38,7 +38,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * Set{Set{1,2}, Set{3}}→ Set{Set{T}} (nested — used with flatten)
  * </pre>
  */
-public class CollectionLiteralComputedTest extends DummyTestSpecification {
+class CollectionLiteralComputedTest extends DummyTestSpecification {
 
   protected void compileExpectError(String input) {
     ParseTree tree = parse(input);
@@ -66,7 +66,7 @@ public class CollectionLiteralComputedTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetComputedArithElements() {
+  void testSetComputedArithElements() {
     Value r = compile("Set{1 + 2, 3 * 4}");
     assertEquals(2, r.size());
     assertTrue(r.includes(new OCLElement.IntValue(3)));
@@ -74,14 +74,14 @@ public class CollectionLiteralComputedTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testSetComputedArithSingleElement() {
+  void testSetComputedArithSingleElement() {
     Value r = compile("Set{5 * 5}");
     assertEquals(1, r.size());
     assertEquals(25, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSetComputedArithDedup() {
+  void testSetComputedArithDedup() {
     // If computed values are equal, Set deduplicates
     Value r = compile("Set{2 + 3, 1 + 4}");
     assertEquals(1, r.size()); // both = 5
@@ -89,7 +89,7 @@ public class CollectionLiteralComputedTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testSetComputedMixedLiteralAndArith() {
+  void testSetComputedMixedLiteralAndArith() {
     Value r = compile("Set{1, 2 + 3, 4}");
     assertEquals(3, r.size()); // 1, 5, 4
   }
@@ -99,7 +99,7 @@ public class CollectionLiteralComputedTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSequenceComputedArithPreservesOrder() {
+  void testSequenceComputedArithPreservesOrder() {
     Value r = compile("Sequence{3 * 2, 1 + 1, 10 - 5}");
     assertEquals(3, r.size());
     assertEquals(6, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -108,13 +108,13 @@ public class CollectionLiteralComputedTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testSequenceComputedArithDuplicatesKept() {
+  void testSequenceComputedArithDuplicatesKept() {
     Value r = compile("Sequence{2 + 3, 1 + 4}");
     assertEquals(2, r.size()); // both = 5, but Sequence keeps duplicates
   }
 
   @Test
-  public void testSequenceComputedStringOp() {
+  void testSequenceComputedStringOp() {
     Value r = compile("Sequence{\"hello\".toUpper(), \"world\".toLower()}");
     assertEquals(2, r.size());
     assertEquals("HELLO", ((OCLElement.StringValue) r.getElements().get(0)).value());
@@ -126,13 +126,13 @@ public class CollectionLiteralComputedTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testBagComputedArith() {
+  void testBagComputedArith() {
     Value r = compile("Bag{1 + 1, 1 + 1, 3}");
     assertEquals(3, r.size()); // Bag keeps duplicates: 2, 2, 3
   }
 
   @Test
-  public void testBagComputedBoolExpr() {
+  void testBagComputedBoolExpr() {
     Value r = compile("Bag{1 > 0, 2 > 3, true}");
     assertEquals(3, r.size());
     assertEquals(true, ((OCLElement.BoolValue) r.getElements().get(0)).value());
@@ -145,14 +145,14 @@ public class CollectionLiteralComputedTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testOrderedSetComputedArith() {
+  void testOrderedSetComputedArith() {
     Value r = compile("OrderedSet{3 - 1, 1 + 1, 5}");
     // 2, 2, 5 → dedup → 2, 5
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testOrderedSetComputedArithPreservesFirstOccurrence() {
+  void testOrderedSetComputedArithPreservesFirstOccurrence() {
     Value r = compile("OrderedSet{5 * 2, 1, 2 + 8}");
     // 10, 1, 10 → dedup → 10, 1
     assertEquals(2, r.size());
@@ -165,13 +165,13 @@ public class CollectionLiteralComputedTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetComputedBoolExpr() {
+  void testSetComputedBoolExpr() {
     Value r = compile("Set{1 > 0, 2 < 1}");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSequenceComputedBoolExpr() {
+  void testSequenceComputedBoolExpr() {
     Value r = compile("Sequence{true and false, true or false}");
     assertEquals(2, r.size());
     assertEquals(false, ((OCLElement.BoolValue) r.getElements().get(0)).value());
@@ -183,43 +183,43 @@ public class CollectionLiteralComputedTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetNestedLiteralCreation() {
+  void testSetNestedLiteralCreation() {
     // nested Set literal, valid
     Value r = compile("Set{Set{1, 2}, Set{3}}.size()");
     assertSingleInt(r, 2); // 2 inner sets
   }
 
   @Test
-  public void testSequenceNestedLiteralCreation() {
+  void testSequenceNestedLiteralCreation() {
     Value r = compile("Sequence{Sequence{1, 2}, Sequence{3, 4}}.size()");
     assertSingleInt(r, 2);
   }
 
   @Test
-  public void testBagNestedLiteralCreation() {
+  void testBagNestedLiteralCreation() {
     Value r = compile("Bag{Bag{1}, Bag{1}}.size()");
     assertSingleInt(r, 2); // Bag: both inner bags kept
   }
 
   @Test
-  public void testOrderedSetNestedLiteralCreation() {
+  void testOrderedSetNestedLiteralCreation() {
     Value r = compile("OrderedSet{OrderedSet{1, 2}, OrderedSet{3}}.size()");
     assertSingleInt(r, 2);
   }
 
   @Test
-  public void testSetNestedLiteralThenFlatten() {
+  void testSetNestedLiteralThenFlatten() {
     Value r = compile("Set{Set{1, 2}, Set{3}}.flatten()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSequenceNestedLiteralThenFlattenThenSum() {
+  void testSequenceNestedLiteralThenFlattenThenSum() {
     assertSingleInt(compile("Sequence{Sequence{1, 2}, Sequence{3, 4}}.flatten().sum()"), 10);
   }
 
   @Test
-  public void testNestedLiteralThenFlattenThenSelect() {
+  void testNestedLiteralThenFlattenThenSelect() {
     Value r = compile("Sequence{Sequence{1, 2, 3}, Sequence{4, 5}}.flatten().select(x | x > 3)");
     assertEquals(2, r.size());
     assertEquals(4, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -231,28 +231,28 @@ public class CollectionLiteralComputedTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testComputedElementsThenSize() {
+  void testComputedElementsThenSize() {
     assertSingleInt(compile("Set{1+1, 2+2, 3+3}.size()"), 3);
   }
 
   @Test
-  public void testComputedElementsThenSum() {
+  void testComputedElementsThenSum() {
     assertSingleInt(compile("Set{1+1, 2+2, 3+3}.sum()"), 12); // 2+4+6
   }
 
   @Test
-  public void testComputedElementsThenSelect() {
+  void testComputedElementsThenSelect() {
     Value r = compile("Set{1+1, 2+2, 3+3}.select(x | x > 3)");
     assertEquals(2, r.size()); // 4, 6
   }
 
   @Test
-  public void testComputedElementsThenForAll() {
+  void testComputedElementsThenForAll() {
     assertSingleBool(compile("Set{1+1, 2+2, 3+3}.forAll(x | x > 0)"), true);
   }
 
   @Test
-  public void testLetInComputedCollectionElement() {
+  void testLetInComputedCollectionElement() {
     // let x = 5 in Set with computed elements
     Value r = compile("let x = 5 in Set{x, x + 1, x + 2}");
     assertEquals(3, r.size());

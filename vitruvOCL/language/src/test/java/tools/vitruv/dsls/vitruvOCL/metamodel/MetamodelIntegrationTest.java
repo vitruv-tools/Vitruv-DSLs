@@ -109,7 +109,7 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapper;
  * @see org.eclipse.emf.ecore.EClass EMF metaclass representation
  * @see CrossMetamodelConstraintTest Tests using metamodel integration for constraints
  */
-public class MetamodelIntegrationTest {
+class MetamodelIntegrationTest {
 
   /**
    * The MetamodelWrapper instance under test.
@@ -142,7 +142,7 @@ public class MetamodelIntegrationTest {
    * @throws Exception if metamodel loading fails (file not found, invalid Ecore format, etc.)
    */
   @BeforeEach
-  public void setup() throws java.io.IOException {
+  void setup() throws java.io.IOException {
     MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
 
     specification = new MetamodelWrapper();
@@ -173,7 +173,7 @@ public class MetamodelIntegrationTest {
    * </ul>
    */
   @Test
-  public void testResolveSpacecraftClass() {
+  void testResolveSpacecraftClass() {
     EClass spacecraft = specification.resolveEClass("spaceMission", "Spacecraft");
     assertNotNull(spacecraft, "Should resolve spaceMission::Spacecraft");
     assertEquals("Spacecraft", spacecraft.getName());
@@ -194,7 +194,7 @@ public class MetamodelIntegrationTest {
    * <p><b>Validates:</b> Resolution works for multiple loaded metamodels.
    */
   @Test
-  public void testResolveSatelliteClass() {
+  void testResolveSatelliteClass() {
     EClass satellite = specification.resolveEClass("satelliteSystem", "Satellite");
     assertNotNull(satellite, "Should resolve satelliteSystem::Satellite");
     assertEquals("Satellite", satellite.getName());
@@ -226,7 +226,7 @@ public class MetamodelIntegrationTest {
    * </ul>
    */
   @Test
-  public void testResolvePayloadClass() {
+  void testResolvePayloadClass() {
     EClass payload = specification.resolveEClass("spaceMission", "Payload");
     assertNotNull(payload, "Should resolve spacemission::Payload");
     assertEquals("Payload", payload.getName());
@@ -249,7 +249,7 @@ public class MetamodelIntegrationTest {
    * <p><b>Validates:</b> Graceful failure for invalid class names.
    */
   @Test
-  public void testResolveUnknownClass() {
+  void testResolveUnknownClass() {
     EClass unknown = specification.resolveEClass("spacemission", "UnknownClass");
     assertNull(unknown, "Should return null for unknown class");
   }
@@ -267,7 +267,7 @@ public class MetamodelIntegrationTest {
    * <p><b>Validates:</b> Graceful failure for invalid metamodel names.
    */
   @Test
-  public void testResolveUnknownMetamodel() {
+  void testResolveUnknownMetamodel() {
     EClass unknown = specification.resolveEClass("unknownmodel", "Spacecraft");
     assertNull(unknown, "Should return null for unknown metamodel");
   }
@@ -298,7 +298,7 @@ public class MetamodelIntegrationTest {
    * </ul>
    */
   @Test
-  public void testAvailableMetamodels() {
+  void testAvailableMetamodels() {
     var metamodels = specification.getAvailableMetamodels();
     assertTrue(metamodels.contains("spaceMission"), "Should contain spacemission");
     assertTrue(metamodels.contains("satelliteSystem"), "Should contain satellite");

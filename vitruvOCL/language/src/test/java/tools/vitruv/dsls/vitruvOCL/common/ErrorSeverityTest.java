@@ -17,45 +17,45 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ErrorSeverity}. */
-public class ErrorSeverityTest {
+class ErrorSeverityTest {
 
   /** Tests that ERROR and WARNING are distinct values. */
   @Test
-  public void testDistinctValues() {
+  void testDistinctValues() {
     assertNotEquals(ErrorSeverity.ERROR, ErrorSeverity.WARNING);
   }
 
   /** Tests enum names. */
   @Test
-  public void testEnumNames() {
+  void testEnumNames() {
     assertEquals("ERROR", ErrorSeverity.ERROR.name());
     assertEquals("WARNING", ErrorSeverity.WARNING.name());
   }
 
   /** Tests enum identity (same reference). */
   @Test
-  public void testEnumIdentity() {
+  void testEnumIdentity() {
     assertSame(ErrorSeverity.ERROR, ErrorSeverity.ERROR);
     assertSame(ErrorSeverity.WARNING, ErrorSeverity.WARNING);
   }
 
   /** Tests valueOf works correctly. */
   @Test
-  public void testValueOf() {
+  void testValueOf() {
     assertEquals(ErrorSeverity.ERROR, ErrorSeverity.valueOf("ERROR"));
     assertEquals(ErrorSeverity.WARNING, ErrorSeverity.valueOf("WARNING"));
   }
 
   /** Tests values() returns both severities. */
   @Test
-  public void testValues() {
+  void testValues() {
     ErrorSeverity[] values = ErrorSeverity.values();
     assertEquals(2, values.length);
   }
 
   /** Tests ordinal ordering. */
   @Test
-  public void testOrdinal() {
+  void testOrdinal() {
     assertEquals(0, ErrorSeverity.ERROR.ordinal());
     assertEquals(1, ErrorSeverity.WARNING.ordinal());
   }

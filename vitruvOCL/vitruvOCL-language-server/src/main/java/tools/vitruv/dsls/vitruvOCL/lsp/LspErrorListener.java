@@ -31,6 +31,8 @@ import org.eclipse.lsp4j.Range;
  */
 final class LspErrorListener extends BaseErrorListener {
 
+  private static final Logger LOG = Logger.getLogger(LspErrorListener.class.getName());
+
   /** OCL structure keywords users might mistype — checked for "did you mean?" suggestions. */
   private static final List<String> OCL_KEYWORDS = List.of(
       "context", "inv", "self", "implies", "and", "or", "xor", "not",
@@ -85,9 +87,10 @@ final class LspErrorListener extends BaseErrorListener {
       diag.setData(suggestion); // enables Quick Fix replacement in OCLTextDocumentService
     }
     diagnostics.add(diag);
-    LOG.fine(String.format(
+    final int capLine = lspLine; final int capStart = lspStart; final int capEnd = lspEnd; final String capMsg = msg;
+    LOG.fine(() -> String.format(
         "[OCL-LS] DIAG syntax-error   L%d:C%d → L%d:C%d  %s",
-        lspLine, lspStart, lspLine, lspEnd, msg));
+        capLine, capStart, capLine, capEnd, capMsg));
   }
 
   List<Diagnostic> getDiagnostics() {

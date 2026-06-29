@@ -17,19 +17,19 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.VitruvOCL;
  * <p>Uses the brakesystem metamodel so the context type resolves correctly and annotation
  * validation inside visitInvCS is actually exercised.
  */
-public class AnnotationTypeCheckTest {
+class AnnotationTypeCheckTest {
 
   private static final Path BRAKESYSTEM_ECORE =
       Path.of("src/test/resources/test-metamodels/brakesystem.ecore");
   private static final Path BRAKESYSTEM_INSTANCE = Path.of("brakesystem.brakesystem");
 
   @BeforeAll
-  public static void setupPaths() {
+  static void setupPaths() {
     MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
   }
 
   @AfterAll
-  public static void cleanupRegistry() {
+  static void cleanupRegistry() {
     EPackage.Registry.INSTANCE.remove("http://vitruv.tools/brakesystem/model");
     EPackage.Registry.INSTANCE.remove(
         "http://vitruv.tools/metamodels/dsls/reactions/runtime/correspondence/1.0");
@@ -38,42 +38,42 @@ public class AnnotationTypeCheckTest {
   }
 
   @Test
-  public void testSeverityCriticalAccepted() {
+  void testSeverityCriticalAccepted() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n    @severity CRITICAL\n    self.diameterInMM > 0");
     assertTrue(result.isSuccess(), "Expected success for @severity CRITICAL: " + result.toDetailedErrorString());
   }
 
   @Test
-  public void testSeverityWarningAccepted() {
+  void testSeverityWarningAccepted() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n    @severity WARNING\n    self.diameterInMM > 0");
     assertTrue(result.isSuccess(), "Expected success for @severity WARNING: " + result.toDetailedErrorString());
   }
 
   @Test
-  public void testSeverityMajorAccepted() {
+  void testSeverityMajorAccepted() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n    @severity MAJOR\n    self.diameterInMM > 0");
     assertTrue(result.isSuccess(), "Expected success for @severity MAJOR: " + result.toDetailedErrorString());
   }
 
   @Test
-  public void testSeverityMinorAccepted() {
+  void testSeverityMinorAccepted() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n    @severity MINOR\n    self.diameterInMM > 0");
     assertTrue(result.isSuccess(), "Expected success for @severity MINOR: " + result.toDetailedErrorString());
   }
 
   @Test
-  public void testSeverityInfoAccepted() {
+  void testSeverityInfoAccepted() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n    @severity INFO\n    self.diameterInMM > 0");
     assertTrue(result.isSuccess(), "Expected success for @severity INFO: " + result.toDetailedErrorString());
   }
 
   @Test
-  public void testInvalidSeverityReportsError() {
+  void testInvalidSeverityReportsError() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n    @severity BLOCKER\n    self.diameterInMM > 0");
     assertFalse(result.isSuccess(), "Expected failure for unknown severity BLOCKER");
@@ -83,7 +83,7 @@ public class AnnotationTypeCheckTest {
   }
 
   @Test
-  public void testMessageAnnotationAccepted() {
+  void testMessageAnnotationAccepted() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n"
             + "    @message \"Brake disk {self.name} is invalid\"\n"
@@ -92,7 +92,7 @@ public class AnnotationTypeCheckTest {
   }
 
   @Test
-  public void testBothAnnotationsAccepted() {
+  void testBothAnnotationsAccepted() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n"
             + "    @severity WARNING\n"
@@ -102,7 +102,7 @@ public class AnnotationTypeCheckTest {
   }
 
   @Test
-  public void testDuplicateSeverityReportsError() {
+  void testDuplicateSeverityReportsError() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n"
             + "    @severity WARNING\n"
@@ -115,7 +115,7 @@ public class AnnotationTypeCheckTest {
   }
 
   @Test
-  public void testDuplicateMessageReportsError() {
+  void testDuplicateMessageReportsError() {
     ConstraintResult result = eval(
         "context brakesystem::BrakeDisk inv:\n"
             + "    @message \"first\"\n"

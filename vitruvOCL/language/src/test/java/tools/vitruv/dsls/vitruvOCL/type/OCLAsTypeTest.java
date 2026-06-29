@@ -48,7 +48,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * @see tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor Evaluates oclAsType operations
  * @see tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor Type checks oclAsType expressions
  */
-public class OCLAsTypeTest extends DummyTestSpecification {
+class OCLAsTypeTest extends DummyTestSpecification {
 
   private static final Path SPACEMISSION_ECORE =
       Path.of("src/test/resources/test-metamodels/spaceMission.ecore");
@@ -60,13 +60,13 @@ public class OCLAsTypeTest extends DummyTestSpecification {
   private static final Path SATELLITE_VOYAGER = Path.of("satellite-voyager.satellitesystem");
 
   @BeforeAll
-  public static void setupPaths() {
+  static void setupPaths() {
     MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
   }
 
   /** Tests casting Integer collection to Integer → same elements preserved. */
   @Test
-  public void testIntegerAsTypeInteger() {
+  void testIntegerAsTypeInteger() {
     Value result = compile("Set{5}.oclAsType(Integer)");
     assertSize(result, 1);
     assertEquals(5, ((OCLElement.IntValue) result.getElements().get(0)).value());
@@ -74,7 +74,7 @@ public class OCLAsTypeTest extends DummyTestSpecification {
 
   /** Tests casting multiple Integers to Integer → all elements preserved. */
   @Test
-  public void testMultipleIntegersAsTypeInteger() {
+  void testMultipleIntegersAsTypeInteger() {
     Value result = compile("Set{1, 2, 3}.oclAsType(Integer)");
     assertSize(result, 3);
   }
@@ -83,7 +83,7 @@ public class OCLAsTypeTest extends DummyTestSpecification {
 
   /** Tests casting String collection to String → same elements preserved. */
   @Test
-  public void testStringAsTypeString() {
+  void testStringAsTypeString() {
     Value result = compile("Set{\"hello\"}.oclAsType(String)");
     assertSize(result, 1);
     assertEquals("hello", ((OCLElement.StringValue) result.getElements().get(0)).value());
@@ -91,7 +91,7 @@ public class OCLAsTypeTest extends DummyTestSpecification {
 
   /** Tests casting multiple Strings to String → all elements preserved. */
   @Test
-  public void testMultipleStringsAsTypeString() {
+  void testMultipleStringsAsTypeString() {
     Value result = compile("Set{\"a\", \"b\", \"c\"}.oclAsType(String)");
     assertSize(result, 3);
   }
@@ -100,7 +100,7 @@ public class OCLAsTypeTest extends DummyTestSpecification {
 
   /** Tests casting Boolean collection to Boolean → same elements preserved. */
   @Test
-  public void testBooleanAsTypeBoolean() {
+  void testBooleanAsTypeBoolean() {
     Value result = compile("Set{true}.oclAsType(Boolean)");
     assertSize(result, 1);
     assertTrue(((OCLElement.BoolValue) result.getElements().get(0)).value());
@@ -110,7 +110,7 @@ public class OCLAsTypeTest extends DummyTestSpecification {
 
   /** Tests casting empty collection → empty result. */
   @Test
-  public void testEmptyCollectionAsType() {
+  void testEmptyCollectionAsType() {
     assertSize(compile("Set{}.oclAsType(Integer)"), 0);
   }
 
@@ -118,7 +118,7 @@ public class OCLAsTypeTest extends DummyTestSpecification {
 
   /** Tests Sequence order preserved after cast. */
   @Test
-  public void testSequencePreservesOrder() {
+  void testSequencePreservesOrder() {
     Value result = compile("Sequence{1, 2, 3}.oclAsType(Integer)");
     assertSize(result, 3);
     List<OCLElement> elements = result.getElements();
@@ -131,7 +131,7 @@ public class OCLAsTypeTest extends DummyTestSpecification {
 
   /** Tests type checker infers Collection(Integer) as result type. */
   @Test
-  public void testTypeCheckReturnsInteger() {
+  void testTypeCheckReturnsInteger() {
     ParseTree tree = parse("Set{5}.oclAsType(Integer)");
     MetamodelWrapperInterface dummySpec = buildDummySpec();
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
@@ -152,7 +152,7 @@ public class OCLAsTypeTest extends DummyTestSpecification {
 
   /** Tests type checker preserves Sequence collection kind. */
   @Test
-  public void testTypeCheckPreservesCollectionKind() {
+  void testTypeCheckPreservesCollectionKind() {
     ParseTree tree = parse("Sequence{1, 2}.oclAsType(Integer)");
     MetamodelWrapperInterface dummySpec = buildDummySpec();
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
@@ -179,7 +179,7 @@ public class OCLAsTypeTest extends DummyTestSpecification {
    * type, then cast for property access.
    */
   @Test
-  public void testSelectKindOfThenAsType() {
+  void testSelectKindOfThenAsType() {
     Value result =
         compile("Sequence{1, \"hello\", 2}.select(p | p.oclIsKindOf(Integer)).oclAsType(Integer)");
     assertSize(result, 2);
@@ -190,7 +190,7 @@ public class OCLAsTypeTest extends DummyTestSpecification {
 
   /** Tests oclAsType used inside collect iterator. */
   @Test
-  public void testOclAsTypeInsideCollect() {
+  void testOclAsTypeInsideCollect() {
     Value result = compile("Sequence{1, 2, 3}.collect(p | p.oclAsType(Integer))");
     assertSize(result, 3);
   }
@@ -199,7 +199,7 @@ public class OCLAsTypeTest extends DummyTestSpecification {
 
   /** Tests casting Spacecraft collection to Spacecraft → same instances preserved. */
   @Test
-  public void testSpacecraftAsTypeSpacecraft() {
+  void testSpacecraftAsTypeSpacecraft() {
     String constraint =
         """
 context spaceMission::Spacecraft inv asTypeSpacecraft:
@@ -221,7 +221,7 @@ context spaceMission::Spacecraft inv asTypeSpacecraft:
 
   /** Tests oclAsType used after select in metamodel context. */
   @Test
-  public void testSelectThenAsTypeInMetamodel() {
+  void testSelectThenAsTypeInMetamodel() {
     String constraint =
         """
 context spaceMission::Spacecraft inv selectThenAsType:

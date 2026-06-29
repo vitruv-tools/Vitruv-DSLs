@@ -32,7 +32,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * All other combinations → ERROR
  * </pre>
  */
-public class LogicalTypeTest extends DummyTestSpecification {
+class LogicalTypeTest extends DummyTestSpecification {
 
   /**
    * Compiles an OCL expression and asserts that type checking rejects it with an error. Used for
@@ -64,194 +64,194 @@ public class LogicalTypeTest extends DummyTestSpecification {
   // ── and ───────────────────────────────────────────────────────
 
   @Test
-  public void testBooleanAndBooleanTrueTrue() {
+  void testBooleanAndBooleanTrueTrue() {
     assertSingleBool(compile("true and true"), true);
   }
 
   @Test
-  public void testBooleanAndBooleanTrueFalse() {
+  void testBooleanAndBooleanTrueFalse() {
     assertSingleBool(compile("true and false"), false);
   }
 
   @Test
-  public void testBooleanAndBooleanFalseTrue() {
+  void testBooleanAndBooleanFalseTrue() {
     assertSingleBool(compile("false and true"), false);
   }
 
   @Test
-  public void testBooleanAndBooleanFalseFalse() {
+  void testBooleanAndBooleanFalseFalse() {
     assertSingleBool(compile("false and false"), false);
   }
 
   // ── or ────────────────────────────────────────────────────────
 
   @Test
-  public void testBooleanOrBooleanTrueTrue() {
+  void testBooleanOrBooleanTrueTrue() {
     assertSingleBool(compile("true or true"), true);
   }
 
   @Test
-  public void testBooleanOrBooleanTrueFalse() {
+  void testBooleanOrBooleanTrueFalse() {
     assertSingleBool(compile("true or false"), true);
   }
 
   @Test
-  public void testBooleanOrBooleanFalseTrue() {
+  void testBooleanOrBooleanFalseTrue() {
     assertSingleBool(compile("false or true"), true);
   }
 
   @Test
-  public void testBooleanOrBooleanFalseFalse() {
+  void testBooleanOrBooleanFalseFalse() {
     assertSingleBool(compile("false or false"), false);
   }
 
   // ── xor ───────────────────────────────────────────────────────
 
   @Test
-  public void testBooleanXorBooleanTrueTrue() {
+  void testBooleanXorBooleanTrueTrue() {
     assertSingleBool(compile("true xor true"), false);
   }
 
   @Test
-  public void testBooleanXorBooleanTrueFalse() {
+  void testBooleanXorBooleanTrueFalse() {
     assertSingleBool(compile("true xor false"), true);
   }
 
   @Test
-  public void testBooleanXorBooleanFalseTrue() {
+  void testBooleanXorBooleanFalseTrue() {
     assertSingleBool(compile("false xor true"), true);
   }
 
   @Test
-  public void testBooleanXorBooleanFalseFalse() {
+  void testBooleanXorBooleanFalseFalse() {
     assertSingleBool(compile("false xor false"), false);
   }
 
   // ── implies ───────────────────────────────────────────────────
 
   @Test
-  public void testBooleanImpliesBooleanTrueTrue() {
+  void testBooleanImpliesBooleanTrueTrue() {
     assertSingleBool(compile("true implies true"), true);
   }
 
   @Test
-  public void testBooleanImpliesBooleanTrueFalse() {
+  void testBooleanImpliesBooleanTrueFalse() {
     assertSingleBool(compile("true implies false"), false);
   }
 
   @Test
-  public void testBooleanImpliesBooleanFalseTrue() {
+  void testBooleanImpliesBooleanFalseTrue() {
     assertSingleBool(compile("false implies true"), true);
   }
 
   @Test
-  public void testBooleanImpliesBooleanFalseFalse() {
+  void testBooleanImpliesBooleanFalseFalse() {
     assertSingleBool(compile("false implies false"), true);
   }
 
   // ── not (unary) ───────────────────────────────────────────────
 
   @Test
-  public void testNotBooleanTrue() {
+  void testNotBooleanTrue() {
     assertSingleBool(compile("not true"), false);
   }
 
   @Test
-  public void testNotBooleanFalse() {
+  void testNotBooleanFalse() {
     assertSingleBool(compile("not false"), true);
   }
 
   // ── ERROR: non-Boolean operands for binary ops ────────────────
 
   @Test
-  public void testIntegerAndIntegerFails() {
+  void testIntegerAndIntegerFails() {
     compileExpectError("1 and 2");
   }
 
   @Test
-  public void testIntegerAndBooleanFails() {
+  void testIntegerAndBooleanFails() {
     compileExpectError("1 and true");
   }
 
   @Test
-  public void testBooleanAndIntegerFails() {
+  void testBooleanAndIntegerFails() {
     compileExpectError("true and 1");
   }
 
   @Test
-  public void testFloatAndBooleanFails() {
+  void testFloatAndBooleanFails() {
     compileExpectError("1.5 and true");
   }
 
   @Test
-  public void testDoubleAndBooleanFails() {
+  void testDoubleAndBooleanFails() {
     compileExpectError("2.5 and true");
   }
 
   @Test
-  public void testStringAndBooleanFails() {
+  void testStringAndBooleanFails() {
     compileExpectError("\"hello\" and true");
   }
 
   @Test
-  public void testBooleanAndStringFails() {
+  void testBooleanAndStringFails() {
     compileExpectError("true and \"hello\"");
   }
 
   @Test
-  public void testStringOrStringFails() {
+  void testStringOrStringFails() {
     compileExpectError("\"hello\" or \"world\"");
   }
 
   @Test
-  public void testIntegerOrBooleanFails() {
+  void testIntegerOrBooleanFails() {
     compileExpectError("1 or true");
   }
 
   @Test
-  public void testIntegerXorBooleanFails() {
+  void testIntegerXorBooleanFails() {
     compileExpectError("1 xor true");
   }
 
   @Test
-  public void testIntegerImpliesBooleanFails() {
+  void testIntegerImpliesBooleanFails() {
     compileExpectError("1 implies true");
   }
 
   @Test
-  public void testSetAndBooleanFails() {
+  void testSetAndBooleanFails() {
     compileExpectError("Set{true} and true");
   }
 
   @Test
-  public void testBooleanAndSetFails() {
+  void testBooleanAndSetFails() {
     compileExpectError("true and Set{true}");
   }
 
   // ── ERROR: not on non-Boolean ─────────────────────────────────
 
   @Test
-  public void testNotIntegerFails() {
+  void testNotIntegerFails() {
     compileExpectError("not 1");
   }
 
   @Test
-  public void testNotFloatFails() {
+  void testNotFloatFails() {
     compileExpectError("not 1.5");
   }
 
   @Test
-  public void testNotDoubleFails() {
+  void testNotDoubleFails() {
     compileExpectError("not 2.5");
   }
 
   @Test
-  public void testNotStringFails() {
+  void testNotStringFails() {
     compileExpectError("not \"hello\"");
   }
 
   @Test
-  public void testNotSetFails() {
+  void testNotSetFails() {
     compileExpectError("not Set{true}");
   }
 }

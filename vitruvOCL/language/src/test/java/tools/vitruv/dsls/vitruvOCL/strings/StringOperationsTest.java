@@ -39,13 +39,13 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * @see tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor Evaluates string operations
  * @see tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor Type checks string expressions
  */
-public class StringOperationsTest extends DummyTestSpecification {
+class StringOperationsTest extends DummyTestSpecification {
 
   // ==================== String Literals ====================
 
   /** Tests basic string literal: {@code "Hello"} → {@code ["Hello"]}. */
   @Test
-  public void testStringLiteral() {
+  void testStringLiteral() {
     assertSingleString(compile("\"Hello\""), "Hello");
   }
 
@@ -53,7 +53,7 @@ public class StringOperationsTest extends DummyTestSpecification {
 
   /** Tests string concatenation including empty string cases. */
   @Test
-  public void testConcat() {
+  void testConcat() {
     assertSingleString(compile("\"Hello\".concat(\" World\")"), "Hello World");
     assertSingleString(compile("\"OCL\".concat(\"#\")"), "OCL#");
     assertSingleString(compile("\"\".concat(\"empty\")"), "empty");
@@ -64,13 +64,13 @@ public class StringOperationsTest extends DummyTestSpecification {
 
   /** Tests substring extraction: {@code "Hello".substring(1, 3)} → {@code ["Hel"]}. */
   @Test
-  public void testSubstring() {
+  void testSubstring() {
     assertSingleString(compile("\"Hello\".substring(1, 3)"), "Hel");
   }
 
   /** Tests complex chained string expressions and integration with conditionals. */
   @Test
-  public void testComplexStringExpressions() {
+  void testComplexStringExpressions() {
     assertSingleString(compile("\"Hello\".substring(1, 2).concat(\"i\").toUpper()"), "HEI");
     assertSingleString(compile("\"Hello\".substring(1, 1).concat(\"i\").toUpper()"), "HI");
     assertSingleString(
@@ -81,7 +81,7 @@ public class StringOperationsTest extends DummyTestSpecification {
 
   /** Tests substring with invalid indices → empty collection. */
   @Test
-  public void testSubstringInvalidIndices() {
+  void testSubstringInvalidIndices() {
     assertSize(compile("\"Hi\".substring(5, 10)"), 0);
     assertSize(compile("\"Test\".substring(0, 2)"), 0);
     assertSize(compile("\"Test\".substring(3, 2)"), 0);
@@ -92,7 +92,7 @@ public class StringOperationsTest extends DummyTestSpecification {
 
   /** Tests uppercase transformation. */
   @Test
-  public void testToUpper() {
+  void testToUpper() {
     assertSingleString(compile("\"hello\".toUpper()"), "HELLO");
     assertSingleString(compile("\"OCL\".toUpper()"), "OCL");
     assertSingleString(compile("\"MiXeD\".toUpper()"), "MIXED");
@@ -104,7 +104,7 @@ public class StringOperationsTest extends DummyTestSpecification {
 
   /** Tests lowercase transformation. */
   @Test
-  public void testToLower() {
+  void testToLower() {
     assertSingleString(compile("\"HELLO\".toLower()"), "hello");
     assertSingleString(compile("\"ocl\".toLower()"), "ocl");
     assertSingleString(compile("\"MiXeD\".toLower()"), "mixed");
@@ -116,7 +116,7 @@ public class StringOperationsTest extends DummyTestSpecification {
 
   /** Tests indexOf (1-based, returns 0 if not found). */
   @Test
-  public void testIndexOf() {
+  void testIndexOf() {
     assertSingleInt(compile("\"Hello World\".indexOf(\"World\")"), 7);
     assertSingleInt(compile("\"Hello\".indexOf(\"H\")"), 1);
     assertSingleInt(compile("\"Hello\".indexOf(\"e\")"), 2);
@@ -130,7 +130,7 @@ public class StringOperationsTest extends DummyTestSpecification {
 
   /** Tests case-insensitive equality comparison. */
   @Test
-  public void testEqualsIgnoreCase() {
+  void testEqualsIgnoreCase() {
     assertSingleBool(compile("\"hello\".equalsIgnoreCase(\"HELLO\")"), true);
     assertSingleBool(compile("\"OCL\".equalsIgnoreCase(\"ocl\")"), true);
     assertSingleBool(compile("\"test\".equalsIgnoreCase(\"different\")"), false);
@@ -142,7 +142,7 @@ public class StringOperationsTest extends DummyTestSpecification {
 
   /** Tests chaining multiple string operations. */
   @Test
-  public void testStringChaining() {
+  void testStringChaining() {
     assertSingleString(compile("\"hello\".toUpper().concat(\" WORLD\")"), "HELLO WORLD");
     assertSingleString(compile("\"  TEST  \".toUpper().substring(3, 6)"), "TEST");
     assertSingleString(compile("\"OCL\".concat(\"#\").toLower()"), "ocl#");
@@ -153,7 +153,7 @@ public class StringOperationsTest extends DummyTestSpecification {
 
   /** Tests string equality, inequality, and lexicographic ordering. */
   @Test
-  public void testStringComparison() {
+  void testStringComparison() {
     assertSingleBool(compile("\"abc\" == \"abc\""), true);
     assertSingleBool(compile("\"abc\" != \"xyz\""), true);
   }

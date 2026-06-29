@@ -45,13 +45,13 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.VitruvOCL;
  * attributes in cad.ecore.
  */
 @SuppressWarnings("java:S125")
-public class EFloatEcoreAttributeTest {
+class EFloatEcoreAttributeTest {
 
   private static final Path CAD_ECORE = Path.of("src/test/resources/test-metamodels/cad.ecore");
   private static final Path CAD_INST = Path.of("brake_disc_and_caliper_plate.cad");
 
   @BeforeAll
-  public static void setupPaths() {
+  static void setupPaths() {
     MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
   }
 
@@ -64,7 +64,7 @@ public class EFloatEcoreAttributeTest {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSphereRadiusIsFloat() {
+  void testSphereRadiusIsFloat() {
     // self.radius > 0 — basic EFloat attribute access
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -72,7 +72,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testSphereRadiusEquality() {
+  void testSphereRadiusEquality() {
     // self.radius == self.radius → ¡Boolean! true (EFloat == EFloat)
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius == self.radius");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -80,14 +80,14 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testSphereRadiusComparisonGe() {
+  void testSphereRadiusComparisonGe() {
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius >= 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
   @Test
-  public void testSphereRadiusComparisonNegativeFails() {
+  void testSphereRadiusComparisonNegativeFails() {
     ConstraintResult r =
         VitruvOCL.evaluateConstraint(
             "context cad::Sphere inv:\n  self.radius < 0",
@@ -102,7 +102,7 @@ public class EFloatEcoreAttributeTest {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testFloatPlusIntegerPromotion() {
+  void testFloatPlusIntegerPromotion() {
     // self.radius (¡Float!) + 1 (¡Integer!) → ¡Double!
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius + 1 > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -110,7 +110,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatTimesIntegerPromotion() {
+  void testFloatTimesIntegerPromotion() {
     // self.radius * 2 → ¡Double!
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius * 2 > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -118,7 +118,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatTimesFloatPromotion() {
+  void testFloatTimesFloatPromotion() {
     // self.radius * self.radius → ¡Double! (radius^2)
     ConstraintResult r =
         evalCad("context cad::Sphere inv:\n" + "  let r = self.radius in\n" + "  r * r > 0");
@@ -127,7 +127,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatPlusDoublePromotion() {
+  void testFloatPlusDoublePromotion() {
     // self.radius + 0.5 → ¡Double!
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius + 0.5 > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -135,7 +135,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatDivideIntegerPromotion() {
+  void testFloatDivideIntegerPromotion() {
     // self.radius / 2 → ¡Double!
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius / 2 > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -147,7 +147,7 @@ public class EFloatEcoreAttributeTest {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testFloatAbsPreservesType() {
+  void testFloatAbsPreservesType() {
     // self.radius.abs() → ¡Float!
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius.abs() > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -155,7 +155,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatFloorPromotion() {
+  void testFloatFloorPromotion() {
     // self.radius.floor() → ¡Double! (promoted)
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius.floor() >= 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -163,21 +163,21 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatCeilPromotion() {
+  void testFloatCeilPromotion() {
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius.ceil() > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
   @Test
-  public void testFloatRoundPromotion() {
+  void testFloatRoundPromotion() {
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius.round() >= 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
   @Test
-  public void testFloatCeilingPromotion() {
+  void testFloatCeilingPromotion() {
     ConstraintResult r = evalCad("context cad::Sphere inv:\n  self.radius.ceiling() > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
@@ -188,7 +188,7 @@ public class EFloatEcoreAttributeTest {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testCollectFloatAttribute() {
+  void testCollectFloatAttribute() {
     // cad::Sphere.allInstances().collect(s | s.radius) → Set{¡Float!}
     ConstraintResult r =
         evalCad(
@@ -199,7 +199,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testSelectOnFloatPredicate() {
+  void testSelectOnFloatPredicate() {
     // select on EFloat attribute
     ConstraintResult r =
         evalCad(
@@ -210,7 +210,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testForAllOnFloatPredicate() {
+  void testForAllOnFloatPredicate() {
     ConstraintResult r =
         evalCad(
             "context cad::Sphere inv:\n" + "  cad::Sphere.allInstances().forAll(s | s.radius > 0)");
@@ -219,7 +219,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testCollectFloatThenMax() {
+  void testCollectFloatThenMax() {
     // max() on a Set{¡Float!}
     ConstraintResult r =
         evalCad(
@@ -230,7 +230,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testCollectFloatThenMin() {
+  void testCollectFloatThenMin() {
     ConstraintResult r =
         evalCad(
             "context cad::Sphere inv:\n"
@@ -240,7 +240,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testCollectFloatThenSum() {
+  void testCollectFloatThenSum() {
     ConstraintResult r =
         evalCad(
             "context cad::Sphere inv:\n"
@@ -254,7 +254,7 @@ public class EFloatEcoreAttributeTest {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testFloatInLetBinding() {
+  void testFloatInLetBinding() {
     ConstraintResult r =
         evalCad("context cad::Sphere inv:\n" + "  let r = self.radius in\n" + "  r > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -262,7 +262,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatLetArithmetic() {
+  void testFloatLetArithmetic() {
     ConstraintResult r =
         evalCad("context cad::Sphere inv:\n" + "  let r = self.radius in\n" + "  r * 2.0 > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -270,7 +270,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatLetComparisonToOtherFloat() {
+  void testFloatLetComparisonToOtherFloat() {
     // Tube.outerRadius > Tube.innerRadius (both EFloat)
     ConstraintResult r =
         evalCad(
@@ -287,35 +287,35 @@ public class EFloatEcoreAttributeTest {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testCylinderRadiusIsFloat() {
+  void testCylinderRadiusIsFloat() {
     ConstraintResult r = evalCad("context cad::Cylinder inv:\n  self.radius > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
   @Test
-  public void testTubeOuterRadiusIsFloat() {
+  void testTubeOuterRadiusIsFloat() {
     ConstraintResult r = evalCad("context cad::Tube inv:\n  self.outerRadius > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
   @Test
-  public void testTubeInnerRadiusIsFloat() {
+  void testTubeInnerRadiusIsFloat() {
     ConstraintResult r = evalCad("context cad::Tube inv:\n  self.innerRadius >= 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
   @Test
-  public void testConeBaseRadiusIsFloat() {
+  void testConeBaseRadiusIsFloat() {
     ConstraintResult r = evalCad("context cad::Cone inv:\n  self.baseRadius > 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
     assertTrue(r.isSatisfied());
   }
 
   @Test
-  public void testTwoFloatAttributesComparison() {
+  void testTwoFloatAttributesComparison() {
     // outerRadius > innerRadius (two EFloat attrs from same object)
     ConstraintResult r =
         evalCad("context cad::Tube inv:\n" + "  self.outerRadius > self.innerRadius");
@@ -328,7 +328,7 @@ public class EFloatEcoreAttributeTest {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testFloatInIfCondition() {
+  void testFloatInIfCondition() {
     ConstraintResult r =
         evalCad("context cad::Sphere inv:\n" + "  if self.radius > 0 then true else false endif");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -336,7 +336,7 @@ public class EFloatEcoreAttributeTest {
   }
 
   @Test
-  public void testFloatInIfThenElseBranches() {
+  void testFloatInIfThenElseBranches() {
     // if cond then EFloat else EFloat → ¡Float! result
     ConstraintResult r =
         evalCad(

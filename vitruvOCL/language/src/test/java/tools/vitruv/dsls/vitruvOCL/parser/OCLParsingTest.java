@@ -92,7 +92,7 @@ import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser;
  * @see VitruvOCLParserTestUtils Utility methods for parsing and tree formatting
  * @see VitruvOCLFileParsingTest File-based parsing tests
  */
-public class OCLParsingTest {
+class OCLParsingTest {
 
   /**
    * Tests parsing a simple context declaration with unqualified class name.
@@ -105,7 +105,7 @@ public class OCLParsingTest {
    */
   @Test
   @DisplayName("Should parse simple context declaration")
-  public void testSimpleContext() {
+  void testSimpleContext() {
     String input = "context Person inv: self.age > 0";
     VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
     CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -129,7 +129,7 @@ public class OCLParsingTest {
    */
   @Test
   @DisplayName("Should parse context with qualified class name")
-  public void testQualifiedContext() {
+  void testQualifiedContext() {
     String input = "context University::Student inv: self.age > 18";
     VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
     CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -142,7 +142,7 @@ public class OCLParsingTest {
 
   @Test
   @DisplayName("Should parse @severity annotation")
-  public void testSeverityAnnotation() {
+  void testSeverityAnnotation() {
     String input = "context Pkg::Foo inv Bar:\n    @severity CRITICAL\n    self.x > 0";
     VitruvOCLLexer lexer = new VitruvOCLLexer(CharStreams.fromString(input));
     CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -156,7 +156,7 @@ public class OCLParsingTest {
 
   @Test
   @DisplayName("Should parse @message annotation")
-  public void testMessageAnnotation() {
+  void testMessageAnnotation() {
     String input =
         "context Pkg::Foo inv Bar:\n"
             + "    @message \"Foo {self.name} violated\"\n"
@@ -173,7 +173,7 @@ public class OCLParsingTest {
 
   @Test
   @DisplayName("Should parse both @severity and @message annotations")
-  public void testBothAnnotations() {
+  void testBothAnnotations() {
     String input =
         "context Pkg::Foo inv Bar:\n"
             + "    @severity WARNING\n"

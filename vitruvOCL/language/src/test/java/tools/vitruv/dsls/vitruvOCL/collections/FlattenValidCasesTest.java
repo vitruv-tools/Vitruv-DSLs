@@ -46,7 +46,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  *   Sequence{1}.flatten()   → ERROR
  * </pre>
  */
-public class FlattenValidCasesTest extends DummyTestSpecification {
+class FlattenValidCasesTest extends DummyTestSpecification {
 
   protected void compileExpectError(String input) {
     ParseTree tree = parse(input);
@@ -74,13 +74,13 @@ public class FlattenValidCasesTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSequenceOfSequenceFlattenBasic() {
+  void testSequenceOfSequenceFlattenBasic() {
     Value r = compile("Sequence{Sequence{1, 2}, Sequence{3, 4}}.flatten()");
     assertEquals(4, r.size());
   }
 
   @Test
-  public void testSequenceOfSequenceFlattenOrder() {
+  void testSequenceOfSequenceFlattenOrder() {
     Value r = compile("Sequence{Sequence{1, 2}, Sequence{3, 4}}.flatten()");
     assertEquals(4, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -90,27 +90,27 @@ public class FlattenValidCasesTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testSequenceOfSequenceFlattenSingle() {
+  void testSequenceOfSequenceFlattenSingle() {
     Value r = compile("Sequence{Sequence{42}}.flatten()");
     assertEquals(1, r.size());
     assertEquals(42, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSequenceOfSequenceFlattenEmpty() {
+  void testSequenceOfSequenceFlattenEmpty() {
     Value r = compile("Sequence{Sequence{}, Sequence{1}}.flatten()");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testSequenceOfSequenceFlattenThreeLevelsOnce() {
+  void testSequenceOfSequenceFlattenThreeLevelsOnce() {
     // flatten() only flattens one level
     Value r = compile("Sequence{Sequence{1, 2}, Sequence{3}}.flatten()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSequenceOfSequenceFlattenStrings() {
+  void testSequenceOfSequenceFlattenStrings() {
     Value r = compile("Sequence{Sequence{\"a\", \"b\"}, Sequence{\"c\"}}.flatten()");
     assertEquals(3, r.size());
     assertEquals("a", ((OCLElement.StringValue) r.getElements().get(0)).value());
@@ -121,26 +121,26 @@ public class FlattenValidCasesTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetOfSetFlattenBasic() {
+  void testSetOfSetFlattenBasic() {
     Value r = compile("Set{Set{1, 2}, Set{3, 4}}.flatten()");
     assertEquals(4, r.size());
   }
 
   @Test
-  public void testSetOfSetFlattenDedup() {
+  void testSetOfSetFlattenDedup() {
     // flattened Set should still deduplicate
     Value r = compile("Set{Set{1, 2}, Set{2, 3}}.flatten()");
     assertEquals(3, r.size()); // 1, 2, 3 (2 appears only once)
   }
 
   @Test
-  public void testSetOfSetFlattenEmpty() {
+  void testSetOfSetFlattenEmpty() {
     Value r = compile("Set{Set{}, Set{1}}.flatten()");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testSetOfSetFlattenSingleElement() {
+  void testSetOfSetFlattenSingleElement() {
     Value r = compile("Set{Set{99}}.flatten()");
     assertEquals(1, r.size());
     assertEquals(99, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -151,13 +151,13 @@ public class FlattenValidCasesTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testBagOfBagFlattenBasic() {
+  void testBagOfBagFlattenBasic() {
     Value r = compile("Bag{Bag{1, 1}, Bag{2}}.flatten()");
     assertEquals(3, r.size()); // Bag keeps duplicates
   }
 
   @Test
-  public void testBagOfBagFlattenDuplicatesKept() {
+  void testBagOfBagFlattenDuplicatesKept() {
     Value r = compile("Bag{Bag{1, 2}, Bag{1, 2}}.flatten()");
     assertEquals(4, r.size()); // Bag: 1,2,1,2
   }
@@ -167,13 +167,13 @@ public class FlattenValidCasesTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testOrderedSetOfOrderedSetFlattenBasic() {
+  void testOrderedSetOfOrderedSetFlattenBasic() {
     Value r = compile("OrderedSet{OrderedSet{1, 2}, OrderedSet{3}}.flatten()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testOrderedSetOfOrderedSetFlattenOrder() {
+  void testOrderedSetOfOrderedSetFlattenOrder() {
     Value r = compile("OrderedSet{OrderedSet{1, 2}, OrderedSet{3, 4}}.flatten()");
     assertEquals(4, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -184,47 +184,47 @@ public class FlattenValidCasesTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testFlattenThenSize() {
+  void testFlattenThenSize() {
     assertSingleInt(compile("Sequence{Sequence{1, 2}, Sequence{3}}.flatten().size()"), 3);
   }
 
   @Test
-  public void testFlattenThenSelect() {
+  void testFlattenThenSelect() {
     Value r = compile("Sequence{Sequence{1, 2}, Sequence{3, 4}}.flatten().select(x | x > 2)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testFlattenThenForAll() {
+  void testFlattenThenForAll() {
     assertSingleBool(
         compile("Sequence{Sequence{1, 2}, Sequence{3}}.flatten().forAll(x | x > 0)"), true);
   }
 
   @Test
-  public void testFlattenThenSum() {
+  void testFlattenThenSum() {
     assertSingleInt(compile("Sequence{Sequence{1, 2}, Sequence{3, 4}}.flatten().sum()"), 10);
   }
 
   @Test
-  public void testFlattenThenIsEmpty() {
+  void testFlattenThenIsEmpty() {
     assertSingleBool(compile("Sequence{Sequence{}, Sequence{}}.flatten().isEmpty()"), true);
   }
 
   @Test
-  public void testFlattenThenFirst() {
+  void testFlattenThenFirst() {
     Value r = compile("Sequence{Sequence{10, 20}, Sequence{30}}.flatten().first()");
     assertEquals(10, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testFlattenThenCollect() {
+  void testFlattenThenCollect() {
     Value r = compile("Sequence{Sequence{1, 2}, Sequence{3}}.flatten().collect(x | x * 2)");
     assertEquals(3, r.size());
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testFlattenThenSortedBy() {
+  void testFlattenThenSortedBy() {
     Value r = compile("Set{Set{3, 1}, Set{2}}.flatten().sortedBy(x | x)");
     assertEquals(3, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -235,14 +235,14 @@ public class FlattenValidCasesTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testLiftThenFlattenRoundtrip() {
+  void testLiftThenFlattenRoundtrip() {
     // lift wraps collection, flatten unwraps it
     Value r = compile("Set{1, 2, 3}.lift().flatten()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSequenceLiftThenFlattenRoundtrip() {
+  void testSequenceLiftThenFlattenRoundtrip() {
     Value r = compile("Sequence{1, 2, 3}.lift().flatten()");
     assertEquals(3, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -253,32 +253,32 @@ public class FlattenValidCasesTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetFlattenOnFlatFails() {
+  void testSetFlattenOnFlatFails() {
     compileExpectError("Set{1, 2, 3}.flatten()");
   }
 
   @Test
-  public void testSequenceFlattenOnFlatFails() {
+  void testSequenceFlattenOnFlatFails() {
     compileExpectError("Sequence{1, 2, 3}.flatten()");
   }
 
   @Test
-  public void testBagFlattenOnFlatFails() {
+  void testBagFlattenOnFlatFails() {
     compileExpectError("Bag{1, 2, 3}.flatten()");
   }
 
   @Test
-  public void testOrderedSetFlattenOnFlatFails() {
+  void testOrderedSetFlattenOnFlatFails() {
     compileExpectError("OrderedSet{1, 2, 3}.flatten()");
   }
 
   @Test
-  public void testIntegerFlattenFails() {
+  void testIntegerFlattenFails() {
     compileExpectError("1.flatten()");
   }
 
   @Test
-  public void testStringFlattenFails() {
+  void testStringFlattenFails() {
     compileExpectError("\"hello\".flatten()");
   }
 }

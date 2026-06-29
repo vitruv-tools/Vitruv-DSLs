@@ -42,13 +42,13 @@ import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
  * @see tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor Evaluates iterator operations
  * @see tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor Type checks iterator expressions
  */
-public class IteratorTest extends DummyTestSpecification {
+class IteratorTest extends DummyTestSpecification {
 
   // ==================== SELECT ====================
 
   /** Tests basic select: {@code Set{1,2,3,4,5}.select(x | x > 2)} → {3,4,5}. */
   @Test
-  public void testSelectBasic() {
+  void testSelectBasic() {
     Value result = compile("Set{1,2,3,4,5}.select(x | x > 2)");
     assertSize(result, 3);
     assertIncludes(result, 3);
@@ -58,7 +58,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests select where no elements match → empty collection. */
   @Test
-  public void testSelectNoneMatch() {
+  void testSelectNoneMatch() {
     Value result = compile("Set{1,2,3}.select(x | x > 10)");
     assertTrue(result.isEmpty());
     assertSize(result, 0);
@@ -66,7 +66,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests select where all elements match → full collection. */
   @Test
-  public void testSelectAllMatch() {
+  void testSelectAllMatch() {
     Value result = compile("Set{1,2,3}.select(x | x > 0)");
     assertSize(result, 3);
     assertIncludes(result, 1);
@@ -76,7 +76,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests select with compound AND predicate: {@code x > 3 and x < 8} → {4,5,6,7}. */
   @Test
-  public void testSelectComplexPredicate() {
+  void testSelectComplexPredicate() {
     Value result = compile("Set{1,2,3,4,5,6,7,8,9,10}.select(x | x > 3 and x < 8)");
     assertSize(result, 4);
     assertIncludes(result, 4);
@@ -87,7 +87,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests select with arithmetic in predicate: {@code x * 2 > 5} → {3,4,5}. */
   @Test
-  public void testSelectWithArithmetic() {
+  void testSelectWithArithmetic() {
     Value result = compile("Set{1,2,3,4,5}.select(x | x * 2 > 5)");
     assertSize(result, 3);
     assertIncludes(result, 3);
@@ -97,7 +97,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests select on Sequence: {@code Sequence{5,2,8,1,9,3}.select(x | x > 4)} → {5,8,9}. */
   @Test
-  public void testSelectOnSequence() {
+  void testSelectOnSequence() {
     Value result = compile("Sequence{5,2,8,1,9,3}.select(x | x > 4)");
     assertSize(result, 3);
     assertIncludes(result, 5);
@@ -109,7 +109,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests basic reject: {@code Set{1,2,3,4,5}.reject(x | x <= 2)} → {3,4,5}. */
   @Test
-  public void testRejectBasic() {
+  void testRejectBasic() {
     Value result = compile("Set{1,2,3,4,5}.reject(x | x <= 2)");
     assertSize(result, 3);
     assertIncludes(result, 3);
@@ -119,7 +119,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests reject where nothing is rejected → full collection. */
   @Test
-  public void testRejectNoneRejected() {
+  void testRejectNoneRejected() {
     Value result = compile("Set{1,2,3}.reject(x | x > 10)");
     assertSize(result, 3);
     assertIncludes(result, 1);
@@ -129,7 +129,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests reject where all elements are rejected → empty collection. */
   @Test
-  public void testRejectAllRejected() {
+  void testRejectAllRejected() {
     Value result = compile("Set{1,2,3}.reject(x | x > 0)");
     assertTrue(result.isEmpty());
     assertSize(result, 0);
@@ -137,7 +137,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests reject with equality: removes element 3 → {1,2,4,5} */
   @Test
-  public void testRejectEquality() {
+  void testRejectEquality() {
     Value result = compile("Set{1,2,3,4,5}.reject(x | x == 3)");
     assertSize(result, 4);
     assertExcludes(result, 3);
@@ -149,7 +149,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests that select and reject are complementary for the same predicate. */
   @Test
-  public void testSelectVsReject() {
+  void testSelectVsReject() {
     Value selectResult = compile("Set{1,2,3,4,5}.select(x | x > 2)");
     Value rejectResult = compile("Set{1,2,3,4,5}.reject(x | x <= 2)");
     assertEquals(
@@ -162,7 +162,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests basic collect: {@code Set{1,2,3}.collect(x | x * 2)} → {2,4,6}. */
   @Test
-  public void testCollectBasic() {
+  void testCollectBasic() {
     Value result = compile("Set{1,2,3}.collect(x | x * 2)");
     assertSize(result, 3);
     assertIncludes(result, 2);
@@ -172,7 +172,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests collect with addition: {@code x + 10} → {11,12,13}. */
   @Test
-  public void testCollectWithAddition() {
+  void testCollectWithAddition() {
     Value result = compile("Set{1,2,3}.collect(x | x + 10)");
     assertSize(result, 3);
     assertIncludes(result, 11);
@@ -182,7 +182,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests collect with complex expression: {@code x * 2 + x} = 3x → {3,6,9}. */
   @Test
-  public void testCollectComplexExpression() {
+  void testCollectComplexExpression() {
     Value result = compile("Set{1,2,3}.collect(x | x * 2 + x)");
     assertSize(result, 3);
     assertIncludes(result, 3);
@@ -192,7 +192,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests collect with division: {@code x / 2} → {1,2,3,4,5}. */
   @Test
-  public void testCollectWithDivision() {
+  void testCollectWithDivision() {
     Value result = compile("Set{2,4,6,8,10}.collect(x | x / 2)");
     assertSize(result, 5);
     assertIncludes(result, 1);
@@ -204,7 +204,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests collect on empty set → empty collection */
   @Test
-  public void testCollectOnEmptySet() {
+  void testCollectOnEmptySet() {
     Value result = compile("Set{}.collect(x | x * 2)");
     assertTrue(result.isEmpty());
     assertSize(result, 0);
@@ -212,7 +212,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests that collect auto-flattens results — no nested collections in output. */
   @Test
-  public void testCollectAutoFlatten() {
+  void testCollectAutoFlatten() {
     Value result = compile("Set{1,2,3}.collect(x | x * 2)");
     for (OCLElement elem : result.getElements()) {
       assertFalse(
@@ -224,37 +224,37 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests forAll where all elements satisfy: {@code x > 0} → {@code [true]} */
   @Test
-  public void testForAllTrue() {
+  void testForAllTrue() {
     assertSingleBool(compile("Set{1,2,3}.forAll(x | x > 0)"), true);
   }
 
   /** Tests forAll where some elements fail: {@code x > 2} → {@code [false]} */
   @Test
-  public void testForAllFalse() {
+  void testForAllFalse() {
     assertSingleBool(compile("Set{1,2,3}.forAll(x | x > 2)"), false);
   }
 
   /** Tests forAll on empty set → vacuously true */
   @Test
-  public void testForAllOnEmptySet() {
+  void testForAllOnEmptySet() {
     assertSingleBool(compile("Set{}.forAll(x | x > 100)"), true);
   }
 
   /** Tests forAll with compound predicate: {@code x > 0 and x < 10} → {@code [true]} */
   @Test
-  public void testForAllComplexPredicate() {
+  void testForAllComplexPredicate() {
     assertSingleBool(compile("Set{2,4,6,8}.forAll(x | x > 0 and x < 10)"), true);
   }
 
   /** Tests forAll with arithmetic: {@code x * 2 <= 10} → {@code [true]} */
   @Test
-  public void testForAllWithArithmetic() {
+  void testForAllWithArithmetic() {
     assertSingleBool(compile("Set{1,2,3,4,5}.forAll(x | x * 2 <= 10)"), true);
   }
 
   /** Tests forAll with equality on uniform set → {@code [true]} */
   @Test
-  public void testForAllEquality() {
+  void testForAllEquality() {
     assertSingleBool(compile("Set{5,5,5}.forAll(x | x == 5)"), true);
   }
 
@@ -262,37 +262,37 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests exists where one element satisfies: {@code x == 2} → {@code [true]} */
   @Test
-  public void testExistsTrue() {
+  void testExistsTrue() {
     assertSingleBool(compile("Set{1,2,3}.exists(x | x == 2)"), true);
   }
 
   /** Tests exists where no elements satisfy: {@code x > 10} → {@code [false]} */
   @Test
-  public void testExistsFalse() {
+  void testExistsFalse() {
     assertSingleBool(compile("Set{1,2,3}.exists(x | x > 10)"), false);
   }
 
   /** Tests exists on empty set → false */
   @Test
-  public void testExistsOnEmptySet() {
+  void testExistsOnEmptySet() {
     assertSingleBool(compile("Set{}.exists(x | x > 0)"), false);
   }
 
   /** Tests exists where multiple elements satisfy → {@code [true]} */
   @Test
-  public void testExistsMultipleMatch() {
+  void testExistsMultipleMatch() {
     assertSingleBool(compile("Set{1,2,3,4,5}.exists(x | x > 2)"), true);
   }
 
   /** Tests exists with compound predicate: element 4 satisfies {@code x > 3 and x < 5} */
   @Test
-  public void testExistsComplexPredicate() {
+  void testExistsComplexPredicate() {
     assertSingleBool(compile("Set{1,2,3,4,5}.exists(x | x > 3 and x < 5)"), true);
   }
 
   /** Tests exists with arithmetic: element 4 satisfies {@code x * 2 == 8} */
   @Test
-  public void testExistsWithArithmetic() {
+  void testExistsWithArithmetic() {
     assertSingleBool(compile("Set{1,2,3,4,5}.exists(x | x * 2 == 8)"), true);
   }
 
@@ -300,7 +300,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests select → collect: {1..5} → select x>2 → {3,4,5} → *2 → {6,8,10} */
   @Test
-  public void testSelectThenCollect() {
+  void testSelectThenCollect() {
     Value result = compile("Set{1,2,3,4,5}.select(x | x > 2).collect(x | x * 2)");
     assertSize(result, 3);
     assertIncludes(result, 6);
@@ -310,7 +310,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests collect → select: *2 → {2,4,6,8,10} → select x>5 → {6,8,10} */
   @Test
-  public void testCollectThenSelect() {
+  void testCollectThenSelect() {
     Value result = compile("Set{1,2,3,4,5}.collect(x | x * 2).select(x | x > 5)");
     assertSize(result, 3);
     assertIncludes(result, 6);
@@ -320,7 +320,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests select → reject: select x>3 → reject x>7 → {4,5,6,7} */
   @Test
-  public void testSelectThenReject() {
+  void testSelectThenReject() {
     Value result = compile("Set{1,2,3,4,5,6,7,8,9,10}.select(x | x > 3).reject(x | x > 7)");
     assertSize(result, 4);
     assertIncludes(result, 4);
@@ -331,19 +331,19 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests collect → forAll: *2 → {2,4,6} → forAll x>0 → true */
   @Test
-  public void testCollectThenForAll() {
+  void testCollectThenForAll() {
     assertSingleBool(compile("Set{1,2,3}.collect(x | x * 2).forAll(x | x > 0)"), true);
   }
 
   /** Tests select → exists: select x>2 → {3,4,5} → exists x==4 → true */
   @Test
-  public void testSelectThenExists() {
+  void testSelectThenExists() {
     assertSingleBool(compile("Set{1,2,3,4,5}.select(x | x > 2).exists(x | x == 4)"), true);
   }
 
   /** Tests triple chaining: select x>3 → *2 → reject x>15 → {8,10,12,14} */
   @Test
-  public void testTripleChaining() {
+  void testTripleChaining() {
     Value result =
         compile(
             "Set{1,2,3,4,5,6,7,8,9,10}.select(x | x > 3).collect(x | x * 2).reject(x | x > 15)");
@@ -361,7 +361,7 @@ public class IteratorTest extends DummyTestSpecification {
    * {4,5}
    */
   @Test
-  public void testSelectWithLet() {
+  void testSelectWithLet() {
     Value result = compile("let threshold = 3 in Set{1,2,3,4,5}.select(x | x > threshold)");
     assertSize(result, 2);
     assertIncludes(result, 4);
@@ -373,7 +373,7 @@ public class IteratorTest extends DummyTestSpecification {
    * → {3,6,9}
    */
   @Test
-  public void testCollectWithLet() {
+  void testCollectWithLet() {
     Value result = compile("let multiplier = 3 in Set{1,2,3}.collect(x | x * multiplier)");
     assertSize(result, 3);
     assertIncludes(result, 3);
@@ -385,7 +385,7 @@ public class IteratorTest extends DummyTestSpecification {
    * Tests forAll with let maxValue: {@code let maxValue = 10 in ...forAll(x | x < maxValue)} → true
    */
   @Test
-  public void testForAllWithLet() {
+  void testForAllWithLet() {
     assertSingleBool(compile("let maxValue = 10 in Set{1,2,3,4,5}.forAll(x | x < maxValue)"), true);
   }
 
@@ -393,7 +393,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests select on singleton (matching): {@code Set{42}.select(x | x > 40)} → {42} */
   @Test
-  public void testSelectOnSingletonSet() {
+  void testSelectOnSingletonSet() {
     Value result = compile("Set{42}.select(x | x > 40)");
     assertSize(result, 1);
     assertIncludes(result, 42);
@@ -401,7 +401,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests collect on singleton: {@code Set{5}.collect(x | x * 2)} → {10} */
   @Test
-  public void testCollectOnSingletonSet() {
+  void testCollectOnSingletonSet() {
     Value result = compile("Set{5}.collect(x | x * 2)");
     assertSize(result, 1);
     assertIncludes(result, 10);
@@ -409,19 +409,19 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests forAll on singleton: {@code Set{42}.forAll(x | x > 0)} → true */
   @Test
-  public void testForAllOnSingletonSet() {
+  void testForAllOnSingletonSet() {
     assertSingleBool(compile("Set{42}.forAll(x | x > 0)"), true);
   }
 
   /** Tests exists on singleton: {@code Set{42}.exists(x | x == 42)} → true */
   @Test
-  public void testExistsOnSingletonSet() {
+  void testExistsOnSingletonSet() {
     assertSingleBool(compile("Set{42}.exists(x | x == 42)"), true);
   }
 
   /** Tests select on range: {@code Set{1..10}.select(x | x > 5)} → {6,7,8,9,10} */
   @Test
-  public void testSelectWithRange() {
+  void testSelectWithRange() {
     Value result = compile("Set{1..10}.select(x | x > 5)");
     assertSize(result, 5);
     assertIncludes(result, 6);
@@ -433,7 +433,7 @@ public class IteratorTest extends DummyTestSpecification {
 
   /** Tests collect on range with squaring: {@code Set{1..5}.collect(x | x * x)} → {1,4,9,16,25} */
   @Test
-  public void testCollectWithRange() {
+  void testCollectWithRange() {
     Value result = compile("Set{1..5}.collect(x | x * x)");
     assertSize(result, 5);
     assertIncludes(result, 1);

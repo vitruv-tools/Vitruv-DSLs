@@ -37,7 +37,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * <p>Scalar results (forAll/exists/one/isUnique → ¡Boolean!, size → ¡Integer!, any/first/last →
  * ¡T!) → can only chain into scalar ops (== != < > arithmetic and/or).
  */
-public class ChainingTypeTest extends DummyTestSpecification {
+class ChainingTypeTest extends DummyTestSpecification {
 
   protected void compileExpectError(String input) {
     ParseTree tree = parse(input);
@@ -63,70 +63,70 @@ public class ChainingTypeTest extends DummyTestSpecification {
   // ── select → collection ops ───────────────────────────────────
 
   @Test
-  public void testSelectThenSelect() {
+  void testSelectThenSelect() {
     Value r = compile("Set{1, 2, 3, 4}.select(x | x > 1).select(x | x > 2)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSelectThenReject() {
+  void testSelectThenReject() {
     Value r = compile("Set{1, 2, 3, 4}.select(x | x > 1).reject(x | x > 3)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSelectThenCollect() {
+  void testSelectThenCollect() {
     Value r = compile("Set{1, 2, 3}.select(x | x > 1).collect(x | x * 2)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSelectThenForAll() {
+  void testSelectThenForAll() {
     assertSingleBool(compile("Set{2, 3, 4}.select(x | x > 1).forAll(x | x > 0)"), true);
   }
 
   @Test
-  public void testSelectThenExists() {
+  void testSelectThenExists() {
     assertSingleBool(compile("Set{1, 2, 3}.select(x | x > 2).exists(x | x == 3)"), true);
   }
 
   @Test
-  public void testSelectThenOne() {
+  void testSelectThenOne() {
     assertSingleBool(compile("Set{1, 2, 3}.select(x | x > 2).one(x | x == 3)"), true);
   }
 
   @Test
-  public void testSelectThenSize() {
+  void testSelectThenSize() {
     assertSingleInt(compile("Set{1, 2, 3, 4}.select(x | x > 2).size()"), 2);
   }
 
   @Test
-  public void testSelectThenIsEmpty() {
+  void testSelectThenIsEmpty() {
     assertSingleBool(compile("Set{1, 2}.select(x | x > 10).isEmpty()"), true);
   }
 
   @Test
-  public void testSelectThenFirst() {
+  void testSelectThenFirst() {
     Value r = compile("Sequence{1, 2, 3}.select(x | x > 1).first()");
     assertEquals(1, r.size());
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSelectThenSortedBy() {
+  void testSelectThenSortedBy() {
     Value r = compile("Set{3, 1, 2}.select(x | x > 0).sortedBy(x | x)");
     assertEquals(3, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSelectThenAsSet() {
+  void testSelectThenAsSet() {
     Value r = compile("Sequence{1, 2, 2}.select(x | x > 0).asSet()");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSelectThenAsSequence() {
+  void testSelectThenAsSequence() {
     Value r = compile("Set{1, 2, 3}.select(x | x > 1).asSequence()");
     assertEquals(2, r.size());
   }
@@ -134,57 +134,57 @@ public class ChainingTypeTest extends DummyTestSpecification {
   // ── collect → collection ops ──────────────────────────────────
 
   @Test
-  public void testCollectThenSelect() {
+  void testCollectThenSelect() {
     Value r = compile("Set{1, 2, 3}.collect(x | x * 2).select(x | x > 2)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testCollectThenSize() {
+  void testCollectThenSize() {
     assertSingleInt(compile("Set{1, 2, 3}.collect(x | x * 2).size()"), 3);
   }
 
   @Test
-  public void testCollectThenForAll() {
+  void testCollectThenForAll() {
     assertSingleBool(compile("Set{1, 2, 3}.collect(x | x * 2).forAll(x | x > 0)"), true);
   }
 
   // ── sortedBy → collection ops ★ ───────────────────────────────
 
   @Test
-  public void testSortedByThenSelect() {
+  void testSortedByThenSelect() {
     Value r = compile("Set{3, 1, 2}.sortedBy(x | x).select(x | x > 1)");
     assertEquals(2, r.size());
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSortedByThenCollect() {
+  void testSortedByThenCollect() {
     Value r = compile("Set{3, 1, 2}.sortedBy(x | x).collect(x | x * 10)");
     assertEquals(3, r.size());
     assertEquals(10, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSortedByThenSize() {
+  void testSortedByThenSize() {
     assertSingleInt(compile("Set{3, 1, 2}.sortedBy(x | x).size()"), 3);
   }
 
   @Test
-  public void testSortedByThenFirst() {
+  void testSortedByThenFirst() {
     Value r = compile("Set{3, 1, 2}.sortedBy(x | x).first()");
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSortedByThenSortedBy() {
+  void testSortedByThenSortedBy() {
     Value r = compile("Set{3, 1, 2}.sortedBy(x | x).sortedBy(x | x)");
     assertEquals(3, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSortedByThenAsSet() {
+  void testSortedByThenAsSet() {
     Value r = compile("Sequence{1, 2, 2}.sortedBy(x | x).asSet()");
     assertEquals(2, r.size());
   }
@@ -192,118 +192,118 @@ public class ChainingTypeTest extends DummyTestSpecification {
   // ── asSet/asSequence/asBag/asOrderedSet → collection ops ★ ────
 
   @Test
-  public void testAsSetThenSelect() {
+  void testAsSetThenSelect() {
     Value r = compile("Sequence{1, 2, 2}.asSet().select(x | x > 1)");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testAsSetThenSize() {
+  void testAsSetThenSize() {
     assertSingleInt(compile("Sequence{1, 2, 2}.asSet().size()"), 2);
   }
 
   @Test
-  public void testAsSetThenForAll() {
+  void testAsSetThenForAll() {
     assertSingleBool(compile("Sequence{1, 2, 2}.asSet().forAll(x | x > 0)"), true);
   }
 
   @Test
-  public void testAsSetThenIsEmpty() {
+  void testAsSetThenIsEmpty() {
     assertSingleBool(compile("Sequence{}.asSet().isEmpty()"), true);
   }
 
   @Test
-  public void testAsSequenceThenFirst() {
+  void testAsSequenceThenFirst() {
     Value r = compile("Set{1, 2, 3}.asSequence().first()");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testAsSequenceThenSize() {
+  void testAsSequenceThenSize() {
     assertSingleInt(compile("Set{1, 2, 3}.asSequence().size()"), 3);
   }
 
   @Test
-  public void testAsOrderedSetThenFirst() {
+  void testAsOrderedSetThenFirst() {
     Value r = compile("Bag{3, 1, 2}.asOrderedSet().first()");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testAsBagThenSize() {
+  void testAsBagThenSize() {
     assertSingleInt(compile("Set{1, 2, 3}.asBag().size()"), 3);
   }
 
   // ── Boolean results → logical ops ─────────────────────────────
 
   @Test
-  public void testForAllResultInLogical() {
+  void testForAllResultInLogical() {
     assertSingleBool(
         compile("Set{2, 4, 6}.forAll(x | x > 0) and Set{1, 2}.exists(x | x > 1)"), true);
   }
 
   @Test
-  public void testExistsResultInLogical() {
+  void testExistsResultInLogical() {
     assertSingleBool(
         compile("Set{1, 2, 3}.exists(x | x > 10) or Set{1, 2}.forAll(x | x > 0)"), true);
   }
 
   @Test
-  public void testOneResultInLogical() {
+  void testOneResultInLogical() {
     assertSingleBool(compile("Set{1, 2, 3}.one(x | x > 2) and true"), true);
   }
 
   @Test
-  public void testIsUniqueResultInLogical() {
+  void testIsUniqueResultInLogical() {
     assertSingleBool(compile("Sequence{1, 2, 3}.isUnique(x | x) or false"), true);
   }
 
   @Test
-  public void testIsEmptyResultInLogical() {
+  void testIsEmptyResultInLogical() {
     assertSingleBool(compile("Set{}.isEmpty() and true"), true);
   }
 
   // ── Integer results → arithmetic / comparison ─────────────────
 
   @Test
-  public void testSizeThenArithmetic() {
+  void testSizeThenArithmetic() {
     assertSingleInt(compile("Set{1, 2, 3}.size() + 10"), 13);
   }
 
   @Test
-  public void testSizeThenComparison() {
+  void testSizeThenComparison() {
     assertSingleBool(compile("Set{1, 2, 3}.size() > 2"), true);
   }
 
   @Test
-  public void testSizeThenEquality() {
+  void testSizeThenEquality() {
     assertSingleBool(compile("Set{1, 2, 3}.size() == 3"), true);
   }
 
   // ── ¡T! results (first/last/any) → comparison ────────────────
 
   @Test
-  public void testFirstThenComparison() {
+  void testFirstThenComparison() {
     assertSingleBool(compile("Sequence{10, 20, 30}.first() == 10"), true);
   }
 
   @Test
-  public void testLastThenComparison() {
+  void testLastThenComparison() {
     assertSingleBool(compile("Sequence{10, 20, 30}.last() == 30"), true);
   }
 
   @Test
-  public void testFirstThenArithmetic() {
+  void testFirstThenArithmetic() {
     assertSingleInt(compile("Sequence{5, 10, 15}.first() + 5"), 10);
   }
 
   @Test
-  public void testLastThenArithmetic() {
+  void testLastThenArithmetic() {
     assertSingleInt(compile("Sequence{5, 10, 15}.last() * 2"), 30);
   }
 
   @Test
-  public void testAnyThenComparison() {
+  void testAnyThenComparison() {
     assertSingleBool(compile("Set{1, 2, 3}.any(x | x > 2) == 3"), true);
   }
 
@@ -312,31 +312,31 @@ public class ChainingTypeTest extends DummyTestSpecification {
   // including ¡T! singletons. Boolean results from forAll/exists/one become ¡Boolean!.
 
   @Test
-  public void testForAllThenSelectValid() {
+  void testForAllThenSelectValid() {
     // forAll() → ¡Boolean! (scalar), select requires explicit collection → error
     compileExpectError("Set{1, 2}.forAll(x | x > 0).select(x | x)");
   }
 
   @Test
-  public void testExistsThenCollectValid() {
+  void testExistsThenCollectValid() {
     // exists() → ¡Boolean! (scalar), collect requires explicit collection → error
     compileExpectError("Set{1, 2}.exists(x | x > 0).collect(x | x)");
   }
 
   @Test
-  public void testSizeThenSelectValid() {
+  void testSizeThenSelectValid() {
     // size() → ¡Integer! (scalar), select requires explicit collection → error
     compileExpectError("Set{1, 2}.size().select(x | x > 0)");
   }
 
   @Test
-  public void testIsEmptyThenSelectValid() {
+  void testIsEmptyThenSelectValid() {
     // isEmpty() → ¡Boolean! (scalar), select requires explicit collection → error
     compileExpectError("Set{}.isEmpty().select(x | x)");
   }
 
   @Test
-  public void testOneThenSelectValid() {
+  void testOneThenSelectValid() {
     // one() → ¡Boolean! (scalar), select requires explicit collection → error
     compileExpectError("Set{1, 2}.one(x | x > 0).select(x | x)");
   }
@@ -344,47 +344,47 @@ public class ChainingTypeTest extends DummyTestSpecification {
   // ── characters/tokenize → collection ops ★ ───────────────────
 
   @Test
-  public void testCharactersThenSelect() {
+  void testCharactersThenSelect() {
     Value r = compile("\"hello\".characters().select(x | x == \"l\")");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testCharactersThenSize() {
+  void testCharactersThenSize() {
     assertSingleInt(compile("\"hello\".characters().size()"), 5);
   }
 
   @Test
-  public void testCharactersThenForAll() {
+  void testCharactersThenForAll() {
     assertSingleBool(compile("\"aaa\".characters().forAll(x | x == \"a\")"), true);
   }
 
   @Test
-  public void testCharactersThenSortedBy() {
+  void testCharactersThenSortedBy() {
     Value r = compile("\"cba\".characters().sortedBy(x | x)");
     assertEquals(3, r.size());
     assertEquals("a", ((OCLElement.StringValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testCharactersThenFirst() {
+  void testCharactersThenFirst() {
     Value r = compile("\"hello\".characters().first()");
     assertEquals("h", ((OCLElement.StringValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testTokenizeThenSelect() {
+  void testTokenizeThenSelect() {
     Value r = compile("\"a,bb,ccc\".tokenize(\",\").select(x | x.length() > 1)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testTokenizeThenSize() {
+  void testTokenizeThenSize() {
     assertSingleInt(compile("\"a,b,c\".tokenize(\",\").size()"), 3);
   }
 
   @Test
-  public void testTokenizeThenSortedBy() {
+  void testTokenizeThenSortedBy() {
     Value r = compile("\"c,a,b\".tokenize(\",\").sortedBy(x | x)");
     assertEquals(3, r.size());
     assertEquals("a", ((OCLElement.StringValue) r.getElements().get(0)).value());
@@ -393,25 +393,25 @@ public class ChainingTypeTest extends DummyTestSpecification {
   // ── intersection → collection ops ★ ──────────────────────────
 
   @Test
-  public void testIntersectionThenSelect() {
+  void testIntersectionThenSelect() {
     Value r = compile("Set{1, 2, 3}.intersection(Set{2, 3, 4}).select(x | x > 2)");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testIntersectionThenSize() {
+  void testIntersectionThenSize() {
     assertSingleInt(compile("Set{1, 2, 3}.intersection(Set{2, 3, 4}).size()"), 2);
   }
 
   // ── iterate result → arithmetic ★ ─────────────────────────────
 
   @Test
-  public void testIterateResultArithmetic() {
+  void testIterateResultArithmetic() {
     assertSingleInt(compile("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x) + 10"), 16);
   }
 
   @Test
-  public void testIterateResultComparison() {
+  void testIterateResultComparison() {
     assertSingleBool(compile("Set{1, 2, 3}.iterate(x; acc : Integer = 0 | acc + x) == 6"), true);
   }
 }

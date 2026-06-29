@@ -38,7 +38,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * Invalid: any collection × anything, cross-kind comparisons → ERROR
  * </pre>
  */
-public class EqualityTypeTest extends DummyTestSpecification {
+class EqualityTypeTest extends DummyTestSpecification {
 
   /**
    * Compiles an OCL expression and asserts that type checking rejects it with an error. Used for
@@ -76,241 +76,241 @@ public class EqualityTypeTest extends DummyTestSpecification {
   // ── ¡Integer! × ¡Integer! ─────────────────────────────────────
 
   @Test
-  public void testIntegerEqualsInteger() {
+  void testIntegerEqualsInteger() {
     assertSingleBool(compile("5 == 5"), true);
   }
 
   @Test
-  public void testIntegerNotEqualsInteger() {
+  void testIntegerNotEqualsInteger() {
     assertSingleBool(compile("5 != 3"), true);
   }
 
   @Test
-  public void testIntegerEqualsIntegerFalse() {
+  void testIntegerEqualsIntegerFalse() {
     assertSingleBool(compile("5 == 3"), false);
   }
 
   // ── ¡Integer! × ¡Float! ──────────────────────────────────────
 
   @Test
-  public void testIntegerEqualsFloat() {
+  void testIntegerEqualsFloat() {
     assertSingleBool(compile("3 == 3.0"), true);
   }
 
   @Test
-  public void testIntegerNotEqualsFloat() {
+  void testIntegerNotEqualsFloat() {
     assertSingleBool(compile("3 != 3.5"), true);
   }
 
   // ── ¡Integer! × ¡Double! ─────────────────────────────────────
 
   @Test
-  public void testIntegerEqualsDouble() {
+  void testIntegerEqualsDouble() {
     assertSingleBool(compile("3 == 3.0"), true);
   }
 
   @Test
-  public void testIntegerNotEqualsDouble() {
+  void testIntegerNotEqualsDouble() {
     assertSingleBool(compile("3 != 4.0"), true);
   }
 
   // ── ¡Float! × ¡Integer! ──────────────────────────────────────
 
   @Test
-  public void testFloatEqualsInteger() {
+  void testFloatEqualsInteger() {
     assertSingleBool(compile("3.0 == 3"), true);
   }
 
   @Test
-  public void testFloatNotEqualsInteger() {
+  void testFloatNotEqualsInteger() {
     assertSingleBool(compile("3.5 != 3"), true);
   }
 
   // ── ¡Float! × ¡Float! ────────────────────────────────────────
 
   @Test
-  public void testFloatEqualsFloat() {
+  void testFloatEqualsFloat() {
     assertSingleBool(compile("1.5 == 1.5"), true);
   }
 
   @Test
-  public void testFloatNotEqualsFloat() {
+  void testFloatNotEqualsFloat() {
     assertSingleBool(compile("1.5 != 2.5"), true);
   }
 
   // ── ¡Float! × ¡Double! ───────────────────────────────────────
 
   @Test
-  public void testFloatEqualsDouble() {
+  void testFloatEqualsDouble() {
     assertSingleBool(compile("1.5 == 1.5"), true);
   }
 
   @Test
-  public void testFloatNotEqualsDouble() {
+  void testFloatNotEqualsDouble() {
     assertSingleBool(compile("1.5 != 2.5"), true);
   }
 
   // ── ¡Double! × ¡Integer! ─────────────────────────────────────
 
   @Test
-  public void testDoubleEqualsInteger() {
+  void testDoubleEqualsInteger() {
     assertSingleBool(compile("3.0 == 3"), true);
   }
 
   @Test
-  public void testDoubleNotEqualsInteger() {
+  void testDoubleNotEqualsInteger() {
     assertSingleBool(compile("3.5 != 3"), true);
   }
 
   // ── ¡Double! × ¡Float! ───────────────────────────────────────
 
   @Test
-  public void testDoubleEqualsFloat() {
+  void testDoubleEqualsFloat() {
     assertSingleBool(compile("2.5 == 2.5"), true);
   }
 
   @Test
-  public void testDoubleNotEqualsFloat() {
+  void testDoubleNotEqualsFloat() {
     assertSingleBool(compile("2.5 != 1.5"), true);
   }
 
   // ── ¡Double! × ¡Double! ──────────────────────────────────────
 
   @Test
-  public void testDoubleEqualsDouble() {
+  void testDoubleEqualsDouble() {
     assertSingleBool(compile("2.5 == 2.5"), true);
   }
 
   @Test
-  public void testDoubleNotEqualsDouble() {
+  void testDoubleNotEqualsDouble() {
     assertSingleBool(compile("2.5 != 3.5"), true);
   }
 
   // ── ¡String! × ¡String! ──────────────────────────────────────
 
   @Test
-  public void testStringEqualsString() {
+  void testStringEqualsString() {
     assertSingleBool(compile("\"hello\" == \"hello\""), true);
   }
 
   @Test
-  public void testStringNotEqualsString() {
+  void testStringNotEqualsString() {
     assertSingleBool(compile("\"hello\" != \"world\""), true);
   }
 
   @Test
-  public void testStringEqualsStringFalse() {
+  void testStringEqualsStringFalse() {
     assertSingleBool(compile("\"hello\" == \"world\""), false);
   }
 
   // ── ¡Boolean! × ¡Boolean! ────────────────────────────────────
 
   @Test
-  public void testBooleanEqualsBoolean() {
+  void testBooleanEqualsBoolean() {
     assertSingleBool(compile("true == true"), true);
   }
 
   @Test
-  public void testBooleanNotEqualsBoolean() {
+  void testBooleanNotEqualsBoolean() {
     assertSingleBool(compile("true != false"), true);
   }
 
   @Test
-  public void testBooleanEqualsBooleanFalse() {
+  void testBooleanEqualsBooleanFalse() {
     assertSingleBool(compile("true == false"), false);
   }
 
   // ── ERROR: cross-kind ─────────────────────────────────────────
 
   @Test
-  public void testIntegerEqualsStringFails() {
+  void testIntegerEqualsStringFails() {
     compileExpectError("1 == \"hello\"");
   }
 
   @Test
-  public void testIntegerEqualsBooleanFails() {
+  void testIntegerEqualsBooleanFails() {
     compileExpectError("1 == true");
   }
 
   @Test
-  public void testStringEqualsIntegerFails() {
+  void testStringEqualsIntegerFails() {
     compileExpectError("\"hello\" == 1");
   }
 
   @Test
-  public void testStringEqualsFloatFails() {
+  void testStringEqualsFloatFails() {
     compileExpectError("\"hello\" == 1.5");
   }
 
   @Test
-  public void testStringEqualsDoubleFails() {
+  void testStringEqualsDoubleFails() {
     compileExpectError("\"hello\" == 2.5");
   }
 
   @Test
-  public void testStringEqualsBooleanFails() {
+  void testStringEqualsBooleanFails() {
     compileExpectError("\"hello\" == true");
   }
 
   @Test
-  public void testBooleanEqualsIntegerFails() {
+  void testBooleanEqualsIntegerFails() {
     compileExpectError("true == 1");
   }
 
   @Test
-  public void testBooleanEqualsStringFails() {
+  void testBooleanEqualsStringFails() {
     compileExpectError("true == \"hello\"");
   }
 
   @Test
-  public void testBooleanEqualsFloatFails() {
+  void testBooleanEqualsFloatFails() {
     compileExpectError("true == 1.5");
   }
 
   // ── ERROR: collection operands ────────────────────────────────
 
   @Test
-  public void testSetEqualsIntegerFails() {
+  void testSetEqualsIntegerFails() {
     compileExpectError("Set{1, 2} == 1");
   }
 
   @Test
-  public void testSetEqualsSetFails() {
+  void testSetEqualsSetFails() {
     compileExpectError("Set{1, 2} == Set{1, 2}");
   }
 
   @Test
-  public void testSequenceEqualsIntegerFails() {
+  void testSequenceEqualsIntegerFails() {
     compileExpectError("Sequence{1, 2} == 1");
   }
 
   @Test
-  public void testBagEqualsIntegerFails() {
+  void testBagEqualsIntegerFails() {
     compileExpectError("Bag{1, 2} == 1");
   }
 
   @Test
-  public void testOrderedSetEqualsIntegerFails() {
+  void testOrderedSetEqualsIntegerFails() {
     compileExpectError("OrderedSet{1, 2} == 1");
   }
 
   @Test
-  public void testIntegerEqualsSetFails() {
+  void testIntegerEqualsSetFails() {
     compileExpectError("1 == Set{1, 2}");
   }
 
   @Test
-  public void testIntegerEqualsSequenceFails() {
+  void testIntegerEqualsSequenceFails() {
     compileExpectError("1 == Sequence{1, 2}");
   }
 
   @Test
-  public void testIntegerEqualsBagFails() {
+  void testIntegerEqualsBagFails() {
     compileExpectError("1 == Bag{1, 2}");
   }
 
   @Test
-  public void testIntegerEqualsOrderedSetFails() {
+  void testIntegerEqualsOrderedSetFails() {
     compileExpectError("1 == OrderedSet{1, 2}");
   }
 }

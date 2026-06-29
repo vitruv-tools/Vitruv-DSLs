@@ -17,11 +17,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CompileError}. */
-public class CompileErrorTest {
+class CompileErrorTest {
 
   /** Tests basic constructor with line, column, message, severity, source. */
   @Test
-  public void testBasicConstructor() {
+  void testBasicConstructor() {
     CompileError error = new CompileError(1, 5, "Test error", ErrorSeverity.ERROR, "type-checker");
     assertEquals(1, error.getLine());
     assertEquals(5, error.getColumn());
@@ -35,7 +35,7 @@ public class CompileErrorTest {
 
   /** Tests constructor with error code. */
   @Test
-  public void testConstructorWithErrorCode() {
+  void testConstructorWithErrorCode() {
     CompileError error =
         new CompileError(
             2, 10, "Type mismatch", ErrorSeverity.ERROR, "type-checker", "TYPE_MISMATCH");
@@ -46,7 +46,7 @@ public class CompileErrorTest {
 
   /** Tests full constructor with span information. */
   @Test
-  public void testFullConstructorWithSpan() {
+  void testFullConstructorWithSpan() {
     CompileError error =
         new CompileError(3, 4, 3, 15, "Span error", ErrorSeverity.WARNING, "evaluator", "WARN_001");
     assertEquals(3, error.getLine());
@@ -61,7 +61,7 @@ public class CompileErrorTest {
 
   /** Tests that WARNING severity is stored correctly. */
   @Test
-  public void testWarningSeverity() {
+  void testWarningSeverity() {
     CompileError warning =
         new CompileError(1, 0, "Potential issue", ErrorSeverity.WARNING, "type-checker");
     assertEquals(ErrorSeverity.WARNING, warning.getSeverity());
@@ -69,14 +69,14 @@ public class CompileErrorTest {
 
   /** Tests that null error code is handled correctly. */
   @Test
-  public void testNullErrorCode() {
+  void testNullErrorCode() {
     CompileError error = new CompileError(1, 0, 1, 5, "msg", ErrorSeverity.ERROR, "src", null);
     assertNull(error.getErrorCode());
   }
 
   /** Tests that end position -1 means unknown. */
   @Test
-  public void testUnknownEndPosition() {
+  void testUnknownEndPosition() {
     CompileError error = new CompileError(5, 3, "msg", ErrorSeverity.ERROR, "src");
     assertEquals(-1, error.getEndLine());
     assertEquals(-1, error.getEndColumn());
@@ -84,7 +84,7 @@ public class CompileErrorTest {
 
   /** Tests that line 0 is stored correctly. */
   @Test
-  public void testLineZero() {
+  void testLineZero() {
     CompileError error = new CompileError(0, 0, "msg", ErrorSeverity.ERROR, "src");
     assertEquals(0, error.getLine());
     assertEquals(0, error.getColumn());
@@ -92,14 +92,14 @@ public class CompileErrorTest {
 
   /** Tests that source identifier is stored correctly. */
   @Test
-  public void testSourceIdentifier() {
+  void testSourceIdentifier() {
     CompileError error = new CompileError(1, 0, "msg", ErrorSeverity.ERROR, "symbol-table");
     assertEquals("symbol-table", error.getSource());
   }
 
   /** Tests multiline span where endLine differs from startLine. */
   @Test
-  public void testMultilineSpan() {
+  void testMultilineSpan() {
     CompileError error =
         new CompileError(1, 0, 3, 10, "Multiline error", ErrorSeverity.ERROR, "src", null);
     assertEquals(1, error.getLine());

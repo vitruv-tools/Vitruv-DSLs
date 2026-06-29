@@ -36,7 +36,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  *
  * <p>Binary ops (receiver × ¡String! arg): concat, indexOf, equalsIgnoreCase, matches, tokenize
  */
-public class StringOpsTypeTest extends DummyTestSpecification {
+class StringOpsTypeTest extends DummyTestSpecification {
 
   /**
    * Compiles an OCL expression and asserts that type checking rejects it with an error. Used for
@@ -68,167 +68,167 @@ public class StringOpsTypeTest extends DummyTestSpecification {
   // ── toUpper() ─────────────────────────────────────────────────
 
   @Test
-  public void testStringToUpperLowercase() {
+  void testStringToUpperLowercase() {
     assertSingleString(compile("\"hello\".toUpper()"), "HELLO");
   }
 
   @Test
-  public void testStringToUpperMixed() {
+  void testStringToUpperMixed() {
     assertSingleString(compile("\"hElLo\".toUpper()"), "HELLO");
   }
 
   @Test
-  public void testStringToUpperAlreadyUpper() {
+  void testStringToUpperAlreadyUpper() {
     assertSingleString(compile("\"HELLO\".toUpper()"), "HELLO");
   }
 
   @Test
-  public void testStringToUpperEmpty() {
+  void testStringToUpperEmpty() {
     assertSingleString(compile("\"\".toUpper()"), "");
   }
 
   @Test
-  public void testIntegerToUpperFails() {
+  void testIntegerToUpperFails() {
     compileExpectError("1.toUpper()");
   }
 
   @Test
-  public void testFloatToUpperFails() {
+  void testFloatToUpperFails() {
     compileExpectError("1.5.toUpper()");
   }
 
   @Test
-  public void testBooleanToUpperFails() {
+  void testBooleanToUpperFails() {
     compileExpectError("true.toUpper()");
   }
 
   @Test
-  public void testSetToUpperFails() {
+  void testSetToUpperFails() {
     compileExpectError("Set{\"a\"}.toUpper()");
   }
 
   @Test
-  public void testSequenceToUpperFails() {
+  void testSequenceToUpperFails() {
     compileExpectError("Sequence{\"a\"}.toUpper()");
   }
 
   // ── toLower() ─────────────────────────────────────────────────
 
   @Test
-  public void testStringToLowerUppercase() {
+  void testStringToLowerUppercase() {
     assertSingleString(compile("\"HELLO\".toLower()"), "hello");
   }
 
   @Test
-  public void testStringToLowerMixed() {
+  void testStringToLowerMixed() {
     assertSingleString(compile("\"HeLLo\".toLower()"), "hello");
   }
 
   @Test
-  public void testStringToLowerEmpty() {
+  void testStringToLowerEmpty() {
     assertSingleString(compile("\"\".toLower()"), "");
   }
 
   @Test
-  public void testIntegerToLowerFails() {
+  void testIntegerToLowerFails() {
     compileExpectError("1.toLower()");
   }
 
   @Test
-  public void testBooleanToLowerFails() {
+  void testBooleanToLowerFails() {
     compileExpectError("true.toLower()");
   }
 
   @Test
-  public void testSetToLowerFails() {
+  void testSetToLowerFails() {
     compileExpectError("Set{\"a\"}.toLower()");
   }
 
   // ── size() on scalar — must fail (size() requires a multi-valued collection) ──
 
   @Test
-  public void testStringSizeOnSingleton() {
+  void testStringSizeOnSingleton() {
     compileExpectError("\"hello\".size()");
   }
 
   @Test
-  public void testIntegerSizeOnSingleton() {
+  void testIntegerSizeOnSingleton() {
     compileExpectError("1.size()");
   }
 
   @Test
-  public void testBooleanSizeOnSingleton() {
+  void testBooleanSizeOnSingleton() {
     compileExpectError("true.size()");
   }
 
   // ── substring(i, j) ───────────────────────────────────────────
 
   @Test
-  public void testStringSubstringMiddle() {
+  void testStringSubstringMiddle() {
     assertSingleString(compile("\"hello\".substring(2, 4)"), "ell");
   }
 
   @Test
-  public void testStringSubstringFull() {
+  void testStringSubstringFull() {
     assertSingleString(compile("\"hello\".substring(1, 5)"), "hello");
   }
 
   @Test
-  public void testStringSubstringSingleChar() {
+  void testStringSubstringSingleChar() {
     assertSingleString(compile("\"hello\".substring(1, 1)"), "h");
   }
 
   @Test
-  public void testIntegerSubstringFails() {
+  void testIntegerSubstringFails() {
     compileExpectError("1.substring(1, 2)");
   }
 
   @Test
-  public void testBooleanSubstringFails() {
+  void testBooleanSubstringFails() {
     compileExpectError("true.substring(1, 2)");
   }
 
   @Test
-  public void testSetSubstringFails() {
+  void testSetSubstringFails() {
     compileExpectError("Set{\"a\"}.substring(1, 1)");
   }
 
   // ── at(i) on String ★ ─────────────────────────────────────────
 
   @Test
-  public void testStringAtFirst() {
+  void testStringAtFirst() {
     assertSingleString(compile("\"hello\".at(1)"), "h");
   }
 
   @Test
-  public void testStringAtMiddle() {
+  void testStringAtMiddle() {
     assertSingleString(compile("\"hello\".at(3)"), "l");
   }
 
   @Test
-  public void testStringAtLast() {
+  void testStringAtLast() {
     assertSingleString(compile("\"hello\".at(5)"), "o");
   }
 
   @Test
-  public void testIntegerAtFails() {
+  void testIntegerAtFails() {
     compileExpectError("1.at(1)");
   }
 
   @Test
-  public void testBooleanAtFails() {
+  void testBooleanAtFails() {
     compileExpectError("true.at(1)");
   }
 
   @Test
-  public void testSetAtStringFails() {
+  void testSetAtStringFails() {
     compileExpectError("Set{\"a\"}.at(1)");
   }
 
   // ── characters() ★ ────────────────────────────────────────────
 
   @Test
-  public void testStringCharactersBasic() {
+  void testStringCharactersBasic() {
     Value result = compile("\"abc\".characters()");
     assertEquals(3, result.size());
     assertEquals("a", ((OCLElement.StringValue) result.getElements().get(0)).value());
@@ -237,273 +237,273 @@ public class StringOpsTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testStringCharactersEmpty() {
+  void testStringCharactersEmpty() {
     Value result = compile("\"\".characters()");
     assertEquals(0, result.size());
   }
 
   @Test
-  public void testStringCharactersSingleChar() {
+  void testStringCharactersSingleChar() {
     Value result = compile("\"x\".characters()");
     assertEquals(1, result.size());
     assertEquals("x", ((OCLElement.StringValue) result.getElements().get(0)).value());
   }
 
   @Test
-  public void testIntegerCharactersFails() {
+  void testIntegerCharactersFails() {
     compileExpectError("1.characters()");
   }
 
   @Test
-  public void testBooleanCharactersFails() {
+  void testBooleanCharactersFails() {
     compileExpectError("true.characters()");
   }
 
   @Test
-  public void testSetCharactersFails() {
+  void testSetCharactersFails() {
     compileExpectError("Set{\"a\"}.characters()");
   }
 
   // ── toInteger() ★ ─────────────────────────────────────────────
 
   @Test
-  public void testStringToIntegerBasic() {
+  void testStringToIntegerBasic() {
     assertSingleInt(compile("\"42\".toInteger()"), 42);
   }
 
   @Test
-  public void testStringToIntegerNegative() {
+  void testStringToIntegerNegative() {
     assertSingleInt(compile("\"-7\".toInteger()"), -7);
   }
 
   @Test
-  public void testIntegerToIntegerFails() {
+  void testIntegerToIntegerFails() {
     compileExpectError("42.toInteger()");
   }
 
   @Test
-  public void testBooleanToIntegerFails() {
+  void testBooleanToIntegerFails() {
     compileExpectError("true.toInteger()");
   }
 
   @Test
-  public void testSetToIntegerFails() {
+  void testSetToIntegerFails() {
     compileExpectError("Set{\"1\"}.toInteger()");
   }
 
   // ── toReal() ★ ────────────────────────────────────────────────
 
   @Test
-  public void testStringToRealBasic() {
+  void testStringToRealBasic() {
     assertSingleDouble(compile("\"3.14\".toReal()"), 3.14);
   }
 
   @Test
-  public void testStringToRealInteger() {
+  void testStringToRealInteger() {
     assertSingleDouble(compile("\"42\".toReal()"), 42.0);
   }
 
   @Test
-  public void testIntegerToRealFails() {
+  void testIntegerToRealFails() {
     compileExpectError("42.toReal()");
   }
 
   @Test
-  public void testBooleanToRealFails() {
+  void testBooleanToRealFails() {
     compileExpectError("true.toReal()");
   }
 
   @Test
-  public void testSetToRealFails() {
+  void testSetToRealFails() {
     compileExpectError("Set{\"3.14\"}.toReal()");
   }
 
   // ── substituteAll(p, r) ★ ─────────────────────────────────────
 
   @Test
-  public void testStringSubstituteAllBasic() {
+  void testStringSubstituteAllBasic() {
     assertSingleString(compile("\"aabbcc\".substituteAll(\"b\", \"x\")"), "aaxxcc");
   }
 
   @Test
-  public void testStringSubstituteAllNotFound() {
+  void testStringSubstituteAllNotFound() {
     assertSingleString(compile("\"hello\".substituteAll(\"z\", \"x\")"), "hello");
   }
 
   @Test
-  public void testStringSubstituteAllMultiple() {
+  void testStringSubstituteAllMultiple() {
     assertSingleString(compile("\"abab\".substituteAll(\"ab\", \"c\")"), "cc");
   }
 
   @Test
-  public void testIntegerSubstituteAllFails() {
+  void testIntegerSubstituteAllFails() {
     compileExpectError("1.substituteAll(\"a\", \"b\")");
   }
 
   @Test
-  public void testBooleanSubstituteAllFails() {
+  void testBooleanSubstituteAllFails() {
     compileExpectError("true.substituteAll(\"t\", \"f\")");
   }
 
   @Test
-  public void testSetSubstituteAllFails() {
+  void testSetSubstituteAllFails() {
     compileExpectError("Set{\"a\"}.substituteAll(\"a\", \"b\")");
   }
 
   // ── substituteFirst(p, r) ★ ───────────────────────────────────
 
   @Test
-  public void testStringSubstituteFirstBasic() {
+  void testStringSubstituteFirstBasic() {
     assertSingleString(compile("\"aabbcc\".substituteFirst(\"b\", \"x\")"), "aaxbcc");
   }
 
   @Test
-  public void testStringSubstituteFirstOnlyFirst() {
+  void testStringSubstituteFirstOnlyFirst() {
     assertSingleString(compile("\"aaaa\".substituteFirst(\"a\", \"b\")"), "baaa");
   }
 
   @Test
-  public void testIntegerSubstituteFirstFails() {
+  void testIntegerSubstituteFirstFails() {
     compileExpectError("1.substituteFirst(\"a\", \"b\")");
   }
 
   @Test
-  public void testSetSubstituteFirstFails() {
+  void testSetSubstituteFirstFails() {
     compileExpectError("Set{\"a\"}.substituteFirst(\"a\", \"b\")");
   }
 
   // ── concat(String) ────────────────────────────────────────────
 
   @Test
-  public void testStringConcatString() {
+  void testStringConcatString() {
     assertSingleString(compile("\"hello\".concat(\", world\")"), "hello, world");
   }
 
   @Test
-  public void testStringConcatEmpty() {
+  void testStringConcatEmpty() {
     assertSingleString(compile("\"hello\".concat(\"\")"), "hello");
   }
 
   @Test
-  public void testEmptyConcatString() {
+  void testEmptyConcatString() {
     assertSingleString(compile("\"\".concat(\"hello\")"), "hello");
   }
 
   @Test
-  public void testIntegerConcatFails() {
+  void testIntegerConcatFails() {
     compileExpectError("1.concat(\"hello\")");
   }
 
   @Test
-  public void testBooleanConcatFails() {
+  void testBooleanConcatFails() {
     compileExpectError("true.concat(\"hello\")");
   }
 
   @Test
-  public void testSetConcatFails() {
+  void testSetConcatFails() {
     compileExpectError("Set{\"a\"}.concat(\"b\")");
   }
 
   // ── indexOf(String) ───────────────────────────────────────────
 
   @Test
-  public void testStringIndexOfFound() {
+  void testStringIndexOfFound() {
     assertSingleInt(compile("\"hello\".indexOf(\"ll\")"), 3);
   }
 
   @Test
-  public void testStringIndexOfNotFound() {
+  void testStringIndexOfNotFound() {
     assertSingleInt(compile("\"hello\".indexOf(\"xyz\")"), 0);
   }
 
   @Test
-  public void testStringIndexOfFirst() {
+  void testStringIndexOfFirst() {
     assertSingleInt(compile("\"hello\".indexOf(\"h\")"), 1);
   }
 
   @Test
-  public void testIntegerIndexOfFails() {
+  void testIntegerIndexOfFails() {
     compileExpectError("1.indexOf(\"1\")");
   }
 
   @Test
-  public void testBooleanIndexOfFails() {
+  void testBooleanIndexOfFails() {
     compileExpectError("true.indexOf(\"t\")");
   }
 
   @Test
-  public void testSetIndexOfFails() {
+  void testSetIndexOfFails() {
     compileExpectError("Set{\"a\"}.indexOf(\"a\")");
   }
 
   // ── equalsIgnoreCase(String) ──────────────────────────────────
 
   @Test
-  public void testStringEqualsIgnoreCaseTrue() {
+  void testStringEqualsIgnoreCaseTrue() {
     assertSingleBool(compile("\"Hello\".equalsIgnoreCase(\"HELLO\")"), true);
   }
 
   @Test
-  public void testStringEqualsIgnoreCaseFalse() {
+  void testStringEqualsIgnoreCaseFalse() {
     assertSingleBool(compile("\"Hello\".equalsIgnoreCase(\"World\")"), false);
   }
 
   @Test
-  public void testStringEqualsIgnoreCaseSame() {
+  void testStringEqualsIgnoreCaseSame() {
     assertSingleBool(compile("\"hello\".equalsIgnoreCase(\"hello\")"), true);
   }
 
   @Test
-  public void testIntegerEqualsIgnoreCaseFails() {
+  void testIntegerEqualsIgnoreCaseFails() {
     compileExpectError("1.equalsIgnoreCase(\"1\")");
   }
 
   @Test
-  public void testBooleanEqualsIgnoreCaseFails() {
+  void testBooleanEqualsIgnoreCaseFails() {
     compileExpectError("true.equalsIgnoreCase(\"true\")");
   }
 
   @Test
-  public void testSetEqualsIgnoreCaseFails() {
+  void testSetEqualsIgnoreCaseFails() {
     compileExpectError("Set{\"a\"}.equalsIgnoreCase(\"a\")");
   }
 
   // ── matches(String) ★ ─────────────────────────────────────────
 
   @Test
-  public void testStringMatchesTrue() {
+  void testStringMatchesTrue() {
     assertSingleBool(compile("\"hello123\".matches(\"[a-z]+[0-9]+\")"), true);
   }
 
   @Test
-  public void testStringMatchesFalse() {
+  void testStringMatchesFalse() {
     assertSingleBool(compile("\"hello\".matches(\"[0-9]+\")"), false);
   }
 
   @Test
-  public void testStringMatchesExact() {
+  void testStringMatchesExact() {
     assertSingleBool(compile("\"abc\".matches(\"abc\")"), true);
   }
 
   @Test
-  public void testIntegerMatchesFails() {
+  void testIntegerMatchesFails() {
     compileExpectError("1.matches(\"[0-9]+\")");
   }
 
   @Test
-  public void testBooleanMatchesFails() {
+  void testBooleanMatchesFails() {
     compileExpectError("true.matches(\"true\")");
   }
 
   @Test
-  public void testSetMatchesFails() {
+  void testSetMatchesFails() {
     compileExpectError("Set{\"a\"}.matches(\"a\")");
   }
 
   // ── tokenize(String) ★ ────────────────────────────────────────
 
   @Test
-  public void testStringTokenizeComma() {
+  void testStringTokenizeComma() {
     Value result = compile("\"a,b,c\".tokenize(\",\")");
     assertEquals(3, result.size());
     assertEquals("a", ((OCLElement.StringValue) result.getElements().get(0)).value());
@@ -512,30 +512,30 @@ public class StringOpsTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testStringTokenizeNoDelimiter() {
+  void testStringTokenizeNoDelimiter() {
     Value result = compile("\"hello\".tokenize(\"z\")");
     assertEquals(1, result.size());
     assertEquals("hello", ((OCLElement.StringValue) result.getElements().get(0)).value());
   }
 
   @Test
-  public void testStringTokenizeSpace() {
+  void testStringTokenizeSpace() {
     Value result = compile("\"a b c\".tokenize(\" \")");
     assertEquals(3, result.size());
   }
 
   @Test
-  public void testIntegerTokenizeFails() {
+  void testIntegerTokenizeFails() {
     compileExpectError("1.tokenize(\",\")");
   }
 
   @Test
-  public void testBooleanTokenizeFails() {
+  void testBooleanTokenizeFails() {
     compileExpectError("true.tokenize(\",\")");
   }
 
   @Test
-  public void testSetTokenizeFails() {
+  void testSetTokenizeFails() {
     compileExpectError("Set{\"a,b\"}.tokenize(\",\")");
   }
 }

@@ -39,7 +39,7 @@ import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
  *   isEmpty → Boolean → only logical/comparison ops
  * </pre>
  */
-public class CollectionChainingTest extends DummyTestSpecification {
+class CollectionChainingTest extends DummyTestSpecification {
 
   @Override
   protected ParseTree parse(String input) {
@@ -52,7 +52,7 @@ public class CollectionChainingTest extends DummyTestSpecification {
   // ==================== select → * ====================
 
   @Test
-  public void testSelectThenSelect() {
+  void testSelectThenSelect() {
     Value result = compile("Set{1,2,3,4,5}.select(x | x > 1).select(x | x < 5)");
     assertSize(result, 3);
     assertIncludes(result, 2);
@@ -61,7 +61,7 @@ public class CollectionChainingTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testSelectThenReject() {
+  void testSelectThenReject() {
     Value result = compile("Set{1,2,3,4,5}.select(x | x > 1).reject(x | x > 3)");
     assertSize(result, 2);
     assertIncludes(result, 2);
@@ -69,7 +69,7 @@ public class CollectionChainingTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testSelectThenCollect() {
+  void testSelectThenCollect() {
     // select evens, then collect doubled values
     Value result = compile("Set{1,2,3,4}.select(x | x > 2).collect(x | x * 2)");
     assertSize(result, 2);
@@ -78,27 +78,27 @@ public class CollectionChainingTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testSelectThenForAll() {
+  void testSelectThenForAll() {
     assertSingleBool(compile("Set{2,4,6}.select(x | x > 0).forAll(x | x > 0)"), true);
   }
 
   @Test
-  public void testSelectThenExists() {
+  void testSelectThenExists() {
     assertSingleBool(compile("Set{1,2,3}.select(x | x > 1).exists(x | x == 2)"), true);
   }
 
   @Test
-  public void testSelectThenSize() {
+  void testSelectThenSize() {
     assertSingleInt(compile("Set{1,2,3,4,5}.select(x | x > 2).size()"), 3);
   }
 
   @Test
-  public void testSelectThenIsEmpty() {
+  void testSelectThenIsEmpty() {
     assertSingleBool(compile("Set{1,2,3}.select(x | x > 10).isEmpty()"), true);
   }
 
   @Test
-  public void testSelectThenFlattentypeError() {
+  void testSelectThenFlattentypeError() {
     // select() on Set{Integer} → Set{Integer}; flatten() on flat collection is a type error
     assertTypeError("Set{1,2,3}.select(x | x > 1).flatten()");
   }
@@ -106,36 +106,36 @@ public class CollectionChainingTest extends DummyTestSpecification {
   // ==================== reject → * ====================
 
   @Test
-  public void testRejectThenSelect() {
+  void testRejectThenSelect() {
     Value result = compile("Set{1,2,3,4,5}.reject(x | x > 3).select(x | x > 1)");
     assertSize(result, 2);
   }
 
   @Test
-  public void testRejectThenReject() {
+  void testRejectThenReject() {
     Value result = compile("Set{1,2,3,4,5}.reject(x | x > 4).reject(x | x < 2)");
     assertSize(result, 3);
   }
 
   @Test
-  public void testRejectThenSize() {
+  void testRejectThenSize() {
     assertSingleInt(compile("Set{1,2,3,4,5}.reject(x | x > 3).size()"), 3);
   }
 
   @Test
-  public void testRejectThenForAll() {
+  void testRejectThenForAll() {
     assertSingleBool(compile("Set{1,2,3}.reject(x | x > 3).forAll(x | x <= 3)"), true);
   }
 
   @Test
-  public void testRejectThenIsEmpty() {
+  void testRejectThenIsEmpty() {
     assertSingleBool(compile("Set{1,2,3}.reject(x | x >= 1).isEmpty()"), true);
   }
 
   // ==================== collect → * ====================
 
   @Test
-  public void testCollectThenSelect() {
+  void testCollectThenSelect() {
     // collect doubles, then select > 4
     Value result = compile("Set{1,2,3}.collect(x | x * 2).select(x | x > 4)");
     assertSize(result, 1);
@@ -143,7 +143,7 @@ public class CollectionChainingTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testCollectThenReject() {
+  void testCollectThenReject() {
     Value result = compile("Set{1,2,3}.collect(x | x * 2).reject(x | x > 4)");
     assertSize(result, 2);
     assertIncludes(result, 2);
@@ -151,7 +151,7 @@ public class CollectionChainingTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testCollectThenCollect() {
+  void testCollectThenCollect() {
     Value result = compile("Set{1,2,3}.collect(x | x * 2).collect(x | x + 1)");
     assertSize(result, 3);
     assertIncludes(result, 3);
@@ -160,17 +160,17 @@ public class CollectionChainingTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testCollectThenSize() {
+  void testCollectThenSize() {
     assertSingleInt(compile("Set{1,2,3}.collect(x | x * 2).size()"), 3);
   }
 
   @Test
-  public void testCollectThenForAll() {
+  void testCollectThenForAll() {
     assertSingleBool(compile("Set{1,2,3}.collect(x | x * 2).forAll(x | x > 0)"), true);
   }
 
   @Test
-  public void testCollectThenExists() {
+  void testCollectThenExists() {
     assertSingleBool(compile("Set{1,2,3}.collect(x | x + 10).exists(x | x == 12)"), true);
   }
 
@@ -180,122 +180,122 @@ public class CollectionChainingTest extends DummyTestSpecification {
   // only if the element type is itself a collection. We test flatten on valid chaining instead.
 
   @Test
-  public void testFlattenThenSelecttypeError() {
+  void testFlattenThenSelecttypeError() {
     assertTypeError("Set{1,2,3}.flatten().select(x | x > 1)");
   }
 
   @Test
-  public void testFlattenThenSizetypeError() {
+  void testFlattenThenSizetypeError() {
     assertTypeError("Set{1,2,3}.flatten().size()");
   }
 
   @Test
-  public void testFlattenThenCollecttypeError() {
+  void testFlattenThenCollecttypeError() {
     assertTypeError("Set{1,2,3}.flatten().collect(x | x * 2)");
   }
 
   // ==================== first/last → scalar ops ====================
 
   @Test
-  public void testFirstThenArithmetic() {
+  void testFirstThenArithmetic() {
     // first() returns Integer → can do arithmetic
     assertSingleInt(compile("Sequence{3,1,4}.first() + 10"), 13);
   }
 
   @Test
-  public void testLastThenArithmetic() {
+  void testLastThenArithmetic() {
     assertSingleInt(compile("Sequence{3,1,4}.last() * 2"), 8);
   }
 
   @Test
-  public void testFirstThenComparison() {
+  void testFirstThenComparison() {
     assertSingleBool(compile("Sequence{10,20,30}.first() > 5"), true);
   }
 
   @Test
-  public void testLastThenComparison() {
+  void testLastThenComparison() {
     assertSingleBool(compile("Sequence{10,20,30}.last() == 30"), true);
   }
 
   // ==================== forAll/exists → scalar, CANNOT chain collection ops ====================
 
   @Test
-  public void testForAllResultUsedInLogical() {
+  void testForAllResultUsedInLogical() {
     // forAll → Boolean → can use in logical expression
     assertSingleBool(compile("Set{2,4,6}.forAll(x | x > 0) and true"), true);
   }
 
   @Test
-  public void testExistsResultUsedInLogical() {
+  void testExistsResultUsedInLogical() {
     assertSingleBool(compile("Set{1,2,3}.exists(x | x == 2) or false"), true);
   }
 
   @Test
-  public void testForAllThenSelectFails() {
+  void testForAllThenSelectFails() {
     // forAll returns Boolean, not a collection → cannot chain .select()
     assertTypeError("Set{1,2}.forAll(x | x > 0).select(x | x > 0)");
   }
 
   @Test
-  public void testForAllThenSizeFails() {
+  void testForAllThenSizeFails() {
     assertTypeError("Set{1,2}.forAll(x | x > 0).size()");
   }
 
   @Test
-  public void testExistsThenRejectFails() {
+  void testExistsThenRejectFails() {
     assertTypeError("Set{1,2}.exists(x | x > 0).reject(x | x > 0)");
   }
 
   // ==================== size/isEmpty → scalar, CANNOT chain collection ops ====================
 
   @Test
-  public void testSizeThenArithmetic() {
+  void testSizeThenArithmetic() {
     // size() → Integer → arithmetic is fine
     assertSingleInt(compile("Set{1,2,3}.size() + 10"), 13);
   }
 
   @Test
-  public void testSizeThenComparison() {
+  void testSizeThenComparison() {
     assertSingleBool(compile("Set{1,2,3}.size() > 2"), true);
   }
 
   @Test
-  public void testSizeThenSelectFails() {
+  void testSizeThenSelectFails() {
     assertTypeError("Set{1,2,3}.size().select(x | x > 0)");
   }
 
   @Test
-  public void testIsEmptyThenSelectFails() {
+  void testIsEmptyThenSelectFails() {
     assertTypeError("Set{}.isEmpty().select(x | x > 0)");
   }
 
   @Test
-  public void testIsEmptyResultInLogical() {
+  void testIsEmptyResultInLogical() {
     assertSingleBool(compile("Set{}.isEmpty() and true"), true);
   }
 
   // ==================== Long chains ====================
 
   @Test
-  public void testThreeLevelChain() {
+  void testThreeLevelChain() {
     // select → reject → size
     assertSingleInt(compile("Set{1,2,3,4,5,6}.select(x | x > 1).reject(x | x > 4).size()"), 3);
   }
 
   @Test
-  public void testFourLevelChain() {
+  void testFourLevelChain() {
     // select → collect → select → size
     assertSingleInt(
         compile("Set{1,2,3,4}.select(x | x > 1).collect(x | x * 2).select(x | x > 5).size()"), 2);
   }
 
   @Test
-  public void testIncludingExcludingChain() {
+  void testIncludingExcludingChain() {
     assertSingleInt(compile("Set{1,2,3}.including(4).excluding(2).size()"), 3);
   }
 
   @Test
-  public void testSelectForAllChainResult() {
+  void testSelectForAllChainResult() {
     // chain ends in scalar: can only use result in further scalar ops
     assertSingleBool(compile("Set{2,4,6}.select(x | x > 0).forAll(x | x > 0)"), true);
   }
@@ -303,165 +303,165 @@ public class CollectionChainingTest extends DummyTestSpecification {
   // ==================== Missing chaining combinations ====================
 
   @Test
-  public void testSelectThenFirst() {
+  void testSelectThenFirst() {
     assertSingleInt(compile("Sequence{1,2,3,4,5}.select(x | x > 2).first()"), 3);
   }
 
   @Test
-  public void testSelectThenLast() {
+  void testSelectThenLast() {
     assertSingleInt(compile("Sequence{1,2,3,4,5}.select(x | x > 2).last()"), 5);
   }
 
   @Test
-  public void testRejectThenCollect() {
+  void testRejectThenCollect() {
     Value result = compile("Set{1,2,3,4}.reject(x | x > 3).collect(x | x * 2)");
     assertSize(result, 3);
   }
 
   @Test
-  public void testRejectThenExists() {
+  void testRejectThenExists() {
     assertSingleBool(compile("Set{1,2,3}.reject(x | x > 5).exists(x | x == 2)"), true);
   }
 
   @Test
-  public void testCollectThenIsEmpty() {
+  void testCollectThenIsEmpty() {
     assertSingleBool(compile("Set{1,2,3}.collect(x | x * 2).isEmpty()"), false);
   }
 
   @Test
-  public void testForAllThenRejectFails() {
+  void testForAllThenRejectFails() {
     assertTypeError("Set{1,2}.forAll(x | x > 0).reject(x | x > 0)");
   }
 
   @Test
-  public void testForAllThenCollectFails() {
+  void testForAllThenCollectFails() {
     assertTypeError("Set{1,2}.forAll(x | x > 0).collect(x | x > 0)");
   }
 
   @Test
-  public void testForAllThenExistsFails() {
+  void testForAllThenExistsFails() {
     assertTypeError("Set{1,2}.forAll(x | x > 0).exists(x | x > 0)");
   }
 
   @Test
-  public void testForAllThenIsEmptyFails() {
+  void testForAllThenIsEmptyFails() {
     assertTypeError("Set{1,2}.forAll(x | x > 0).isEmpty()");
   }
 
   @Test
-  public void testForAllThenFirstFails() {
+  void testForAllThenFirstFails() {
     assertTypeError("Set{1,2}.forAll(x | x > 0).first()");
   }
 
   @Test
-  public void testExistsThenSelectFails() {
+  void testExistsThenSelectFails() {
     assertTypeError("Set{1,2}.exists(x | x > 0).select(x | x > 0)");
   }
 
   @Test
-  public void testExistsThenCollectFails() {
+  void testExistsThenCollectFails() {
     assertTypeError("Set{1,2}.exists(x | x > 0).collect(x | x > 0)");
   }
 
   @Test
-  public void testExistsThenForAllFails() {
+  void testExistsThenForAllFails() {
     assertTypeError("Set{1,2}.exists(x | x > 0).forAll(x | x > 0)");
   }
 
   @Test
-  public void testExistsThenSizeFails() {
+  void testExistsThenSizeFails() {
     assertTypeError("Set{1,2}.exists(x | x > 0).size()");
   }
 
   @Test
-  public void testExistsThenIsEmptyFails() {
+  void testExistsThenIsEmptyFails() {
     assertTypeError("Set{1,2}.exists(x | x > 0).isEmpty()");
   }
 
   @Test
-  public void testExistsThenFirstFails() {
+  void testExistsThenFirstFails() {
     assertTypeError("Set{1,2}.exists(x | x > 0).first()");
   }
 
   @Test
-  public void testSizeThenRejectFails() {
+  void testSizeThenRejectFails() {
     assertTypeError("Set{1,2,3}.size().reject(x | x > 0)");
   }
 
   @Test
-  public void testSizeThenCollectFails() {
+  void testSizeThenCollectFails() {
     assertTypeError("Set{1,2,3}.size().collect(x | x > 0)");
   }
 
   @Test
-  public void testSizeThenForAllFails() {
+  void testSizeThenForAllFails() {
     assertTypeError("Set{1,2,3}.size().forAll(x | x > 0)");
   }
 
   @Test
-  public void testSizeThenExistsFails() {
+  void testSizeThenExistsFails() {
     assertTypeError("Set{1,2,3}.size().exists(x | x > 0)");
   }
 
   @Test
-  public void testSizeThenIsEmptyFails() {
+  void testSizeThenIsEmptyFails() {
     assertTypeError("Set{1,2,3}.size().isEmpty()");
   }
 
   @Test
-  public void testSizeThenFirstFails() {
+  void testSizeThenFirstFails() {
     assertTypeError("Set{1,2,3}.size().first()");
   }
 
   @Test
-  public void testIsEmptyThenRejectFails() {
+  void testIsEmptyThenRejectFails() {
     assertTypeError("Set{}.isEmpty().reject(x | x > 0)");
   }
 
   @Test
-  public void testIsEmptyThenCollectFails() {
+  void testIsEmptyThenCollectFails() {
     assertTypeError("Set{}.isEmpty().collect(x | x > 0)");
   }
 
   @Test
-  public void testIsEmptyThenForAllFails() {
+  void testIsEmptyThenForAllFails() {
     assertTypeError("Set{}.isEmpty().forAll(x | x > 0)");
   }
 
   @Test
-  public void testIsEmptyThenExistsFails() {
+  void testIsEmptyThenExistsFails() {
     assertTypeError("Set{}.isEmpty().exists(x | x > 0)");
   }
 
   @Test
-  public void testIsEmptyThenSizeFails() {
+  void testIsEmptyThenSizeFails() {
     assertTypeError("Set{}.isEmpty().size()");
   }
 
   @Test
-  public void testIsEmptyThenFirstFails() {
+  void testIsEmptyThenFirstFails() {
     assertTypeError("Set{}.isEmpty().first()");
   }
 
   @Test
-  public void testCollectThenFirst() {
+  void testCollectThenFirst() {
     assertSingleInt(compile("Sequence{1,2,3}.collect(x | x * 2).first()"), 2);
   }
 
   @Test
-  public void testCollectThenLast() {
+  void testCollectThenLast() {
     assertSingleInt(compile("Sequence{1,2,3}.collect(x | x * 2).last()"), 6);
   }
 
   // ==================== Missing: reject → first/last ====================
 
   @Test
-  public void testRejectThenFirst() {
+  void testRejectThenFirst() {
     assertSingleInt(compile("Sequence{1,2,3,4,5}.reject(x | x > 3).first()"), 1);
   }
 
   @Test
-  public void testRejectThenLast() {
+  void testRejectThenLast() {
     assertSingleInt(compile("Sequence{1,2,3,4,5}.reject(x | x > 3).last()"), 3);
   }
 

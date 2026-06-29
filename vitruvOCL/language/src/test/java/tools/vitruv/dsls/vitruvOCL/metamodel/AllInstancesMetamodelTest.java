@@ -15,7 +15,7 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.MetamodelWrapper;
 import tools.vitruv.dsls.vitruvOCL.pipeline.VitruvOCL;
 
 /** Type Matrix: allInstances() on metaclass receiver → Set{T} */
-public class AllInstancesMetamodelTest {
+class AllInstancesMetamodelTest {
   private static final Path BS_ECORE =
       Path.of("src/test/resources/test-metamodels/brakesystem.ecore");
   private static final Path CAD_ECORE = Path.of("src/test/resources/test-metamodels/cad.ecore");
@@ -23,7 +23,7 @@ public class AllInstancesMetamodelTest {
   private static final Path CAD_INST = Path.of("Intersecting.cad");
 
   @BeforeAll
-  public static void setupPaths() {
+  static void setupPaths() {
     MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
   }
 
@@ -45,7 +45,7 @@ public class AllInstancesMetamodelTest {
   // ── cad metaclass receivers ──────────────────────────────────
 
   @Test
-  public void testSphereAllInstancesNotEmpty() {
+  void testSphereAllInstancesNotEmpty() {
     String c = "context cad::Sphere inv:\n" + "  cad::Sphere.allInstances().size() > 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -53,7 +53,7 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testCylinderAllInstancesNotEmpty() {
+  void testCylinderAllInstancesNotEmpty() {
     String c = "context cad::Cylinder inv:\n" + "  cad::Cylinder.allInstances().size() > 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -61,7 +61,7 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testConeAllInstancesNotEmpty() {
+  void testConeAllInstancesNotEmpty() {
     String c = "context cad::Cone inv:\n" + "  cad::Cone.allInstances().notEmpty()";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -69,7 +69,7 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testTubeAllInstancesNotEmpty() {
+  void testTubeAllInstancesNotEmpty() {
     String c = "context cad::Tube inv:\n" + "  cad::Tube.allInstances().size() > 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -77,28 +77,28 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testBoxAllInstancesEvaluates() {
+  void testBoxAllInstancesEvaluates() {
     String c = "context cad::Box inv:\n" + "  cad::Box.allInstances().size() >= 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
   }
 
   @Test
-  public void testPrismAllInstancesEvaluates() {
+  void testPrismAllInstancesEvaluates() {
     String c = "context cad::Prism inv:\n" + "  cad::Prism.allInstances().size() >= 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
   }
 
   @Test
-  public void testPyramidAllInstancesEvaluates() {
+  void testPyramidAllInstancesEvaluates() {
     String c = "context cad::Pyramid inv:\n" + "  cad::Pyramid.allInstances().size() >= 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
   }
 
   @Test
-  public void testNamespaceAllInstancesNotEmpty() {
+  void testNamespaceAllInstancesNotEmpty() {
     String c = "context cad::Namespace inv:\n" + "  cad::Namespace.allInstances().size() > 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -106,7 +106,7 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testShapeSupertypeAllInstances() {
+  void testShapeSupertypeAllInstances() {
     String c = "context cad::Namespace inv:\n" + "  cad::Shape.allInstances().size() > 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -114,7 +114,7 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testParameterSupertypeAllInstances() {
+  void testParameterSupertypeAllInstances() {
     String c = "context cad::Namespace inv:\n" + "  cad::Parameter.allInstances().size() >= 0";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -124,7 +124,7 @@ public class AllInstancesMetamodelTest {
   // ── brakesystem receivers ────────────────────────────────────
 
   @Test
-  public void testBrakeDiskAllInstancesNotEmpty() {
+  void testBrakeDiskAllInstancesNotEmpty() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  brakesystem::BrakeDisk.allInstances().size() > 0";
@@ -134,7 +134,7 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testBrakeCaliperAllInstancesNotEmpty() {
+  void testBrakeCaliperAllInstancesNotEmpty() {
     String c =
         "context brakesystem::BrakeCaliper inv:\n"
             + "  brakesystem::BrakeCaliper.allInstances().size() > 0";
@@ -144,7 +144,7 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testBrakePadAllInstancesEvaluates() {
+  void testBrakePadAllInstancesEvaluates() {
     String c =
         "context brakesystem::BrakePad inv:\n"
             + "  brakesystem::BrakePad.allInstances().size() >= 0";
@@ -155,7 +155,7 @@ public class AllInstancesMetamodelTest {
   // ── allInstances() result → chaining ────────────────────────
 
   @Test
-  public void testAllInstancesThenSelect() {
+  void testAllInstancesThenSelect() {
     String c =
         "context cad::Sphere inv:\n"
             + "  cad::Sphere.allInstances().select(s | s.radius > 0).size() > 0";
@@ -165,7 +165,7 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testAllInstancesThenForAll() {
+  void testAllInstancesThenForAll() {
     String c =
         "context cad::Sphere inv:\n" + "  cad::Sphere.allInstances().forAll(s | s.radius > 0)";
     ConstraintResult r = evalCad(c);
@@ -174,7 +174,7 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testAllInstancesThenExists() {
+  void testAllInstancesThenExists() {
     String c =
         "context cad::Sphere inv:\n" + "  cad::Sphere.allInstances().exists(s | s.radius > 0)";
     ConstraintResult r = evalCad(c);
@@ -183,7 +183,7 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testAllInstancesThenSize() {
+  void testAllInstancesThenSize() {
     String c = "context cad::Cylinder inv:\n" + "  cad::Cylinder.allInstances().size() >= 1";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -191,7 +191,7 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testAllInstancesThenIsEmpty() {
+  void testAllInstancesThenIsEmpty() {
     String c = "context cad::Sphere inv:\n" + "  cad::Sphere.allInstances().isEmpty() == false";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
@@ -199,7 +199,7 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testAllInstancesThenCollect() {
+  void testAllInstancesThenCollect() {
     String c =
         "context cad::Sphere inv:\n"
             + "  cad::Sphere.allInstances().collect(s | s.radius).size() > 0";
@@ -209,14 +209,14 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testAllInstancesThenFirst() {
+  void testAllInstancesThenFirst() {
     String c = "context cad::Cylinder inv:\n" + "  cad::Cylinder.allInstances().first().notEmpty()";
     ConstraintResult r = evalCad(c);
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
   }
 
   @Test
-  public void testAllInstancesCrossMetamodel() {
+  void testAllInstancesCrossMetamodel() {
     String c =
         "context brakesystem::BrakeDisk inv:\n"
             + "  brakesystem::BrakeDisk.allInstances().size() > 0 and\n"
@@ -227,7 +227,7 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testAllInstancesPropertyNavigation() {
+  void testAllInstancesPropertyNavigation() {
     String c =
         "context cad::Sphere inv:\n" + "  cad::Sphere.allInstances().collect(s | s.radius).size() > 0";
     ConstraintResult r = evalCad(c);
@@ -236,7 +236,7 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testAllInstancesThenSortedBy() {
+  void testAllInstancesThenSortedBy() {
     String c =
         "context cad::Sphere inv:\n"
             + "  cad::Sphere.allInstances().sortedBy(s | s.radius).size() > 0";
@@ -246,7 +246,7 @@ public class AllInstancesMetamodelTest {
   }
 
   @Test
-  public void testAllInstancesThenOne() {
+  void testAllInstancesThenOne() {
     String c =
         "context cad::Sphere inv:\n"
             + "  cad::Sphere.allInstances().one(s | s.radius > 0) or\n"

@@ -48,7 +48,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * @see tools.vitruv.dsls.vitruvOCL.evaluator.EvaluationVisitor Evaluates oclIsTypeOf operations
  * @see tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor Type checks oclIsTypeOf expressions
  */
-public class OCLIsTypeOfTest extends DummyTestSpecification {
+class OCLIsTypeOfTest extends DummyTestSpecification {
 
   private static final Path SPACEMISSION_ECORE =
       Path.of("src/test/resources/test-metamodels/spaceMission.ecore");
@@ -60,7 +60,7 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
   private static final Path SATELLITE_VOYAGER = Path.of("satellite-voyager.satellitesystem");
 
   @BeforeAll
-  public static void setupPaths() {
+  static void setupPaths() {
     MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
   }
 
@@ -68,19 +68,19 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests Integer is type of Integer → {@code [true]}. */
   @Test
-  public void testIntegerIsTypeOfInteger() {
+  void testIntegerIsTypeOfInteger() {
     assertSingleBool(compile("Set{5}.oclIsTypeOf(Integer)"), true);
   }
 
   /** Tests Integer is NOT type of String → {@code [false]}. */
   @Test
-  public void testIntegerIsTypeOfString() {
+  void testIntegerIsTypeOfString() {
     assertSingleBool(compile("Set{5}.oclIsTypeOf(String)"), false);
   }
 
   /** Tests Integer is NOT type of Boolean → {@code [false]}. */
   @Test
-  public void testIntegerIsTypeOfBoolean() {
+  void testIntegerIsTypeOfBoolean() {
     assertSingleBool(compile("Set{5}.oclIsTypeOf(Boolean)"), false);
   }
 
@@ -88,19 +88,19 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests String is type of String → {@code [true]}. */
   @Test
-  public void testStringIsTypeOfString() {
+  void testStringIsTypeOfString() {
     assertSingleBool(compile("Set{\"hello\"}.oclIsTypeOf(String)"), true);
   }
 
   /** Tests String is NOT type of Integer → {@code [false]}. */
   @Test
-  public void testStringIsTypeOfInteger() {
+  void testStringIsTypeOfInteger() {
     assertSingleBool(compile("Set{\"hello\"}.oclIsTypeOf(Integer)"), false);
   }
 
   /** Tests String is NOT type of Boolean → {@code [false]}. */
   @Test
-  public void testStringIsTypeOfBoolean() {
+  void testStringIsTypeOfBoolean() {
     assertSingleBool(compile("Set{\"hello\"}.oclIsTypeOf(Boolean)"), false);
   }
 
@@ -108,19 +108,19 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests Boolean is type of Boolean → {@code [true]}. */
   @Test
-  public void testBooleanIsTypeOfBoolean() {
+  void testBooleanIsTypeOfBoolean() {
     assertSingleBool(compile("Set{true}.oclIsTypeOf(Boolean)"), true);
   }
 
   /** Tests Boolean is NOT type of Integer → {@code [false]}. */
   @Test
-  public void testBooleanIsTypeOfInteger() {
+  void testBooleanIsTypeOfInteger() {
     assertSingleBool(compile("Set{true}.oclIsTypeOf(Integer)"), false);
   }
 
   /** Tests Boolean is NOT type of String → {@code [false]}. */
   @Test
-  public void testBooleanIsTypeOfString() {
+  void testBooleanIsTypeOfString() {
     assertSingleBool(compile("Set{false}.oclIsTypeOf(String)"), false);
   }
 
@@ -128,7 +128,7 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests all Integer elements → all true: {@code Set{1,2,3}.oclIsTypeOf(Integer)}. */
   @Test
-  public void testMultipleIntegersIsTypeOfInteger() {
+  void testMultipleIntegersIsTypeOfInteger() {
     Value result = compile("Set{1, 2, 3}.oclIsTypeOf(Integer)");
     assertSize(result, 3);
     for (OCLElement elem : result.getElements()) {
@@ -138,7 +138,7 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests Integer elements checked against String → all false. */
   @Test
-  public void testMultipleIntegersIsTypeOfString() {
+  void testMultipleIntegersIsTypeOfString() {
     Value result = compile("Set{1, 2, 3}.oclIsTypeOf(String)");
     assertSize(result, 3);
     for (OCLElement elem : result.getElements()) {
@@ -148,7 +148,7 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests all String elements → all true. */
   @Test
-  public void testMultipleStringsIsTypeOfString() {
+  void testMultipleStringsIsTypeOfString() {
     Value result = compile("Set{\"a\", \"b\", \"c\"}.oclIsTypeOf(String)");
     assertSize(result, 3);
     for (OCLElement elem : result.getElements()) {
@@ -158,7 +158,7 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests Boolean Set with duplicates: {true,false,true} → 2 elements, both true. */
   @Test
-  public void testMultipleBooleansIsTypeOfBoolean() {
+  void testMultipleBooleansIsTypeOfBoolean() {
     Value result = compile("Set{true, false, true}.oclIsTypeOf(Boolean)");
     assertSize(result, 2);
     for (OCLElement elem : result.getElements()) {
@@ -170,7 +170,7 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests empty collection → empty result. */
   @Test
-  public void testEmptyCollectionIsTypeOf() {
+  void testEmptyCollectionIsTypeOf() {
     assertSize(compile("Set{}.oclIsTypeOf(Integer)"), 0);
   }
 
@@ -178,7 +178,7 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests Sequence order preserved: {@code Sequence{1,2,3}.oclIsTypeOf(Integer)} → all true. */
   @Test
-  public void testSequencePreservesOrder() {
+  void testSequencePreservesOrder() {
     Value result = compile("Sequence{1, 2, 3}.oclIsTypeOf(Integer)");
     assertSize(result, 3);
     for (OCLElement elem : result.getElements()) {
@@ -190,7 +190,7 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests type checker infers Collection(Boolean) as result type. */
   @Test
-  public void testTypeCheckReturnsBoolean() {
+  void testTypeCheckReturnsBoolean() {
     ParseTree tree = parse("Set{5}.oclIsTypeOf(Integer)");
     MetamodelWrapperInterface dummySpec = buildDummySpec();
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
@@ -211,7 +211,7 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests type checker preserves Sequence collection kind. */
   @Test
-  public void testTypeCheckPreservesCollectionKind() {
+  void testTypeCheckPreservesCollectionKind() {
     ParseTree tree = parse("Sequence{1, 2}.oclIsTypeOf(Integer)");
     MetamodelWrapperInterface dummySpec = buildDummySpec();
     SymbolTable symbolTable = new SymbolTableImpl(dummySpec);
@@ -235,7 +235,7 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests mixed types checking for Integer: {1,"hello",true} → {true,false,false}. */
   @Test
-  public void testMixedTypesInCollection() {
+  void testMixedTypesInCollection() {
     Value result = compile("Sequence{1, \"hello\", true}.oclIsTypeOf(Integer)");
     assertSize(result, 3);
     List<OCLElement> elements = result.getElements();
@@ -246,7 +246,7 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests mixed types checking for String: {1,"hello",true,"world"} → {false,true,false,true}. */
   @Test
-  public void testMixedTypesCheckingForString() {
+  void testMixedTypesCheckingForString() {
     Value result = compile("Sequence{1, \"hello\", true, \"world\"}.oclIsTypeOf(String)");
     assertSize(result, 4);
     List<OCLElement> elements = result.getElements();
@@ -258,7 +258,7 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests {1,"test",true}.oclIsTypeOf(Boolean) → exactly one true. */
   @Test
-  public void testAllDifferentTypesCheckBoolean() {
+  void testAllDifferentTypesCheckBoolean() {
     Value result = compile("Set{1, \"test\", true}.oclIsTypeOf(Boolean)");
     assertSize(result, 3);
     int trueCount = 0;
@@ -270,7 +270,7 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests all Strings checked against Integer → all false. */
   @Test
-  public void testEmptyResultFromMixedCollection() {
+  void testEmptyResultFromMixedCollection() {
     Value result = compile("Set{\"hello\", \"world\", \"test\"}.oclIsTypeOf(Integer)");
     assertSize(result, 3);
     for (OCLElement elem : result.getElements()) {
@@ -283,7 +283,7 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
    * {true,true,false,false,false,false}.
    */
   @Test
-  public void testNestedCollectionsWithMixedTypes() {
+  void testNestedCollectionsWithMixedTypes() {
     Value result =
         compile(
             "Sequence{Set{1, 2}, Set{\"a\", \"b\"}, Set{true,"
@@ -302,7 +302,7 @@ public class OCLIsTypeOfTest extends DummyTestSpecification {
 
   /** Tests Spacecraft instance is exactly of type Spacecraft → {@code [true]}. */
   @Test
-  public void testSpacecraftIsTypeOfSpacecraft() {
+  void testSpacecraftIsTypeOfSpacecraft() {
     String constraint =
         """
 context spaceMission::Spacecraft inv typeOfSpacecraft:
@@ -321,7 +321,7 @@ context spaceMission::Spacecraft inv typeOfSpacecraft:
 
   /** Tests Spacecraft instance is NOT exactly of type Satellite → all false, constraint fails. */
   @Test
-  public void testSpacecraftIsNotTypeOfSatellite() {
+  void testSpacecraftIsNotTypeOfSatellite() {
     String constraint =
         """
 context spaceMission::Spacecraft inv typeOfSatellite:
@@ -340,7 +340,7 @@ context spaceMission::Spacecraft inv typeOfSatellite:
 
   /** Tests Satellite instances are exactly of type Satellite → all true. */
   @Test
-  public void testSatelliteIsTypeOfSatellite() {
+  void testSatelliteIsTypeOfSatellite() {
     String constraint =
         """
 context satelliteSystem::Satellite inv typeOfSatellite:
@@ -362,7 +362,7 @@ context satelliteSystem::Satellite inv typeOfSatellite:
    * pass oclIsTypeOf(Spacecraft).
    */
   @Test
-  public void testOclIsTypeOfUsedInSelect() {
+  void testOclIsTypeOfUsedInSelect() {
     String constraint =
         """
         context spaceMission::Spacecraft inv typeOfInSelect:
@@ -386,7 +386,7 @@ context satelliteSystem::Satellite inv typeOfSatellite:
    * p.oclIsTypeOf(Integer)) should filter correctly.
    */
   @Test
-  public void testOclIsTypeOfAsSelectPredicate() {
+  void testOclIsTypeOfAsSelectPredicate() {
     Value result = compile("Sequence{1, \"hello\", true}.select(p | p.oclIsTypeOf(Integer))");
     assertSize(result, 1);
     assertEquals(1, ((OCLElement.IntValue) result.getElements().get(0)).value());
@@ -397,7 +397,7 @@ context satelliteSystem::Satellite inv typeOfSatellite:
    * collection.select(p | p.oclIsTypeOf(T)).size() > 0
    */
   @Test
-  public void testOclIsTypeOfSelectThenSize() {
+  void testOclIsTypeOfSelectThenSize() {
     Value result =
         compile("Sequence{1, \"hello\", true, 2}.select(p | p.oclIsTypeOf(Integer)).size()");
     assertSingleInt(result, 2);

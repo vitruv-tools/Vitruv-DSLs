@@ -31,7 +31,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * Invalid: anything with String, Boolean, or any Collection → ERROR
  * </pre>
  */
-public class OrderingTypeTest extends DummyTestSpecification {
+class OrderingTypeTest extends DummyTestSpecification {
 
   /**
    * Compiles an OCL expression and asserts that type checking rejects it with an error. Used for
@@ -63,284 +63,284 @@ public class OrderingTypeTest extends DummyTestSpecification {
   // ── ¡Integer! × ¡Integer! ─────────────────────────────────────
 
   @Test
-  public void testIntegerLessThanInteger() {
+  void testIntegerLessThanInteger() {
     assertSingleBool(compile("3 < 5"), true);
   }
 
   @Test
-  public void testIntegerLessThanIntegerFalse() {
+  void testIntegerLessThanIntegerFalse() {
     assertSingleBool(compile("5 < 3"), false);
   }
 
   @Test
-  public void testIntegerLessOrEqualIntegerEqual() {
+  void testIntegerLessOrEqualIntegerEqual() {
     assertSingleBool(compile("5 <= 5"), true);
   }
 
   @Test
-  public void testIntegerLessOrEqualIntegerLess() {
+  void testIntegerLessOrEqualIntegerLess() {
     assertSingleBool(compile("3 <= 5"), true);
   }
 
   @Test
-  public void testIntegerLessOrEqualIntegerFalse() {
+  void testIntegerLessOrEqualIntegerFalse() {
     assertSingleBool(compile("5 <= 3"), false);
   }
 
   @Test
-  public void testIntegerGreaterThanInteger() {
+  void testIntegerGreaterThanInteger() {
     assertSingleBool(compile("5 > 3"), true);
   }
 
   @Test
-  public void testIntegerGreaterOrEqualIntegerEqual() {
+  void testIntegerGreaterOrEqualIntegerEqual() {
     assertSingleBool(compile("5 >= 5"), true);
   }
 
   @Test
-  public void testIntegerGreaterOrEqualIntegerGreater() {
+  void testIntegerGreaterOrEqualIntegerGreater() {
     assertSingleBool(compile("7 >= 5"), true);
   }
 
   // ── ¡Integer! × ¡Float! ──────────────────────────────────────
 
   @Test
-  public void testIntegerLessThanFloat() {
+  void testIntegerLessThanFloat() {
     assertSingleBool(compile("3 < 3.5"), true);
   }
 
   @Test
-  public void testIntegerLessOrEqualFloat() {
+  void testIntegerLessOrEqualFloat() {
     assertSingleBool(compile("3 <= 3.0"), true);
   }
 
   @Test
-  public void testIntegerGreaterThanFloat() {
+  void testIntegerGreaterThanFloat() {
     assertSingleBool(compile("4 > 3.5"), true);
   }
 
   @Test
-  public void testIntegerGreaterOrEqualFloat() {
+  void testIntegerGreaterOrEqualFloat() {
     assertSingleBool(compile("4 >= 4.0"), true);
   }
 
   // ── ¡Integer! × ¡Double! ─────────────────────────────────────
 
   @Test
-  public void testIntegerLessThanDouble() {
+  void testIntegerLessThanDouble() {
     assertSingleBool(compile("3 < 3.5"), true);
   }
 
   @Test
-  public void testIntegerGreaterThanDouble() {
+  void testIntegerGreaterThanDouble() {
     assertSingleBool(compile("4 > 3.5"), true);
   }
 
   // ── ¡Float! × ¡Integer! ──────────────────────────────────────
 
   @Test
-  public void testFloatLessThanInteger() {
+  void testFloatLessThanInteger() {
     assertSingleBool(compile("2.5 < 3"), true);
   }
 
   @Test
-  public void testFloatGreaterOrEqualInteger() {
+  void testFloatGreaterOrEqualInteger() {
     assertSingleBool(compile("3.0 >= 3"), true);
   }
 
   @Test
-  public void testFloatGreaterThanInteger() {
+  void testFloatGreaterThanInteger() {
     assertSingleBool(compile("3.5 > 3"), true);
   }
 
   // ── ¡Float! × ¡Float! ────────────────────────────────────────
 
   @Test
-  public void testFloatLessThanFloat() {
+  void testFloatLessThanFloat() {
     assertSingleBool(compile("1.5 < 2.5"), true);
   }
 
   @Test
-  public void testFloatLessOrEqualFloat() {
+  void testFloatLessOrEqualFloat() {
     assertSingleBool(compile("1.5 <= 1.5"), true);
   }
 
   @Test
-  public void testFloatGreaterThanFloat() {
+  void testFloatGreaterThanFloat() {
     assertSingleBool(compile("2.5 > 1.5"), true);
   }
 
   @Test
-  public void testFloatGreaterOrEqualFloat() {
+  void testFloatGreaterOrEqualFloat() {
     assertSingleBool(compile("2.5 >= 2.5"), true);
   }
 
   // ── ¡Float! × ¡Double! ───────────────────────────────────────
 
   @Test
-  public void testFloatLessThanDouble() {
+  void testFloatLessThanDouble() {
     assertSingleBool(compile("1.5 < 2.5"), true);
   }
 
   @Test
-  public void testFloatLessOrEqualDouble() {
+  void testFloatLessOrEqualDouble() {
     assertSingleBool(compile("1.5 <= 1.5"), true);
   }
 
   @Test
-  public void testFloatGreaterThanDouble() {
+  void testFloatGreaterThanDouble() {
     assertSingleBool(compile("2.5 > 1.5"), true);
   }
 
   // ── ¡Double! × ¡Integer! ─────────────────────────────────────
 
   @Test
-  public void testDoubleLessThanInteger() {
+  void testDoubleLessThanInteger() {
     assertSingleBool(compile("2.5 < 3"), true);
   }
 
   @Test
-  public void testDoubleGreaterThanInteger() {
+  void testDoubleGreaterThanInteger() {
     assertSingleBool(compile("3.5 > 3"), true);
   }
 
   @Test
-  public void testDoubleGreaterOrEqualInteger() {
+  void testDoubleGreaterOrEqualInteger() {
     assertSingleBool(compile("3.0 >= 3"), true);
   }
 
   // ── ¡Double! × ¡Float! ───────────────────────────────────────
 
   @Test
-  public void testDoubleLessThanFloat() {
+  void testDoubleLessThanFloat() {
     assertSingleBool(compile("1.5 < 2.5"), true);
   }
 
   @Test
-  public void testDoubleGreaterThanFloat() {
+  void testDoubleGreaterThanFloat() {
     assertSingleBool(compile("2.5 > 1.5"), true);
   }
 
   // ── ¡Double! × ¡Double! ──────────────────────────────────────
 
   @Test
-  public void testDoubleLessThanDouble() {
+  void testDoubleLessThanDouble() {
     assertSingleBool(compile("1.5 < 2.5"), true);
   }
 
   @Test
-  public void testDoubleLessOrEqualDoubleEqual() {
+  void testDoubleLessOrEqualDoubleEqual() {
     assertSingleBool(compile("2.5 <= 2.5"), true);
   }
 
   @Test
-  public void testDoubleGreaterThanDouble() {
+  void testDoubleGreaterThanDouble() {
     assertSingleBool(compile("2.5 > 1.5"), true);
   }
 
   @Test
-  public void testDoubleGreaterOrEqualDouble() {
+  void testDoubleGreaterOrEqualDouble() {
     assertSingleBool(compile("2.5 >= 2.5"), true);
   }
 
   // ── ERROR: ¡String! operands ──────────────────────────────────
 
   @Test
-  public void testStringLessThanIntegerFails() {
+  void testStringLessThanIntegerFails() {
     compileExpectError("\"hello\" < 1");
   }
 
   @Test
-  public void testStringLessThanStringFails() {
+  void testStringLessThanStringFails() {
     compileExpectError("\"hello\" < \"world\"");
   }
 
   @Test
-  public void testStringGreaterThanDoubleFails() {
+  void testStringGreaterThanDoubleFails() {
     compileExpectError("\"hello\" > 2.5");
   }
 
   @Test
-  public void testIntegerLessThanStringFails() {
+  void testIntegerLessThanStringFails() {
     compileExpectError("1 < \"hello\"");
   }
 
   @Test
-  public void testFloatLessThanStringFails() {
+  void testFloatLessThanStringFails() {
     compileExpectError("1.5 < \"hello\"");
   }
 
   @Test
-  public void testDoubleLessThanStringFails() {
+  void testDoubleLessThanStringFails() {
     compileExpectError("2.5 < \"hello\"");
   }
 
   // ── ERROR: ¡Boolean! operands ─────────────────────────────────
 
   @Test
-  public void testBooleanLessThanIntegerFails() {
+  void testBooleanLessThanIntegerFails() {
     compileExpectError("true < 1");
   }
 
   @Test
-  public void testBooleanLessOrEqualIntegerFails() {
+  void testBooleanLessOrEqualIntegerFails() {
     compileExpectError("true <= 1");
   }
 
   @Test
-  public void testBooleanLessThanBooleanFails() {
+  void testBooleanLessThanBooleanFails() {
     compileExpectError("true < false");
   }
 
   @Test
-  public void testIntegerLessThanBooleanFails() {
+  void testIntegerLessThanBooleanFails() {
     compileExpectError("1 < true");
   }
 
   // ── ERROR: Collection operands ────────────────────────────────
 
   @Test
-  public void testSetLessThanIntegerFails() {
+  void testSetLessThanIntegerFails() {
     compileExpectError("Set{1, 2} < 3");
   }
 
   @Test
-  public void testSetLessThanSetFails() {
+  void testSetLessThanSetFails() {
     compileExpectError("Set{1} < Set{2}");
   }
 
   @Test
-  public void testSequenceLessThanIntegerFails() {
+  void testSequenceLessThanIntegerFails() {
     compileExpectError("Sequence{1, 2} < 3");
   }
 
   @Test
-  public void testBagLessThanIntegerFails() {
+  void testBagLessThanIntegerFails() {
     compileExpectError("Bag{1, 2} < 3");
   }
 
   @Test
-  public void testOrderedSetLessThanIntegerFails() {
+  void testOrderedSetLessThanIntegerFails() {
     compileExpectError("OrderedSet{1, 2} < 3");
   }
 
   @Test
-  public void testIntegerLessThanSetFails() {
+  void testIntegerLessThanSetFails() {
     compileExpectError("3 < Set{1, 2}");
   }
 
   @Test
-  public void testIntegerLessThanSequenceFails() {
+  void testIntegerLessThanSequenceFails() {
     compileExpectError("3 < Sequence{1, 2}");
   }
 
   @Test
-  public void testIntegerLessThanBagFails() {
+  void testIntegerLessThanBagFails() {
     compileExpectError("3 < Bag{1, 2}");
   }
 
   @Test
-  public void testIntegerLessThanOrderedSetFails() {
+  void testIntegerLessThanOrderedSetFails() {
     compileExpectError("3 < OrderedSet{1, 2}");
   }
 }

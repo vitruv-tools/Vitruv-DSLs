@@ -51,7 +51,7 @@ import tools.vitruv.dsls.vitruvOCL.evaluator.Value;
  * @see OCLElement Collection element types
  * @see EvaluationVisitor Evaluates collection operations
  */
-public class CollectionTest extends DummyTestSpecification {
+class CollectionTest extends DummyTestSpecification {
 
   // ==================== Collection Literals ====================
 
@@ -63,7 +63,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Collection with 3 elements (1, 2, 3)
    */
   @Test
-  public void testSetLiteral() {
+  void testSetLiteral() {
     Value result = compile("Set{1,2,3}");
 
     assertSize(result, 3);
@@ -80,7 +80,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Collection with 3 unique elements (duplicates removed)
    */
   @Test
-  public void testSetRemovesDuplicates() {
+  void testSetRemovesDuplicates() {
     assertSize(compile("Set{1,2,2,3}"), 3);
   }
 
@@ -92,7 +92,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Empty collection (size = 0, isEmpty = true)
    */
   @Test
-  public void testEmptySet() {
+  void testEmptySet() {
     Value result = compile("Set{}");
 
     assertTrue(result.isEmpty(), "Set{} should be empty");
@@ -107,7 +107,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Ordered collection with 3 elements
    */
   @Test
-  public void testSequenceLiteral() {
+  void testSequenceLiteral() {
     assertSize(compile("Sequence{1,2,3}"), 3);
   }
 
@@ -119,7 +119,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Collection with 4 elements (duplicates kept)
    */
   @Test
-  public void testSequenceKeepsDuplicates() {
+  void testSequenceKeepsDuplicates() {
     assertSize(compile("Sequence{1,2,2,3}"), 4);
   }
 
@@ -133,7 +133,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Set containing {1, 2, 3, 4, 5}
    */
   @Test
-  public void testRange() {
+  void testRange() {
     Value result = compile("Set{1..5}");
 
     assertSize(result, 5);
@@ -149,7 +149,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Sequence containing {5, 4, 3, 2, 1} in that order
    */
   @Test
-  public void testDescendingRange() {
+  void testDescendingRange() {
     Value result = compile("Sequence{5..1}");
 
     assertSize(result, 5);
@@ -167,7 +167,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Singleton collection {@code [3]}
    */
   @Test
-  public void testSize() {
+  void testSize() {
     assertSingleInt(compile("Set{1,2,3}.size()"), 3);
   }
 
@@ -179,7 +179,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Singleton collection {@code [true]}
    */
   @Test
-  public void testIsEmpty() {
+  void testIsEmpty() {
     assertSingleBool(compile("Set{}.isEmpty()"), true);
   }
 
@@ -191,7 +191,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Singleton collection {@code [true]}
    */
   @Test
-  public void testNotEmpty() {
+  void testNotEmpty() {
     assertSingleBool(compile("Set{1,2,3}.notEmpty()"), true);
   }
 
@@ -203,7 +203,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Singleton collection {@code [true]}
    */
   @Test
-  public void testIncludes() {
+  void testIncludes() {
     assertSingleBool(compile("Set{1,2,3}.includes(2)"), true);
   }
 
@@ -215,7 +215,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Singleton collection {@code [false]}
    */
   @Test
-  public void testIncludesFalse() {
+  void testIncludesFalse() {
     assertSingleBool(compile("Set{1,2,3}.includes(5)"), false);
   }
 
@@ -227,7 +227,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Singleton collection {@code [true]}
    */
   @Test
-  public void testExcludes() {
+  void testExcludes() {
     assertSingleBool(compile("Set{1,2,3}.excludes(5)"), true);
   }
 
@@ -241,7 +241,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Set containing {1, 2, 3, 4}
    */
   @Test
-  public void testUnion() {
+  void testUnion() {
     Value result = compile("Set{1,2}.union(Set{3,4})");
 
     assertSize(result, 4);
@@ -259,7 +259,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Set containing {1, 2, 3} (duplicate 2 removed)
    */
   @Test
-  public void testUnionWithDuplicates() {
+  void testUnionWithDuplicates() {
     Value result = compile("Set{1,2}.union(Set{2,3})");
 
     assertSize(result, 3);
@@ -276,7 +276,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Set containing {1, 2, 3}
    */
   @Test
-  public void testIncluding() {
+  void testIncluding() {
     Value result = compile("Set{1,2}.including(3)");
 
     assertSize(result, 3);
@@ -291,7 +291,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Set containing {1, 3}
    */
   @Test
-  public void testExcluding() {
+  void testExcluding() {
     Value result = compile("Set{1,2,3}.excluding(2)");
 
     assertSize(result, 2);
@@ -309,7 +309,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Singleton collection {@code [1]}
    */
   @Test
-  public void testFirst() {
+  void testFirst() {
     assertSingleInt(compile("Sequence{1,2,3}.first()"), 1);
   }
 
@@ -321,7 +321,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Singleton collection {@code [3]}
    */
   @Test
-  public void testLast() {
+  void testLast() {
     assertSingleInt(compile("Sequence{1,2,3}.last()"), 3);
   }
 
@@ -333,7 +333,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Sequence containing {3, 2, 1} in that order
    */
   @Test
-  public void testReverse() {
+  void testReverse() {
     Value result = compile("Sequence{1,2,3}.reverse()");
 
     assertSize(result, 3);
@@ -354,7 +354,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Evaluation flow:</b> {@code {1,2,3} → {1,2,3,4} → {1,3,4} → 3}
    */
   @Test
-  public void testChainedOperations() {
+  void testChainedOperations() {
     assertSingleInt(compile("Set{1,2,3}.including(4).excluding(2).size()"), 3);
   }
 
@@ -368,7 +368,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Singleton collection {@code [0]}
    */
   @Test
-  public void testEmptySetSize() {
+  void testEmptySetSize() {
     assertSingleInt(compile("Set{}.size()"), 0);
   }
 
@@ -380,7 +380,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Singleton collection {@code [1]}
    */
   @Test
-  public void testSingletonSize() {
+  void testSingletonSize() {
     assertSingleInt(compile("Set{42}.size()"), 1);
   }
 
@@ -392,7 +392,7 @@ public class CollectionTest extends DummyTestSpecification {
    * <p><b>Expected:</b> Singleton collection {@code [100]}
    */
   @Test
-  public void testLargeRange() {
+  void testLargeRange() {
     assertSingleInt(compile("Set{1..100}.size()"), 100);
   }
 }

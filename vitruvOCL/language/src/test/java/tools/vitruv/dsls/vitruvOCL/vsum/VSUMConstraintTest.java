@@ -48,7 +48,7 @@ import tools.vitruv.framework.vsum.internal.InternalVirtualModel;
  * files. This validates the full VSUM integration path including metamodel discovery, instance
  * retrieval, and correspondence-based constraint evaluation.
  */
-public class VSUMConstraintTest {
+class VSUMConstraintTest {
 
   private static final Path SPACEMISSION_ECORE =
       Path.of("src/test/resources/test-metamodels/spaceMission.ecore");
@@ -70,17 +70,17 @@ public class VSUMConstraintTest {
   private InternalVirtualModel mockVsum;
 
   @BeforeAll
-  public static void setupPaths() {
+  static void setupPaths() {
     MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
   }
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     mockVsum = mock(InternalVirtualModel.class, withSettings().extraInterfaces(ViewSource.class));
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     VitruvOCL.clearVSUM();
   }
 
@@ -248,7 +248,7 @@ public class VSUMConstraintTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testRegisterVSUM() {
+  void testRegisterVSUM() {
     Collection<Resource> resources = loadResources(SPACEMISSION_ECORE, SPACECRAFT_VOYAGER);
     setupMockVsum(resources, mockCorrespondenceModel(List.of()));
 
@@ -258,7 +258,7 @@ public class VSUMConstraintTest {
   }
 
   @Test
-  public void testClearVSUM() {
+  void testClearVSUM() {
     Collection<Resource> resources = loadResources(SPACEMISSION_ECORE, SPACECRAFT_VOYAGER);
     setupMockVsum(resources, mockCorrespondenceModel(List.of()));
 
@@ -269,12 +269,12 @@ public class VSUMConstraintTest {
   }
 
   @Test
-  public void testRegisterVSUMNull() {
+  void testRegisterVSUMNull() {
     assertThrows(IllegalArgumentException.class, () -> VitruvOCL.registerVSUM(null));
   }
 
   @Test
-  public void testEvaluateWithoutRegisteredVSUMThrows() {
+  void testEvaluateWithoutRegisteredVSUMThrows() {
     assertThrows(
         IllegalStateException.class,
         () -> VitruvOCL.evaluateConstraint("context spaceMission::Spacecraft inv: true"));
@@ -285,7 +285,7 @@ public class VSUMConstraintTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testSimpleConstraintAgainstVSUM() {
+  void testSimpleConstraintAgainstVSUM() {
     Collection<Resource> resources = loadResources(SPACEMISSION_ECORE, SPACECRAFT_VOYAGER);
     setupMockVsum(resources, mockCorrespondenceModel(List.of()));
     VitruvOCL.registerVSUM(mockVsum);
@@ -298,7 +298,7 @@ public class VSUMConstraintTest {
   }
 
   @Test
-  public void testConstraintViolationAgainstVSUM() {
+  void testConstraintViolationAgainstVSUM() {
     Collection<Resource> resources = loadResources(SPACEMISSION_ECORE, SPACECRAFT_VOYAGER);
     setupMockVsum(resources, mockCorrespondenceModel(List.of()));
     VitruvOCL.registerVSUM(mockVsum);
@@ -311,7 +311,7 @@ public class VSUMConstraintTest {
   }
 
   @Test
-  public void testAttributeConstraintAgainstVSUM() {
+  void testAttributeConstraintAgainstVSUM() {
     Collection<Resource> resources = loadResources(SPACEMISSION_ECORE, SPACECRAFT_VOYAGER);
     setupMockVsum(resources, mockCorrespondenceModel(List.of()));
     VitruvOCL.registerVSUM(mockVsum);
@@ -324,7 +324,7 @@ public class VSUMConstraintTest {
   }
 
   @Test
-  public void testCrossMetamodelConstraintAgainstVSUM() {
+  void testCrossMetamodelConstraintAgainstVSUM() {
     Collection<Resource> resources =
         loadResources(SPACEMISSION_ECORE, SATELLITE_ECORE, SPACECRAFT_VOYAGER, SATELLITE_VOYAGER);
     setupMockVsum(resources, mockCorrespondenceModel(List.of()));
@@ -348,7 +348,7 @@ public class VSUMConstraintTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testEvaluateConstraintsFromFileAgainstVSUM() {
+  void testEvaluateConstraintsFromFileAgainstVSUM() {
     Collection<Resource> resources = loadResources(SPACEMISSION_ECORE, SPACECRAFT_VOYAGER);
     setupMockVsum(resources, mockCorrespondenceModel(List.of()));
     VitruvOCL.registerVSUM(mockVsum);
@@ -364,7 +364,7 @@ public class VSUMConstraintTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testCorrespondenceOperatorAgainstVSUM() {
+  void testCorrespondenceOperatorAgainstVSUM() {
     Collection<Resource> modelResources =
         loadResources(
             SPACEMISSION_ECORE,
@@ -394,7 +394,7 @@ public class VSUMConstraintTest {
   }
 
   @Test
-  public void testSelectCorrespondenceAgainstVSUM() {
+  void testSelectCorrespondenceAgainstVSUM() {
     Collection<Resource> modelResources =
         loadResources(
             SPACEMISSION_ECORE,
@@ -424,7 +424,7 @@ public class VSUMConstraintTest {
   }
 
   @Test
-  public void testNoCorrespondenceAgainstVSUM() {
+  void testNoCorrespondenceAgainstVSUM() {
     Collection<Resource> modelResources =
         loadResources(
             SPACEMISSION_ECORE, SATELLITE_ECORE,
@@ -449,7 +449,7 @@ public class VSUMConstraintTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testSelectCorrespondenceWithMatchingTagAgainstVSUM() {
+  void testSelectCorrespondenceWithMatchingTagAgainstVSUM() {
     Collection<Resource> modelResources =
         loadResources(
             SPACEMISSION_ECORE,
@@ -483,7 +483,7 @@ public class VSUMConstraintTest {
   }
 
   @Test
-  public void testSelectCorrespondenceWithWrongTagAgainstVSUM() {
+  void testSelectCorrespondenceWithWrongTagAgainstVSUM() {
     Collection<Resource> modelResources =
         loadResources(
             SPACEMISSION_ECORE,
@@ -516,7 +516,7 @@ public class VSUMConstraintTest {
   }
 
   @Test
-  public void testExistsCorrespondenceWithTagAgainstVSUM() {
+  void testExistsCorrespondenceWithTagAgainstVSUM() {
     Collection<Resource> modelResources =
         loadResources(
             SPACEMISSION_ECORE,
@@ -560,7 +560,7 @@ public class VSUMConstraintTest {
   }
 
   @Test
-  public void testRejectCorrespondenceWithTagAgainstVSUM() {
+  void testRejectCorrespondenceWithTagAgainstVSUM() {
     Collection<Resource> modelResources =
         loadResources(
             SPACEMISSION_ECORE,
@@ -598,7 +598,7 @@ public class VSUMConstraintTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  public void testReRegisterVSUM() {
+  void testReRegisterVSUM() {
     Collection<Resource> resources1 = loadResources(SPACEMISSION_ECORE, SPACECRAFT_VOYAGER);
     Collection<Resource> resources2 = loadResources(SATELLITE_ECORE, SATELLITE_VOYAGER);
 

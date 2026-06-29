@@ -34,7 +34,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * OrderedSet). abs/floor/ceil/ceiling/round: ¡Numeric! singletons only. All singleton receivers for
  * collection ops → ERROR. All collection receivers for scalar ops → ERROR.
  */
-public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
+class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
 
   protected void compileExpectError(String input) {
     ParseTree tree = parse(input);
@@ -62,48 +62,48 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetIntSize() {
+  void testSetIntSize() {
     assertSingleInt(compile("Set{1, 2, 3}.size()"), 3);
   }
 
   @Test
-  public void testEmptySetSize() {
+  void testEmptySetSize() {
     assertSingleInt(compile("Set{}.size()"), 0);
   }
 
   @Test
-  public void testSequenceIntSize() {
+  void testSequenceIntSize() {
     assertSingleInt(compile("Sequence{1, 2, 3}.size()"), 3);
   }
 
   @Test
-  public void testBagIntSize() {
+  void testBagIntSize() {
     assertSingleInt(compile("Bag{1, 1, 2}.size()"), 3);
   }
 
   @Test
-  public void testOrderedSetIntSize() {
+  void testOrderedSetIntSize() {
     assertSingleInt(compile("OrderedSet{1, 2, 3}.size()"), 3);
   }
 
   @Test
-  public void testIntegerSizeOnSingleton() {
+  void testIntegerSizeOnSingleton() {
     // ¡Integer! scalar — size() requires explicit collection → error
     compileExpectError("1.size()");
   }
 
   @Test
-  public void testFloatSizeOnSingleton() {
+  void testFloatSizeOnSingleton() {
     compileExpectError("1.5.size()");
   }
 
   @Test
-  public void testDoubleSizeOnSingleton() {
+  void testDoubleSizeOnSingleton() {
     compileExpectError("2.5.size()");
   }
 
   @Test
-  public void testBooleanSizeOnSingleton() {
+  void testBooleanSizeOnSingleton() {
     compileExpectError("true.size()");
   }
 
@@ -112,58 +112,58 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testEmptySetIsEmpty() {
+  void testEmptySetIsEmpty() {
     assertSingleBool(compile("Set{}.isEmpty()"), true);
   }
 
   @Test
-  public void testNonEmptySetIsEmpty() {
+  void testNonEmptySetIsEmpty() {
     assertSingleBool(compile("Set{1}.isEmpty()"), false);
   }
 
   @Test
-  public void testNonEmptySetNotEmpty() {
+  void testNonEmptySetNotEmpty() {
     assertSingleBool(compile("Set{1}.notEmpty()"), true);
   }
 
   @Test
-  public void testEmptySetNotEmpty() {
+  void testEmptySetNotEmpty() {
     assertSingleBool(compile("Set{}.notEmpty()"), false);
   }
 
   @Test
-  public void testSequenceIsEmpty() {
+  void testSequenceIsEmpty() {
     assertSingleBool(compile("Sequence{}.isEmpty()"), true);
   }
 
   @Test
-  public void testSequenceNotEmpty() {
+  void testSequenceNotEmpty() {
     assertSingleBool(compile("Sequence{1, 2}.notEmpty()"), true);
   }
 
   @Test
-  public void testBagIsEmpty() {
+  void testBagIsEmpty() {
     assertSingleBool(compile("Bag{}.isEmpty()"), true);
   }
 
   @Test
-  public void testOrderedSetIsEmpty() {
+  void testOrderedSetIsEmpty() {
     assertSingleBool(compile("OrderedSet{}.isEmpty()"), true);
   }
 
   @Test
-  public void testIntegerIsEmptyOnSingleton() {
+  void testIntegerIsEmptyOnSingleton() {
     // ¡Integer! scalar — isEmpty() requires explicit collection → error
     compileExpectError("1.isEmpty()");
   }
 
   @Test
-  public void testBooleanIsEmptyOnSingleton() {
+  void testBooleanIsEmptyOnSingleton() {
     compileExpectError("true.isEmpty()");
   }
 
   @Test
-  public void testStringIsEmptyOnSingleton() {
+  void testStringIsEmptyOnSingleton() {
     compileExpectError("\"hello\".isEmpty()");
   }
 
@@ -172,50 +172,50 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSequenceFirst() {
+  void testSequenceFirst() {
     Value r = compile("Sequence{10, 20, 30}.first()");
     assertEquals(1, r.size());
     assertEquals(10, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSequenceLast() {
+  void testSequenceLast() {
     Value r = compile("Sequence{10, 20, 30}.last()");
     assertEquals(1, r.size());
     assertEquals(30, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testOrderedSetFirst() {
+  void testOrderedSetFirst() {
     Value r = compile("OrderedSet{10, 20, 30}.first()");
     assertEquals(1, r.size());
     assertEquals(10, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testOrderedSetLast() {
+  void testOrderedSetLast() {
     Value r = compile("OrderedSet{10, 20, 30}.last()");
     assertEquals(1, r.size());
     assertEquals(30, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSetFirstFails() {
+  void testSetFirstFails() {
     compileExpectError("Set{1, 2}.first()");
   }
 
   @Test
-  public void testSetLastFails() {
+  void testSetLastFails() {
     compileExpectError("Set{1, 2}.last()");
   }
 
   @Test
-  public void testBagFirstFails() {
+  void testBagFirstFails() {
     compileExpectError("Bag{1, 2}.first()");
   }
 
   @Test
-  public void testBagLastFails() {
+  void testBagLastFails() {
     compileExpectError("Bag{1, 2}.last()");
   }
 
@@ -224,7 +224,7 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSequenceReverse() {
+  void testSequenceReverse() {
     Value r = compile("Sequence{1, 2, 3}.reverse()");
     assertEquals(3, r.size());
     assertEquals(3, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -232,31 +232,31 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testOrderedSetReverse() {
+  void testOrderedSetReverse() {
     Value r = compile("OrderedSet{1, 2, 3}.reverse()");
     assertEquals(3, r.size());
     assertEquals(3, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSetReverse() {
+  void testSetReverse() {
     Value r = compile("Set{1, 2, 3}.reverse()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testBagReverse() {
+  void testBagReverse() {
     Value r = compile("Bag{1, 2, 3}.reverse()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testIntegerReverseFails() {
+  void testIntegerReverseFails() {
     compileExpectError("1.reverse()");
   }
 
   @Test
-  public void testBooleanReverseFails() {
+  void testBooleanReverseFails() {
     compileExpectError("true.reverse()");
   }
 
@@ -265,42 +265,42 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetIntSum() {
+  void testSetIntSum() {
     assertSingleInt(compile("Set{1, 2, 3}.sum()"), 6);
   }
 
   @Test
-  public void testSequenceIntSum() {
+  void testSequenceIntSum() {
     assertSingleInt(compile("Sequence{1, 2, 3}.sum()"), 6);
   }
 
   @Test
-  public void testBagIntSum() {
+  void testBagIntSum() {
     assertSingleInt(compile("Bag{1, 1, 2}.sum()"), 4);
   }
 
   @Test
-  public void testOrderedSetIntSum() {
+  void testOrderedSetIntSum() {
     assertSingleInt(compile("OrderedSet{1, 2, 3}.sum()"), 6);
   }
 
   @Test
-  public void testSetDoubleSum() {
+  void testSetDoubleSum() {
     assertSingleDouble(compile("Set{1.5, 2.5}.sum()"), 4.0);
   }
 
   @Test
-  public void testEmptySetSum() {
+  void testEmptySetSum() {
     assertSingleInt(compile("Set{}.sum()"), 0);
   }
 
   @Test
-  public void testIntegerSumFails() {
+  void testIntegerSumFails() {
     compileExpectError("1.sum()");
   }
 
   @Test
-  public void testBooleanSumFails() {
+  void testBooleanSumFails() {
     compileExpectError("true.sum()");
   }
 
@@ -309,58 +309,58 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetIntMax() {
+  void testSetIntMax() {
     Value r = compile("Set{1, 5, 3}.max()");
     assertEquals(5, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSetIntMin() {
+  void testSetIntMin() {
     Value r = compile("Set{1, 5, 3}.min()");
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSequenceIntMax() {
+  void testSequenceIntMax() {
     Value r = compile("Sequence{3, 1, 4, 1, 5}.max()");
     assertEquals(5, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSequenceIntMin() {
+  void testSequenceIntMin() {
     Value r = compile("Sequence{3, 1, 4, 1, 5}.min()");
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testBagIntMax() {
+  void testBagIntMax() {
     Value r = compile("Bag{2, 7, 3}.max()");
     assertEquals(7, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testOrderedSetIntMax() {
+  void testOrderedSetIntMax() {
     Value r = compile("OrderedSet{1, 2, 3}.max()");
     assertEquals(3, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSetDoubleMax() {
+  void testSetDoubleMax() {
     assertSingleDouble(compile("Set{1.5, 3.5, 2.5}.max()"), 3.5);
   }
 
   @Test
-  public void testSetDoubleMin() {
+  void testSetDoubleMin() {
     assertSingleDouble(compile("Set{1.5, 3.5, 2.5}.min()"), 1.5);
   }
 
   @Test
-  public void testIntegerMaxFails() {
+  void testIntegerMaxFails() {
     compileExpectError("1.max()");
   }
 
   @Test
-  public void testBooleanMinFails() {
+  void testBooleanMinFails() {
     compileExpectError("true.min()");
   }
 
@@ -369,27 +369,27 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetIntAvg() {
+  void testSetIntAvg() {
     assertSingleDouble(compile("Set{1, 2, 3}.avg()"), 2.0);
   }
 
   @Test
-  public void testSequenceIntAvg() {
+  void testSequenceIntAvg() {
     assertSingleDouble(compile("Sequence{1, 2, 3, 4}.avg()"), 2.5);
   }
 
   @Test
-  public void testBagIntAvg() {
+  void testBagIntAvg() {
     assertSingleDouble(compile("Bag{2, 4}.avg()"), 3.0);
   }
 
   @Test
-  public void testOrderedSetAvg() {
+  void testOrderedSetAvg() {
     assertSingleDouble(compile("OrderedSet{1, 2, 3}.avg()"), 2.0);
   }
 
   @Test
-  public void testIntegerAvgFails() {
+  void testIntegerAvgFails() {
     compileExpectError("1.avg()");
   }
 
@@ -398,118 +398,118 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetAsSet() {
+  void testSetAsSet() {
     Value r = compile("Set{1, 2, 3}.asSet()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSequenceAsSetDedup() {
+  void testSequenceAsSetDedup() {
     Value r = compile("Sequence{1, 2, 2, 3}.asSet()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testBagAsSetDedup() {
+  void testBagAsSetDedup() {
     Value r = compile("Bag{1, 1, 2}.asSet()");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testOrderedSetAsSet() {
+  void testOrderedSetAsSet() {
     Value r = compile("OrderedSet{1, 2, 3}.asSet()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSetAsBag() {
+  void testSetAsBag() {
     Value r = compile("Set{1, 2, 3}.asBag()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSequenceAsBag() {
+  void testSequenceAsBag() {
     Value r = compile("Sequence{1, 2, 3}.asBag()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testBagAsBag() {
+  void testBagAsBag() {
     Value r = compile("Bag{1, 1, 2}.asBag()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testOrderedSetAsBag() {
+  void testOrderedSetAsBag() {
     Value r = compile("OrderedSet{1, 2, 3}.asBag()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSetAsSequence() {
+  void testSetAsSequence() {
     Value r = compile("Set{1, 2, 3}.asSequence()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testBagAsSequence() {
+  void testBagAsSequence() {
     Value r = compile("Bag{1, 1, 2}.asSequence()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSequenceAsSequence() {
+  void testSequenceAsSequence() {
     Value r = compile("Sequence{1, 2}.asSequence()");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testOrderedSetAsSequence() {
+  void testOrderedSetAsSequence() {
     Value r = compile("OrderedSet{1, 2, 3}.asSequence()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSetAsOrderedSet() {
+  void testSetAsOrderedSet() {
     Value r = compile("Set{1, 2, 3}.asOrderedSet()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSequenceAsOrderedSetDedup() {
+  void testSequenceAsOrderedSetDedup() {
     Value r = compile("Sequence{1, 2, 2, 3}.asOrderedSet()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testBagAsOrderedSetDedup() {
+  void testBagAsOrderedSetDedup() {
     Value r = compile("Bag{1, 1, 2}.asOrderedSet()");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testOrderedSetAsOrderedSet() {
+  void testOrderedSetAsOrderedSet() {
     Value r = compile("OrderedSet{1, 2, 3}.asOrderedSet()");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testIntegerAsSetFails() {
+  void testIntegerAsSetFails() {
     compileExpectError("1.asSet()");
   }
 
   @Test
-  public void testBooleanAsBagFails() {
+  void testBooleanAsBagFails() {
     compileExpectError("true.asBag()");
   }
 
   @Test
-  public void testStringAsSequenceFails() {
+  void testStringAsSequenceFails() {
     compileExpectError("\"hello\".asSequence()");
   }
 
   @Test
-  public void testIntegerAsOrderedSetFails() {
+  void testIntegerAsOrderedSetFails() {
     compileExpectError("1.asOrderedSet()");
   }
 
@@ -518,41 +518,41 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSequenceAtFirst() {
+  void testSequenceAtFirst() {
     Value r = compile("Sequence{10, 20, 30}.at(1)");
     assertEquals(10, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSequenceAtMiddle() {
+  void testSequenceAtMiddle() {
     Value r = compile("Sequence{10, 20, 30}.at(2)");
     assertEquals(20, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSequenceAtLast() {
+  void testSequenceAtLast() {
     Value r = compile("Sequence{10, 20, 30}.at(3)");
     assertEquals(30, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testOrderedSetAt() {
+  void testOrderedSetAt() {
     Value r = compile("OrderedSet{10, 20, 30}.at(2)");
     assertEquals(20, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSetAtFails() {
+  void testSetAtFails() {
     compileExpectError("Set{1, 2}.at(1)");
   }
 
   @Test
-  public void testBagAtFails() {
+  void testBagAtFails() {
     compileExpectError("Bag{1, 2}.at(1)");
   }
 
   @Test
-  public void testIntegerAtFails() {
+  void testIntegerAtFails() {
     compileExpectError("1.at(1)");
   }
 
@@ -561,7 +561,7 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSequenceSubSequenceMiddle() {
+  void testSequenceSubSequenceMiddle() {
     Value r = compile("Sequence{1, 2, 3, 4}.subSequence(2, 3)");
     assertEquals(2, r.size());
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -569,36 +569,36 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testSequenceSubSequenceFull() {
+  void testSequenceSubSequenceFull() {
     Value r = compile("Sequence{1, 2, 3}.subSequence(1, 3)");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSequenceSubSequenceSingle() {
+  void testSequenceSubSequenceSingle() {
     Value r = compile("Sequence{1, 2, 3}.subSequence(2, 2)");
     assertEquals(1, r.size());
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testOrderedSetSubSequence() {
+  void testOrderedSetSubSequence() {
     Value r = compile("OrderedSet{1, 2, 3, 4}.subSequence(1, 2)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSetSubSequenceFails() {
+  void testSetSubSequenceFails() {
     compileExpectError("Set{1, 2}.subSequence(1, 2)");
   }
 
   @Test
-  public void testBagSubSequenceFails() {
+  void testBagSubSequenceFails() {
     compileExpectError("Bag{1, 2}.subSequence(1, 2)");
   }
 
   @Test
-  public void testIntegerSubSequenceFails() {
+  void testIntegerSubSequenceFails() {
     compileExpectError("1.subSequence(1, 1)");
   }
 
@@ -607,142 +607,142 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testIntegerAbsPositive() {
+  void testIntegerAbsPositive() {
     assertSingleInt(compile("(-3).abs()"), 3);
   }
 
   @Test
-  public void testIntegerAbsNegative() {
+  void testIntegerAbsNegative() {
     assertSingleInt(compile("(-5).abs()"), 5);
   }
 
   @Test
-  public void testIntegerAbsZero() {
+  void testIntegerAbsZero() {
     assertSingleInt(compile("0.abs()"), 0);
   }
 
   @Test
-  public void testFloatAbs() {
+  void testFloatAbs() {
     assertSingleDouble(compile("(-1.5).abs()"), 1.5);
   }
 
   @Test
-  public void testDoubleAbs() {
+  void testDoubleAbs() {
     assertSingleDouble(compile("(-2.5).abs()"), 2.5);
   }
 
   @Test
-  public void testStringAbsFails() {
+  void testStringAbsFails() {
     compileExpectError("\"hello\".abs()");
   }
 
   @Test
-  public void testBooleanAbsFails() {
+  void testBooleanAbsFails() {
     compileExpectError("true.abs()");
   }
 
   @Test
-  public void testSetAbsFails() {
+  void testSetAbsFails() {
     compileExpectError("Set{1, 2}.abs()");
   }
 
   @Test
-  public void testSequenceAbsFails() {
+  void testSequenceAbsFails() {
     compileExpectError("Sequence{1, 2}.abs()");
   }
 
   @Test
-  public void testIntegerFloor() {
+  void testIntegerFloor() {
     assertSingleInt(compile("3.floor()"), 3);
   }
 
   @Test
-  public void testFloatFloor() {
+  void testFloatFloor() {
     assertSingleDouble(compile("2.7.floor()"), 2.0);
   }
 
   @Test
-  public void testDoubleFloor() {
+  void testDoubleFloor() {
     assertSingleDouble(compile("2.9.floor()"), 2.0);
   }
 
   @Test
-  public void testStringFloorFails() {
+  void testStringFloorFails() {
     compileExpectError("\"hello\".floor()");
   }
 
   @Test
-  public void testSetFloorFails() {
+  void testSetFloorFails() {
     compileExpectError("Set{1, 2}.floor()");
   }
 
   @Test
-  public void testIntegerCeil() {
+  void testIntegerCeil() {
     assertSingleInt(compile("3.ceil()"), 3);
   }
 
   @Test
-  public void testFloatCeil() {
+  void testFloatCeil() {
     assertSingleDouble(compile("2.3.ceil()"), 3.0);
   }
 
   @Test
-  public void testDoubleCeil() {
+  void testDoubleCeil() {
     assertSingleDouble(compile("2.1.ceil()"), 3.0);
   }
 
   @Test
-  public void testStringCeilFails() {
+  void testStringCeilFails() {
     compileExpectError("\"hello\".ceil()");
   }
 
   @Test
-  public void testSetCeilFails() {
+  void testSetCeilFails() {
     compileExpectError("Set{1}.ceil()");
   }
 
   @Test
-  public void testIntegerCeiling() {
+  void testIntegerCeiling() {
     assertSingleInt(compile("3.ceiling()"), 3);
   }
 
   @Test
-  public void testFloatCeiling() {
+  void testFloatCeiling() {
     assertSingleDouble(compile("2.3.ceiling()"), 3.0);
   }
 
   @Test
-  public void testDoubleCeilingAlreadyWhole() {
+  void testDoubleCeilingAlreadyWhole() {
     assertSingleDouble(compile("3.0.ceiling()"), 3.0);
   }
 
   @Test
-  public void testStringCeilingFails() {
+  void testStringCeilingFails() {
     compileExpectError("\"hello\".ceiling()");
   }
 
   @Test
-  public void testIntegerRound() {
+  void testIntegerRound() {
     assertSingleInt(compile("3.round()"), 3);
   }
 
   @Test
-  public void testFloatRoundUp() {
+  void testFloatRoundUp() {
     assertSingleDouble(compile("2.5.round()"), 3.0);
   }
 
   @Test
-  public void testDoubleRoundDown() {
+  void testDoubleRoundDown() {
     assertSingleDouble(compile("2.4.round()"), 2.0);
   }
 
   @Test
-  public void testStringRoundFails() {
+  void testStringRoundFails() {
     compileExpectError("\"hello\".round()");
   }
 
   @Test
-  public void testSetRoundFails() {
+  void testSetRoundFails() {
     compileExpectError("Set{1.5}.round()");
   }
 
@@ -765,71 +765,71 @@ public class CollectionNullaryOpsTypeTest extends DummyTestSpecification {
   // ── abs() on ¡Float! grammar literal (parsed as Double) ───────
 
   @Test
-  public void testFloatAbsNegativeValue() {
+  void testFloatAbsNegativeValue() {
     assertSingleDouble(compile("(-2.5).abs()"), 2.5);
   }
 
   @Test
-  public void testFloatAbsAlreadyPositive() {
+  void testFloatAbsAlreadyPositive() {
     assertSingleDouble(compile("(2.5).abs()"), 2.5);
   }
 
   @Test
-  public void testFloatAbsZero() {
+  void testFloatAbsZero() {
     assertSingleDouble(compile("(0.0).abs()"), 0.0);
   }
 
   // ── floor() on ¡Float! → ¡Double! (promotion documented) ──────
 
   @Test
-  public void testFloatFloorNegative() {
+  void testFloatFloorNegative() {
     assertSingleDouble(compile("(-2.3).floor()"), -3.0);
   }
 
   @Test
-  public void testFloatFloorAlreadyWhole() {
+  void testFloatFloorAlreadyWhole() {
     assertSingleDouble(compile("(3.0).floor()"), 3.0);
   }
 
   // ── ceil() / ceiling() on ¡Float! → ¡Double! ──────────────────
 
   @Test
-  public void testFloatCeilNegative() {
+  void testFloatCeilNegative() {
     assertSingleDouble(compile("(-2.7).ceil()"), -2.0);
   }
 
   @Test
-  public void testFloatCeilingNegative() {
+  void testFloatCeilingNegative() {
     assertSingleDouble(compile("(-2.7).ceiling()"), -2.0);
   }
 
   // ── round() on ¡Float! → ¡Double! ─────────────────────────────
 
   @Test
-  public void testFloatRoundDown() {
+  void testFloatRoundDown() {
     assertSingleDouble(compile("(2.3).round()"), 2.0);
   }
 
   @Test
-  public void testFloatRoundHalfUp() {
+  void testFloatRoundHalfUp() {
     assertSingleDouble(compile("(2.5).round()"), 3.0);
   }
 
   @Test
-  public void testFloatRoundNegativeHalf() {
+  void testFloatRoundNegativeHalf() {
     assertSingleDouble(compile("(-2.5).round()"), -2.0);
   }
 
   // ── Contrast: Integer unary ops stay ¡Integer! ─────────────────
 
   @Test
-  public void testIntegerAbsKeepsIntegerType() {
+  void testIntegerAbsKeepsIntegerType() {
     // ¡Integer!.abs() → ¡Integer! (no promotion)
     assertSingleInt(compile("(-5).abs()"), 5);
   }
 
   @Test
-  public void testIntegerFloorKeepsIntegerType() {
+  void testIntegerFloorKeepsIntegerType() {
     // ¡Integer!.floor() → ¡Integer! (no promotion needed)
     assertSingleInt(compile("(5).floor()"), 5);
   }

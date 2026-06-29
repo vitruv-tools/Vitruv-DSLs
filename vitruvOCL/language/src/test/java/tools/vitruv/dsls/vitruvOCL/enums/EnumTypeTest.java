@@ -81,7 +81,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * </pre>
  */
 @SuppressWarnings("java:S125")
-public class EnumTypeTest extends DummyTestSpecification {
+class EnumTypeTest extends DummyTestSpecification {
 
   private static final org.eclipse.emf.ecore.EPackage STATUS_PACKAGE;
   private static final org.eclipse.emf.ecore.EEnum STATUS_ENUM;
@@ -213,33 +213,33 @@ public class EnumTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testEnumLiteralEqualsSameValue() {
+  void testEnumLiteralEqualsSameValue() {
     assertSingleBool(compile("Status::ACTIVE == Status::ACTIVE"), true);
   }
 
   @Test
-  public void testEnumLiteralEqualsDifferentValue() {
+  void testEnumLiteralEqualsDifferentValue() {
     // Status::ACTIVE == Status::INACTIVE → ¡Boolean! false
     Value result = compile("Status::ACTIVE == Status::INACTIVE");
     assertSingleBool(result, false);
   }
 
   @Test
-  public void testEnumLiteralNotEqualsDifferentValue() {
+  void testEnumLiteralNotEqualsDifferentValue() {
     // Status::ACTIVE != Status::INACTIVE → ¡Boolean! true
     Value result = compile("Status::ACTIVE != Status::INACTIVE");
     assertSingleBool(result, true);
   }
 
   @Test
-  public void testEnumLiteralNotEqualsSameValue() {
+  void testEnumLiteralNotEqualsSameValue() {
     // Status::ACTIVE != Status::ACTIVE → ¡Boolean! false
     Value result = compile("Status::ACTIVE != Status::ACTIVE");
     assertSingleBool(result, false);
   }
 
   @Test
-  public void testEnumThreeDistinctValues() {
+  void testEnumThreeDistinctValues() {
     // Status::PENDING != Status::ACTIVE and Status::PENDING != Status::INACTIVE
     Value result =
         compile("Status::PENDING != Status::ACTIVE and Status::PENDING != Status::INACTIVE");
@@ -251,31 +251,31 @@ public class EnumTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testEnumEqualsIntegerFails() {
+  void testEnumEqualsIntegerFails() {
     // Status::ACTIVE == 1 → ERROR (enum ≠ integer)
     compileExpectError("Status::ACTIVE == 1");
   }
 
   @Test
-  public void testEnumEqualsStringFails() {
+  void testEnumEqualsStringFails() {
     // Status::ACTIVE == "ACTIVE" → ERROR (enum ≠ string)
     compileExpectError("Status::ACTIVE == \"ACTIVE\"");
   }
 
   @Test
-  public void testEnumEqualsBooleanFails() {
+  void testEnumEqualsBooleanFails() {
     // Status::ACTIVE == true → ERROR
     compileExpectError("Status::ACTIVE == true");
   }
 
   @Test
-  public void testEnumEqualsDoubleFails() {
+  void testEnumEqualsDoubleFails() {
     // Status::ACTIVE == 1.0 → ERROR
     compileExpectError("Status::ACTIVE == 1.0");
   }
 
   @Test
-  public void testDifferentEnumTypeComparisonFails() {
+  void testDifferentEnumTypeComparisonFails() {
     // Direction::NORTH == Status::ACTIVE → ERROR (different enum types)
     compileExpectError("Direction::NORTH == Status::ACTIVE");
   }
@@ -285,27 +285,27 @@ public class EnumTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testEnumPlusIntegerFails() {
+  void testEnumPlusIntegerFails() {
     compileExpectError("Status::ACTIVE + 1");
   }
 
   @Test
-  public void testEnumMinusIntegerFails() {
+  void testEnumMinusIntegerFails() {
     compileExpectError("Status::ACTIVE - 1");
   }
 
   @Test
-  public void testEnumTimesIntegerFails() {
+  void testEnumTimesIntegerFails() {
     compileExpectError("Status::ACTIVE * 2");
   }
 
   @Test
-  public void testEnumDividesIntegerFails() {
+  void testEnumDividesIntegerFails() {
     compileExpectError("Status::ACTIVE / 1");
   }
 
   @Test
-  public void testIntegerPlusEnumFails() {
+  void testIntegerPlusEnumFails() {
     compileExpectError("1 + Status::ACTIVE");
   }
 
@@ -314,22 +314,22 @@ public class EnumTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testEnumLessThanEnumFails() {
+  void testEnumLessThanEnumFails() {
     compileExpectError("Status::ACTIVE < Status::INACTIVE");
   }
 
   @Test
-  public void testEnumLessOrEqualEnumFails() {
+  void testEnumLessOrEqualEnumFails() {
     compileExpectError("Status::ACTIVE <= Status::INACTIVE");
   }
 
   @Test
-  public void testEnumGreaterThanEnumFails() {
+  void testEnumGreaterThanEnumFails() {
     compileExpectError("Status::ACTIVE > Status::INACTIVE");
   }
 
   @Test
-  public void testEnumGreaterOrEqualEnumFails() {
+  void testEnumGreaterOrEqualEnumFails() {
     compileExpectError("Status::ACTIVE >= Status::INACTIVE");
   }
 
@@ -338,17 +338,17 @@ public class EnumTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testEnumAndBooleanFails() {
+  void testEnumAndBooleanFails() {
     compileExpectError("Status::ACTIVE and true");
   }
 
   @Test
-  public void testEnumOrBooleanFails() {
+  void testEnumOrBooleanFails() {
     compileExpectError("Status::ACTIVE or false");
   }
 
   @Test
-  public void testBooleanAndEnumFails() {
+  void testBooleanAndEnumFails() {
     compileExpectError("true and Status::ACTIVE");
   }
 
@@ -357,13 +357,13 @@ public class EnumTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testNotEnumFails() {
+  void testNotEnumFails() {
     // not Status::ACTIVE → ERROR (not a Boolean)
     compileExpectError("not Status::ACTIVE");
   }
 
   @Test
-  public void testUnaryMinusEnumFails() {
+  void testUnaryMinusEnumFails() {
     // -Status::ACTIVE → ERROR (not numeric)
     compileExpectError("-Status::ACTIVE");
   }
@@ -373,28 +373,28 @@ public class EnumTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetOfEnumLiterals() {
+  void testSetOfEnumLiterals() {
     // Set{Status::ACTIVE, Status::INACTIVE} → Set{¡Status!}
     Value result = compile("Set{Status::ACTIVE, Status::INACTIVE}");
     assertEquals(2, result.size());
   }
 
   @Test
-  public void testSetOfEnumDeduplication() {
+  void testSetOfEnumDeduplication() {
     // Set deduplicates: Set{Status::ACTIVE, Status::ACTIVE} → 1 element
     Value result = compile("Set{Status::ACTIVE, Status::ACTIVE}");
     assertEquals(1, result.size());
   }
 
   @Test
-  public void testSequenceOfEnumLiterals() {
+  void testSequenceOfEnumLiterals() {
     // Sequence preserves order and duplicates
     Value result = compile("Sequence{Status::ACTIVE, Status::INACTIVE, Status::ACTIVE}");
     assertEquals(3, result.size());
   }
 
   @Test
-  public void testSequenceOfEnumPreservesOrder() {
+  void testSequenceOfEnumPreservesOrder() {
     Value result = compile("Sequence{Status::ACTIVE, Status::INACTIVE}");
     assertEquals(2, result.size());
     // First element should be ACTIVE
@@ -406,21 +406,21 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testBagOfEnumKeepsDuplicates() {
+  void testBagOfEnumKeepsDuplicates() {
     // Bag: duplicates kept
     Value result = compile("Bag{Status::ACTIVE, Status::ACTIVE, Status::INACTIVE}");
     assertEquals(3, result.size());
   }
 
   @Test
-  public void testOrderedSetOfEnumDeduplicates() {
+  void testOrderedSetOfEnumDeduplicates() {
     // OrderedSet: unique + ordered
     Value result = compile("OrderedSet{Status::ACTIVE, Status::INACTIVE, Status::ACTIVE}");
     assertEquals(2, result.size());
   }
 
   @Test
-  public void testOrderedSetOfEnumPreservesOrder() {
+  void testOrderedSetOfEnumPreservesOrder() {
     Value result = compile("OrderedSet{Status::INACTIVE, Status::ACTIVE}");
     assertEquals(2, result.size());
     OCLElement first = result.getElements().get(0);
@@ -432,64 +432,64 @@ public class EnumTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testEnumSetIncludes() {
+  void testEnumSetIncludes() {
     // Set{Status::ACTIVE}.includes(Status::ACTIVE) → true
     Value result = compile("Set{Status::ACTIVE, Status::INACTIVE}.includes(Status::ACTIVE)");
     assertSingleBool(result, true);
   }
 
   @Test
-  public void testEnumSetIncludesNotFound() {
+  void testEnumSetIncludesNotFound() {
     Value result = compile("Set{Status::ACTIVE, Status::INACTIVE}.includes(Status::PENDING)");
     assertSingleBool(result, false);
   }
 
   @Test
-  public void testEnumSetExcludes() {
+  void testEnumSetExcludes() {
     Value result = compile("Set{Status::ACTIVE}.excludes(Status::INACTIVE)");
     assertSingleBool(result, true);
   }
 
   @Test
-  public void testEnumSetSize() {
+  void testEnumSetSize() {
     assertSingleInt(compile("Set{Status::ACTIVE, Status::INACTIVE}.size()"), 2);
   }
 
   @Test
-  public void testEnumSequenceSize() {
+  void testEnumSequenceSize() {
     assertSingleInt(
         compile("Sequence{Status::ACTIVE, Status::INACTIVE, Status::PENDING}.size()"), 3);
   }
 
   @Test
-  public void testEnumBagSize() {
+  void testEnumBagSize() {
     assertSingleInt(compile("Bag{Status::ACTIVE, Status::ACTIVE}.size()"), 2);
   }
 
   @Test
-  public void testEnumSetIsEmpty() {
+  void testEnumSetIsEmpty() {
     assertSingleBool(compile("Set{}.isEmpty()"), true);
   }
 
   @Test
-  public void testEnumSetNotEmpty() {
+  void testEnumSetNotEmpty() {
     assertSingleBool(compile("Set{Status::ACTIVE}.notEmpty()"), true);
   }
 
   @Test
-  public void testEnumCountInBag() {
+  void testEnumCountInBag() {
     // Bag{Status::ACTIVE, Status::ACTIVE, Status::INACTIVE}.count(Status::ACTIVE) == 2
     assertSingleInt(
         compile("Bag{Status::ACTIVE, Status::ACTIVE, Status::INACTIVE}.count(Status::ACTIVE)"), 2);
   }
 
   @Test
-  public void testEnumCountNotPresent() {
+  void testEnumCountNotPresent() {
     assertSingleInt(compile("Set{Status::ACTIVE}.count(Status::INACTIVE)"), 0);
   }
 
   @Test
-  public void testEnumSequenceFirst() {
+  void testEnumSequenceFirst() {
     // Sequence{Status::INACTIVE, Status::ACTIVE}.first() → ¡Status!
     Value result = compile("Sequence{Status::INACTIVE, Status::ACTIVE}.first()");
     assertEquals(1, result.size());
@@ -498,7 +498,7 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testEnumSequenceLast() {
+  void testEnumSequenceLast() {
     Value result = compile("Sequence{Status::INACTIVE, Status::ACTIVE}.last()");
     assertEquals(1, result.size());
     assertEquals(
@@ -506,12 +506,12 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testEnumSetFirstFails() {
+  void testEnumSetFirstFails() {
     compileExpectError("Set{Status::ACTIVE, Status::INACTIVE}.first()");
   }
 
   @Test
-  public void testEnumBagLastFails() {
+  void testEnumBagLastFails() {
     compileExpectError("Bag{Status::ACTIVE}.last()");
   }
 
@@ -520,7 +520,7 @@ public class EnumTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testEnumSelect() {
+  void testEnumSelect() {
     // select active values only
     Value result = compile("Set{Status::ACTIVE, Status::INACTIVE}.select(e | e == Status::ACTIVE)");
     assertEquals(1, result.size());
@@ -529,14 +529,14 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testEnumSelectNone() {
+  void testEnumSelectNone() {
     Value result =
         compile("Set{Status::ACTIVE, Status::INACTIVE}.select(e | e == Status::PENDING)");
     assertEquals(0, result.size());
   }
 
   @Test
-  public void testEnumReject() {
+  void testEnumReject() {
     Value result =
         compile(
             "Set{Status::ACTIVE, Status::INACTIVE, Status::PENDING}"
@@ -545,7 +545,7 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testEnumForAllSameType() {
+  void testEnumForAllSameType() {
     // All elements are Status enums → true
     Value result =
         compile("Set{Status::ACTIVE, Status::INACTIVE}.forAll(e | e != Status::PENDING)");
@@ -553,39 +553,39 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testEnumForAllFalse() {
+  void testEnumForAllFalse() {
     Value result = compile("Set{Status::ACTIVE, Status::INACTIVE}.forAll(e | e == Status::ACTIVE)");
     assertSingleBool(result, false);
   }
 
   @Test
-  public void testEnumExists() {
+  void testEnumExists() {
     Value result = compile("Set{Status::ACTIVE, Status::INACTIVE}.exists(e | e == Status::ACTIVE)");
     assertSingleBool(result, true);
   }
 
   @Test
-  public void testEnumExistsFalse() {
+  void testEnumExistsFalse() {
     Value result =
         compile("Set{Status::ACTIVE, Status::INACTIVE}.exists(e | e == Status::PENDING)");
     assertSingleBool(result, false);
   }
 
   @Test
-  public void testEnumOne() {
+  void testEnumOne() {
     Value result = compile("Set{Status::ACTIVE, Status::INACTIVE}.one(e | e == Status::ACTIVE)");
     assertSingleBool(result, true);
   }
 
   @Test
-  public void testEnumSortedBy() {
+  void testEnumSortedBy() {
     // sortedBy on enum collection → OrderedSet
     Value result = compile("Set{Status::INACTIVE, Status::ACTIVE}.sortedBy(e | e)");
     assertEquals(2, result.size());
   }
 
   @Test
-  public void testEnumAny() {
+  void testEnumAny() {
     Value result = compile("Set{Status::ACTIVE, Status::INACTIVE}.any(e | e == Status::ACTIVE)");
     assertEquals(1, result.size());
     assertEquals(
@@ -593,13 +593,13 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testEnumIsUnique() {
+  void testEnumIsUnique() {
     // All values in Set are unique by definition
     assertSingleBool(compile("Set{Status::ACTIVE, Status::INACTIVE}.isUnique(e | e)"), true);
   }
 
   @Test
-  public void testEnumIsUniqueOnBagFalse() {
+  void testEnumIsUniqueOnBagFalse() {
     // Bag with duplicates → not unique
     assertSingleBool(compile("Bag{Status::ACTIVE, Status::ACTIVE}.isUnique(e | e)"), false);
   }
@@ -609,7 +609,7 @@ public class EnumTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testEnumIfThenElseSameType() {
+  void testEnumIfThenElseSameType() {
     // if true then Status::ACTIVE else Status::INACTIVE → ¡Status!
     Value result = compile("if true then Status::ACTIVE else Status::INACTIVE endif");
     assertEquals(1, result.size());
@@ -618,7 +618,7 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testEnumIfThenElseFalseBranch() {
+  void testEnumIfThenElseFalseBranch() {
     Value result = compile("if false then Status::ACTIVE else Status::INACTIVE endif");
     assertEquals(1, result.size());
     assertEquals(
@@ -626,20 +626,20 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testEnumIfThenElseInCondition() {
+  void testEnumIfThenElseInCondition() {
     // if (e == Status::ACTIVE) then 1 else 0 — enum in condition
     Value result = compile("let e = Status::ACTIVE in if e == Status::ACTIVE then 1 else 0 endif");
     assertSingleInt(result, 1);
   }
 
   @Test
-  public void testEnumIfThenElseMixedTypesFails() {
+  void testEnumIfThenElseMixedTypesFails() {
     // if true then Status::ACTIVE else 1 → ERROR (incompatible branches)
     compileExpectError("if true then Status::ACTIVE else 1 endif");
   }
 
   @Test
-  public void testEnumIfThenElseDifferentEnumsFails() {
+  void testEnumIfThenElseDifferentEnumsFails() {
     // if true then Status::ACTIVE else Direction::NORTH → ERROR
     compileExpectError("if true then Status::ACTIVE else Direction::NORTH endif");
   }
@@ -649,18 +649,18 @@ public class EnumTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testEnumLetBinding() {
+  void testEnumLetBinding() {
     // let x = Status::ACTIVE in x == Status::ACTIVE → true
     assertSingleBool(compile("let x = Status::ACTIVE in x == Status::ACTIVE"), true);
   }
 
   @Test
-  public void testEnumLetBindingNotEquals() {
+  void testEnumLetBindingNotEquals() {
     assertSingleBool(compile("let x = Status::ACTIVE in x != Status::INACTIVE"), true);
   }
 
   @Test
-  public void testEnumLetBindingInCollectionOp() {
+  void testEnumLetBindingInCollectionOp() {
     Value result =
         compile(
             "let active = Status::ACTIVE in "
@@ -669,7 +669,7 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testEnumLetInIfThenElse() {
+  void testEnumLetInIfThenElse() {
     assertSingleBool(
         compile(
             "let s = Status::PENDING in " + "if s == Status::ACTIVE then true else false endif"),
@@ -677,7 +677,7 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testEnumLetDeclaredTypeMismatchFails() {
+  void testEnumLetDeclaredTypeMismatchFails() {
     // let x : Integer = Status::ACTIVE → ERROR
     compileExpectError("let x : Integer = Status::ACTIVE in x");
   }
@@ -687,13 +687,13 @@ public class EnumTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testEnumSetIncluding() {
+  void testEnumSetIncluding() {
     Value result = compile("Set{Status::ACTIVE}.including(Status::INACTIVE)");
     assertEquals(2, result.size());
   }
 
   @Test
-  public void testEnumSetExcluding() {
+  void testEnumSetExcluding() {
     Value result = compile("Set{Status::ACTIVE, Status::INACTIVE}.excluding(Status::ACTIVE)");
     assertEquals(1, result.size());
     assertEquals(
@@ -701,7 +701,7 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testEnumSequencePrepend() {
+  void testEnumSequencePrepend() {
     Value result = compile("Sequence{Status::INACTIVE}.prepend(Status::ACTIVE)");
     assertEquals(2, result.size());
     assertEquals(
@@ -709,7 +709,7 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testEnumSequenceAppend() {
+  void testEnumSequenceAppend() {
     Value result = compile("Sequence{Status::ACTIVE}.append(Status::INACTIVE)");
     assertEquals(2, result.size());
     assertEquals(
@@ -721,19 +721,19 @@ public class EnumTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testEnumSetUnion() {
+  void testEnumSetUnion() {
     Value result = compile("Set{Status::ACTIVE}.union(Set{Status::INACTIVE})");
     assertEquals(2, result.size());
   }
 
   @Test
-  public void testEnumSetUnionDedup() {
+  void testEnumSetUnionDedup() {
     Value result = compile("Set{Status::ACTIVE}.union(Set{Status::ACTIVE, Status::INACTIVE})");
     assertEquals(2, result.size());
   }
 
   @Test
-  public void testEnumSetIntersection() {
+  void testEnumSetIntersection() {
     Value result =
         compile(
             "Set{Status::ACTIVE, Status::INACTIVE}"
@@ -744,7 +744,7 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testEnumSetSymmetricDifference() {
+  void testEnumSetSymmetricDifference() {
     Value result =
         compile(
             "Set{Status::ACTIVE, Status::INACTIVE}"
@@ -757,20 +757,20 @@ public class EnumTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testEnumBagAsSet() {
+  void testEnumBagAsSet() {
     // Bag{ACTIVE, ACTIVE, INACTIVE}.asSet() → Set{ACTIVE, INACTIVE}
     Value result = compile("Bag{Status::ACTIVE, Status::ACTIVE, Status::INACTIVE}.asSet()");
     assertEquals(2, result.size());
   }
 
   @Test
-  public void testEnumSetAsSequence() {
+  void testEnumSetAsSequence() {
     Value result = compile("Set{Status::ACTIVE, Status::INACTIVE}.asSequence()");
     assertEquals(2, result.size());
   }
 
   @Test
-  public void testEnumSequenceAsOrderedSet() {
+  void testEnumSequenceAsOrderedSet() {
     // Sequence{ACTIVE, ACTIVE, INACTIVE}.asOrderedSet() deduplicates
     Value result =
         compile("Sequence{Status::ACTIVE, Status::ACTIVE, Status::INACTIVE}.asOrderedSet()");
@@ -782,14 +782,14 @@ public class EnumTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testEnumCollect() {
+  void testEnumCollect() {
     // collect returns same enum values mapped through identity
     Value result = compile("Set{Status::ACTIVE, Status::INACTIVE}.collect(e | e)");
     assertEquals(2, result.size());
   }
 
   @Test
-  public void testEnumCollectToBoolean() {
+  void testEnumCollectToBoolean() {
     // collect(e | e == Status::ACTIVE) → Set{true, false}
     Value result =
         compile("Set{Status::ACTIVE, Status::INACTIVE}.collect(e | e == Status::ACTIVE)");
@@ -801,7 +801,7 @@ public class EnumTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testEnumSelectThenSize() {
+  void testEnumSelectThenSize() {
     assertSingleInt(
         compile(
             "Set{Status::ACTIVE, Status::INACTIVE, Status::PENDING}"
@@ -810,7 +810,7 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testEnumSelectThenFirst() {
+  void testEnumSelectThenFirst() {
     Value result =
         compile(
             "Sequence{Status::INACTIVE, Status::ACTIVE}"
@@ -821,20 +821,20 @@ public class EnumTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testEnumSetSelectThenFirst() {
+  void testEnumSetSelectThenFirst() {
     // select on Set → Set (unordered) → need asSequence() before first()
     Value r = compile("Set{Status::ACTIVE, Status::INACTIVE}.select(e | e == Status::ACTIVE).asSequence().first()");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testEnumSortedByThenFirst() {
+  void testEnumSortedByThenFirst() {
     Value result = compile("Set{Status::INACTIVE, Status::ACTIVE}.sortedBy(e | e).first()");
     assertEquals(1, result.size());
   }
 
   @Test
-  public void testEnumIterateSum() {
+  void testEnumIterateSum() {
     // iterate to count active elements
     assertSingleInt(
         compile(

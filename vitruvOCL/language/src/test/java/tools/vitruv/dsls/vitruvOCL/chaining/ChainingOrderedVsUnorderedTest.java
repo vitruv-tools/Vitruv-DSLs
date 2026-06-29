@@ -34,7 +34,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * Bag.reject(...) → Bag → last() allowed (non-deterministic) OrderedSet.collect(…) → OrderedSet →
  * first() OK (ordered)
  */
-public class ChainingOrderedVsUnorderedTest extends DummyTestSpecification {
+class ChainingOrderedVsUnorderedTest extends DummyTestSpecification {
 
   protected void compileExpectError(String input) {
     ParseTree tree = parse(input);
@@ -62,46 +62,46 @@ public class ChainingOrderedVsUnorderedTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSequenceSelectThenFirst() {
+  void testSequenceSelectThenFirst() {
     Value r = compile("Sequence{1, 2, 3, 4}.select(x | x > 1).first()");
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSequenceSelectThenLast() {
+  void testSequenceSelectThenLast() {
     Value r = compile("Sequence{1, 2, 3, 4}.select(x | x > 1).last()");
     assertEquals(4, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testOrderedSetSelectThenFirst() {
+  void testOrderedSetSelectThenFirst() {
     Value r = compile("OrderedSet{1, 2, 3, 4}.select(x | x > 2).first()");
     assertEquals(3, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testOrderedSetSelectThenLast() {
+  void testOrderedSetSelectThenLast() {
     Value r = compile("OrderedSet{1, 2, 3, 4}.select(x | x > 2).last()");
     assertEquals(4, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSetSelectThenFirstFails() {
+  void testSetSelectThenFirstFails() {
     compileExpectError("Set{1, 2, 3}.select(x | x > 1).first()");
   }
 
   @Test
-  public void testSetSelectThenLastFails() {
+  void testSetSelectThenLastFails() {
     compileExpectError("Set{1, 2, 3}.select(x | x > 1).last()");
   }
 
   @Test
-  public void testBagSelectThenFirstFails() {
+  void testBagSelectThenFirstFails() {
     compileExpectError("Bag{1, 2, 3}.select(x | x > 1).first()");
   }
 
   @Test
-  public void testBagSelectThenLastFails() {
+  void testBagSelectThenLastFails() {
     compileExpectError("Bag{1, 2, 3}.select(x | x > 1).last()");
   }
 
@@ -110,36 +110,36 @@ public class ChainingOrderedVsUnorderedTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSequenceRejectThenFirst() {
+  void testSequenceRejectThenFirst() {
     Value r = compile("Sequence{1, 2, 3, 4}.reject(x | x > 3).first()");
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSequenceRejectThenLast() {
+  void testSequenceRejectThenLast() {
     Value r = compile("Sequence{1, 2, 3, 4}.reject(x | x > 2).last()");
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testOrderedSetRejectThenFirst() {
+  void testOrderedSetRejectThenFirst() {
     Value r = compile("OrderedSet{1, 2, 3, 4}.reject(x | x > 3).first()");
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testOrderedSetRejectThenLast() {
+  void testOrderedSetRejectThenLast() {
     Value r = compile("OrderedSet{1, 2, 3, 4}.reject(x | x > 2).last()");
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSetRejectThenFirstFails() {
+  void testSetRejectThenFirstFails() {
     compileExpectError("Set{1, 2, 3}.reject(x | x > 2).first()");
   }
 
   @Test
-  public void testBagRejectThenLastFails() {
+  void testBagRejectThenLastFails() {
     compileExpectError("Bag{1, 2, 3}.reject(x | x > 2).last()");
   }
 
@@ -148,46 +148,46 @@ public class ChainingOrderedVsUnorderedTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSequenceCollectThenFirst() {
+  void testSequenceCollectThenFirst() {
     Value r = compile("Sequence{1, 2, 3}.collect(x | x * 10).first()");
     assertEquals(10, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSequenceCollectThenLast() {
+  void testSequenceCollectThenLast() {
     Value r = compile("Sequence{1, 2, 3}.collect(x | x * 10).last()");
     assertEquals(30, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testOrderedSetCollectThenFirst() {
+  void testOrderedSetCollectThenFirst() {
     Value r = compile("OrderedSet{1, 2, 3}.collect(x | x * 2).first()");
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testOrderedSetCollectThenLast() {
+  void testOrderedSetCollectThenLast() {
     Value r = compile("OrderedSet{1, 2, 3}.collect(x | x * 2).last()");
     assertEquals(6, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSetCollectThenFirstFails() {
+  void testSetCollectThenFirstFails() {
     compileExpectError("Set{1, 2, 3}.collect(x | x * 2).first()");
   }
 
   @Test
-  public void testSetCollectThenLastFails() {
+  void testSetCollectThenLastFails() {
     compileExpectError("Set{1, 2, 3}.collect(x | x * 2).last()");
   }
 
   @Test
-  public void testBagCollectThenFirstFails() {
+  void testBagCollectThenFirstFails() {
     compileExpectError("Bag{1, 2, 3}.collect(x | x * 2).first()");
   }
 
   @Test
-  public void testBagCollectThenLastFails() {
+  void testBagCollectThenLastFails() {
     compileExpectError("Bag{1, 2, 3}.collect(x | x * 2).last()");
   }
 
@@ -196,22 +196,22 @@ public class ChainingOrderedVsUnorderedTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testAsSetThenFirstFails() {
+  void testAsSetThenFirstFails() {
     compileExpectError("Sequence{1, 2, 3}.asSet().first()");
   }
 
   @Test
-  public void testAsSetThenLastFails() {
+  void testAsSetThenLastFails() {
     compileExpectError("Sequence{1, 2, 3}.asSet().last()");
   }
 
   @Test
-  public void testAsBagThenFirstFails() {
+  void testAsBagThenFirstFails() {
     compileExpectError("Sequence{1, 2, 3}.asBag().first()");
   }
 
   @Test
-  public void testAsBagThenLastFails() {
+  void testAsBagThenLastFails() {
     compileExpectError("Sequence{1, 2, 3}.asBag().last()");
   }
 
@@ -220,25 +220,25 @@ public class ChainingOrderedVsUnorderedTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testAsSequenceThenFirst() {
+  void testAsSequenceThenFirst() {
     Value r = compile("Set{1, 2, 3}.asSequence().first()");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testAsSequenceThenLast() {
+  void testAsSequenceThenLast() {
     Value r = compile("Set{1, 2, 3}.asSequence().last()");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testAsOrderedSetThenFirst() {
+  void testAsOrderedSetThenFirst() {
     Value r = compile("Bag{3, 1, 2}.asOrderedSet().first()");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testAsOrderedSetThenLast() {
+  void testAsOrderedSetThenLast() {
     Value r = compile("Bag{3, 1, 2}.asOrderedSet().last()");
     assertEquals(1, r.size());
   }
@@ -248,25 +248,25 @@ public class ChainingOrderedVsUnorderedTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSortedByOnSetThenFirst() {
+  void testSortedByOnSetThenFirst() {
     Value r = compile("Set{3, 1, 2}.sortedBy(x | x).first()");
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSortedByOnSetThenLast() {
+  void testSortedByOnSetThenLast() {
     Value r = compile("Set{3, 1, 2}.sortedBy(x | x).last()");
     assertEquals(3, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSortedByOnBagThenFirst() {
+  void testSortedByOnBagThenFirst() {
     Value r = compile("Bag{3, 1, 2}.sortedBy(x | x).first()");
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSortedByOnSequenceThenFirst() {
+  void testSortedByOnSequenceThenFirst() {
     Value r = compile("Sequence{3, 1, 2}.sortedBy(x | x).first()");
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
@@ -276,18 +276,18 @@ public class ChainingOrderedVsUnorderedTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSequenceSelectThenAt() {
+  void testSequenceSelectThenAt() {
     Value r = compile("Sequence{1, 2, 3, 4}.select(x | x > 1).at(1)");
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSetSelectThenAtFails() {
+  void testSetSelectThenAtFails() {
     compileExpectError("Set{1, 2, 3}.select(x | x > 1).at(1)");
   }
 
   @Test
-  public void testSortedByThenAt() {
+  void testSortedByThenAt() {
     Value r = compile("Set{3, 1, 2}.sortedBy(x | x).at(2)");
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
@@ -297,19 +297,19 @@ public class ChainingOrderedVsUnorderedTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSequenceSelectThenSubSequence() {
+  void testSequenceSelectThenSubSequence() {
     Value r = compile("Sequence{1, 2, 3, 4}.select(x | x > 0).subSequence(2, 3)");
     assertEquals(2, r.size());
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSetSelectThenSubSequenceFails() {
+  void testSetSelectThenSubSequenceFails() {
     compileExpectError("Set{1, 2, 3}.select(x | x > 0).subSequence(1, 2)");
   }
 
   @Test
-  public void testSortedByThenSubSequence() {
+  void testSortedByThenSubSequence() {
     Value r = compile("Set{3, 1, 2}.sortedBy(x | x).subSequence(1, 2)");
     assertEquals(2, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());

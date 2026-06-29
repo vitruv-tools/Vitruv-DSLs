@@ -128,7 +128,7 @@ public class DocumentAnalyzer {
             new SymbolTableBuilder(symbolTable, wrapper, errors, scopeAnnotator);
         builder.visit(tree);
       } catch (Exception e) {
-        LOG.fine("[OCL-LS] SymbolTableBuilder error: " + e.getMessage());
+        LOG.fine(() -> "[OCL-LS] SymbolTableBuilder error: " + e.getMessage());
       }
 
       // -----------------------------------------------------------------------
@@ -141,7 +141,7 @@ public class DocumentAnalyzer {
         typeChecker.visit(tree);
         nodeTypes = typeChecker.getNodeTypes();
       } catch (Exception e) {
-        LOG.fine("[OCL-LS] TypeCheckVisitor error: " + e.getMessage());
+        LOG.fine(() -> "[OCL-LS] TypeCheckVisitor error: " + e.getMessage());
       }
 
       // -----------------------------------------------------------------------
@@ -163,7 +163,7 @@ public class DocumentAnalyzer {
 
         Diagnostic d = toDiagnostic(error);
         diagnostics.add(d);
-        LOG.fine(String.format(
+        LOG.fine(() -> String.format(
             "[OCL-LS] DIAG type-checker  L%d:C%d → L%d:C%d  %s",
             d.getRange().getStart().getLine(),
             d.getRange().getStart().getCharacter(),
@@ -174,7 +174,7 @@ public class DocumentAnalyzer {
 
     } catch (Exception e) {
       // Catch-all — return empty analysis with a single internal-error diagnostic.
-      LOG.fine("[OCL-LS] Unexpected analysis error: " + e.getMessage());
+      LOG.fine(() -> "[OCL-LS] Unexpected analysis error: " + e.getMessage());
       diagnostics.add(
           new Diagnostic(
               new Range(new Position(0, 0), new Position(0, 1)),
@@ -235,9 +235,10 @@ public class DocumentAnalyzer {
             LANGUAGE_ID);
         d.setData(suggestion); // picked up by the code-action handler for the quick fix
         diagnostics.add(d);
-        LOG.fine(String.format(
+        final int capturedLine = lineIdx;
+        LOG.fine(() -> String.format(
             "[OCL-LS] DIAG annotation-typo L%d:C%d  %s → %s",
-            lineIdx, startCol, badAnnotation, suggestion));
+            capturedLine, startCol, badAnnotation, suggestion));
       }
     }
   }

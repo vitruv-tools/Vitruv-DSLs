@@ -45,7 +45,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  *   then:Set{T}  else:¡Integer!  → ERROR
  * </pre>
  */
-public class IfThenElseTypeTest extends DummyTestSpecification {
+class IfThenElseTypeTest extends DummyTestSpecification {
 
   protected void compileExpectError(String input) {
     ParseTree tree = parse(input);
@@ -75,122 +75,122 @@ public class IfThenElseTypeTest extends DummyTestSpecification {
   // ── then:¡Integer! else:¡Integer! → ¡Integer! ────────────────
 
   @Test
-  public void testBoolCondIntegerThenIntegerElse() {
+  void testBoolCondIntegerThenIntegerElse() {
     assertSingleInt(compile("if true then 1 else 2 endif"), 1);
   }
 
   @Test
-  public void testBoolCondIntegerThenIntegerElseFalse() {
+  void testBoolCondIntegerThenIntegerElseFalse() {
     assertSingleInt(compile("if false then 1 else 2 endif"), 2);
   }
 
   @Test
-  public void testBoolCondIntegerThenIntegerElseArith() {
+  void testBoolCondIntegerThenIntegerElseArith() {
     assertSingleInt(compile("if true then 3 + 4 else 0 endif"), 7);
   }
 
   // ── then:¡Integer! else:¡Float! → ¡Double! ───────────────────
 
   @Test
-  public void testBoolCondIntegerThenFloatElseTrueBranch() {
+  void testBoolCondIntegerThenFloatElseTrueBranch() {
     assertSingleDouble(compile("if true then 1 else 1.5 endif"), 1.0);
   }
 
   @Test
-  public void testBoolCondIntegerThenFloatElseFalseBranch() {
+  void testBoolCondIntegerThenFloatElseFalseBranch() {
     assertSingleDouble(compile("if false then 1 else 1.5 endif"), 1.5);
   }
 
   // ── then:¡Integer! else:¡Double! → ¡Double! ──────────────────
 
   @Test
-  public void testBoolCondIntegerThenDoublElseTrueBranch() {
+  void testBoolCondIntegerThenDoublElseTrueBranch() {
     assertSingleDouble(compile("if true then 2 else 2.5 endif"), 2.0);
   }
 
   @Test
-  public void testBoolCondIntegerThenDoubleElseFalseBranch() {
+  void testBoolCondIntegerThenDoubleElseFalseBranch() {
     assertSingleDouble(compile("if false then 2 else 2.5 endif"), 2.5);
   }
 
   // ── then:¡Float! else:¡Float! → ¡Double! ─────────────────────
 
   @Test
-  public void testBoolCondFloatThenFloatElse() {
+  void testBoolCondFloatThenFloatElse() {
     assertSingleDouble(compile("if true then 1.5 else 2.5 endif"), 1.5);
   }
 
   // ── then:¡Float! else:¡Double! → ¡Double! ────────────────────
 
   @Test
-  public void testBoolCondFloatThenDoubleElse() {
+  void testBoolCondFloatThenDoubleElse() {
     assertSingleDouble(compile("if false then 1.5 else 2.5 endif"), 2.5);
   }
 
   // ── then:¡Double! else:¡Double! → ¡Double! ───────────────────
 
   @Test
-  public void testBoolCondDoubleThenDoubleElse() {
+  void testBoolCondDoubleThenDoubleElse() {
     assertSingleDouble(compile("if true then 1.5 else 2.5 endif"), 1.5);
   }
 
   // ── then:¡String! else:¡String! → ¡String! ───────────────────
 
   @Test
-  public void testBoolCondStringThenStringElseTrueBranch() {
+  void testBoolCondStringThenStringElseTrueBranch() {
     assertSingleString(compile("if true then \"yes\" else \"no\" endif"), "yes");
   }
 
   @Test
-  public void testBoolCondStringThenStringElseFalseBranch() {
+  void testBoolCondStringThenStringElseFalseBranch() {
     assertSingleString(compile("if false then \"yes\" else \"no\" endif"), "no");
   }
 
   @Test
-  public void testBoolCondStringThenStringElseEmpty() {
+  void testBoolCondStringThenStringElseEmpty() {
     assertSingleString(compile("if true then \"hello\" else \"\" endif"), "hello");
   }
 
   // ── then:¡Boolean! else:¡Boolean! → ¡Boolean! ────────────────
 
   @Test
-  public void testBoolCondBooleanThenBooleanElseTrueBranch() {
+  void testBoolCondBooleanThenBooleanElseTrueBranch() {
     assertSingleBool(compile("if true then true else false endif"), true);
   }
 
   @Test
-  public void testBoolCondBooleanThenBooleanElseFalseBranch() {
+  void testBoolCondBooleanThenBooleanElseFalseBranch() {
     assertSingleBool(compile("if false then true else false endif"), false);
   }
 
   // ── then:Set{T} else:Set{T} → Set{T} ───────────────────
 
   @Test
-  public void testBoolCondSetThenSetElseTrueBranch() {
+  void testBoolCondSetThenSetElseTrueBranch() {
     Value r = compile("if true then Set{1, 2} else Set{3, 4} endif");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testBoolCondSetThenSetElseFalseBranch() {
+  void testBoolCondSetThenSetElseFalseBranch() {
     Value r = compile("if false then Set{1, 2} else Set{3, 4} endif");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testBoolCondSequenceThenSequenceElse() {
+  void testBoolCondSequenceThenSequenceElse() {
     Value r = compile("if true then Sequence{1, 2} else Sequence{3, 4} endif");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testBoolCondBagThenBagElse() {
+  void testBoolCondBagThenBagElse() {
     Value r = compile("if true then Bag{1, 1} else Bag{2, 2} endif");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testBoolCondOrderedSetThenOrderedSetElse() {
+  void testBoolCondOrderedSetThenOrderedSetElse() {
     Value r = compile("if false then OrderedSet{1, 2} else OrderedSet{3, 4} endif");
     assertEquals(2, r.size());
   }
@@ -198,22 +198,22 @@ public class IfThenElseTypeTest extends DummyTestSpecification {
   // ── condition derived from expression ─────────────────────────
 
   @Test
-  public void testArithConditionTrueBranch() {
+  void testArithConditionTrueBranch() {
     assertSingleInt(compile("if 3 > 2 then 1 else 0 endif"), 1);
   }
 
   @Test
-  public void testArithConditionFalseBranch() {
+  void testArithConditionFalseBranch() {
     assertSingleInt(compile("if 2 > 3 then 1 else 0 endif"), 0);
   }
 
   @Test
-  public void testLogicalCondition() {
+  void testLogicalCondition() {
     assertSingleBool(compile("if true and false then true else false endif"), false);
   }
 
   @Test
-  public void testNestedIfThenElse() {
+  void testNestedIfThenElse() {
     assertSingleInt(compile("if true then (if false then 1 else 2 endif) else 3 endif"), 2);
   }
 
@@ -222,32 +222,32 @@ public class IfThenElseTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testIntegerConditionFails() {
+  void testIntegerConditionFails() {
     compileExpectError("if 1 then 1 else 2 endif");
   }
 
   @Test
-  public void testFloatConditionFails() {
+  void testFloatConditionFails() {
     compileExpectError("if 1.5 then 1 else 2 endif");
   }
 
   @Test
-  public void testDoubleConditionFails() {
+  void testDoubleConditionFails() {
     compileExpectError("if 2.5 then 1 else 2 endif");
   }
 
   @Test
-  public void testStringConditionFails() {
+  void testStringConditionFails() {
     compileExpectError("if \"hello\" then 1 else 2 endif");
   }
 
   @Test
-  public void testIntegerCollectionConditionFails() {
+  void testIntegerCollectionConditionFails() {
     compileExpectError("if Set{1, 2} then 1 else 2 endif");
   }
 
   @Test
-  public void testSequenceConditionFails() {
+  void testSequenceConditionFails() {
     compileExpectError("if Sequence{true} then 1 else 2 endif");
   }
 
@@ -256,52 +256,52 @@ public class IfThenElseTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testIntegerThenStringElseFails() {
+  void testIntegerThenStringElseFails() {
     compileExpectError("if true then 1 else \"hello\" endif");
   }
 
   @Test
-  public void testStringThenIntegerElseFails() {
+  void testStringThenIntegerElseFails() {
     compileExpectError("if true then \"hello\" else 1 endif");
   }
 
   @Test
-  public void testBooleanThenIntegerElseFails() {
+  void testBooleanThenIntegerElseFails() {
     compileExpectError("if true then true else 1 endif");
   }
 
   @Test
-  public void testIntegerThenBooleanElseFails() {
+  void testIntegerThenBooleanElseFails() {
     compileExpectError("if true then 1 else true endif");
   }
 
   @Test
-  public void testStringThenBooleanElseFails() {
+  void testStringThenBooleanElseFails() {
     compileExpectError("if true then \"hello\" else true endif");
   }
 
   @Test
-  public void testSetThenIntegerElseFails() {
+  void testSetThenIntegerElseFails() {
     compileExpectError("if true then Set{1} else 1 endif");
   }
 
   @Test
-  public void testIntegerThenSetElseFails() {
+  void testIntegerThenSetElseFails() {
     compileExpectError("if true then 1 else Set{1} endif");
   }
 
   @Test
-  public void testSetThenBooleanElseFails() {
+  void testSetThenBooleanElseFails() {
     compileExpectError("if true then Set{1} else true endif");
   }
 
   @Test
-  public void testSetThenStringElseFails() {
+  void testSetThenStringElseFails() {
     compileExpectError("if true then Set{1} else \"hello\" endif");
   }
 
   @Test
-  public void testSequenceThenSetElseFails() {
+  void testSequenceThenSetElseFails() {
     // different collection kinds — incompatible unless type system allows it
     compileExpectError("if true then Sequence{1} else Set{1} endif");
   }

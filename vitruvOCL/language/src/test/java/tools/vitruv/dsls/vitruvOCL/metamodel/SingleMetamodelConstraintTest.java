@@ -32,7 +32,7 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.VitruvOCL;
  * <p>The tests verify both successful evaluation (no compilation/runtime errors) and constraint
  * satisfaction (constraint evaluates to true for the given model).
  */
-public class SingleMetamodelConstraintTest {
+class SingleMetamodelConstraintTest {
 
   private static final Path SPACEMISSION_ECORE =
       Path.of("src/test/resources/test-metamodels/spaceMission.ecore");
@@ -49,7 +49,7 @@ public class SingleMetamodelConstraintTest {
   private static final Path SPACECRAFT_INACTIVE = Path.of("spacecraft-inactive.spacemission");
 
   @BeforeAll
-  public static void setupPaths() {
+  static void setupPaths() {
     MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
   }
 
@@ -60,7 +60,7 @@ public class SingleMetamodelConstraintTest {
    * Uses spacecraft with name "Voyager".
    */
   @Test
-  public void testAttributeAccess() {
+  void testAttributeAccess() {
     String constraint = "context spaceMission::Spacecraft inv: self.name == \"Voyager\"";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -77,7 +77,7 @@ public class SingleMetamodelConstraintTest {
    * Uses spacecraft with mass under 2000 kg.
    */
   @Test
-  public void testNumericAttributeConstraint() {
+  void testNumericAttributeConstraint() {
     String constraint = "context spaceMission::Spacecraft inv: self.mass < 2000";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -94,7 +94,7 @@ public class SingleMetamodelConstraintTest {
    * spacecraft with operational status set to true.
    */
   @Test
-  public void testBooleanAttributeConstraint() {
+  void testBooleanAttributeConstraint() {
     String constraint = "context spaceMission::Spacecraft inv: self.operational";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -111,7 +111,7 @@ public class SingleMetamodelConstraintTest {
    * the exists iterator. Uses mission with spacecraft named "Apollo".
    */
   @Test
-  public void testSingleReferenceNavigation() {
+  void testSingleReferenceNavigation() {
     String constraint =
         "context spaceMission::Mission inv: self.spacecraft.exists(s | s.name == \"Apollo\")";
     ConstraintResult result =
@@ -130,7 +130,7 @@ public class SingleMetamodelConstraintTest {
    * consumption under 300 watts.
    */
   @Test
-  public void testCollectionSum() {
+  void testCollectionSum() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.powerConsumption.sum() < 300";
     ConstraintResult result =
@@ -148,7 +148,7 @@ public class SingleMetamodelConstraintTest {
    * condition. Uses spacecraft where all payloads consume less than 100 watts each.
    */
   @Test
-  public void testForAll() {
+  void testForAll() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.forAll(p | p.powerConsumption < 100)";
     ConstraintResult result =
@@ -168,7 +168,7 @@ public class SingleMetamodelConstraintTest {
    * enhancement.
    */
   @Test
-  public void testMultipleInstances() {
+  void testMultipleInstances() {
     String constraint = "context spaceMission::Spacecraft inv: self.operational";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -188,7 +188,7 @@ public class SingleMetamodelConstraintTest {
    * value. Uses spacecraft with exactly 2 payloads.
    */
   @Test
-  public void testCollectionSize() {
+  void testCollectionSize() {
     String constraint = "context spaceMission::Spacecraft inv: self.payloads.size() == 2";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -204,7 +204,7 @@ public class SingleMetamodelConstraintTest {
    * <p>Validates exists() returns true when at least one element matches the condition.
    */
   @Test
-  public void testExistsIterator() {
+  void testExistsIterator() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.exists(p | p.powerConsumption > 50)";
     ConstraintResult result =
@@ -221,7 +221,7 @@ public class SingleMetamodelConstraintTest {
    * <p>Validates select() filters elements and returns a subset matching the condition.
    */
   @Test
-  public void testSelectIterator() {
+  void testSelectIterator() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.select(p | p.powerConsumption >"
             + " 30).size() >= 1";
@@ -239,7 +239,7 @@ public class SingleMetamodelConstraintTest {
    * <p>Validates reject() filters out elements matching the condition.
    */
   @Test
-  public void testRejectIterator() {
+  void testRejectIterator() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.reject(p | p.powerConsumption >"
             + " 200).notEmpty()";
@@ -257,7 +257,7 @@ public class SingleMetamodelConstraintTest {
    * <p>Validates collect() transforms elements by applying an expression to each.
    */
   @Test
-  public void testCollectIterator() {
+  void testCollectIterator() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.collect(p | p.powerConsumption).sum()"
             + " < 500";
@@ -271,7 +271,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests isEmpty() on empty collections. */
   @Test
-  public void testIsEmptyOperation() {
+  void testIsEmptyOperation() {
     String constraint = "context spaceMission::Mission inv: self.spacecraft.isEmpty() == false";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -283,7 +283,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests notEmpty() on non-empty collections. */
   @Test
-  public void testNotEmptyOperation() {
+  void testNotEmptyOperation() {
     String constraint = "context spaceMission::Spacecraft inv: self.payloads.notEmpty()";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -295,7 +295,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests includes() membership check. */
   @Test
-  public void testIncludesOperation() {
+  void testIncludesOperation() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.powerConsumption.includes(50)";
     ConstraintResult result =
@@ -308,7 +308,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests excludes() negative membership check. */
   @Test
-  public void testExcludesOperation() {
+  void testExcludesOperation() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.powerConsumption.excludes(999)";
     ConstraintResult result =
@@ -321,7 +321,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests chained iterator operations. */
   @Test
-  public void testChainedIterators() {
+  void testChainedIterators() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.select(p | p.powerConsumption >"
             + " 30).collect(p | p.powerConsumption).sum() < 400";
@@ -335,7 +335,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests logical AND in constraints. */
   @Test
-  public void testLogicalAnd() {
+  void testLogicalAnd() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.operational and self.mass < 2000";
     ConstraintResult result =
@@ -348,7 +348,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests logical OR in constraints. */
   @Test
-  public void testLogicalOr() {
+  void testLogicalOr() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.mass > 5000 or self.operational";
     ConstraintResult result =
@@ -361,7 +361,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests logical NOT in constraints. */
   @Test
-  public void testLogicalNot() {
+  void testLogicalNot() {
     String constraint = "context spaceMission::Spacecraft inv: not (self.mass > 10000)";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -373,7 +373,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests implies operator (logical implication). */
   @Test
-  public void testImpliesOperator() {
+  void testImpliesOperator() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.operational implies self.payloads.notEmpty()";
     ConstraintResult result =
@@ -386,7 +386,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests nested forAll iterators. */
   @Test
-  public void testNestedForAll() {
+  void testNestedForAll() {
     String constraint =
         "context spaceMission::Mission inv: self.spacecraft.forAll(s | s.payloads.forAll(p |"
             + " p.powerConsumption > 0))";
@@ -399,7 +399,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests arithmetic in constraints. */
   @Test
-  public void testArithmeticOperations() {
+  void testArithmeticOperations() {
     String constraint = "context spaceMission::Spacecraft inv: (self.mass * 2) - 1000 > 0";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -411,7 +411,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests greater-or-equal comparison. */
   @Test
-  public void testGreaterOrEqualComparison() {
+  void testGreaterOrEqualComparison() {
     String constraint = "context spaceMission::Spacecraft inv: self.mass >= 500";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -423,7 +423,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests less-or-equal comparison. */
   @Test
-  public void testLessOrEqualComparison() {
+  void testLessOrEqualComparison() {
     String constraint = "context spaceMission::Spacecraft inv: self.payloads.size() <= 10";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -435,7 +435,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests not-equal comparison. */
   @Test
-  public void testNotEqualComparison() {
+  void testNotEqualComparison() {
     String constraint = "context spaceMission::Spacecraft inv: self.name != \"Unknown\"";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -447,7 +447,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests max() operation on numeric collections. */
   @Test
-  public void testMaxOperation() {
+  void testMaxOperation() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.powerConsumption.max() < 150";
     ConstraintResult result =
@@ -459,7 +459,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests min() operation on numeric collections. */
   @Test
-  public void testMinOperation() {
+  void testMinOperation() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.powerConsumption.min() > 0";
     ConstraintResult result =
@@ -471,7 +471,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests constraint on empty payload collection. */
   @Test
-  public void testEmptyPayloadsCollection() {
+  void testEmptyPayloadsCollection() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.isEmpty() or self.payloads.size() =="
             + " 0";
@@ -484,7 +484,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests forAll on empty collection (vacuous truth). */
   @Test
-  public void testForAllOnEmptyCollection() {
+  void testForAllOnEmptyCollection() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.forAll(p | p.powerConsumption > 1000)";
     ConstraintResult result =
@@ -497,7 +497,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests exists on empty collection. */
   @Test
-  public void testExistsOnEmptyCollection() {
+  void testExistsOnEmptyCollection() {
     String constraint =
         "context spaceMission::Spacecraft inv: not self.payloads.exists(p | p.powerConsumption >"
             + " 0)";
@@ -511,7 +511,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests zero mass edge case. */
   @Test
-  public void testZeroMass() {
+  void testZeroMass() {
     String constraint = "context spaceMission::Spacecraft inv: self.mass >= 0";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -523,7 +523,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests division by positive number. */
   @Test
-  public void testDivisionOperation() {
+  void testDivisionOperation() {
     String constraint = "context spaceMission::Spacecraft inv: self.mass / 2 > 0";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -535,7 +535,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests negative mass constraint (boundary). */
   @Test
-  public void testNegativeMassBoundary() {
+  void testNegativeMassBoundary() {
     String constraint = "context spaceMission::Spacecraft inv: self.mass > -1";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -547,7 +547,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests string concatenation in constraint. */
   @Test
-  public void testStringConcatenation() {
+  void testStringConcatenation() {
     String constraint = "context spaceMission::Spacecraft inv: self.name.concat(\"-1\") != \"\"";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -559,7 +559,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests size of single-element collection. */
   @Test
-  public void testSingleElementCollectionSize() {
+  void testSingleElementCollectionSize() {
     String constraint = "context spaceMission::Mission inv: self.spacecraft.size() >= 1";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -571,7 +571,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests collect with constant expression. */
   @Test
-  public void testCollectConstant() {
+  void testCollectConstant() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.collect(p | 1).sum() =="
             + " self.payloads.size()";
@@ -585,7 +585,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests select with always-true condition. */
   @Test
-  public void testSelectAlwaysTrue() {
+  void testSelectAlwaysTrue() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.select(p | true).size() =="
             + " self.payloads.size()";
@@ -599,7 +599,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests select with always-false condition. */
   @Test
-  public void testSelectAlwaysFalse() {
+  void testSelectAlwaysFalse() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.select(p | false).isEmpty()";
     ConstraintResult result =
@@ -612,7 +612,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests equality reflexivity (self == self). */
   @Test
-  public void testEqualityReflexivity() {
+  void testEqualityReflexivity() {
     String constraint = "context spaceMission::Spacecraft inv: self.mass == self.mass";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -624,7 +624,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests double negation. */
   @Test
-  public void testDoubleNegation() {
+  void testDoubleNegation() {
     String constraint =
         "context spaceMission::Spacecraft inv: not (not self.operational) == self.operational";
     ConstraintResult result =
@@ -637,7 +637,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests tautology (always true). */
   @Test
-  public void testTautology() {
+  void testTautology() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.operational or not self.operational";
     ConstraintResult result =
@@ -650,7 +650,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests complex nested boolean expression. */
   @Test
-  public void testComplexBooleanNesting() {
+  void testComplexBooleanNesting() {
     String constraint =
         "context spaceMission::Spacecraft inv: ((self.operational and true) or false) =="
             + " self.operational";
@@ -664,7 +664,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests parenthesized arithmetic precedence. */
   @Test
-  public void testArithmeticPrecedenceWithParentheses() {
+  void testArithmeticPrecedenceWithParentheses() {
     String constraint =
         "context spaceMission::Spacecraft inv: (self.mass + 100) * 2 == self.mass * 2 + 200";
     ConstraintResult result =
@@ -677,7 +677,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests chained comparisons (transitive property). */
   @Test
-  public void testChainedComparisons() {
+  void testChainedComparisons() {
     String constraint =
         "context spaceMission::Spacecraft inv: (self.mass > 0 and 0 < 2000) implies self.mass <"
             + " 2000";
@@ -690,7 +690,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests max on single-element collection. */
   @Test
-  public void testMaxOnSingleElement() {
+  void testMaxOnSingleElement() {
     String constraint = "context spaceMission::Spacecraft inv: Set{self.mass}.max() == self.mass";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -701,7 +701,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests min on single-element collection. */
   @Test
-  public void testMinOnSingleElement() {
+  void testMinOnSingleElement() {
     String constraint = "context spaceMission::Spacecraft inv: Set{self.mass}.min() == self.mass";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -712,7 +712,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests size invariant under select-reject complement. */
   @Test
-  public void testSelectRejectComplement() {
+  void testSelectRejectComplement() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.select(p | p.powerConsumption >"
             + " 50).size() + self.payloads.reject(p | p.powerConsumption > 50).size() =="
@@ -727,7 +727,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests exists equivalent to select.notEmpty(). */
   @Test
-  public void testExistsSelectEquivalence() {
+  void testExistsSelectEquivalence() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.exists(p | p.powerConsumption > 30) =="
             + " self.payloads.select(p | p.powerConsumption > 30).notEmpty()";
@@ -741,7 +741,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests forAll equivalent to select.size() == collection.size(). */
   @Test
-  public void testForAllSelectEquivalence() {
+  void testForAllSelectEquivalence() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.forAll(p | p.powerConsumption > 0) =="
             + " (self.payloads.select(p | p.powerConsumption > 0).size() == self.payloads.size())";
@@ -754,7 +754,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests includes on collected values. */
   @Test
-  public void testIncludesOnCollectedValues() {
+  void testIncludesOnCollectedValues() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.collect(p |"
             + " p.powerConsumption).includes(self.payloads.first().powerConsumption)";
@@ -767,7 +767,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests attribute access through double navigation. */
   @Test
-  public void testDoubleNavigation() {
+  void testDoubleNavigation() {
     String constraint =
         "context spaceMission::Mission inv: self.spacecraft.first().payloads.notEmpty()";
     ConstraintResult result =
@@ -779,7 +779,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests constraint with literal Set construction. */
   @Test
-  public void testLiteralSetConstruction() {
+  void testLiteralSetConstruction() {
     String constraint = "context spaceMission::Spacecraft inv: Set{100, 200, 300}.includes(100)";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -791,7 +791,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests constraint with literal Sequence construction. */
   @Test
-  public void testLiteralSequenceConstruction() {
+  void testLiteralSequenceConstruction() {
     String constraint = "context spaceMission::Spacecraft inv: Sequence{1, 2, 2, 3}.size() == 4";
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -803,7 +803,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests absolute value using conditional. */
   @Test
-  public void testAbsoluteValuePattern() {
+  void testAbsoluteValuePattern() {
     String constraint =
         "context spaceMission::Spacecraft inv: if self.mass >= 0 then self.mass else -1 * self.mass"
             + " endif > 0";
@@ -816,7 +816,7 @@ public class SingleMetamodelConstraintTest {
 
   /** Tests nested iterator with self reference. */
   @Test
-  public void testNestedIteratorSelfReference() {
+  void testNestedIteratorSelfReference() {
     String constraint =
         "context spaceMission::Spacecraft inv: self.payloads.forAll(p | self.operational implies"
             + " p.powerConsumption > 0)";

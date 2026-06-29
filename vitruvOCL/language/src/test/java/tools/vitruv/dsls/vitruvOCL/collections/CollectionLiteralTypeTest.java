@@ -49,7 +49,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * </pre>
  */
 @SuppressWarnings("java:S125")
-public class CollectionLiteralTypeTest extends DummyTestSpecification {
+class CollectionLiteralTypeTest extends DummyTestSpecification {
 
   protected void compileExpectError(String input) {
     ParseTree tree = parse(input);
@@ -77,25 +77,25 @@ public class CollectionLiteralTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testEmptySetLiteral() {
+  void testEmptySetLiteral() {
     Value r = compile("Set{}");
     assertEquals(0, r.size());
   }
 
   @Test
-  public void testEmptyBagLiteral() {
+  void testEmptyBagLiteral() {
     Value r = compile("Bag{}");
     assertEquals(0, r.size());
   }
 
   @Test
-  public void testEmptySequenceLiteral() {
+  void testEmptySequenceLiteral() {
     Value r = compile("Sequence{}");
     assertEquals(0, r.size());
   }
 
   @Test
-  public void testEmptyOrderedSetLiteral() {
+  void testEmptyOrderedSetLiteral() {
     Value r = compile("OrderedSet{}");
     assertEquals(0, r.size());
   }
@@ -105,32 +105,32 @@ public class CollectionLiteralTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetIntegerLiteralSingleElement() {
+  void testSetIntegerLiteralSingleElement() {
     Value r = compile("Set{42}");
     assertEquals(1, r.size());
     assertEquals(42, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSetIntegerLiteralMultipleElements() {
+  void testSetIntegerLiteralMultipleElements() {
     Value r = compile("Set{1, 2, 3}");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSetIntegerLiteralDeduplication() {
+  void testSetIntegerLiteralDeduplication() {
     Value r = compile("Set{1, 2, 2, 3}");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testBagIntegerLiteralKeepsDuplicates() {
+  void testBagIntegerLiteralKeepsDuplicates() {
     Value r = compile("Bag{1, 1, 2}");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSequenceIntegerLiteralPreservesOrder() {
+  void testSequenceIntegerLiteralPreservesOrder() {
     Value r = compile("Sequence{3, 1, 2}");
     assertEquals(3, r.size());
     assertEquals(3, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -139,7 +139,7 @@ public class CollectionLiteralTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testSequenceIntegerLiteralKeepsDuplicates() {
+  void testSequenceIntegerLiteralKeepsDuplicates() {
     Value r = compile("Sequence{1, 2, 1}");
     assertEquals(3, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -148,13 +148,13 @@ public class CollectionLiteralTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testOrderedSetIntegerLiteralDeduplication() {
+  void testOrderedSetIntegerLiteralDeduplication() {
     Value r = compile("OrderedSet{1, 2, 2, 3}");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testOrderedSetIntegerLiteralPreservesOrder() {
+  void testOrderedSetIntegerLiteralPreservesOrder() {
     Value r = compile("OrderedSet{3, 1, 2}");
     assertEquals(3, r.size());
     assertEquals(3, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -166,25 +166,25 @@ public class CollectionLiteralTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetFloatLiteral() {
+  void testSetFloatLiteral() {
     Value r = compile("Set{1.5, 2.5}");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSetDoubleLiteral() {
+  void testSetDoubleLiteral() {
     Value r = compile("Set{1.5, 2.5, 3.5}");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testBagDoubleLiteralKeepsDuplicates() {
+  void testBagDoubleLiteralKeepsDuplicates() {
     Value r = compile("Bag{1.5, 1.5}");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSequenceDoubleLiteralPreservesOrder() {
+  void testSequenceDoubleLiteralPreservesOrder() {
     Value r = compile("Sequence{3.0, 1.0, 2.0}");
     assertEquals(3, r.size());
     assertSingleDouble(
@@ -199,32 +199,32 @@ public class CollectionLiteralTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetStringLiteral() {
+  void testSetStringLiteral() {
     Value r = compile("Set{\"a\", \"b\", \"c\"}");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSetStringLiteralDeduplication() {
+  void testSetStringLiteralDeduplication() {
     Value r = compile("Set{\"a\", \"b\", \"a\"}");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testBagStringLiteralKeepsDuplicates() {
+  void testBagStringLiteralKeepsDuplicates() {
     Value r = compile("Bag{\"a\", \"a\"}");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSequenceStringLiteralPreservesOrder() {
+  void testSequenceStringLiteralPreservesOrder() {
     Value r = compile("Sequence{\"c\", \"a\", \"b\"}");
     assertEquals(3, r.size());
     assertEquals("c", ((OCLElement.StringValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testOrderedSetStringLiteral() {
+  void testOrderedSetStringLiteral() {
     Value r = compile("OrderedSet{\"a\", \"b\"}");
     assertEquals(2, r.size());
   }
@@ -234,25 +234,25 @@ public class CollectionLiteralTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetBooleanLiteral() {
+  void testSetBooleanLiteral() {
     Value r = compile("Set{true, false}");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSetBooleanLiteralDeduplication() {
+  void testSetBooleanLiteralDeduplication() {
     Value r = compile("Set{true, true}");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testBagBooleanLiteralKeepsDuplicates() {
+  void testBagBooleanLiteralKeepsDuplicates() {
     Value r = compile("Bag{true, true, false}");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testSequenceBooleanLiteralPreservesOrder() {
+  void testSequenceBooleanLiteralPreservesOrder() {
     Value r = compile("Sequence{false, true}");
     assertEquals(2, r.size());
     assertEquals(false, ((OCLElement.BoolValue) r.getElements().get(0)).value());
@@ -264,19 +264,19 @@ public class CollectionLiteralTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetMixedIntegerAndFloat() {
+  void testSetMixedIntegerAndFloat() {
     Value r = compile("Set{1, 1.5}");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSequenceMixedIntegerAndDouble() {
+  void testSequenceMixedIntegerAndDouble() {
     Value r = compile("Sequence{1, 2.5, 3}");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testBagMixedNumeric() {
+  void testBagMixedNumeric() {
     Value r = compile("Bag{1, 1.5, 2.5}");
     assertEquals(3, r.size());
   }
@@ -286,7 +286,7 @@ public class CollectionLiteralTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSequenceRangeAscending() {
+  void testSequenceRangeAscending() {
     Value r = compile("Sequence{1..5}");
     assertEquals(5, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -294,39 +294,39 @@ public class CollectionLiteralTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testSequenceRangeSingleElement() {
+  void testSequenceRangeSingleElement() {
     Value r = compile("Sequence{3..3}");
     assertEquals(1, r.size());
     assertEquals(3, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSequenceRangeFromZero() {
+  void testSequenceRangeFromZero() {
     Value r = compile("Sequence{0..4}");
     assertEquals(5, r.size());
     assertEquals(0, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSequenceRangeNegative() {
+  void testSequenceRangeNegative() {
     Value r = compile("Sequence{(-2)..2}");
     assertEquals(5, r.size());
   }
 
   @Test
-  public void testSetRangeLiteral() {
+  void testSetRangeLiteral() {
     Value r = compile("Set{1..5}");
     assertEquals(5, r.size());
   }
 
   @Test
-  public void testBagRangeLiteral() {
+  void testBagRangeLiteral() {
     Value r = compile("Bag{1..3}");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testOrderedSetRangeLiteral() {
+  void testOrderedSetRangeLiteral() {
     Value r = compile("OrderedSet{1..4}");
     assertEquals(4, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -334,23 +334,23 @@ public class CollectionLiteralTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testSequenceRangeThenSize() {
+  void testSequenceRangeThenSize() {
     assertSingleInt(compile("Sequence{1..10}.size()"), 10);
   }
 
   @Test
-  public void testSequenceRangeThenSum() {
+  void testSequenceRangeThenSum() {
     assertSingleInt(compile("Sequence{1..4}.sum()"), 10);
   }
 
   @Test
-  public void testSequenceRangeThenSelect() {
+  void testSequenceRangeThenSelect() {
     Value r = compile("Sequence{1..5}.select(x | x > 3)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSequenceRangeThenForAll() {
+  void testSequenceRangeThenForAll() {
     assertSingleBool(compile("Sequence{1..5}.forAll(x | x > 0)"), true);
   }
 
@@ -359,25 +359,25 @@ public class CollectionLiteralTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetLiteralInSelect() {
+  void testSetLiteralInSelect() {
     Value r = compile("Set{1, 2, 3, 4, 5}.select(x | x > 3)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSequenceLiteralInCollect() {
+  void testSequenceLiteralInCollect() {
     Value r = compile("Sequence{1, 2, 3}.collect(x | x * 2)");
     assertEquals(3, r.size());
     assertEquals(2, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testBagLiteralInForAll() {
+  void testBagLiteralInForAll() {
     assertSingleBool(compile("Bag{2, 4, 6}.forAll(x | x > 0)"), true);
   }
 
   @Test
-  public void testOrderedSetLiteralInExists() {
+  void testOrderedSetLiteralInExists() {
     assertSingleBool(compile("OrderedSet{1, 2, 3}.exists(x | x == 2)"), true);
   }
 }

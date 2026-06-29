@@ -18,11 +18,11 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ErrorCollector}. */
-public class ErrorCollectorTest {
+class ErrorCollectorTest {
 
   /** Tests that new ErrorCollector has no errors. */
   @Test
-  public void testEmptyCollector() {
+  void testEmptyCollector() {
     ErrorCollector collector = new ErrorCollector();
     assertFalse(collector.hasErrors());
     assertEquals(0, collector.getErrorCount());
@@ -31,7 +31,7 @@ public class ErrorCollectorTest {
 
   /** Tests adding an ERROR-level error. */
   @Test
-  public void testAddError() {
+  void testAddError() {
     ErrorCollector collector = new ErrorCollector();
     collector.add(1, 0, "Test error", ErrorSeverity.ERROR, "test");
     assertTrue(collector.hasErrors());
@@ -41,7 +41,7 @@ public class ErrorCollectorTest {
 
   /** Tests that WARNING does not count as error in hasErrors(). */
   @Test
-  public void testWarningNotCountedAsError() {
+  void testWarningNotCountedAsError() {
     ErrorCollector collector = new ErrorCollector();
     collector.add(1, 0, "Warning", ErrorSeverity.WARNING, "test");
     assertFalse(collector.hasErrors());
@@ -51,7 +51,7 @@ public class ErrorCollectorTest {
 
   /** Tests adding multiple errors of different severities. */
   @Test
-  public void testMultipleErrors() {
+  void testMultipleErrors() {
     ErrorCollector collector = new ErrorCollector();
     collector.add(1, 0, "Error 1", ErrorSeverity.ERROR, "test");
     collector.add(2, 5, "Error 2", ErrorSeverity.ERROR, "test");
@@ -63,7 +63,7 @@ public class ErrorCollectorTest {
 
   /** Tests adding a pre-constructed CompileError. */
   @Test
-  public void testAddCompileError() {
+  void testAddCompileError() {
     ErrorCollector collector = new ErrorCollector();
     CompileError error = new CompileError(5, 3, "Direct error", ErrorSeverity.ERROR, "evaluator");
     collector.add(error);
@@ -74,7 +74,7 @@ public class ErrorCollectorTest {
 
   /** Tests that getErrors() returns a defensive copy. */
   @Test
-  public void testDefensiveCopy() {
+  void testDefensiveCopy() {
     ErrorCollector collector = new ErrorCollector();
     collector.add(1, 0, "Error", ErrorSeverity.ERROR, "test");
     List<CompileError> copy1 = collector.getErrors();
@@ -85,7 +85,7 @@ public class ErrorCollectorTest {
 
   /** Tests that modifying returned list does not affect collector. */
   @Test
-  public void testReturnedListIsImmutable() {
+  void testReturnedListIsImmutable() {
     ErrorCollector collector = new ErrorCollector();
     collector.add(1, 0, "Error", ErrorSeverity.ERROR, "test");
     collector.getErrors().clear();
@@ -95,7 +95,7 @@ public class ErrorCollectorTest {
 
   /** Tests error content is preserved correctly. */
   @Test
-  public void testErrorContentPreserved() {
+  void testErrorContentPreserved() {
     ErrorCollector collector = new ErrorCollector();
     collector.add(7, 12, "Specific message", ErrorSeverity.WARNING, "symbol-table");
     CompileError stored = collector.getErrors().get(0);
@@ -108,7 +108,7 @@ public class ErrorCollectorTest {
 
   /** Tests getErrorCount with mixed severities. */
   @Test
-  public void testErrorCountOnlyCountsErrors() {
+  void testErrorCountOnlyCountsErrors() {
     ErrorCollector collector = new ErrorCollector();
     collector.add(1, 0, "E1", ErrorSeverity.ERROR, "t");
     collector.add(2, 0, "W1", ErrorSeverity.WARNING, "t");
@@ -120,7 +120,7 @@ public class ErrorCollectorTest {
 
   /** Tests that only warnings leaves hasErrors false. */
   @Test
-  public void testOnlyWarnings() {
+  void testOnlyWarnings() {
     ErrorCollector collector = new ErrorCollector();
     collector.add(1, 0, "W1", ErrorSeverity.WARNING, "t");
     collector.add(2, 0, "W2", ErrorSeverity.WARNING, "t");
@@ -131,7 +131,7 @@ public class ErrorCollectorTest {
 
   /** Tests error order is preserved (insertion order). */
   @Test
-  public void testErrorOrderPreserved() {
+  void testErrorOrderPreserved() {
     ErrorCollector collector = new ErrorCollector();
     collector.add(3, 0, "Third", ErrorSeverity.ERROR, "t");
     collector.add(1, 0, "First", ErrorSeverity.ERROR, "t");

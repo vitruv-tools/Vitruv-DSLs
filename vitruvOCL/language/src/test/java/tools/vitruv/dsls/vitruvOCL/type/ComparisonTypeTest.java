@@ -43,7 +43,7 @@ import tools.vitruv.dsls.vitruvOCL.VitruvOCLParser;
  *   numeric × String, numeric × Boolean, Collection × anything
  * </pre>
  */
-public class ComparisonTypeTest extends DummyTestSpecification {
+class ComparisonTypeTest extends DummyTestSpecification {
 
   @Override
   protected ParseTree parse(String input) {
@@ -56,336 +56,336 @@ public class ComparisonTypeTest extends DummyTestSpecification {
   // ==================== == : Integer × {Integer, Float, Double} ====================
 
   @Test
-  public void testIntEqualsInt() {
+  void testIntEqualsInt() {
     assertSingleBool(compile("3 == 3"), true);
   }
 
   @Test
-  public void testIntEqualsIntFalse() {
+  void testIntEqualsIntFalse() {
     assertSingleBool(compile("3 == 4"), false);
   }
 
   @Test
-  public void testIntEqualsFloat() {
+  void testIntEqualsFloat() {
     assertSingleBool(compile("3 == 3.0"), true);
   }
 
   @Test
-  public void testIntEqualsDouble() {
+  void testIntEqualsDouble() {
     assertSingleBool(compile("3 == 3.0"), true);
   }
 
   // ==================== == : Float × {Integer, Float, Double} ====================
 
   @Test
-  public void testFloatEqualsInt() {
+  void testFloatEqualsInt() {
     assertSingleBool(compile("3.0 == 3"), true);
   }
 
   @Test
-  public void testFloatEqualsFloat() {
+  void testFloatEqualsFloat() {
     assertSingleBool(compile("1.5 == 1.5"), true);
   }
 
   @Test
-  public void testFloatEqualsDouble() {
+  void testFloatEqualsDouble() {
     assertSingleBool(compile("1.5 == 1.5"), true);
   }
 
   // ==================== == : Double × {Integer, Float, Double} ====================
 
   @Test
-  public void testDoubleEqualsInt() {
+  void testDoubleEqualsInt() {
     assertSingleBool(compile("3.0 == 3"), true);
   }
 
   @Test
-  public void testDoubleEqualsFloat() {
+  void testDoubleEqualsFloat() {
     assertSingleBool(compile("2.5 == 2.5"), true);
   }
 
   @Test
-  public void testDoubleEqualsDouble() {
+  void testDoubleEqualsDouble() {
     assertSingleBool(compile("2.5 == 2.5"), true);
   }
 
   // ==================== == : String × String ====================
 
   @Test
-  public void testStringEqualsString() {
+  void testStringEqualsString() {
     assertSingleBool(compile("\"hello\" == \"hello\""), true);
   }
 
   @Test
-  public void testStringEqualsStringFalse() {
+  void testStringEqualsStringFalse() {
     assertSingleBool(compile("\"hello\" == \"world\""), false);
   }
 
   // ==================== == : Boolean × Boolean ====================
 
   @Test
-  public void testBoolEqualsBool() {
+  void testBoolEqualsBool() {
     assertSingleBool(compile("true == true"), true);
   }
 
   @Test
-  public void testBoolEqualsBoolFalse() {
+  void testBoolEqualsBoolFalse() {
     assertSingleBool(compile("true == false"), false);
   }
 
   // ==================== != across all valid combinations ====================
 
   @Test
-  public void testIntNotEqualsInt() {
+  void testIntNotEqualsInt() {
     assertSingleBool(compile("3 != 4"), true);
   }
 
   @Test
-  public void testIntNotEqualsFloat() {
+  void testIntNotEqualsFloat() {
     assertSingleBool(compile("3 != 3.0"), false);
   }
 
   @Test
-  public void testFloatNotEqualsInt() {
+  void testFloatNotEqualsInt() {
     assertSingleBool(compile("1.5 != 2"), true);
   }
 
   @Test
-  public void testStringNotEqualsString() {
+  void testStringNotEqualsString() {
     assertSingleBool(compile("\"a\" != \"b\""), true);
   }
 
   @Test
-  public void testBoolNotEqualsBool() {
+  void testBoolNotEqualsBool() {
     assertSingleBool(compile("true != false"), true);
   }
 
   // ==================== < : Integer × {Integer, Float, Double} ====================
 
   @Test
-  public void testIntLessThanInt() {
+  void testIntLessThanInt() {
     assertSingleBool(compile("3 < 4"), true);
   }
 
   @Test
-  public void testIntLessThanIntFalse() {
+  void testIntLessThanIntFalse() {
     assertSingleBool(compile("4 < 3"), false);
   }
 
   @Test
-  public void testIntLessThanFloat() {
+  void testIntLessThanFloat() {
     assertSingleBool(compile("2 < 2.5"), true);
   }
 
   @Test
-  public void testIntLessThanDouble() {
+  void testIntLessThanDouble() {
     assertSingleBool(compile("2 < 2.5"), true);
   }
 
   // ==================== < : Float × {Integer, Float, Double} ====================
 
   @Test
-  public void testFloatLessThanInt() {
+  void testFloatLessThanInt() {
     assertSingleBool(compile("1.5 < 2"), true);
   }
 
   @Test
-  public void testFloatLessThanFloat() {
+  void testFloatLessThanFloat() {
     assertSingleBool(compile("1.5 < 2.5"), true);
   }
 
   @Test
-  public void testFloatLessThanDouble() {
+  void testFloatLessThanDouble() {
     assertSingleBool(compile("1.5 < 2.5"), true);
   }
 
   // ==================== < : Double × {Integer, Float, Double} ====================
 
   @Test
-  public void testDoubleLessThanInt() {
+  void testDoubleLessThanInt() {
     assertSingleBool(compile("1.5 < 2"), true);
   }
 
   @Test
-  public void testDoubleLessThanFloat() {
+  void testDoubleLessThanFloat() {
     assertSingleBool(compile("1.5 < 2.0"), true);
   }
 
   @Test
-  public void testDoubleLessThanDouble() {
+  void testDoubleLessThanDouble() {
     assertSingleBool(compile("1.5 < 2.5"), true);
   }
 
   // ==================== > ====================
 
   @Test
-  public void testIntGreaterThanInt() {
+  void testIntGreaterThanInt() {
     assertSingleBool(compile("4 > 3"), true);
   }
 
   @Test
-  public void testIntGreaterThanFloat() {
+  void testIntGreaterThanFloat() {
     assertSingleBool(compile("3 > 2.5"), true);
   }
 
   @Test
-  public void testFloatGreaterThanInt() {
+  void testFloatGreaterThanInt() {
     assertSingleBool(compile("2.5 > 2"), true);
   }
 
   @Test
-  public void testDoubleGreaterThanDouble() {
+  void testDoubleGreaterThanDouble() {
     assertSingleBool(compile("2.5 > 1.5"), true);
   }
 
   // ==================== <= ====================
 
   @Test
-  public void testIntLessOrEqualIntequal() {
+  void testIntLessOrEqualIntequal() {
     assertSingleBool(compile("3 <= 3"), true);
   }
 
   @Test
-  public void testIntLessOrEqualIntless() {
+  void testIntLessOrEqualIntless() {
     assertSingleBool(compile("2 <= 3"), true);
   }
 
   @Test
-  public void testIntLessOrEqualIntgreater() {
+  void testIntLessOrEqualIntgreater() {
     assertSingleBool(compile("4 <= 3"), false);
   }
 
   @Test
-  public void testFloatLessOrEqualDouble() {
+  void testFloatLessOrEqualDouble() {
     assertSingleBool(compile("1.5 <= 1.5"), true);
   }
 
   @Test
-  public void testIntLessOrEqualFloat() {
+  void testIntLessOrEqualFloat() {
     assertSingleBool(compile("2 <= 2.5"), true);
   }
 
   // ==================== >= ====================
 
   @Test
-  public void testIntGreaterOrEqualIntequal() {
+  void testIntGreaterOrEqualIntequal() {
     assertSingleBool(compile("3 >= 3"), true);
   }
 
   @Test
-  public void testIntGreaterOrEqualIntgreater() {
+  void testIntGreaterOrEqualIntgreater() {
     assertSingleBool(compile("4 >= 3"), true);
   }
 
   @Test
-  public void testFloatGreaterOrEqualInt() {
+  void testFloatGreaterOrEqualInt() {
     assertSingleBool(compile("3.0 >= 3"), true);
   }
 
   @Test
-  public void testDoubleGreaterOrEqualDouble() {
+  void testDoubleGreaterOrEqualDouble() {
     assertSingleBool(compile("2.5 >= 2.5"), true);
   }
 
   // ==================== Invalid: == across incompatible types → ERROR ====================
 
   @Test
-  public void testIntEqualsStringFails() {
+  void testIntEqualsStringFails() {
     assertTypeError("3 == \"hello\"");
   }
 
   @Test
-  public void testIntEqualsBoolFails() {
+  void testIntEqualsBoolFails() {
     assertTypeError("3 == true");
   }
 
   @Test
-  public void testStringEqualsIntFails() {
+  void testStringEqualsIntFails() {
     assertTypeError("\"hello\" == 3");
   }
 
   @Test
-  public void testStringEqualsBoolFails() {
+  void testStringEqualsBoolFails() {
     assertTypeError("\"hello\" == true");
   }
 
   @Test
-  public void testBoolEqualsIntFails() {
+  void testBoolEqualsIntFails() {
     assertTypeError("true == 3");
   }
 
   @Test
-  public void testBoolEqualsStringFails() {
+  void testBoolEqualsStringFails() {
     assertTypeError("true == \"hello\"");
   }
 
   @Test
-  public void testFloatEqualsStringFails() {
+  void testFloatEqualsStringFails() {
     assertTypeError("1.5 == \"hello\"");
   }
 
   @Test
-  public void testDoubleEqualsBoolFails() {
+  void testDoubleEqualsBoolFails() {
     assertTypeError("2.5 == true");
   }
 
   // ==================== Invalid: < > <= >= on non-numeric → ERROR ====================
 
   @Test
-  public void testStringLessThanStringFails() {
+  void testStringLessThanStringFails() {
     assertTypeError("\"a\" < \"b\"");
   }
 
   @Test
-  public void testBoolLessThanBoolFails() {
+  void testBoolLessThanBoolFails() {
     assertTypeError("true < false");
   }
 
   @Test
-  public void testIntLessThanStringFails() {
+  void testIntLessThanStringFails() {
     assertTypeError("3 < \"hello\"");
   }
 
   @Test
-  public void testIntLessThanBoolFails() {
+  void testIntLessThanBoolFails() {
     assertTypeError("3 < true");
   }
 
   @Test
-  public void testStringGreaterThanIntFails() {
+  void testStringGreaterThanIntFails() {
     assertTypeError("\"hello\" > 3");
   }
 
   @Test
-  public void testBoolLessOrEqualIntFails() {
+  void testBoolLessOrEqualIntFails() {
     assertTypeError("true <= 3");
   }
 
   @Test
-  public void testFloatGreaterThanStringFails() {
+  void testFloatGreaterThanStringFails() {
     assertTypeError("1.5 > \"hello\"");
   }
 
   // ==================== Invalid: Collection comparisons → ERROR ====================
 
   @Test
-  public void testSetEqualsIntFails() {
+  void testSetEqualsIntFails() {
     assertTypeError("Set{1,2} == 3");
   }
 
   @Test
-  public void testSetLessThanSetFails() {
+  void testSetLessThanSetFails() {
     assertTypeError("Set{1,2} < Set{3,4}");
   }
 
   @Test
-  public void testSetEqualsSetSameType() {
+  void testSetEqualsSetSameType() {
     // Set{T} == Set{T} currently fails at Pass 3 — not supported
     assertTypeError("Set{1,2} == Set{1,2}");
   }
 
   @Test
-  public void testSetEqualsSetDifferentType() {
+  void testSetEqualsSetDifferentType() {
     // Set{Integer} == Set{String} — incompatible element types → ERROR
     assertTypeError("Set{1,2} == Set{\"a\",\"b\"}");
   }
@@ -393,109 +393,109 @@ public class ComparisonTypeTest extends DummyTestSpecification {
   // ==================== Invalid: == missing combinations → ERROR ====================
 
   @Test
-  public void testFloatEqualsBoolFails() {
+  void testFloatEqualsBoolFails() {
     assertTypeError("1.5 == true");
   }
 
   @Test
-  public void testFloatEqualsSetFails() {
+  void testFloatEqualsSetFails() {
     assertTypeError("1.5 == Set{1,2}");
   }
 
   @Test
-  public void testDoubleEqualsSetFails() {
+  void testDoubleEqualsSetFails() {
     assertTypeError("2.5 == Set{1,2}");
   }
 
   @Test
-  public void testStringEqualsFloatFails() {
+  void testStringEqualsFloatFails() {
     assertTypeError("\"hello\" == 1.5");
   }
 
   @Test
-  public void testStringEqualsDoubleFails() {
+  void testStringEqualsDoubleFails() {
     assertTypeError("\"hello\" == 2.5");
   }
 
   @Test
-  public void testStringEqualsSetFails() {
+  void testStringEqualsSetFails() {
     assertTypeError("\"hello\" == Set{1,2}");
   }
 
   @Test
-  public void testBoolEqualsFloatFails() {
+  void testBoolEqualsFloatFails() {
     assertTypeError("true == 1.5");
   }
 
   @Test
-  public void testBoolEqualsDoubleFails() {
+  void testBoolEqualsDoubleFails() {
     assertTypeError("true == 2.5");
   }
 
   @Test
-  public void testBoolEqualsSetFails() {
+  void testBoolEqualsSetFails() {
     assertTypeError("true == Set{1,2}");
   }
 
   // ==================== Invalid: < > <= >= missing combinations → ERROR ====================
 
   @Test
-  public void testFloatLessThanBoolFails() {
+  void testFloatLessThanBoolFails() {
     assertTypeError("1.5 < true");
   }
 
   @Test
-  public void testFloatLessThanSetFails() {
+  void testFloatLessThanSetFails() {
     assertTypeError("1.5 < Set{1,2}");
   }
 
   @Test
-  public void testDoubleLessThanBoolFails() {
+  void testDoubleLessThanBoolFails() {
     assertTypeError("2.5 < true");
   }
 
   @Test
-  public void testDoubleLessThanSetFails() {
+  void testDoubleLessThanSetFails() {
     assertTypeError("2.5 < Set{1,2}");
   }
 
   @Test
-  public void testStringLessThanFloatFails() {
+  void testStringLessThanFloatFails() {
     assertTypeError("\"a\" < 1.5");
   }
 
   @Test
-  public void testStringLessThanDoubleFails() {
+  void testStringLessThanDoubleFails() {
     assertTypeError("\"a\" < 2.5");
   }
 
   @Test
-  public void testStringLessThanBoolFails() {
+  void testStringLessThanBoolFails() {
     assertTypeError("\"a\" < true");
   }
 
   @Test
-  public void testStringLessThanSetFails() {
+  void testStringLessThanSetFails() {
     assertTypeError("\"a\" < Set{1,2}");
   }
 
   @Test
-  public void testBoolLessThanFloatFails() {
+  void testBoolLessThanFloatFails() {
     assertTypeError("true < 1.5");
   }
 
   @Test
-  public void testBoolLessThanDoubleFails() {
+  void testBoolLessThanDoubleFails() {
     assertTypeError("true < 2.5");
   }
 
   @Test
-  public void testBoolLessThanStringFails() {
+  void testBoolLessThanStringFails() {
     assertTypeError("true < \"hello\"");
   }
 
   @Test
-  public void testBoolLessThanSetFails() {
+  void testBoolLessThanSetFails() {
     assertTypeError("true < Set{1,2}");
   }
 

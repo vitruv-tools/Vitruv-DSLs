@@ -49,7 +49,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  * </pre>
  */
 @SuppressWarnings("java:S125")
-public class AppendTypeTest extends DummyTestSpecification {
+class AppendTypeTest extends DummyTestSpecification {
 
   protected void compileExpectError(String input) {
     ParseTree tree = parse(input);
@@ -77,33 +77,33 @@ public class AppendTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetAppendInteger() {
+  void testSetAppendInteger() {
     Value r = compile("Set{1, 2}.append(3)");
     assertEquals(3, r.size());
     assertTrue(r.includes(new OCLElement.IntValue(3)));
   }
 
   @Test
-  public void testSetAppendIntegerDuplicate() {
+  void testSetAppendIntegerDuplicate() {
     // Set: duplicate → no change in size
     Value r = compile("Set{1, 2}.append(2)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSetAppendFloat() {
+  void testSetAppendFloat() {
     Value r = compile("Set{1}.append(1.5)");
     assertTrue(r.size() >= 1);
   }
 
   @Test
-  public void testSetAppendBoolean() {
+  void testSetAppendBoolean() {
     Value r = compile("Set{true}.append(false)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSetAppendString() {
+  void testSetAppendString() {
     Value r = compile("Set{\"a\"}.append(\"b\")");
     assertEquals(2, r.size());
   }
@@ -113,14 +113,14 @@ public class AppendTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSequenceAppendInteger() {
+  void testSequenceAppendInteger() {
     Value r = compile("Sequence{1, 2}.append(3)");
     assertEquals(3, r.size());
     assertEquals(3, ((OCLElement.IntValue) r.getElements().get(2)).value());
   }
 
   @Test
-  public void testSequenceAppendIntegerDuplicate() {
+  void testSequenceAppendIntegerDuplicate() {
     // Sequence: duplicate allowed
     Value r = compile("Sequence{1, 2}.append(2)");
     assertEquals(3, r.size());
@@ -128,20 +128,20 @@ public class AppendTypeTest extends DummyTestSpecification {
   }
 
   @Test
-  public void testSequenceAppendFloat() {
+  void testSequenceAppendFloat() {
     Value r = compile("Sequence{1}.append(1.5)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSequenceAppendString() {
+  void testSequenceAppendString() {
     Value r = compile("Sequence{\"a\", \"b\"}.append(\"c\")");
     assertEquals(3, r.size());
     assertEquals("c", ((OCLElement.StringValue) r.getElements().get(2)).value());
   }
 
   @Test
-  public void testSequenceAppendBoolean() {
+  void testSequenceAppendBoolean() {
     Value r = compile("Sequence{true}.append(false)");
     assertEquals(2, r.size());
   }
@@ -151,20 +151,20 @@ public class AppendTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testBagAppendInteger() {
+  void testBagAppendInteger() {
     Value r = compile("Bag{1, 1}.append(2)");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testBagAppendIntegerDuplicate() {
+  void testBagAppendIntegerDuplicate() {
     // Bag: always adds, even duplicates
     Value r = compile("Bag{1, 2}.append(1)");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testBagAppendString() {
+  void testBagAppendString() {
     Value r = compile("Bag{\"a\"}.append(\"a\")");
     assertEquals(2, r.size());
   }
@@ -174,20 +174,20 @@ public class AppendTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testOrderedSetAppendInteger() {
+  void testOrderedSetAppendInteger() {
     Value r = compile("OrderedSet{1, 2}.append(3)");
     assertEquals(3, r.size());
   }
 
   @Test
-  public void testOrderedSetAppendIntegerDuplicate() {
+  void testOrderedSetAppendIntegerDuplicate() {
     // OrderedSet: no duplicates
     Value r = compile("OrderedSet{1, 2}.append(2)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testOrderedSetAppendFloat() {
+  void testOrderedSetAppendFloat() {
     Value r = compile("OrderedSet{1}.append(1.5)");
     assertTrue(r.size() >= 1);
   }
@@ -197,27 +197,27 @@ public class AppendTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testIntegerAppendFails() {
+  void testIntegerAppendFails() {
     compileExpectError("1.append(2)");
   }
 
   @Test
-  public void testFloatAppendFails() {
+  void testFloatAppendFails() {
     compileExpectError("1.5.append(2)");
   }
 
   @Test
-  public void testDoubleAppendFails() {
+  void testDoubleAppendFails() {
     compileExpectError("2.5.append(1)");
   }
 
   @Test
-  public void testStringAppendFails() {
+  void testStringAppendFails() {
     compileExpectError("\"hello\".append(\"world\")");
   }
 
   @Test
-  public void testBooleanAppendFails() {
+  void testBooleanAppendFails() {
     compileExpectError("true.append(false)");
   }
 
@@ -226,22 +226,22 @@ public class AppendTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSetAppendSetFails() {
+  void testSetAppendSetFails() {
     compileExpectError("Set{1}.append(Set{2})");
   }
 
   @Test
-  public void testSequenceAppendSequenceFails() {
+  void testSequenceAppendSequenceFails() {
     compileExpectError("Sequence{1}.append(Sequence{2})");
   }
 
   @Test
-  public void testBagAppendBagFails() {
+  void testBagAppendBagFails() {
     compileExpectError("Bag{1}.append(Bag{2})");
   }
 
   @Test
-  public void testOrderedSetAppendSetFails() {
+  void testOrderedSetAppendSetFails() {
     compileExpectError("OrderedSet{1}.append(Set{2})");
   }
 
@@ -250,35 +250,35 @@ public class AppendTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testSequenceAppendThenSize() {
+  void testSequenceAppendThenSize() {
     assertSingleInt(compile("Sequence{1, 2}.append(3).size()"), 3);
   }
 
   @Test
-  public void testSequenceAppendThenFirst() {
+  void testSequenceAppendThenFirst() {
     Value r = compile("Sequence{1, 2}.append(3).first()");
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSequenceAppendThenLast() {
+  void testSequenceAppendThenLast() {
     Value r = compile("Sequence{1, 2}.append(3).last()");
     assertEquals(3, ((OCLElement.IntValue) r.getElements().get(0)).value());
   }
 
   @Test
-  public void testSequenceAppendThenSelect() {
+  void testSequenceAppendThenSelect() {
     Value r = compile("Sequence{1, 2}.append(3).select(x | x > 1)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testSequenceAppendThenForAll() {
+  void testSequenceAppendThenForAll() {
     assertSingleBool(compile("Sequence{1, 2}.append(3).forAll(x | x > 0)"), true);
   }
 
   @Test
-  public void testSequenceMultipleAppend() {
+  void testSequenceMultipleAppend() {
     Value r = compile("Sequence{}.append(1).append(2).append(3)");
     assertEquals(3, r.size());
   }

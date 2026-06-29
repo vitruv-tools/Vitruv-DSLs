@@ -180,9 +180,9 @@ public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
     for (Path ecoreFile : ecoreFiles) {
       try {
         wrapper.loadMetamodel(ecoreFile);
-        LOG.fine("[OCL-LS] Loaded metamodel: " + ecoreFile);
+        LOG.fine(() -> "[OCL-LS] Loaded metamodel: " + ecoreFile);
       } catch (IOException e) {
-        LOG.fine("[OCL-LS] Could not load " + ecoreFile + ": " + e.getMessage());
+        LOG.fine(() -> "[OCL-LS] Could not load " + ecoreFile + ": " + e.getMessage());
       }
     }
   }
@@ -212,7 +212,7 @@ public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
             }
           });
     } catch (IOException e) {
-      LOG.fine("[OCL-LS] Error scanning " + root + ": " + e.getMessage());
+      LOG.fine(() -> "[OCL-LS] Error scanning " + root + ": " + e.getMessage());
     }
   }
 

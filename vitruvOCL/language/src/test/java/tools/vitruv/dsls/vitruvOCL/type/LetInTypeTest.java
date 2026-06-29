@@ -50,7 +50,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  *   (no type) = any        → inferred from initializer
  * </pre>
  */
-public class LetInTypeTest extends DummyTestSpecification {
+class LetInTypeTest extends DummyTestSpecification {
 
   protected void compileExpectError(String input) {
     ParseTree tree = parse(input);
@@ -78,38 +78,38 @@ public class LetInTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testLetIntegerInferred() {
+  void testLetIntegerInferred() {
     assertSingleInt(compile("let x = 5 in x + 3"), 8);
   }
 
   @Test
-  public void testLetFloatInferred() {
+  void testLetFloatInferred() {
     assertSingleDouble(compile("let x = 1.5 in x + 1.5"), 3.0);
   }
 
   @Test
-  public void testLetDoubleInferred() {
+  void testLetDoubleInferred() {
     assertSingleDouble(compile("let x = 2.5 in x * 2"), 5.0);
   }
 
   @Test
-  public void testLetStringInferred() {
+  void testLetStringInferred() {
     assertSingleString(compile("let s = \"hello\" in s.toUpper()"), "HELLO");
   }
 
   @Test
-  public void testLetBooleanInferred() {
+  void testLetBooleanInferred() {
     assertSingleBool(compile("let b = true in not b"), false);
   }
 
   @Test
-  public void testLetCollectionInferred() {
+  void testLetCollectionInferred() {
     Value r = compile("let c = Set{1, 2, 3} in c.size()");
     assertSingleInt(r, 3);
   }
 
   @Test
-  public void testLetSequenceInferred() {
+  void testLetSequenceInferred() {
     Value r = compile("let s = Sequence{1, 2, 3} in s.first()");
     assertEquals(1, r.size());
     assertEquals(1, ((OCLElement.IntValue) r.getElements().get(0)).value());
@@ -120,27 +120,27 @@ public class LetInTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testLetIntegerDeclaredIntegerInit() {
+  void testLetIntegerDeclaredIntegerInit() {
     assertSingleInt(compile("let x : Integer = 5 in x * 2"), 10);
   }
 
   @Test
-  public void testLetStringDeclaredStringInit() {
+  void testLetStringDeclaredStringInit() {
     assertSingleString(compile("let s : String = \"world\" in s.toUpper()"), "WORLD");
   }
 
   @Test
-  public void testLetBooleanDeclaredBooleanInit() {
+  void testLetBooleanDeclaredBooleanInit() {
     assertSingleBool(compile("let b : Boolean = false in not b"), true);
   }
 
   @Test
-  public void testLetSetDeclaredSetInit() {
+  void testLetSetDeclaredSetInit() {
     assertSingleInt(compile("let c : Set(Integer) = Set{1, 2, 3} in c.size()"), 3);
   }
 
   @Test
-  public void testLetSequenceDeclaredSequenceInit() {
+  void testLetSequenceDeclaredSequenceInit() {
     assertSingleInt(compile("let s : Sequence(Integer) = Sequence{1, 2} in s.size()"), 2);
   }
 
@@ -149,7 +149,7 @@ public class LetInTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testLetDoubleDeclaredIntegerInit() {
+  void testLetDoubleDeclaredIntegerInit() {
     // Integer conforms to Double
     assertSingleDouble(compile("let x : Double = 5 in x + 0.5"), 5.5);
   }
@@ -159,28 +159,28 @@ public class LetInTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testLetTwoIntegerBindings() {
+  void testLetTwoIntegerBindings() {
     assertSingleInt(compile("let x = 3, y = 4 in x + y"), 7);
   }
 
   @Test
-  public void testLetMixedTypeBindings() {
+  void testLetMixedTypeBindings() {
     assertSingleString(compile("let n = 42, s = \"hello\" in s.toUpper()"), "HELLO");
   }
 
   @Test
-  public void testLetBindingUsedInCondition() {
+  void testLetBindingUsedInCondition() {
     assertSingleInt(compile("let x = 5 in if x > 3 then 1 else 0 endif"), 1);
   }
 
   @Test
-  public void testLetBindingUsedInIterator() {
+  void testLetBindingUsedInIterator() {
     Value r = compile("let c = Set{1, 2, 3} in c.select(x | x > 1)");
     assertEquals(2, r.size());
   }
 
   @Test
-  public void testLetBindingChained() {
+  void testLetBindingChained() {
     assertSingleInt(compile("let x = 3 in let y = x * 2 in y + 1"), 7);
   }
 
@@ -189,28 +189,28 @@ public class LetInTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testLetBodyReturnsInteger() {
+  void testLetBodyReturnsInteger() {
     assertSingleInt(compile("let x = 10 in x - 3"), 7);
   }
 
   @Test
-  public void testLetBodyReturnsBoolean() {
+  void testLetBodyReturnsBoolean() {
     assertSingleBool(compile("let x = 5 in x > 3"), true);
   }
 
   @Test
-  public void testLetBodyReturnsString() {
+  void testLetBodyReturnsString() {
     assertSingleString(compile("let s = \"hello\" in s.concat(\" world\")"), "hello world");
   }
 
   @Test
-  public void testLetBodyReturnsCollection() {
+  void testLetBodyReturnsCollection() {
     Value r = compile("let c = Set{1, 2, 3} in c.reject(x | x > 1)");
     assertEquals(1, r.size());
   }
 
   @Test
-  public void testLetBodyReturnsCollectionSize() {
+  void testLetBodyReturnsCollectionSize() {
     assertSingleInt(compile("let c = Bag{1, 1, 2} in c.size()"), 3);
   }
 
@@ -219,37 +219,37 @@ public class LetInTypeTest extends DummyTestSpecification {
   // ══════════════════════════════════════════════════════════════
 
   @Test
-  public void testLetIntegerDeclaredStringInitFails() {
+  void testLetIntegerDeclaredStringInitFails() {
     compileExpectError("let x : Integer = \"hello\" in x");
   }
 
   @Test
-  public void testLetStringDeclaredIntegerInitFails() {
+  void testLetStringDeclaredIntegerInitFails() {
     compileExpectError("let s : String = 42 in s");
   }
 
   @Test
-  public void testLetBooleanDeclaredIntegerInitFails() {
+  void testLetBooleanDeclaredIntegerInitFails() {
     compileExpectError("let b : Boolean = 1 in b");
   }
 
   @Test
-  public void testLetIntegerDeclaredBooleanInitFails() {
+  void testLetIntegerDeclaredBooleanInitFails() {
     compileExpectError("let x : Integer = true in x");
   }
 
   @Test
-  public void testLetStringDeclaredBooleanInitFails() {
+  void testLetStringDeclaredBooleanInitFails() {
     compileExpectError("let s : String = false in s");
   }
 
   @Test
-  public void testLetIntegerDeclaredSetInitFails() {
+  void testLetIntegerDeclaredSetInitFails() {
     compileExpectError("let x : Integer = Set{1, 2} in x");
   }
 
   @Test
-  public void testLetSetDeclaredIntegerInitFails() {
+  void testLetSetDeclaredIntegerInitFails() {
     compileExpectError("let c : Set(Integer) = 42 in c");
   }
 }

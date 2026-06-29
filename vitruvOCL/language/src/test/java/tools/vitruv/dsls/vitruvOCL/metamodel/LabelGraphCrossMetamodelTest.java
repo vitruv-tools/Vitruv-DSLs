@@ -62,7 +62,7 @@ import tools.vitruv.dsls.vitruvOCL.pipeline.VitruvOCL;
  *
  * @see dsls.vitruvOCLInterface#evaluateConstraint(String, Path[], Path[])
  */
-public class LabelGraphCrossMetamodelTest {
+class LabelGraphCrossMetamodelTest {
 
   // ==================== Metamodels ====================
 
@@ -90,7 +90,7 @@ public class LabelGraphCrossMetamodelTest {
 
   /** Registers the test model base path before all tests run. */
   @BeforeAll
-  public static void setupPaths() {
+  static void setupPaths() {
     MetamodelWrapper.TEST_MODELS_PATH = Path.of("src/test/resources/test-models");
   }
 
@@ -112,7 +112,7 @@ public class LabelGraphCrossMetamodelTest {
    * <p>Expected: satisfied, because every LG1 name suffix appears exactly once in LG2.
    */
   @Test
-  public void testExistsCorrespondentByNameSuffix() {
+  void testExistsCorrespondentByNameSuffix() {
     String constraint =
         """
         context Labelgraph1::SimpleNode inv:
@@ -151,7 +151,7 @@ public class LabelGraphCrossMetamodelTest {
    * <p>Expected: satisfied, because each three-digit suffix is unique within LG2.
    */
   @Test
-  public void testCorrespondenceIsUnique() {
+  void testCorrespondenceIsUnique() {
     String constraint =
         """
         context Labelgraph1::SimpleNode inv:
@@ -193,7 +193,7 @@ public class LabelGraphCrossMetamodelTest {
    * it produces a singleton label collection, so {@code size() == 1}.
    */
   @Test
-  public void testCorrespondentLabelCollectionSizeIsOne() {
+  void testCorrespondentLabelCollectionSizeIsOne() {
     String constraint =
         """
         context Labelgraph1::SimpleNode inv:
@@ -231,7 +231,7 @@ public class LabelGraphCrossMetamodelTest {
    * every corresponding node pair.
    */
   @Test
-  public void testCorrespondentLabelsMatch() {
+  void testCorrespondentLabelsMatch() {
     String constraint =
         """
         context Labelgraph1::SimpleNode inv:
@@ -265,7 +265,7 @@ public class LabelGraphCrossMetamodelTest {
    * never evaluated.
    */
   @Test
-  public void testForAllVacuouslyTrueWithoutLG2Instances() {
+  void testForAllVacuouslyTrueWithoutLG2Instances() {
     String constraint =
         """
         context Labelgraph1::SimpleNode inv:
@@ -299,7 +299,7 @@ public class LabelGraphCrossMetamodelTest {
    * <p>Expected: not satisfied, because the LG2 model is absent.
    */
   @Test
-  public void testExistsFailsWithoutLG2Instances() {
+  void testExistsFailsWithoutLG2Instances() {
     String constraint =
         """
         context Labelgraph1::SimpleNode inv:

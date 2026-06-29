@@ -41,7 +41,7 @@ import tools.vitruv.dsls.vitruvOCL.typechecker.TypeCheckVisitor;
  *   All others → ERROR
  * </pre>
  */
-public class UnaryTypeTest extends DummyTestSpecification {
+class UnaryTypeTest extends DummyTestSpecification {
 
   /**
    * Compiles an OCL expression and asserts that type checking rejects it with an error. Used for
@@ -85,138 +85,138 @@ public class UnaryTypeTest extends DummyTestSpecification {
   // ── unary minus: valid ────────────────────────────────────────
 
   @Test
-  public void testUnaryMinusInteger() {
+  void testUnaryMinusInteger() {
     assertSingleInt(compile("-(3)"), -3);
   }
 
   @Test
-  public void testUnaryMinusIntegerPositive() {
+  void testUnaryMinusIntegerPositive() {
     assertSingleInt(compile("-(-5)"), 5);
   }
 
   @Test
-  public void testUnaryMinusFloat() {
+  void testUnaryMinusFloat() {
     assertSingleDouble(compile("-(1.5)"), -1.5);
   }
 
   @Test
-  public void testUnaryMinusDouble() {
+  void testUnaryMinusDouble() {
     assertSingleDouble(compile("-(2.5)"), -2.5);
   }
 
   // ── unary minus: ERROR ────────────────────────────────────────
 
   @Test
-  public void testUnaryMinusStringFails() {
+  void testUnaryMinusStringFails() {
     compileExpectError("-\"hello\"");
   }
 
   @Test
-  public void testUnaryMinusBooleanFails() {
+  void testUnaryMinusBooleanFails() {
     compileExpectError("-true");
   }
 
   @Test
-  public void testUnaryMinusSetFails() {
+  void testUnaryMinusSetFails() {
     compileExpectError("-Set{1, 2}");
   }
 
   @Test
-  public void testUnaryMinusSequenceFails() {
+  void testUnaryMinusSequenceFails() {
     compileExpectError("-Sequence{1, 2}");
   }
 
   @Test
-  public void testUnaryMinusBagFails() {
+  void testUnaryMinusBagFails() {
     compileExpectError("-Bag{1, 2}");
   }
 
   @Test
-  public void testUnaryMinusOrderedSetFails() {
+  void testUnaryMinusOrderedSetFails() {
     compileExpectError("-OrderedSet{1, 2}");
   }
 
   // ── not: valid ────────────────────────────────────────────────
 
   @Test
-  public void testNotBooleanTrue() {
+  void testNotBooleanTrue() {
     assertSingleBool(compile("not true"), false);
   }
 
   @Test
-  public void testNotBooleanFalse() {
+  void testNotBooleanFalse() {
     assertSingleBool(compile("not false"), true);
   }
 
   @Test
-  public void testNotDoubleNot() {
+  void testNotDoubleNot() {
     assertSingleBool(compile("not (not true)"), true);
   }
 
   // ── not: ERROR ────────────────────────────────────────────────
 
   @Test
-  public void testNotIntegerFails() {
+  void testNotIntegerFails() {
     compileExpectError("not 1");
   }
 
   @Test
-  public void testNotFloatFails() {
+  void testNotFloatFails() {
     compileExpectError("not 1.5");
   }
 
   @Test
-  public void testNotDoubleFails() {
+  void testNotDoubleFails() {
     compileExpectError("not 2.5");
   }
 
   @Test
-  public void testNotStringFails() {
+  void testNotStringFails() {
     compileExpectError("not \"hello\"");
   }
 
   @Test
-  public void testNotSetFails() {
+  void testNotSetFails() {
     compileExpectError("not Set{true, false}");
   }
 
   @Test
-  public void testNotSequenceFails() {
+  void testNotSequenceFails() {
     compileExpectError("not Sequence{true}");
   }
 
   @Test
-  public void testNotBagFails() {
+  void testNotBagFails() {
     compileExpectError("not Bag{true}");
   }
 
   @Test
-  public void testNotOrderedSetFails() {
+  void testNotOrderedSetFails() {
     compileExpectError("not OrderedSet{true}");
   }
 
   @Test
-  public void testUnaryMinusOnFloatLiteralStaysNumeric() {
+  void testUnaryMinusOnFloatLiteralStaysNumeric() {
     // -(1.5) — grammar parses 1.5 as Double → result is ¡Double!
     Value result = compile("-(1.5)");
     assertSingleDouble(result, -1.5);
   }
 
   @Test
-  public void testUnaryMinusOnNegativeFloat() {
+  void testUnaryMinusOnNegativeFloat() {
     Value result = compile("-(-1.5)");
     assertSingleDouble(result, 1.5);
   }
 
   @Test
-  public void testUnaryMinusFloatNegated() {
+  void testUnaryMinusFloatNegated() {
     // Verify -(float expression) evaluates correctly
     Value result = compile("-(2.0 * 1.5)");
     assertSingleDouble(result, -3.0);
   }
 
   @Test
-  public void testUnaryMinusOnFloatArithmetic() {
+  void testUnaryMinusOnFloatArithmetic() {
     // -(¡Float! + ¡Float!) → ¡Double! (arithmetic promotes first)
     Value result = compile("-(1.5 + 2.5)");
     assertSingleDouble(result, -4.0);
