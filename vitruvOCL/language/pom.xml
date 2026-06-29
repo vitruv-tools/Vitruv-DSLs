@@ -204,12 +204,6 @@
                 <configuration>
                     <mainClass>tools.vitruv.dsls.vitruvOCL.TestMain</mainClass>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>execute-mwe2-generate</id>
-                        <phase>none</phase>
-                    </execution>
-                </executions>
             </plugin>
 
             <!-- Assembly Plugin for JAR with dependencies -->
