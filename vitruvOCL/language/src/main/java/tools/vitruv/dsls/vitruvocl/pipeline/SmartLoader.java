@@ -158,9 +158,6 @@ public class SmartLoader {
     // and auto-registered, so no explicit .ecore file is required for it.
     requiredPackages.add(PKG_CORRESPONDENCE);
 
-    LOG.fine(() -> "[DBG-SL] requiredPackages=" + requiredPackages);
-    LOG.fine(() -> "[DBG-SL] availableEcores=" + availableEcores.keySet());
-    LOG.fine(() -> "[DBG-SL] xmiPackageNames=" + xmiPackageNames);
 
     // Load only required metamodels and the instances that match them.
     boolean[] loaded = new boolean[xmiOccurrences.size()];
@@ -198,18 +195,14 @@ public class SmartLoader {
           loaded[i] = true;
         Path xmi = xmiOccurrences.get(i);
         try {
-          LOG.fine(() -> "[DBG-SL] Loading XMI: " + xmi.getFileName());
           wrapper.loadModelInstance(xmi);
-          LOG.fine(() -> "[DBG-SL] XMI loaded OK: " + xmi.getFileName());
         } catch (IOException e) {
-          LOG.fine(() -> "[DBG-SL] IOException loading " + xmi.getFileName() + ": " + e.getMessage());
           fileErrors.add(
               new FileError(
                   xmi,
                   FileError.FileErrorType.PARSE_ERROR,
                   "Failed to load model: " + e.getMessage()));
         } catch (Exception e) {
-          LOG.fine(() -> "[DBG-SL] RuntimeException loading " + xmi.getFileName() + ": " + e.getClass().getSimpleName() + ": " + e.getMessage());
           fileErrors.add(
               new FileError(
                   xmi,

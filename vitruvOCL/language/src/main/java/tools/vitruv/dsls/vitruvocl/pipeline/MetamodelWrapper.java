@@ -147,7 +147,6 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
           URI localUri = byFilename.get(filename);
           if (localUri != null) {
             uriMap.computeIfAbsent(platformUri, k -> localUri);
-            LOG.fine(() -> "[OCL-LS] platform:/plugin/ mapped: " + platformUriStr + " -> " + localUri);
           }
         }
       } catch (IOException e) {
@@ -451,15 +450,12 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
 
     String filename = xmiPath.getFileName().toString();
 
-    LOG.fine(() -> "[DBG-MW] Loaded file: " + filename
         + " | contents=" + resource.getContents().size()
         + " | errors=" + resource.getErrors().size());
     if (!resource.getErrors().isEmpty()) {
-      resource.getErrors().forEach(e -> LOG.fine(() -> "[DBG-MW]   load-error: " + e.getMessage()));
     }
 
     for (EObject root : resource.getContents()) {
-      LOG.fine(() -> "[DBG-MW]   root eClass: " + root.eClass().getName()
           + " (pkg=" + root.eClass().getEPackage().getNsURI() + ")");
       addInstanceRecursiveInternal(root, filename);
       // Register root as context candidate (one entry per root EObject per file)
@@ -516,7 +512,6 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   public EClass resolveEClass(String metamodelName, String className) {
     EPackage ePackage = metamodelRegistry.get(metamodelName);
     if (ePackage == null) {
-      LOG.fine(() -> "MetaModelRegistry: " + metamodelRegistry);
       return null;
     }
 
@@ -760,10 +755,8 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
           }
         }
       }
-      LOG.fine(() -> "[DBG-MW] Loaded correspondence (DOM): " + corrPath.getFileName()
           + " | entries=" + correspondenceUriMap.size());
     } catch (Exception e) {
-      LOG.fine(() -> "[DBG-MW] Failed to load correspondence via DOM: " + e.getMessage());
     }
   }
 
