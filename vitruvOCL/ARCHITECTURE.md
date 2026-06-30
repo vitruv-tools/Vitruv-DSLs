@@ -104,57 +104,18 @@ tools.vitruv.dsls.vitruvocl/
     └── VitruvOCLCLI           Command-line interface
 ```
 
----
-
-## Type System
-
-Everything-is-a-collection principle from OCL#:
-
-| Notation | Meaning | Example |
-|---|---|---|
-| `¡T!` | Singleton (exactly 1) | `self.name` |
-| `[]` | Empty / null | failed lookup |
-| `{T}` | Set (unique, unordered) | |
-| `[T]` | Sequence (ordered) | |
-| `{{T}}` | Bag (non-unique, unordered) | |
-| `⟨T⟩` | OrderedSet (unique, ordered) | |
-| `?T?` | Optional (0 or 1) | null-safe ops |
-
-`Type` is immutable; collection types are created via factory methods (`Type.set(T)`, `Type.sequence(T)`, etc.).
-
----
-
-## Constraint Annotations
-
-Annotations appear between the `inv:` colon and the constraint body expression. Parsed in Pass 2, applied in Pass 3.
-
-```ocl
-context Pkg::Class inv myRule:
-  @severity MAJOR
-  @message "Custom violation message"
-  self.attr > 0
-```
-
-Valid `@severity` values: `CRITICAL`, `WARNING` (default), `MAJOR`, `MINOR`, `INFO`.
-
-`@message` accepts any string literal. If omitted, the evaluator generates a default message.
-
----
-
 ## Language Server (vitruvocl-language-server/)
 
 LSP4J-based language server. Entry point: `LspMain`. Registered providers:
 
-| Provider | Capability |
-|---|---|
-| `DocumentAnalyzer` | Runs the full compiler pipeline on open documents, produces LSP `Diagnostic` list |
-| `CompletionProvider` | Context-sensitive completion: packages, classes, `inv` keyword, features, `@severity` levels, annotation keywords, collection literals |
-| `HoverProvider` | Hover documentation for OCL operations via `OclOperationDocs` |
-| `SignatureHelpProvider` | Parameter hints for OCL operations (e.g., `select`, `substring`) |
-| `SymbolProvider` | Document symbols (invariant names + ranges) for outline view |
-| `InlayHintProvider` | Inlay hints for inferred types |
-| `DefinitionProvider` | Go-to-definition for metamodel types |
-| `NodeFinder` | Maps cursor position to ANTLR parse tree node |
+`DocumentAnalyzer`: Runs the full compiler pipeline on open documents, produces LSP `Diagnostic` list
+`CompletionProvider`: Context-sensitive completion: packages, classes, `inv` keyword, features, `@severity` levels, annotation keywords, collection literals
+`HoverProvider`. Hover documentation for OCL operations via `OclOperationDocs`
+`SignatureHelpProvider`: Parameter hints for OCL operations (e.g., `select`, `substring`)
+`SymbolProvider`: Document symbols (invariant names + ranges) for outline view
+`InlayHintProvider`: Inlay hints for inferred types
+`DefinitionProvider`: Go-to-definition for metamodel types
+`NodeFinder`: Maps cursor position to ANTLR parse tree node
 
 The server communicates with the VSCode extension over stdio via LSP4J's `Launcher`.
 

@@ -41,7 +41,7 @@ University of Mannheim: Chair for Software Engineering
 License: Eclipse Public License 1.0
 
 Based on OCL# semantics:
-Gogolla, M., Vallecillo, A., Büttner, F. (2013)
-"OCL# - A New Approach to Type-Safe OCL"
-ECMFA 2013
-https://dl.acm.org/doi/10.1145/2499777.2499781
+Friedrich Steimann, Robert Clarisó, Martin Gogolla
+"Meet OCL#, a relational object constraint language"
+Softw. Syst. Model. 24(6): 1737-1761 (2025)
+https://link.springer.com/article/10.1007/s10270-025-01286-1

@@ -62,16 +62,33 @@ See [Methodologist-Template](https://github.com/vitruv-tools/Methodologist-Templ
 
 ## Syntax
 
-vitruvocl extends standard OCL with cross-metamodel support and follows OCL# semantics.
+vitruvocl extends plain OCL with cross-metamodel support and follows OCL# semantics.
 
 ### Key Differences from Standard OCL
 
-| Standard OCL | vitruvocl |
-|---|---|
-| `->` for collection navigation | `.` for all navigation |
-| `<>` for inequality | `!=` |
-| Null concept | Empty collection `[]` |
-| 0-based indexing | 1-based indexing |
+| plain OCL                      | vitruvocl               |
+|---                             |---                      |
+| `->` for collection navigation | `.` for all navigation  |
+| `<>` for inequality            | `!=`                    |
+| Null concept                   | Empty collection `[]`   |
+| 0-based indexing               | 1-based indexing        |
+
+## Type System
+
+Everything-is-a-collection principle from OCL#:
+
+| Notation | Meaning | Example |
+|---|---|---|
+| `¡T!` | Singleton (exactly 1) | `self.name` |
+| `[]` | Empty / null | failed lookup |
+| `{T}` | Set (unique, unordered) | |
+| `[T]` | Sequence (ordered) | |
+| `{{T}}` | Bag (non-unique, unordered) | |
+| `⟨T⟩` | OrderedSet (unique, ordered) | |
+| `?T?` | Optional (0 or 1) | null-safe ops |
+
+`Type` is immutable; collection types are created via factory methods (`Type.set(T)`, `Type.sequence(T)`, etc.).
+
 
 ### Constraint Format
 
