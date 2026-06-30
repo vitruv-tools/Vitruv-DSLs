@@ -1,6 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -10,29 +11,139 @@
     </parent>
 
     <groupId>tools.vitruv.dsls</groupId>
-    <artifactId>vitruvOCL</artifactId>
+    <artifactId>vitruvocl</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
         <module>language</module>
-        <module>vitruvOCL-language-server</module>
+        <module>vitruvocl-language-server</module>
+        <module>vitruvocl-vscode-extension</module>
     </modules>
 
     <properties>
         <sonar.host.url>http://localhost:9000</sonar.host.url>
         <!-- sonar.token is passed via -Dsonar.token=... on the CLI, not stored here -->
-        <sonar.projectKey>vitruvOCL</sonar.projectKey>
-        <sonar.projectName>VitruvOCL</sonar.projectName>
+        <sonar.projectKey>vitruvocl</sonar.projectKey>
+        <sonar.projectName>vitruvocl</sonar.projectName>
         <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+
+        <!-- Centralized dependency versions (not managed by tools.vitruv.dsls parent) -->
+        <antlr4.version>4.13.2</antlr4.version>
+        <junit.jupiter.version>5.10.2</junit.jupiter.version>
+        <junit.platform.version>1.10.2</junit.platform.version>
+        <assertj.version>3.24.2</assertj.version>
+        <mockito.version>5.10.0</mockito.version>
+        <lsp4j.version>0.21.2</lsp4j.version>
+        <gson.version>2.8.9</gson.version>
+        <jacoco.version>0.8.11</jacoco.version>
+        <surefire.version>3.5.3</surefire.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <!-- ANTLR4 runtime (parent only manages antlr3) -->
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-runtime</artifactId>
+                <version>${antlr4.version}</version>
+            </dependency>
+
+            <!-- JUnit 5 — parent manages 6.0.0 which does not exist; override here -->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-commons</artifactId>
+                <version>${junit.platform.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- AssertJ -->
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- Mockito -->
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- LSP4J (not in parent) -->
+            <dependency>
+                <groupId>org.eclipse.lsp4j</groupId>
+                <artifactId>org.eclipse.lsp4j</artifactId>
+                <version>${lsp4j.version}</version>
+            </dependency>
+
+            <!-- Gson (not in parent) -->
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>${gson.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.antlr</groupId>
+                    <artifactId>antlr4-maven-plugin</artifactId>
+                    <version>${antlr4.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${surefire.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco.version}</version>
+                </plugin>
+                <!-- Disable the MWE2 workflow generation inherited from tools.vitruv.dsls parent -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>3.1.0</version>
+                    <executions>
+                        <execution>
+                            <id>execute-mwe2-generate</id>
+                            <phase>none</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.11</version>
                 <executions>
                     <execution>
                         <goals>
@@ -50,33 +161,5 @@
             </plugin>
         </plugins>
     </build>
-
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-core</artifactId>
-                <version>5.10.0</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>tools.vitruv</groupId>
-                <artifactId>tools.vitruv.change.correspondence</artifactId>
-                <version>${vitruv-change.version}</version>
-                <scope>compile</scope>
-            </dependency>
-            <dependency>
-                <groupId>tools.vitruv</groupId>
-                <artifactId>tools.vitruv.framework.views</artifactId>
-                <version>${vitruv-change.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>tools.vitruv</groupId>
-                <artifactId>tools.vitruv.framework.vsum</artifactId>
-                <version>${vitruv-change.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
 </project>
