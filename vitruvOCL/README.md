@@ -1,203 +1,186 @@
-# VitruvOCL
+# vitruvocl
 
 A domain-specific language for cross-metamodel OCL constraint evaluation in the Vitruvius framework.
 
 ## Overview
 
-VitruvOCL implements OCL# semantics for type-safe constraint evaluation across multiple EMF metamodels. It features a three-pass compiler architecture with smart metamodel loading, type checking, and support for cross-metamodel references.
+vitruvocl implements OCL# semantics for type-safe constraint evaluation across multiple EMF metamodels. It features a three-pass compiler architecture with smart metamodel loading, type checking, and support for cross-metamodel references.
 
 **Key Features:**
-- **OCL# Semantics**: Null-safe
-- **Cross-Metamodel Constraints**: Reference entities across different metamodels
+- **OCL# Semantics**: Null-safe, everything-is-a-collection value model
+- **Cross-Metamodel Constraints**: Reference entities across different metamodels in one expression
 - **Type Safety**: Full static type checking before evaluation
 - **EMF Integration**: Native support for Ecore metamodels and XMI instances
-- **Vitruvius Framework Integration**: Native support for Ecore metamodels and XMI instances
+- **Vitruvius Framework Integration**: First-class VSUM support via `VSUMWrapper`
+- **Language Server**: LSP-based language server with diagnostics, completion, hover, and signature help
+- **VSCode Extension**: Syntax highlighting, real-time error reporting, constraint explorer
 
-Based on: Steinmann, F., Clarisó, R., Gogolla, M. (2025). ["Meet OCL{^\sharp }, a relational object constraint language"](https://link.springer.com/article/10.1007/s10270-025-01286-1).
-Uses: [Vitruvius Framweork](https://github.com/vitruv-tools)
+Based on: Steinmann, F., Clarisó, R., Gogolla, M. (2025). ["Meet OCL#, a relational object constraint language"](https://link.springer.com/article/10.1007/s10270-025-01286-1).
+Uses: [Vitruvius Framework](https://github.com/vitruv-tools)
+
+---
 
 ## Quick Start
 
-### Download
-
-VitruvOCL consists of a Java-based language engine and a VS Code extension for development support.
-
 ### VS Code Extension (Recommended)
-The extension provides syntax highlighting, real-time error reporting, and Language Server support.
 
-1. Navigate to the `vitruvocl-vscode-extension/` folder in the repository.
+The extension provides syntax highlighting, real-time diagnostics, code completion, and hover documentation.
+
+1. Navigate to `vitruvocl-vscode-extension/` in the repository.
 2. Locate the latest `.vsix` file.
-3. In VS Code, go to the **Extensions** view (`Ctrl+Shift+X`).
-4. Click the three dots (···) in the top right and select **Install from VSIX...**.
-5. Select the downloaded `.vsix` file.
+3. In VS Code, open the **Extensions** view (`Ctrl+Shift+X`).
+4. Click `···` → **Install from VSIX...** and select the file.
 
 ### Java Library (API)
-To use VitruvOCL in your own Java project (e.g., to integrate it with a VSUM), you need to install the library to your local Maven repository:
 
-1. Clone the repository:
-   ```bash
-   git clone [https://github.com/vitruv-tools/Vitruv-DSLs.git](https://github.com/vitruv-tools/Vitruv-DSLs.git)
-Navigate to the language engine:
+To use vitruvocl in your own Java project, build and install it:
 
-Bash
-cd Vitruv-DSLs/vitruvOCL/language
-Build and install locally:
+```bash
+# Clone the parent repository
+git clone https://github.com/vitruv-tools/Vitruv-DSLs.git
+cd Vitruv-DSLs/vitruvocl
 
-Bash
-mvn clean install
+# Build everything (JARs + VSCode extension)
+mvn clean package
+```
 
+The compiler JAR is then at `language/target/vitruvocl.jar`.
 
-You can then add it to your `pom.xml`:
+Add it to your `pom.xml`:
+
 ```xml
 <dependency>
-      <groupId>tools.vitruv</groupId>
-      <artifactId>vitruvOCL</artifactId>
-      <version>1.0.0</version>
+    <groupId>tools.vitruv.dsls</groupId>
+    <artifactId>vitruvocl-language</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
 </dependency>
-
-
-### Example Constraints
-
-**constraints.ocl:**
-```ocl
--- Simple constraint
-context spaceMission::Spacecraft inv:
-  self.mass > 0
-
--- Cross-metamodel constraint
-context spaceMission::Spacecraft inv:
-  satelliteSystem::Satellite.allInstances().collect(sat |
-    sat.massKg
-  ).sum() > self.mass
 ```
 
-**Java API:**
-```java
-import tools.vitruv.dsls.vitruvOCL.pipeline.*;
-import java.nio.file.Path;
-
-public class Main {
-    public static void main(String[] args) throws Exception {
-        // Evaluate project
-        BatchValidationResult result = VitruvOCL.evaluateProject(
-            Path.of(".")
-        );
-        
-        System.out.println("Satisfied: " + result.getSatisfiedCount());
-        System.out.println("Violated: " + result.getViolatedCount());
-    }
-}
-```
 See [Methodologist-Template](https://github.com/vitruv-tools/Methodologist-Template/tree/vitruviusOCL) for complete working examples.
+
+---
 
 ## Syntax
 
-VitruvOCL extends standard OCL with cross-metamodel support and follows OCL# semantics.
+vitruvocl extends standard OCL with cross-metamodel support and follows OCL# semantics.
 
 ### Key Differences from Standard OCL
 
-- **Unified dot notation**: Use `.` for all navigation (no `->` operator)
-- **Inequality operator**: Use `!=` instead of `<>`
-- **Everything is a collection**: Single values are singletons `[5]`, null is empty `[]`
-- **1-based indexing**: Collections start at index 1
-- **Fully qualified names**: `metamodelName::ClassName`
+| Standard OCL | vitruvocl |
+|---|---|
+| `->` for collection navigation | `.` for all navigation |
+| `<>` for inequality | `!=` |
+| Null concept | Empty collection `[]` |
+| 0-based indexing | 1-based indexing |
 
 ### Constraint Format
+
 ```ocl
 -- Comments start with double dash
-context MetamodelName::ClassName inv:
+context MetamodelName::ClassName inv invariantName:
   expression
 ```
+
+The invariant name is optional:
+
+```ocl
+context spaceMission::Spacecraft inv:
+  self.mass > 0
+```
+
+### Constraint Annotations
+
+Annotations appear between the `:` and the constraint body. Each annotation is optional and may appear at most once per constraint.
+
+```ocl
+context spaceMission::Spacecraft inv massCheck:
+  @severity WARNING
+  @message "Spacecraft mass must be positive"
+  self.mass > 0
+```
+
+**`@severity`** — sets the severity level reported when the constraint is violated.
+
+| Value | Meaning |
+|---|---|
+| `CRITICAL` | Blocker-level violation |
+| `WARNING` | Default if omitted |
+| `MAJOR` | Significant issue |
+| `MINOR` | Minor issue |
+| `INFO` | Informational only |
+
+**`@message`** — custom violation message (string literal). If omitted, a default message is generated.
+
 ### Supported Operations
 
-**Collection Operations:**
-- `select(iterator | condition)` - Filter elements
-- `reject(iterator | condition)` - Exclude elements
-- `collect(iterator | expression)` - Transform elements
-- `forAll(iterator | condition)` - Universal quantification
-- `exists(iterator | condition)` - Existential quantification
+**Collection:**
+- `select(x | cond)`, `reject(x | cond)`, `collect(x | expr)`
+- `forAll(x | cond)`, `exists(x | cond)`
 - `size()`, `isEmpty()`, `notEmpty()`
-- `includes(value)`, `excludes(value)`
-- `including(value)`, `excluding(value)` - Add/remove elements
-- `union(collection)`, `append(value)` - Combine collections
-- `flatten()` - Flatten nested collections
-- `sum()`, `avg()`, `min()`, `max()` - Numeric aggregations
-- `abs()`, `floor()`, `ceil()`, `round()` - Numeric operations
-- `first()`, `last()`, `reverse()` - Sequence operations
-- `at(index)` - Access by index (1-based)
-- `lift()` - Lift operation
-- `allInstances()` - Get all instances of a type
+- `includes(v)`, `excludes(v)`, `including(v)`, `excluding(v)`
+- `union(c)`, `intersection(c)`, `append(v)`, `flatten()`
+- `first()`, `last()`, `reverse()`, `at(i)` (1-based)
+- `sum()`, `avg()`, `min()`, `max()`
+- `allInstances()` — all EMF instances of a type
 
-**Arithmetic:**
-- `+`, `-`, `*`, `/`, `%`
-- Unary minus: `-expression`
+**Arithmetic:** `+`, `-`, `*`, `/`, `%`, unary `-`
 
-**Comparison:**
-- `<`, `<=`, `>`, `>=`, `==`, `!=`
+**Math:** `abs()`, `floor()`, `ceil()`, `round()`
 
-**Boolean:**
-- `and`, `or`, `xor`, `not`, `implies`
+**Comparison:** `<`, `<=`, `>`, `>=`, `==`, `!=`
 
-**String:**
-- `concat(string)`, `size()`
-- `toUpper()`, `toLower()`
-- `substring(start, end)`
-- `indexOf(substring)`
-- `equalsIgnoreCase(string)`
-- `length()`
+**Boolean:** `and`, `or`, `xor`, `not`, `implies`
+
+**String:** `concat(s)`, `size()`, `length()`, `toUpper()`, `toLower()`,
+`substring(start, end)`, `indexOf(s)`, `equalsIgnoreCase(s)`
 
 **Control Flow:**
-- `if condition then expr1 else expr2 endif`
-- `let variable = expression in body`
-- Multiple variables: `let x = 1, y = 2 in x + y`
+```ocl
+if condition then expr1 else expr2 endif
+let x = expr in body
+let x = 1, y = 2 in x + y    -- multiple bindings
+```
 
-**Type Checking:**
-- `oclIsKindOf(Type)` - Check if instance is kind of type
-- `oclIsTypeOf(Type)` - Check exact type
-- `oclAsType(Type)` - Cast to type
+**Type Operations:**
+```ocl
+oclIsKindOf(pkg::Type)   -- isinstance check
+oclIsTypeOf(pkg::Type)   -- exact type check
+oclAsType(pkg::Type)     -- cast
+```
 
-**Correspondence Operator (`~`):**
+### Cross-Metamodel Constraints
 
-The `~` operator checks whether two objects are related by a Vitruvius correspondence. It is used as a shorthand predicate inside collection operations — it always refers to `self` on one side:
+Reference types from multiple metamodels in one expression using fully qualified names:
+
+```ocl
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances()
+    .collect(sat | sat.massKg)
+    .sum() > self.mass
+```
+
+### Correspondence Operator (`~`)
+
+The `~` operator checks whether two objects are related by a Vitruvius correspondence. It always refers to `self` on one side and is used inside collection operations:
 
 | Syntax | Meaning |
-|--------|---------|
-| `Collection.select(~)` | Keep elements that correspond to `self` |
-| `Collection.reject(~)` | Remove elements that correspond to `self` |
+|---|---|
+| `Collection.select(~)` | Elements that correspond to `self` |
+| `Collection.reject(~)` | Elements that do NOT correspond to `self` |
 | `Collection.exists(~)` | True if any element corresponds to `self` |
 | `Collection.select(~, Tag = "x")` | Filter by correspondence tag |
-| `Collection.select(~, Type = pkg::Class)` | Filter by concrete type of the corresponding object |
+| `Collection.select(~, Type = pkg::Class)` | Filter by type of corresponding object |
 | `Collection.select(~, Tag = "x", Type = pkg::Class)` | Combined tag + type filter |
 
-Requires a `correspondence.ecore` metamodel and at least one `.correspondence` instance file to be loaded alongside the domain metamodels.
+Requires a `correspondence.ecore` metamodel and at least one `.correspondence` XMI file.
 
-**Example:**
 ```ocl
--- Homer has exactly one corresponding Person
-context family::Member inv:
-  self.firstName == "Homer" implies
-    persons::Person.allInstances().select(~).size() == 1
-
--- Only Husband correspondences
 context family::Member inv:
   self.firstName == "Homer" implies
     persons::Person.allInstances().select(~, Tag = "Husband").notEmpty()
-
--- Filter by type and tag
-context family::Member inv:
-  persons::Person.allInstances()
-    .select(~, Type = persons::Male, Tag = "Husband").size() == 1
 ```
 
-## Architecture
-
-VitruvOCL uses a three-pass compiler architecture:
-
-1. **Pass 1 - Symbol Table Construction**: Builds scope hierarchy, registers variables
-2. **Pass 2 - Type Checking**: Validates operations, produces type annotations
-3. **Pass 3 - Evaluation**: Executes constraints against EMF model instances
-
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed design documentation.
+---
 
 ## Building from Source
 
@@ -205,58 +188,65 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed design documentation.
 
 - Java 17+
 - Maven 3.6+
+- Node.js + npm (for VSCode extension packaging)
 
-### Build
+### Full Build
+
 ```bash
+cd Vitruv-DSLs/vitruvocl
 mvn clean package
 ```
 
-JAR will be in `language/target/vitruvOCL.jar`
+This builds all three modules in order:
+1. `language/` → `language/target/vitruvocl.jar` (compiler + evaluator)
+2. `vitruvocl-language-server/` → `vitruvocl-language-server/target/language-server.jar`
+3. `vitruvocl-vscode-extension/` → copies both JARs into `lib/`, then runs `vsce package` → `.vsix`
+
+### Build without VSCode Extension
+
+```bash
+mvn clean package -pl language,vitruvocl-language-server
+```
 
 ### Run Tests
+
 ```bash
 mvn clean test
 ```
 
-Test coverage report: `language/target/site/jacoco/index.html`
+Coverage report: `language/target/site/jacoco/index.html`
 
-## API Documentation
+---
 
-Full JavaDoc available in `tools.vitruv.dsls.vitruvOCL.pipeline.VitruvOCL` class.
+## Java API
 
-### Main API Methods
-
-**Project-based evaluation:**
 ```java
-BatchValidationResult evaluateProject(Path projectDir)
+import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCLCompiler;
+import tools.vitruv.dsls.vitruvocl.pipeline.BatchValidationResult;
+import java.nio.file.Path;
+
+// Evaluate all constraints in a project directory
+BatchValidationResult result = VitruvOCLCompiler.evaluateProject(Path.of("."));
+
+System.out.println("Satisfied: " + result.getSatisfiedCount());
+System.out.println("Violated:  " + result.getViolatedCount());
 ```
 
-**Single constraint:**
-```java
-ConstraintResult evaluateConstraint(
-    String constraint, 
-    Path[] ecoreFiles, 
-    Path[] xmiFiles
-)
-```
+See `tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCLCompiler` for the full API.
 
-**Multiple constraints from file:**
-```java
-BatchValidationResult evaluateConstraints(
-    Path constraintsFile,
-    Path[] ecoreFiles,
-    Path[] xmiFiles
-)
-```
+---
+
+## Architecture
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the detailed design documentation.
+
+---
 
 ## License
 
-This project is licensed under the Eclipse Public License 2.0 - see [LICENSE](LICENSE) file for details.
+Eclipse Public License 2.0 — see [LICENSE](LICENSE).
 
-### Third-Party Licenses
-
-See [NOTICE](NOTICE) for information about third-party dependencies and their licenses.
-
+See [NOTICE](NOTICE) for third-party dependency licenses.
 
 ## Acknowledgments
 
