@@ -1,24 +1,22 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>tools.vitruv.dsls</groupId>
-        <artifactId>vitruvOCL</artifactId>
+        <artifactId>vitruvocl</artifactId>
         <version>0.1.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>vitruvOCL-language</artifactId>
+    <artifactId>vitruvocl-language</artifactId>
     <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <antlr4.version>4.13.2</antlr4.version>
-        <junit.jupiter.version>5.10.2</junit.jupiter.version>
-        <junit.platform.version>1.10.2</junit.platform.version>
     </properties>
 
     <repositories>
@@ -30,89 +28,74 @@
     </repositories>
 
     <dependencies>
-
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
         </dependency>
 
-        <!-- ANTLR Runtime -->
         <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>
-            <version>${antlr4.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.eclipse.emf</groupId>
             <artifactId>org.eclipse.emf.ecore</artifactId>
-            <version>2.35.0</version>
         </dependency>
 
-        <!-- Gson for JSON serialization in CLI -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.8.9</version>
         </dependency>
 
-        <!-- JUnit 5 API -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>${junit.jupiter.version}</version>
             <scope>test</scope>
         </dependency>
 
-        <!-- JUnit 5 Engine -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>${junit.jupiter.version}</version>
             <scope>test</scope>
         </dependency>
 
-        <!-- JUnit 5 Parameterized Tests -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
-            <version>${junit.jupiter.version}</version>
             <scope>test</scope>
         </dependency>
 
-        <!-- JUnit Platform Commons -->
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-commons</artifactId>
-            <version>${junit.platform.version}</version>
             <scope>test</scope>
         </dependency>
 
-        <!-- Optional: AssertJ -->
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.24.2</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.eclipse.emf</groupId>
             <artifactId>org.eclipse.emf.ecore.xmi</artifactId>
-            <version>2.39.0</version>
         </dependency>
 
+        <!-- Vitruvius framework dependencies -->
         <dependency>
             <groupId>tools.vitruv</groupId>
             <artifactId>tools.vitruv.change.correspondence</artifactId>
         </dependency>
         <dependency>
             <groupId>tools.vitruv</groupId>
-            <artifactId>tools.vitruv.framework.views</artifactId>
+            <artifactId>tools.vitruv.framework.vsum</artifactId>
         </dependency>
         <dependency>
             <groupId>tools.vitruv</groupId>
-            <artifactId>tools.vitruv.framework.vsum</artifactId>
+            <artifactId>tools.vitruv.framework.views</artifactId>
         </dependency>
     </dependencies>
 
@@ -121,7 +104,6 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.11</version>
                 <executions>
                     <execution>
                         <goals>
@@ -138,11 +120,9 @@
                 </executions>
             </plugin>
 
-            <!-- ANTLR Plugin -->
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
-                <version>${antlr4.version}</version>
                 <executions>
                     <execution>
                         <id>generate-antlr</id>
@@ -160,7 +140,6 @@
                 </executions>
             </plugin>
 
-            <!-- Build Helper Plugin -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
@@ -181,11 +160,9 @@
                 </executions>
             </plugin>
 
-            <!-- Surefire Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.3</version>
                 <configuration>
                     <useModulePath>false</useModulePath>
                     <includes>
@@ -196,17 +173,15 @@
                 </configuration>
             </plugin>
 
-            <!-- Exec Maven Plugin -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
                 <configuration>
-                    <mainClass>tools.vitruv.dsls.vitruvOCL.TestMain</mainClass>
+                    <mainClass>tools.vitruv.dsls.vitruvocl.cli.VitruvOCLCLI</mainClass>
                 </configuration>
             </plugin>
 
-            <!-- Assembly Plugin for JAR with dependencies -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -229,12 +204,11 @@
                                 </filter>
                             </filters>
                             <transformers>
-                                <transformer
-                                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>tools.vitruv.dsls.vitruvOCL.cli.VitruvOCLCLI</mainClass>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>tools.vitruv.dsls.vitruvocl.cli.VitruvOCLCLI</mainClass>
                                 </transformer>
                             </transformers>
-                            <finalName>vitruvOCL</finalName>
+                            <finalName>vitruvocl</finalName>
                         </configuration>
                     </execution>
                 </executions>
