@@ -136,18 +136,6 @@ The extension is built as part of the Maven reactor (`mvn package`):
 
 ---
 
-## Key Design Decisions
-
-**Visitor over custom AST**: vitruvocl operates directly on the ANTLR parse tree using three separate visitor passes rather than building a custom AST. This avoids a translation layer but results in large visitor classes (see below).
-
-**`Value implements Comparable<Value>`**: Ordering of runtime values (used by `<`, `>`, `<=`, `>=`) is implemented in `Value.compareTo()` using element-wise `OCLElement.compare()`. This keeps comparison logic in the `evaluator` package and avoids a cross-package dependency from `typechecker` → `evaluator`.
-
-**`MetamodelWrapperInterface`**: Abstracts over two implementations — `MetamodelWrapper` (file-based, loads `.ecore` + `.xmi`) and `VSUMWrapper` (VSUM-based). The compiler pipeline only depends on the interface.
-
-**Known limitation**: `TypeCheckVisitor` (~6400 LOC) and `EvaluationVisitor` (~4400 LOC) are oversized. Natural split points would be by operation family (Collections, Strings, Iterators, Arithmetic, Metamodel). Refactoring is deferred.
-
----
-
 ## External Dependencies
 
 | Library | Purpose |
