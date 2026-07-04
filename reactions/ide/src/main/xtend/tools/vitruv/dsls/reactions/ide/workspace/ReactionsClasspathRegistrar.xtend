@@ -20,6 +20,16 @@ import org.eclipse.emf.common.util.URI
  * Unlike {@link ReactionsEcoreWorkspaceRegistrar}, which only needs the {@code .ecore} file's
  * structure, this needs actual compiled {@code .class} files, so it only helps once the model
  * project has been built at least once (e.g. via {@code mvn compile}).
+ * <p>
+ * Deliberately skips the {@code target/classes} of the Maven module that contains the
+ * {@code .reactions} file being linked (found by walking up to the nearest {@code pom.xml}):
+ * a previous {@code mvn compile} of that same module leaves behind class files generated from
+ * the very reactions sources being edited (e.g. the routines facade). Adding that directory to
+ * the classpath makes those stale, already-compiled classes resolvable under the same qualified
+ * name as the live, in-memory JVM model this language server derives from the open file, so Xbase
+ * ends up binding calls (and, transitively, the "N callers" search and orphaned-routine
+ * validation, which only look for references to the live derived model) to the stale external
+ * class instead of the current in-memory one.
  */
 class ReactionsClasspathRegistrar {
 	static final Logger log = LogManager.getLogger(ReactionsClasspathRegistrar)
@@ -42,16 +52,35 @@ class ReactionsClasspathRegistrar {
 			return;
 		}
 		lastScanTimeByRoot.put(root, now)
-		collectClassesDirs(new File(root.toFileString), new AtomicInteger(0))
+		val ownModuleRoot = findOwnModuleRoot(resourceUri)
+		collectClassesDirs(new File(root.toFileString), ownModuleRoot, new AtomicInteger(0))
 	}
 
-	def private void collectClassesDirs(File directory, AtomicInteger visitedCount) {
+	/**
+	 * Walks up from {@code resourceUri} to the nearest ancestor directory containing a
+	 * {@code pom.xml}, i.e. the Maven module the {@code .reactions} file belongs to.
+	 */
+	def private File findOwnModuleRoot(URI resourceUri) {
+		if (resourceUri === null || !resourceUri.isFile) {
+			return null;
+		}
+		var probe = new File(resourceUri.toFileString).parentFile
+		while (probe !== null) {
+			if (new File(probe, "pom.xml").exists) {
+				return probe;
+			}
+			probe = probe.parentFile
+		}
+		return null;
+	}
+
+	def private void collectClassesDirs(File directory, File ownModuleRoot, AtomicInteger visitedCount) {
 		if (visitedCount.get >= MAX_VISITED_ENTRIES) {
 			return;
 		}
 		visitedCount.incrementAndGet
 		val classesDir = new File(directory, "target/classes")
-		if (classesDir.directory) {
+		if (classesDir.directory && !directory.equals(ownModuleRoot)) {
 			addClassesDir(classesDir)
 		}
 		val children = directory.listFiles
@@ -60,7 +89,7 @@ class ReactionsClasspathRegistrar {
 		}
 		for (child : children) {
 			if (child.directory && !EXCLUDED_SEGMENTS.contains(child.name)) {
-				collectClassesDirs(child, visitedCount)
+				collectClassesDirs(child, ownModuleRoot, visitedCount)
 			}
 		}
 	}
