@@ -1,22 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
   <parent>
     <groupId>tools.vitruv</groupId>
     <artifactId>tools.vitruv.dsls.reactions</artifactId>
-    <version>3.2.4-SNAPSHOT</version>
+    <version>4.0.1-SNAPSHOT</version>
   </parent>
-
   <artifactId>tools.vitruv.dsls.reactions.language</artifactId>
-
   <name>Vitruv Reactions Language</name>
   <description>Definition of the Reactions Language with Xtext and Code Generation.</description>
-
-
   <build>
     <plugins>
       <plugin>
@@ -25,9 +19,8 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>3.10.0</version>
+        <version>3.11.0</version>
       </plugin>
-
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
@@ -37,7 +30,7 @@
         <artifactId>exec-maven-plugin</artifactId>
       </plugin>
       <plugin>
-        <groupId>org.eclipse.xtend</groupId>
+        <groupId>org.eclipse.xtext</groupId>
         <artifactId>xtend-maven-plugin</artifactId>
       </plugin>
       <plugin>
@@ -61,7 +54,6 @@
       </plugin>
     </plugins>
   </build>
-
   <dependencies>
     <!-- project compile dependencies -->
     <dependency>
@@ -74,7 +66,6 @@
       <artifactId>tools.vitruv.dsls.reactions.runtime</artifactId>
       <version>${project.version}</version>
     </dependency>
-
     <!-- project test dependencies -->
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -82,7 +73,6 @@
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
-
     <!-- Vitruvius compile dependencies -->
     <dependency>
       <groupId>tools.vitruv</groupId>
@@ -100,7 +90,6 @@
       <groupId>tools.vitruv</groupId>
       <artifactId>tools.vitruv.change.utils</artifactId>
     </dependency>
-
     <!-- Vitruvius test dependencies -->
     <dependency>
       <groupId>tools.vitruv</groupId>
@@ -154,7 +143,7 @@
       <artifactId>org.eclipse.emf.ecore</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.eclipse.xtend</groupId>
+      <groupId>org.eclipse.xtext</groupId>
       <artifactId>org.eclipse.xtend.lib</artifactId>
     </dependency>
     <dependency>
@@ -177,8 +166,6 @@
       <groupId>org.eclipse.xtext</groupId>
       <artifactId>org.eclipse.xtext.xbase.lib</artifactId>
     </dependency>
-
-
     <!-- external test dependencies -->
     <dependency>
       <groupId>org.eclipse.platform</groupId>
@@ -205,7 +192,6 @@
       <artifactId>junit-jupiter-params</artifactId>
       <scope>test</scope>
     </dependency>
-
     <!-- p2 compile dependencies -->
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -217,7 +203,6 @@
       <artifactId>tools.vitruv.dsls.p2wrappers.javautils</artifactId>
       <version>${project.version}</version>
     </dependency>
-
     <!-- p2 test dependencies -->
     <dependency>
       <groupId>${project.groupId}</groupId>

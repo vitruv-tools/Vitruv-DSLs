@@ -23,13 +23,13 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
     - name: Setup Java and Maven cache
-      uses: actions/setup-java@v5.2.0
+      uses: actions/setup-java@v5.5.0
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '21'
         check-latest: true
         cache: 'maven'
 
@@ -65,7 +65,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
     - name: Download Maven build results
       uses: actions/download-artifact@v8
@@ -90,7 +90,7 @@ jobs:
 
     - name: Package extension
       working-directory: reactions/vscode-plugin
-      run: npx @vscode/vsce package
+      run: npx --yes --ignore-scripts @vscode/vsce@3.9.1 package
 
     - name: Stage build results
       run: mkdir staging-${{ matrix.os }} && cp reactions/vscode-plugin/*.vsix staging-${{ matrix.os }}/;
@@ -110,13 +110,13 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
     - name: Setup Java and Maven cache
-      uses: actions/setup-java@v5.2.0
+      uses: actions/setup-java@v5.5.0
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '21'
         check-latest: true
         cache: 'maven'
 
@@ -138,13 +138,13 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
     - name: Setup Java and Maven cache
-      uses: actions/setup-java@v5.2.0
+      uses: actions/setup-java@v5.5.0
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '21'
         check-latest: true
         cache: 'maven'
 
@@ -166,9 +166,9 @@ jobs:
       fail-fast: true
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Run checkstyle
-        uses: dbelyaev/action-checkstyle@v3.10.0
+        uses: dbelyaev/action-checkstyle@v3.12.1
         with:
           github_token: ${{ secrets.github_token }}
           reporter: github-pr-review
@@ -185,13 +185,13 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
     - name: Setup Java and Maven cache
-      uses: actions/setup-java@v5.2.0
+      uses: actions/setup-java@v5.5.0
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '21'
         check-latest: true
         cache: 'maven'
         server-id: central

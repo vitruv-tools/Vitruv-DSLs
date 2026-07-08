@@ -59,7 +59,7 @@ Workflow {
             }
 
             junitSupport = junit.JUnitFragment {
-                junitVersion = "5"
+                junitVersion = "6"
                 generateStub = false
             }
         }
