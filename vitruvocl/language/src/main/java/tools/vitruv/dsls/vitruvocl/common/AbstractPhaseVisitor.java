@@ -33,7 +33,7 @@ import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
  * </ul>
  *
  * <p>The generic type parameter {@code T} allows phase-specific return types: {@link
- * tools.vitruv.dsls.vitruvocl.common.Type} for type checking and {@link
+ * tools.vitruv.dsls.vitruvocl.typechecker.Type} for type checking and {@link
  * tools.vitruv.dsls.vitruvocl.evaluator.Value} for evaluation.
  *
  * <p>Subclasses must implement {@link #handleUndefinedSymbol(String, ParserRuleContext)} to provide

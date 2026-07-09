@@ -114,9 +114,9 @@ public enum Multiplicity {
    * <p>The conformance relation follows the OCL# subtyping rules:
    *
    * <pre>
-   * !T!  <:  ?T?  <:  {T}
-   * &lt;T&gt;  <:  {T}     (OrderedSet is a more specific Set)
-   * [T]  <:  {{T}}   (Sequence is a more specific Bag)
+   * !T!  &lt;:  ?T?  &lt;:  {T}
+   * &lt;T&gt;  &lt;:  {T}     (OrderedSet is a more specific Set)
+   * [T]  &lt;:  {{T}}   (Sequence is a more specific Bag)
    * </pre>
    *
    * <p>Intuitively:

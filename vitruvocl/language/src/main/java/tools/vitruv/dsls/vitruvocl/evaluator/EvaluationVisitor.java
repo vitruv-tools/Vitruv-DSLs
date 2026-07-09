@@ -124,7 +124,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   /**
    * Constructs an EvaluationVisitor for Phase 3 of the compilation pipeline.
    *
-   * @param symbolTable The symbol table containing variable and type definitions
+   * @param st The symbol table containing variable and type definitions
    * @param specification The metamodel wrapper providing access to model instances
    * @param errors The error collector for reporting runtime errors
    * @param nodeTypes Pre-computed type information from the type checking phase
