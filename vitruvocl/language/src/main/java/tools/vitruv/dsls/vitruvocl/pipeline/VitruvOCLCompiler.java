@@ -15,7 +15,6 @@ package tools.vitruv.dsls.vitruvocl.pipeline;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.tree.ParseTree;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLLexer;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvocl.common.ErrorCollector;
@@ -77,14 +76,27 @@ public class VitruvOCLCompiler {
    * @return Evaluation result, or null if any pass fails
    */
   public Value compile(Path sourcePath) {
-    String source = sourcePath.toString();
-    CharStream input = CharStreams.fromString(source);
+    return runPipeline(CharStreams.fromString(sourcePath.toString()));
+  }
+
+  /**
+   * Runs the full 3-pass pipeline on the given input and returns the evaluation result.
+   *
+   * <p>Accumulates errors in {@link #errors}; returns {@code null} if parsing fails or any pass
+   * before evaluation reports errors. Sets {@link #lastEvaluator} when evaluation runs.
+   *
+   * @param input character stream of the constraint source
+   * @return the evaluation {@link Value}, or {@code null} if a pass before evaluation failed
+   */
+  private Value runPipeline(CharStream input) {
     VitruvOCLLexer lexer = new VitruvOCLLexer(input);
     CommonTokenStream tokens = new CommonTokenStream(lexer);
     VitruvOCLParser parser = new VitruvOCLParser(tokens);
     VitruvOCLParser.ContextDeclCSContext tree = parser.contextDeclCS();
 
-    if (parser.getNumberOfSyntaxErrors() > 0) return null;
+    if (parser.getNumberOfSyntaxErrors() > 0) {
+      return null;
+    }
 
     // Initialize 3-pass architecture
     SymbolTableImpl symbolTable = new SymbolTableImpl(wrapper);
@@ -95,7 +107,9 @@ public class VitruvOCLCompiler {
         new SymbolTableBuilder(symbolTable, wrapper, errors, scopeAnnotator);
     symbolTableBuilder.visit(tree);
 
-    if (errors.hasErrors()) return null;
+    if (errors.hasErrors()) {
+      return null;
+    }
 
     // PASS 2: Type Checking
     TypeCheckVisitor typeChecker =
@@ -103,7 +117,9 @@ public class VitruvOCLCompiler {
     typeChecker.setTokenStream(tokens);
     typeChecker.visit(tree);
 
-    if (errors.hasErrors()) return null;
+    if (errors.hasErrors()) {
+      return null;
+    }
 
     // PASS 3: Evaluation
     EvaluationVisitor evaluator =
@@ -119,45 +135,7 @@ public class VitruvOCLCompiler {
    * @throws IOException If file cannot be read
    */
   public ValidationResult compile() throws IOException {
-    CharStream input = CharStreams.fromPath(oclFile);
-    VitruvOCLLexer lexer = new VitruvOCLLexer(input);
-    CommonTokenStream tokens = new CommonTokenStream(lexer);
-    VitruvOCLParser parser = new VitruvOCLParser(tokens);
-    VitruvOCLParser.ContextDeclCSContext tree = parser.contextDeclCS();
-
-    if (parser.getNumberOfSyntaxErrors() > 0) {
-      return new ValidationResult(errors.getErrors(), java.util.List.of());
-    }
-
-    // Initialize 3-pass architecture
-    SymbolTableImpl symbolTable = new SymbolTableImpl(wrapper);
-    ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
-
-    // PASS 1: Symbol Table Construction
-    SymbolTableBuilder symbolTableBuilder =
-        new SymbolTableBuilder(symbolTable, wrapper, errors, scopeAnnotator);
-    symbolTableBuilder.visit(tree);
-
-    if (errors.hasErrors()) {
-      return new ValidationResult(errors.getErrors(), java.util.List.of());
-    }
-
-    // PASS 2: Type Checking
-    TypeCheckVisitor typeChecker =
-        new TypeCheckVisitor(symbolTable, wrapper, errors, scopeAnnotator);
-    typeChecker.setTokenStream(tokens);
-    typeChecker.visit(tree);
-
-    if (errors.hasErrors()) {
-      return new ValidationResult(errors.getErrors(), java.util.List.of());
-    }
-
-    // PASS 3: Evaluation
-    EvaluationVisitor evaluator =
-        new EvaluationVisitor(symbolTable, wrapper, errors, typeChecker.getNodeTypes());
-    lastEvaluator = evaluator;
-    evaluator.visit(tree);
-
+    runPipeline(CharStreams.fromPath(oclFile));
     return new ValidationResult(errors.getErrors(), java.util.List.of());
   }
 
@@ -170,44 +148,7 @@ public class VitruvOCLCompiler {
    * @return Evaluation result, or null if any pass fails
    */
   public Value compile(String oclSource) {
-    CharStream input = CharStreams.fromString(oclSource);
-    VitruvOCLLexer lexer = new VitruvOCLLexer(input);
-    CommonTokenStream tokens = new CommonTokenStream(lexer);
-    VitruvOCLParser parser = new VitruvOCLParser(tokens);
-    ParseTree tree = parser.contextDeclCS();
-
-    if (parser.getNumberOfSyntaxErrors() > 0) {
-      return null;
-    }
-
-    // Initialize 3-pass architecture
-    SymbolTableImpl symbolTable = new SymbolTableImpl(wrapper);
-    ScopeAnnotator scopeAnnotator = new ScopeAnnotator();
-
-    // PASS 1: Symbol Table Construction
-    SymbolTableBuilder symbolTableBuilder =
-        new SymbolTableBuilder(symbolTable, wrapper, errors, scopeAnnotator);
-    symbolTableBuilder.visit(tree);
-
-    if (errors.hasErrors()) {
-      return null;
-    }
-
-    // PASS 2: Type Checking
-    TypeCheckVisitor typeChecker =
-        new TypeCheckVisitor(symbolTable, wrapper, errors, scopeAnnotator);
-    typeChecker.setTokenStream(tokens);
-    typeChecker.visit(tree);
-
-    if (errors.hasErrors()) {
-      return null;
-    }
-
-    // PASS 3: Evaluation
-    EvaluationVisitor evaluator =
-        new EvaluationVisitor(symbolTable, wrapper, errors, typeChecker.getNodeTypes());
-    lastEvaluator = evaluator;
-    Value result = evaluator.visit(tree);
+    Value result = runPipeline(CharStreams.fromString(oclSource));
 
     if (errors.hasErrors()) {
       return null;

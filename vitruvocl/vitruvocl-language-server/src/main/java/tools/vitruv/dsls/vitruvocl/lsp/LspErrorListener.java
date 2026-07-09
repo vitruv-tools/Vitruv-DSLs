@@ -66,10 +66,10 @@ final class LspErrorListener extends BaseErrorListener {
       if (!text.equals("<EOF>") && text.chars().allMatch(Character::isLetterOrDigit)) {
         String lower = text.toLowerCase(Locale.ROOT);
         String best = OCL_KEYWORDS.stream()
-            .min(java.util.Comparator.comparingInt(k -> damerauLevenshtein(lower, k)))
+            .min(java.util.Comparator.comparingInt(k -> EditDistance.damerauLevenshtein(lower, k)))
             .orElse(null);
-        int dist = best == null ? Integer.MAX_VALUE : damerauLevenshtein(lower, best);
-        int threshold = editThreshold(text.length());
+        int dist = best == null ? Integer.MAX_VALUE : EditDistance.damerauLevenshtein(lower, best);
+        int threshold = EditDistance.editThreshold(text.length());
 
         if (dist <= threshold) {
           msg = "Unknown keyword '" + text + "' — did you mean '" + best + "'?";
@@ -98,40 +98,6 @@ final class LspErrorListener extends BaseErrorListener {
 
   List<Diagnostic> getDiagnostics() {
     return diagnostics;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Damerau-Levenshtein (adjacent transpositions count as distance 1)
-  // ---------------------------------------------------------------------------
-
-  private static int editThreshold(int len) {
-    if (len <= 3) return 1;
-    if (len <= 6) return 2;
-    return 3;
-  }
-
-  private static int damerauLevenshtein(String a, String b) {
-    if (a.equals(b)) return 0;
-    if (a.isEmpty()) return b.length();
-    if (b.isEmpty()) return a.length();
-    int la = a.length();
-    int lb = b.length();
-    int[][] d = new int[la + 1][lb + 1];
-    for (int i = 0; i <= la; i++) d[i][0] = i;
-    for (int j = 0; j <= lb; j++) d[0][j] = j;
-    for (int i = 1; i <= la; i++) {
-      for (int j = 1; j <= lb; j++) {
-        int cost = a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1;
-        d[i][j] = Math.min(d[i-1][j] + 1,
-                  Math.min(d[i][j-1] + 1, d[i-1][j-1] + cost));
-        if (i > 1 && j > 1
-            && a.charAt(i-1) == b.charAt(j-2)
-            && a.charAt(i-2) == b.charAt(j-1)) {
-          d[i][j] = Math.min(d[i][j], d[i-2][j-2] + cost);
-        }
-      }
-    }
-    return d[la][lb];
   }
 }
 

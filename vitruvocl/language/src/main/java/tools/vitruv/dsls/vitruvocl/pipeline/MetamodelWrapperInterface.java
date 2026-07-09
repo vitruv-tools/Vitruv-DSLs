@@ -13,10 +13,13 @@
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EClassifier;
 import org.eclipse.emf.ecore.EEnum;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EPackage;
 
 /**
  * Constraint specification providing metamodel and instance access. Similar to Reactions'
@@ -114,4 +117,69 @@ public interface MetamodelWrapperInterface {
    * @return true if a correspondence with that tag exists between obj1 and obj2
    */
   boolean correspondenceHasTag(EObject obj1, EObject obj2, String tag);
+
+  /** Resolves a qualified name to its {@link EClass} using a name-keyed metamodel registry. */
+  static EClass resolveEClassInRegistry(
+      Map<String, EPackage> registry, String metamodelName, String className) {
+    EPackage ePackage = registry.get(metamodelName);
+    if (ePackage == null) {
+      return null;
+    }
+    EClassifier classifier = ePackage.getEClassifier(className);
+    return (classifier instanceof EClass ec) ? ec : null;
+  }
+
+  /** Resolves the first {@link EClass} matching an unqualified short name across a registry. */
+  static EClass resolveEClassByShortNameInRegistry(
+      Map<String, EPackage> registry, String shortName) {
+    for (EPackage ePackage : registry.values()) {
+      EClass found = resolveEClassByShortNameInPackage(ePackage, shortName);
+      if (found != null) {
+        return found;
+      }
+    }
+    return null;
+  }
+
+  /** Searches an {@link EPackage} and its direct subpackages for an {@link EClass} by short name. */
+  static EClass resolveEClassByShortNameInPackage(EPackage ePackage, String shortName) {
+    EClassifier classifier = ePackage.getEClassifier(shortName);
+    if (classifier instanceof EClass eClass) {
+      return eClass;
+    }
+    for (EPackage subPkg : ePackage.getESubpackages()) {
+      EClassifier subClassifier = subPkg.getEClassifier(shortName);
+      if (subClassifier instanceof EClass eClass) {
+        return eClass;
+      }
+    }
+    return null;
+  }
+
+  /** Resolves the first {@link EEnum} matching a name across a registry and its subpackages. */
+  static EEnum resolveEEnumInRegistry(Map<String, EPackage> registry, String enumName) {
+    for (EPackage ePackage : registry.values()) {
+      EEnum found = resolveEEnumInPackage(ePackage, enumName);
+      if (found != null) {
+        return found;
+      }
+    }
+    return null;
+  }
+
+  /** Resolves an {@link EEnum} by name within an {@link EPackage} and its subpackages. */
+  static EEnum resolveEEnumInPackage(EPackage ePackage, String enumName) {
+    for (EClassifier classifier : ePackage.getEClassifiers()) {
+      if (classifier instanceof EEnum eEnum && eEnum.getName().equals(enumName)) {
+        return eEnum;
+      }
+    }
+    for (EPackage subPackage : ePackage.getESubpackages()) {
+      EEnum found = resolveEEnumInPackage(subPackage, enumName);
+      if (found != null) {
+        return found;
+      }
+    }
+    return null;
+  }
 }

@@ -13,6 +13,7 @@
 package tools.vitruv.dsls.vitruvocl.common;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLBaseVisitor;
 import tools.vitruv.dsls.vitruvocl.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapperInterface;
@@ -97,6 +98,53 @@ public abstract class AbstractPhaseVisitor<T> extends VitruvOCLBaseVisitor<T> {
    * @param ctx Parse tree context for error location information
    */
   protected abstract void handleUndefinedSymbol(String name, ParserRuleContext ctx);
+
+  /**
+   * Source tag identifying the current compilation phase in error reports.
+   *
+   * @return phase tag (e.g. {@code "type-checker"} or {@code "evaluator"})
+   */
+  protected abstract String phaseTag();
+
+  /**
+   * Records an error at the start position of the given context.
+   *
+   * @param ctx Parse tree context providing the error location
+   * @param message Human-readable error message
+   */
+  protected void reportError(ParserRuleContext ctx, String message) {
+    errors.add(
+        ctx.getStart().getLine(),
+        ctx.getStart().getCharPositionInLine(),
+        message,
+        ErrorSeverity.ERROR,
+        phaseTag());
+  }
+
+  /**
+   * Records a warning at the start position of the given context.
+   *
+   * @param ctx Parse tree context providing the warning location
+   * @param message Human-readable warning message
+   */
+  protected void reportWarning(ParserRuleContext ctx, String message) {
+    errors.add(
+        ctx.getStart().getLine(),
+        ctx.getStart().getCharPositionInLine(),
+        message,
+        ErrorSeverity.WARNING,
+        phaseTag());
+  }
+
+  /**
+   * Records an error at the given token's position.
+   *
+   * @param token Token providing the error location
+   * @param message Human-readable error message
+   */
+  protected void reportError(Token token, String message) {
+    errors.add(token, message, ErrorSeverity.ERROR, phaseTag());
+  }
 
   /**
    * Checks whether any errors were collected during this phase.

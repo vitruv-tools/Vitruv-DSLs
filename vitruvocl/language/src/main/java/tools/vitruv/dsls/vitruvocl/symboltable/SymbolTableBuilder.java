@@ -187,6 +187,11 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
         PHASE_TAG);
   }
 
+  @Override
+  protected String phaseTag() {
+    return PHASE_TAG;
+  }
+
   // ==================== Context Declaration ====================
 
   /**

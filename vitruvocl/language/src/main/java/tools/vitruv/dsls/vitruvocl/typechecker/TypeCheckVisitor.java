@@ -217,6 +217,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return 3;
   }
 
+  @Override
+  protected String phaseTag() {
+    return PHASE_TAG;
+  }
+
   protected void handleUndefinedSymbol(String name, ParserRuleContext ctx) {
     String lower = name.toLowerCase(java.util.Locale.ROOT);
 
@@ -291,12 +296,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       // Unqualified: ClassName
       contextType = symbolTable.lookupType(ctx.contextName.getText());
     } else {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Invalid context declaration",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Invalid context declaration");
       return Type.ERROR;
     }
 
@@ -354,20 +354,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
             .filter(a -> a instanceof VitruvOCLParser.MessageAnnotationContext)
             .count();
     if (severityCount > 1) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "@severity may only appear once per constraint",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "@severity may only appear once per constraint");
     }
     if (messageCount > 1) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "@message may only appear once per constraint",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "@message may only appear once per constraint");
     }
     // Validate annotations before type-checking the body
     for (VitruvOCLParser.AnnotationCSContext ann : ctx.annotationCS()) {
@@ -396,12 +386,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         Type checkType =
             specType.isSingleton() || specType.isCollection() ? specType.getElementType() : specType;
         if (!checkType.isConformantTo(Type.BOOLEAN)) {
-          errors.add(
-              ctx.getStart().getLine(),
-              ctx.getStart().getCharPositionInLine(),
-              "Invariant must be Boolean, got " + specType,
-              ErrorSeverity.ERROR,
-              PHASE_TAG);
+          reportError(ctx, "Invariant must be Boolean, got " + specType);
           resultType = Type.ERROR;
         }
       }
@@ -420,12 +405,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitSeverityAnnotation(VitruvOCLParser.SeverityAnnotationContext ctx) {
     String val = ctx.severityValue.getText();
     if (!VALID_SEVERITIES.contains(val)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Unknown severity level '" + val + "'. Valid values: CRITICAL, WARNING, MAJOR, MINOR, INFO",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Unknown severity level '" + val + "'. Valid values: CRITICAL, WARNING, MAJOR, MINOR, INFO");
     }
     return Type.BOOLEAN;
   }
@@ -455,12 +435,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return visitTypeLiteralCS(ctx.typeLiteralCS());
     }
 
-    errors.add(
-        ctx.getStart().getLine(),
-        ctx.getStart().getCharPositionInLine(),
-        "Invalid type expression",
-        ErrorSeverity.ERROR,
-        PHASE_TAG);
+    reportError(ctx, "Invalid type expression");
     return Type.ERROR;
   }
 
@@ -479,12 +454,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return visit(ctx.collectionTypeCS());
     }
 
-    errors.add(
-        ctx.getStart().getLine(),
-        ctx.getStart().getCharPositionInLine(),
-        "Invalid type literal",
-        ErrorSeverity.ERROR,
-        PHASE_TAG);
+    reportError(ctx, "Invalid type literal");
     return Type.ERROR;
   }
 
@@ -527,12 +497,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
           case "OrderedSet" -> Type.orderedSet(elementType);
           case "Collection" -> Type.set(elementType); // Generic → Set
           default -> {
-            errors.add(
-                ctx.getStart().getLine(),
-                ctx.getStart().getCharPositionInLine(),
-                "Unknown collection type: " + kind,
-                ErrorSeverity.ERROR,
-                PHASE_TAG);
+            reportError(ctx, "Unknown collection type: " + kind);
             yield Type.ERROR;
           }
         };
@@ -589,12 +554,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         };
 
     if (primitiveType == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Unknown primitive type: " + typeName,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Unknown primitive type: " + typeName);
       return Type.ERROR;
     }
 
@@ -633,12 +593,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     } else if (ctx.unqualified != null) {
       typeName = ctx.unqualified.getText();
     } else {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Invalid type name",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Invalid type name");
       return Type.ERROR;
     }
 
@@ -661,12 +616,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     // Lookup in symbol table (metamodel types)
     Type resolvedType = symbolTable.lookupType(typeName);
     if (resolvedType == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Unknown type: " + typeName,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Unknown type: " + typeName);
       return Type.ERROR;
     }
 
@@ -687,12 +637,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitSpecificationCS(VitruvOCLParser.SpecificationCSContext ctx) {
     if (ctx.expCS().isEmpty()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Empty specification",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Empty specification");
       return Type.ERROR;
     }
 
@@ -939,14 +884,9 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         || hasErrorNode(body)
         || body.getChildCount() == 0;
     if (invalid) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'" + opName + "' requires 'variable | expression' — "
+      reportError(ctx, "'" + opName + "' requires 'variable | expression' — "
               + "did you forget the '| body' part? "
-              + "Example: " + opName + "(x | x.active)",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+              + "Example: " + opName + "(x | x.active)");
       return false;
     }
     return true;
@@ -1129,12 +1069,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type resultType = TypeResolver.resolveBinaryOp(operator, leftType, rightType);
 
     if (resultType == Type.ERROR && leftType != Type.ERROR && rightType != Type.ERROR) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_TYPE_MISMATCH_PREFIX + operator + ERR_TO + leftType + AND_SEPARATOR + rightType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_TYPE_MISMATCH_PREFIX + operator + ERR_TO + leftType + AND_SEPARATOR + rightType);
     }
 
     nodeTypes.put(ctx, resultType);
@@ -1165,12 +1100,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type resultType = TypeResolver.resolveBinaryOp(operator, leftType, rightType);
 
     if (resultType == Type.ERROR && leftType != Type.ERROR && rightType != Type.ERROR) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_TYPE_MISMATCH_PREFIX + operator + ERR_TO + leftType + AND_SEPARATOR + rightType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_TYPE_MISMATCH_PREFIX + operator + ERR_TO + leftType + AND_SEPARATOR + rightType);
     }
 
     nodeTypes.put(ctx, resultType);
@@ -1199,12 +1129,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type resultType = TypeResolver.resolveBinaryOp(operator, leftType, rightType);
 
     if (resultType == Type.ERROR && leftType != Type.ERROR && rightType != Type.ERROR) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_TYPE_MISMATCH_PREFIX + operator + ERR_TO + leftType + AND_SEPARATOR + rightType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_TYPE_MISMATCH_PREFIX + operator + ERR_TO + leftType + AND_SEPARATOR + rightType);
     }
 
     nodeTypes.put(ctx, resultType);
@@ -1231,12 +1156,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type resultType = TypeResolver.resolveBinaryOp(operator, leftType, rightType);
 
     if (resultType == Type.ERROR && leftType != Type.ERROR && rightType != Type.ERROR) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_TYPE_MISMATCH_PREFIX + operator + ERR_TO + leftType + AND_SEPARATOR + rightType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_TYPE_MISMATCH_PREFIX + operator + ERR_TO + leftType + AND_SEPARATOR + rightType);
     }
 
     nodeTypes.put(ctx, resultType);
@@ -1263,12 +1183,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type resultType = TypeResolver.resolveBinaryOp(operator, leftType, rightType);
 
     if (resultType == Type.ERROR && leftType != Type.ERROR && rightType != Type.ERROR) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_TYPE_MISMATCH_PREFIX + operator + ERR_TO + leftType + AND_SEPARATOR + rightType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_TYPE_MISMATCH_PREFIX + operator + ERR_TO + leftType + AND_SEPARATOR + rightType);
     }
 
     nodeTypes.put(ctx, resultType);
@@ -1357,12 +1272,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type currentType = visit(ctx.base);
 
     if (currentType == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Base expression has no type",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Base expression has no type");
       return Type.ERROR;
     }
 
@@ -1402,22 +1312,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type baseType = operandType.isSingleton() ? operandType.getElementType() : operandType;
 
     if (baseType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Unary minus requires numeric type, got " + operandType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Unary minus requires numeric type, got " + operandType);
       return Type.ERROR;
     }
 
     if (!TypeResolver.isNumeric(baseType) && baseType != Type.ERROR) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Unary minus requires numeric type, got " + operandType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Unary minus requires numeric type, got " + operandType);
       return Type.ERROR;
     }
 
@@ -1451,22 +1351,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type baseType = operandType.isSingleton() ? operandType.getElementType() : operandType;
 
     if (baseType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Logical not requires Boolean type, got " + operandType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Logical not requires Boolean type, got " + operandType);
       return Type.ERROR;
     }
 
     if (baseType != Type.BOOLEAN && baseType != Type.ERROR) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Logical not requires Boolean type, got " + operandType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Logical not requires Boolean type, got " + operandType);
       return Type.ERROR;
     }
 
@@ -1523,12 +1413,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     if (!specification.getAvailableMetamodels().contains(metamodel)) {
-      errors.add(ctx.metamodel, "Unknown metamodel '" + metamodel + "'",
-          ErrorSeverity.ERROR, PHASE_TAG);
+      reportError(ctx.metamodel, "Unknown metamodel '" + metamodel + "'");
     } else {
-      errors.add(ctx.className, "Unknown class '" + className
-          + "' in metamodel '" + metamodel + "'",
-          ErrorSeverity.ERROR, PHASE_TAG);
+      reportError(ctx.className, "Unknown class '" + className
+          + "' in metamodel '" + metamodel + "'");
     }
     return Type.ERROR;
   }
@@ -1619,11 +1507,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       Type elemType = receiverType.getElementType();
 
       if (!elemType.isMetaclassType()) {
-        errors.add(
-            propertyNameToken,
-            "Cannot navigate on non-object type",
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(propertyNameToken, "Cannot navigate on non-object type");
         return Type.ERROR;
       }
 
@@ -1633,11 +1517,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       if (feature == null) {
         feature = findFeatureInSubtypes(eClass, propName);
         if (feature == null) {
-          errors.add(propertyNameToken, "Unknown property '" + propName
-              + "' on type '" + eClass.getName() + "'"
-              + " (not found on declared type or any known subtype;"
-              + " use oclIsKindOf + oclAsType to cast to the concrete subtype first)",
-              ErrorSeverity.ERROR, PHASE_TAG);
+          reportError(propertyNameToken, unknownPropertyMessage(propName, eClass));
           return Type.ERROR;
         }
       }
@@ -1654,11 +1534,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       if (feature == null) {
         feature = findFeatureInSubtypes(eClass, propName);
         if (feature == null) {
-          errors.add(propertyNameToken, "Unknown property '" + propName
-              + "' on type '" + eClass.getName() + "'"
-              + " (not found on declared type or any known subtype;"
-              + " use oclIsKindOf + oclAsType to cast to the concrete subtype first)",
-              ErrorSeverity.ERROR, PHASE_TAG);
+          reportError(propertyNameToken, unknownPropertyMessage(propName, eClass));
           return Type.ERROR;
         }
       }
@@ -1666,9 +1542,15 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return mapFeatureToType(feature);
     }
 
-    errors.add(propertyNameToken, "Cannot access property on " + receiverType,
-        ErrorSeverity.ERROR, PHASE_TAG);
+    reportError(propertyNameToken, "Cannot access property on " + receiverType);
     return Type.ERROR;
+  }
+
+  private static String unknownPropertyMessage(String propName, EClass eClass) {
+    return "Unknown property '" + propName
+        + "' on type '" + eClass.getName() + "'"
+        + " (not found on declared type or any known subtype;"
+        + " use oclIsKindOf + oclAsType to cast to the concrete subtype first)";
   }
 
   /**
@@ -1877,12 +1759,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (condType != null && condType != Type.ERROR) {
       Type condCheck = condType.isSingleton() ? condType.getElementType() : condType;
       if (condCheck.isCollection() || !condCheck.isConformantTo(Type.BOOLEAN)) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "If condition must be Boolean, got " + condType,
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(ctx, "If condition must be Boolean, got " + condType);
       }
     }
 
@@ -1906,12 +1783,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     boolean thenIsCollection = thenType.isCollection() && !thenType.isSingleton();
     boolean elseIsCollection = elseType.isCollection() && !elseType.isSingleton();
     if (thenIsCollection != elseIsCollection) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_BRANCH_TYPES + thenType + AND_SEPARATOR + elseType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_BRANCH_TYPES + thenType + AND_SEPARATOR + elseType);
       nodeTypes.put(ctx, Type.ERROR);
       return Type.ERROR;
     }
@@ -1920,12 +1792,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (thenIsCollection && elseIsCollection
         && (thenType.isOrdered() != elseType.isOrdered()
             || thenType.isUnique() != elseType.isUnique())) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_BRANCH_TYPES + thenType + AND_SEPARATOR + elseType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_BRANCH_TYPES + thenType + AND_SEPARATOR + elseType);
       nodeTypes.put(ctx, Type.ERROR);
       return Type.ERROR;
     }
@@ -1941,12 +1808,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     } else {
       resultType = Type.commonSuperType(thenType, elseType);
       if (resultType == null || resultType == Type.ANY) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            ERR_BRANCH_TYPES + thenType + AND_SEPARATOR + elseType,
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(ctx, ERR_BRANCH_TYPES + thenType + AND_SEPARATOR + elseType);
         resultType = Type.ERROR;
       }
     }
@@ -1993,12 +1855,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     // Variable already defined in Pass 1 - just look it up
     VariableSymbol symbol = symbolTable.resolveVariable(varName);
     if (symbol == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Variable '" + varName + "' not found (Pass 1 error?)",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Variable '" + varName + "' not found (Pass 1 error?)");
       return Type.ERROR;
     }
 
@@ -2013,12 +1870,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       // use standard isConformantTo first, then singleton-unwrapping
       if (!initType.isConformantTo(explicitType)
           && !conformsWithUnwrapping(initType, explicitType)) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "Type mismatch: got " + initType + ", expected " + explicitType,
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(ctx, "Type mismatch: got " + initType + ", expected " + explicitType);
         return Type.ERROR;
       }
 
@@ -2035,12 +1887,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
         declaredType = initType;
       } else if (!initType.isConformantTo(declaredType)
           && !conformsWithUnwrapping(initType, declaredType)) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "Type mismatch: got " + initType + ", expected " + declaredType,
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(ctx, "Type mismatch: got " + initType + ", expected " + declaredType);
       }
     }
 
@@ -2105,12 +1952,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
     // null is not valid in OCL# — use isEmpty() / notEmpty() instead
     if (varName.equals("null")) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'null' is not a valid expression in OCL#. Use isEmpty() / notEmpty() to test optional values.",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'null' is not a valid expression in OCL#. Use isEmpty() / notEmpty() to test optional values.");
       nodeTypes.put(ctx, Type.ERROR);
       return Type.ERROR;
     }
@@ -2140,12 +1982,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Symbol selfSymbol = symbolTable.resolveVariable("self");
 
     if (selfSymbol == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'self' not defined in current context",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'self' not defined in current context");
       nodeTypes.put(ctx, Type.ERROR);
       return Type.ERROR;
     }
@@ -2275,20 +2112,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       Type secondType = visit(ctx.expCS(1));
 
       if (!firstType.isConformantTo(Type.INTEGER)) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "Range start must be Integer",
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(ctx, "Range start must be Integer");
       }
       if (!secondType.isConformantTo(Type.INTEGER)) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "Range end must be Integer",
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(ctx, "Range end must be Integer");
       }
 
       return Type.INTEGER;
@@ -2314,12 +2141,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection() || !receiverType.isOrdered()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "first() requires an ordered collection (Sequence or OrderedSet), got: " + receiverType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "first() requires an ordered collection (Sequence or OrderedSet), got: " + receiverType);
       return Type.ERROR;
     }
     Type resultType = Type.singleton(receiverType.getElementType());
@@ -2342,12 +2164,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection() || !receiverType.isOrdered()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "last() requires an ordered collection (Sequence or OrderedSet), got: " + receiverType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "last() requires an ordered collection (Sequence or OrderedSet), got: " + receiverType);
       return Type.ERROR;
     }
     Type resultType = Type.singleton(receiverType.getElementType());
@@ -2366,12 +2183,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "reverse() requires collection receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "reverse() requires collection receiver");
       return Type.ERROR;
     }
     nodeTypes.put(ctx, receiverType);
@@ -2389,12 +2201,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isExplicitCollectionType()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "isEmpty() requires a collection receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "isEmpty() requires a collection receiver");
       return Type.ERROR;
     }
     nodeTypes.put(ctx, Type.BOOLEAN);
@@ -2413,12 +2220,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isExplicitCollectionType()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "notEmpty() requires a collection receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "notEmpty() requires a collection receiver");
       return Type.ERROR;
     }
 
@@ -2439,23 +2241,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type argType = visit(ctx.arg);
 
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'including' requires collection",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'including' requires collection");
       return Type.ERROR;
     }
 
     Type elemType = receiverType.getElementType();
     if (!argType.isConformantTo(elemType)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Incompatible argument type",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Incompatible argument type");
     }
 
     nodeTypes.put(ctx, receiverType);
@@ -2486,12 +2278,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'excluding' requires collection",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'excluding' requires collection");
       return Type.ERROR;
     }
 
@@ -2524,12 +2311,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isExplicitCollectionType()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'includes' requires a collection, ¡T!, or ¿T? receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'includes' requires a collection, ¡T!, or ¿T? receiver");
       return Type.ERROR;
     }
 
@@ -2562,12 +2344,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isExplicitCollectionType()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'excludes' requires a collection, ¡T!, or ¿T? receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'excludes' requires a collection, ¡T!, or ¿T? receiver");
       return Type.ERROR;
     }
 
@@ -2589,23 +2366,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'flatten' requires collection",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'flatten' requires collection");
       return Type.ERROR;
     }
 
     Type innerType = receiverType.getElementType();
     if (!innerType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Expected Collection(Collection(T))",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Expected Collection(Collection(T))");
       return Type.ERROR;
     }
 
@@ -2631,12 +2398,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type argType = visit(ctx.arg);
 
     if (!receiverType.isCollection() || !argType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'union' requires collection operands",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'union' requires collection operands");
       return Type.ERROR;
     }
 
@@ -2697,22 +2459,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type argType = visit(ctx.arg);
 
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'append' requires a collection receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'append' requires a collection receiver");
       return Type.ERROR;
     }
 
     if (argType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'append' argument must be a singleton, not a collection",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'append' argument must be a singleton, not a collection");
       return Type.ERROR;
     }
 
@@ -2738,23 +2490,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'sum' requires collection",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'sum' requires collection");
       return Type.ERROR;
     }
 
     Type elemType = receiverType.getElementType();
     if (elemType != Type.ANY && !TypeResolver.isNumeric(elemType)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'sum' requires numeric collection",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'sum' requires numeric collection");
     }
 
     // Preserve the concrete numeric element type (FLOAT stays FLOAT, not INTEGER)
@@ -2875,12 +2617,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
     // Reject singletons — max/min/avg require a collection, not a scalar
     if (receiverType.isSingleton() || !receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'" + opName + "' requires collection receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'" + opName + "' requires collection receiver");
       return Type.ERROR;
     }
 
@@ -2890,12 +2627,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     if (elemType != Type.ANY && !TypeResolver.isNumeric(elemType)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'" + opName + "' requires numeric collection",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'" + opName + "' requires numeric collection");
     }
 
     Type resultType = Type.singleton(TypeResolver.isNumeric(elemType) ? elemType : Type.INTEGER);
@@ -2918,12 +2650,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'length' requires String receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'length' requires String receiver");
       return Type.ERROR;
     }
     nodeTypes.put(ctx, Type.INTEGER);
@@ -2945,12 +2672,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isExplicitCollectionType()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "size() requires a collection receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "size() requires a collection receiver");
       return Type.ERROR;
     }
 
@@ -2977,12 +2699,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
     // Reject collections — abs/floor/ceil/round require scalar receiver
     if (checkType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'" + opName + "' requires scalar numeric receiver, not a collection",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'" + opName + "' requires scalar numeric receiver, not a collection");
       return Type.ERROR;
     }
 
@@ -2992,12 +2709,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     if (checkType != Type.ERROR) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'" + opName + "' requires numeric receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'" + opName + "' requires numeric receiver");
     }
     return Type.ERROR;
   }
@@ -3016,12 +2728,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'lift' requires collection",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'lift' requires collection");
       return Type.ERROR;
     }
 
@@ -3048,12 +2755,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isExplicitCollectionType()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'select' requires a collection, ¡T!, or ¿T? receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'select' requires a collection, ¡T!, or ¿T? receiver");
       return Type.ERROR;
     }
 
@@ -3065,12 +2767,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     if (iterVars.isEmpty()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "select requires at least one iterator variable",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "select requires at least one iterator variable");
       return Type.ERROR;
     }
 
@@ -3080,12 +2777,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
     Scope iterScope = scopeAnnotator.getScope(ctx);
     if (iterScope == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_NO_SCOPE,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_NO_SCOPE);
       return Type.ERROR;
     }
 
@@ -3105,12 +2797,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       Type checkType = bodyType.isCollection() ? bodyType.getElementType() : bodyType;
 
       if (!checkType.isConformantTo(Type.BOOLEAN)) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "select body must return Boolean",
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(ctx, "select body must return Boolean");
       }
 
       // select on ¡T! may filter out the element → result is ¿T?
@@ -3137,12 +2824,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isExplicitCollectionType()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'reject' requires a collection, ¡T!, or ¿T? receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'reject' requires a collection, ¡T!, or ¿T? receiver");
       return Type.ERROR;
     }
 
@@ -3154,12 +2836,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     if (iterVars.isEmpty()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "reject requires at least one iterator variable",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "reject requires at least one iterator variable");
       return Type.ERROR;
     }
 
@@ -3169,12 +2846,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
     Scope iterScope = scopeAnnotator.getScope(ctx);
     if (iterScope == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_NO_SCOPE,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_NO_SCOPE);
       return Type.ERROR;
     }
 
@@ -3193,12 +2865,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       if (bodyType == null || bodyType == Type.ERROR) return Type.ERROR;
 
       if (!bodyType.getElementType().equals(Type.BOOLEAN)) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "reject predicate must return Boolean",
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(ctx, "reject predicate must return Boolean");
         return Type.ERROR;
       }
 
@@ -3226,12 +2893,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isExplicitCollectionType()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'collect' requires a collection, ¡T!, or ¿T? receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'collect' requires a collection, ¡T!, or ¿T? receiver");
       return Type.ERROR;
     }
 
@@ -3243,12 +2905,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     if (iterVars.isEmpty()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "collect requires at least one iterator variable",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "collect requires at least one iterator variable");
       return Type.ERROR;
     }
 
@@ -3258,12 +2915,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
     Scope iterScope = scopeAnnotator.getScope(ctx);
     if (iterScope == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_NO_SCOPE,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_NO_SCOPE);
       return Type.ERROR;
     }
 
@@ -3319,12 +2971,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isExplicitCollectionType()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'forAll' requires a collection, ¡T!, or ¿T? receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'forAll' requires a collection, ¡T!, or ¿T? receiver");
       return Type.ERROR;
     }
 
@@ -3340,23 +2987,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     if (iterVars.isEmpty()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "forAll requires at least one iterator variable",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "forAll requires at least one iterator variable");
       return Type.ERROR;
     }
 
     Scope iterScope = scopeAnnotator.getScope(ctx);
     if (iterScope == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_NO_SCOPE,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_NO_SCOPE);
       return Type.ERROR;
     }
 
@@ -3375,12 +3012,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       if (bodyType == null || bodyType == Type.ERROR) return Type.ERROR;
 
       if (!bodyType.getElementType().equals(Type.BOOLEAN)) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "forAll predicate must return Boolean",
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(ctx, "forAll predicate must return Boolean");
         return Type.ERROR;
       }
 
@@ -3406,12 +3038,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isExplicitCollectionType()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'exists' requires a collection, ¡T!, or ¿T? receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'exists' requires a collection, ¡T!, or ¿T? receiver");
       return Type.ERROR;
     }
 
@@ -3427,23 +3054,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     if (iterVars.isEmpty()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "exists requires at least one iterator variable",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "exists requires at least one iterator variable");
       return Type.ERROR;
     }
 
     Scope iterScope = scopeAnnotator.getScope(ctx);
     if (iterScope == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_NO_SCOPE,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_NO_SCOPE);
       return Type.ERROR;
     }
 
@@ -3462,12 +3079,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       if (bodyType == null || bodyType == Type.ERROR) return Type.ERROR;
 
       if (!bodyType.getElementType().equals(Type.BOOLEAN)) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "exists predicate must return Boolean",
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(ctx, "exists predicate must return Boolean");
         return Type.ERROR;
       }
 
@@ -3553,22 +3165,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type argType = visit(ctx.arg);
 
     if (!receiverType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "concat requires String receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "concat requires String receiver");
       return Type.ERROR;
     }
 
     if (!argType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "concat argument must be String",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "concat argument must be String");
     }
 
     nodeTypes.put(ctx, Type.STRING);
@@ -3597,12 +3199,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'substring' requires String",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'substring' requires String");
       return Type.ERROR;
     }
 
@@ -3610,21 +3207,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type endType = visit(ctx.end);
 
     if (!startType.isConformantTo(Type.INTEGER)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Start index must be Integer",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Start index must be Integer");
     }
 
     if (!endType.isConformantTo(Type.INTEGER)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "End index must be Integer",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "End index must be Integer");
     }
 
     nodeTypes.put(ctx, Type.STRING);
@@ -3680,23 +3267,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'indexOf' requires String",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'indexOf' requires String");
       return Type.ERROR;
     }
 
     Type argType = visit(ctx.arg);
     if (!argType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Argument must be String",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Argument must be String");
     }
 
     nodeTypes.put(ctx, Type.INTEGER);
@@ -3724,23 +3301,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'equalsIgnoreCase' requires String",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'equalsIgnoreCase' requires String");
       return Type.ERROR;
     }
 
     Type argType = visit(ctx.arg);
     if (!argType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Argument must be String",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Argument must be String");
     }
 
     nodeTypes.put(ctx, Type.BOOLEAN);
@@ -3753,12 +3320,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'" + opName + "' requires String",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'" + opName + "' requires String");
       return Type.ERROR;
     }
 
@@ -3912,12 +3474,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
     if (!receiverType.isMetaclassType()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "allInstances() requires metaclass receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "allInstances() requires metaclass receiver");
       return Type.ERROR;
     }
 
@@ -3960,45 +3517,25 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
     // Both sides must be single objects (singleton or object type, not multi-valued collection)
     if (leftType.isCollection() && leftType.getMultiplicity() != Multiplicity.SINGLETON) {
-      errors.add(
-          ctx.left.start.getLine(),
-          ctx.left.start.getCharPositionInLine(),
-          "Correspondence operator ~ requires single object on left side, got collection: "
-              + leftType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx.left, "Correspondence operator ~ requires single object on left side, got collection: "
+              + leftType);
       return Type.ERROR;
     }
 
     if (rightType.isCollection() && rightType.getMultiplicity() != Multiplicity.SINGLETON) {
-      errors.add(
-          ctx.right.start.getLine(),
-          ctx.right.start.getCharPositionInLine(),
-          "Correspondence operator ~ requires single object on right side, got collection: "
-              + rightType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx.right, "Correspondence operator ~ requires single object on right side, got collection: "
+              + rightType);
       return Type.ERROR;
     }
 
     // Both must be metaclass types (not primitives)
     if (!baseLeftType.isMetaclassType() && baseLeftType != Type.ANY) {
-      errors.add(
-          ctx.left.start.getLine(),
-          ctx.left.start.getCharPositionInLine(),
-          "Correspondence operator ~ requires object type on left side, got: " + baseLeftType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx.left, "Correspondence operator ~ requires object type on left side, got: " + baseLeftType);
       return Type.ERROR;
     }
 
     if (!baseRightType.isMetaclassType() && baseRightType != Type.ANY) {
-      errors.add(
-          ctx.right.start.getLine(),
-          ctx.right.start.getCharPositionInLine(),
-          "Correspondence operator ~ requires object type on right side, got: " + baseRightType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx.right, "Correspondence operator ~ requires object type on right side, got: " + baseRightType);
       return Type.ERROR;
     }
 
@@ -4021,23 +3558,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitSelectCorrespondence(VitruvOCLParser.SelectCorrespondenceContext ctx) {
     Type receiverType = receiverStack.peek();
     if (receiverType == null || receiverType == Type.ERROR) {
-      errors.add(
-          ctx.start.getLine(),
-          ctx.start.getCharPositionInLine(),
-          "Cannot determine receiver type for select(~)",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Cannot determine receiver type for select(~)");
       return Type.ERROR;
     }
 
     VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
     if (selfSymbol == null) {
-      errors.add(
-          ctx.start.getLine(),
-          ctx.start.getCharPositionInLine(),
-          "select(~) requires 'self' to be bound in current context",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "select(~) requires 'self' to be bound in current context");
       return Type.ERROR;
     }
 
@@ -4045,23 +3572,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (baseSelfType.isSingleton()) baseSelfType = baseSelfType.getElementType();
 
     if (!baseSelfType.isMetaclassType() && baseSelfType != Type.ANY) {
-      errors.add(
-          ctx.start.getLine(),
-          ctx.start.getCharPositionInLine(),
-          "select(~) requires 'self' to be an object type, got: " + baseSelfType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "select(~) requires 'self' to be an object type, got: " + baseSelfType);
       return Type.ERROR;
     }
 
     Type elemType = receiverType.getElementType();
     if (!elemType.isMetaclassType() && elemType != Type.ANY) {
-      errors.add(
-          ctx.start.getLine(),
-          ctx.start.getCharPositionInLine(),
-          "select(~) requires collection of object types, got: " + elemType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "select(~) requires collection of object types, got: " + elemType);
       return Type.ERROR;
     }
 
@@ -4093,23 +3610,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitRejectCorrespondence(VitruvOCLParser.RejectCorrespondenceContext ctx) {
     Type receiverType = receiverStack.peek();
     if (receiverType == null || receiverType == Type.ERROR) {
-      errors.add(
-          ctx.start.getLine(),
-          ctx.start.getCharPositionInLine(),
-          "Cannot determine receiver type for reject(~)",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Cannot determine receiver type for reject(~)");
       return Type.ERROR;
     }
 
     VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
     if (selfSymbol == null) {
-      errors.add(
-          ctx.start.getLine(),
-          ctx.start.getCharPositionInLine(),
-          "reject(~) requires 'self' to be bound in current context",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "reject(~) requires 'self' to be bound in current context");
       return Type.ERROR;
     }
 
@@ -4117,23 +3624,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (baseSelfType.isSingleton()) baseSelfType = baseSelfType.getElementType();
 
     if (!baseSelfType.isMetaclassType() && baseSelfType != Type.ANY) {
-      errors.add(
-          ctx.start.getLine(),
-          ctx.start.getCharPositionInLine(),
-          "reject(~) requires 'self' to be an object type, got: " + baseSelfType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "reject(~) requires 'self' to be an object type, got: " + baseSelfType);
       return Type.ERROR;
     }
 
     Type elemType = receiverType.getElementType();
     if (!elemType.isMetaclassType() && elemType != Type.ANY) {
-      errors.add(
-          ctx.start.getLine(),
-          ctx.start.getCharPositionInLine(),
-          "reject(~) requires collection of object types, got: " + elemType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "reject(~) requires collection of object types, got: " + elemType);
       return Type.ERROR;
     }
 
@@ -4163,23 +3660,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitExistsCorrespondence(VitruvOCLParser.ExistsCorrespondenceContext ctx) {
     Type receiverType = receiverStack.peek();
     if (receiverType == null || receiverType == Type.ERROR) {
-      errors.add(
-          ctx.start.getLine(),
-          ctx.start.getCharPositionInLine(),
-          "Cannot determine receiver type for exists(~)",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Cannot determine receiver type for exists(~)");
       return Type.ERROR;
     }
 
     VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
     if (selfSymbol == null) {
-      errors.add(
-          ctx.start.getLine(),
-          ctx.start.getCharPositionInLine(),
-          "exists(~) requires 'self' to be bound in current context",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "exists(~) requires 'self' to be bound in current context");
       return Type.ERROR;
     }
 
@@ -4187,23 +3674,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (baseSelfType.isSingleton()) baseSelfType = baseSelfType.getElementType();
 
     if (!baseSelfType.isMetaclassType() && baseSelfType != Type.ANY) {
-      errors.add(
-          ctx.start.getLine(),
-          ctx.start.getCharPositionInLine(),
-          "exists(~) requires 'self' to be an object type, got: " + baseSelfType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "exists(~) requires 'self' to be an object type, got: " + baseSelfType);
       return Type.ERROR;
     }
 
     Type elemType = receiverType.getElementType();
     if (!elemType.isMetaclassType() && elemType != Type.ANY) {
-      errors.add(
-          ctx.start.getLine(),
-          ctx.start.getCharPositionInLine(),
-          "exists(~) requires collection of object types, got: " + elemType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "exists(~) requires collection of object types, got: " + elemType);
       return Type.ERROR;
     }
 
@@ -4390,12 +3867,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitMessage(VitruvOCLParser.MessageContext ctx) {
     Type leftType = visit(ctx.left);
 
-    errors.add(
-        ctx.getStart().getLine(),
-        ctx.getStart().getCharPositionInLine(),
-        "Message operator '^' not yet implemented",
-        ErrorSeverity.WARNING,
-        PHASE_TAG);
+    reportWarning(ctx, "Message operator '^' not yet implemented");
 
     nodeTypes.put(ctx, leftType);
     return leftType;
@@ -4462,12 +3934,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitLetExpCS(VitruvOCLParser.LetExpCSContext ctx) {
     Scope letScope = scopeAnnotator.getScope(ctx);
     if (letScope == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_NO_SCOPE,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_NO_SCOPE);
 
       return Type.ERROR;
     }
@@ -4484,12 +3951,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       }
 
       if (bodyType == null) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "Let body empty",
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(ctx, "Let body empty");
         bodyType = Type.ERROR;
       }
 
@@ -4586,12 +4048,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitNestedExpCS(VitruvOCLParser.NestedExpCSContext ctx) {
     List<VitruvOCLParser.ExpCSContext> exps = ctx.expCS();
     if (exps.isEmpty()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "Empty nested expression",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "Empty nested expression");
       nodeTypes.put(ctx, Type.ERROR);
       return Type.ERROR;
     }
@@ -4652,12 +4109,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'one' requires collection",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'one' requires collection");
       return Type.ERROR;
     }
 
@@ -4669,12 +4121,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type iterVarType = normalizeToSingleton(receiverType.getElementType());
     Scope iterScope = scopeAnnotator.getScope(ctx);
     if (iterScope == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_NO_SCOPE,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_NO_SCOPE);
       return Type.ERROR;
     }
 
@@ -4689,12 +4136,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       if (bodyType == null || bodyType == Type.ERROR) return Type.ERROR;
       Type checkType = bodyType.isCollection() ? bodyType.getElementType() : bodyType;
       if (!checkType.isConformantTo(Type.BOOLEAN)) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "one() predicate must return Boolean",
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(ctx, "one() predicate must return Boolean");
       }
       nodeTypes.put(ctx, Type.BOOLEAN);
       return Type.BOOLEAN;
@@ -4717,12 +4159,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isExplicitCollectionType()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'any' requires a collection, ¡T!, or ¿T? receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'any' requires a collection, ¡T!, or ¿T? receiver");
       return Type.ERROR;
     }
 
@@ -4734,12 +4171,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type iterVarType = normalizeToSingleton(receiverType.getElementType());
     Scope iterScope = scopeAnnotator.getScope(ctx);
     if (iterScope == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_NO_SCOPE,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_NO_SCOPE);
       return Type.ERROR;
     }
 
@@ -4754,12 +4186,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       if (bodyType == null || bodyType == Type.ERROR) return Type.ERROR;
       Type checkType = bodyType.isCollection() ? bodyType.getElementType() : bodyType;
       if (!checkType.isConformantTo(Type.BOOLEAN)) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "any() predicate must return Boolean",
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(ctx, "any() predicate must return Boolean");
       }
       // any() returns ¿T? — may find no matching element
       Type resultType = Type.optional(receiverType.getElementType());
@@ -4783,12 +4210,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'isUnique' requires collection",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'isUnique' requires collection");
       return Type.ERROR;
     }
 
@@ -4800,12 +4222,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type iterVarType = normalizeToSingleton(receiverType.getElementType());
     Scope iterScope = scopeAnnotator.getScope(ctx);
     if (iterScope == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_NO_SCOPE,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_NO_SCOPE);
       return Type.ERROR;
     }
 
@@ -4836,12 +4253,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'sortedBy' requires collection",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'sortedBy' requires collection");
       return Type.ERROR;
     }
 
@@ -4853,12 +4265,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type iterVarType = normalizeToSingleton(receiverType.getElementType());
     Scope iterScope = scopeAnnotator.getScope(ctx);
     if (iterScope == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_NO_SCOPE,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_NO_SCOPE);
       return Type.ERROR;
     }
 
@@ -4878,12 +4285,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
           && !checkType.isConformantTo(Type.STRING)
           && !checkType.isEnumType()
           && checkType != Type.ERROR) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "sortedBy() body must return a comparable type (numeric or String), got: " + checkType,
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(ctx, "sortedBy() body must return a comparable type (numeric or String), got: " + checkType);
       }
       // result is always OrderedSet of the original element type
       Type resultType = Type.orderedSet(receiverType.getElementType());
@@ -4907,12 +4309,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'collectNested' requires collection",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'collectNested' requires collection");
       return Type.ERROR;
     }
 
@@ -4924,12 +4321,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type iterVarType = normalizeToSingleton(receiverType.getElementType());
     Scope iterScope = scopeAnnotator.getScope(ctx);
     if (iterScope == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_NO_SCOPE,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_NO_SCOPE);
       return Type.ERROR;
     }
 
@@ -4966,23 +4358,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'iterate' requires collection",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'iterate' requires collection");
       return Type.ERROR;
     }
 
     Scope iterScope = scopeAnnotator.getScope(ctx);
     if (iterScope == null) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          ERR_NO_SCOPE,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, ERR_NO_SCOPE);
       return Type.ERROR;
     }
 
@@ -5010,15 +4392,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       // Init expression must conform to accumulator type
       Type initType = visit(spec.accInit);
       if (!initType.isConformantTo(accType) && !conformsWithUnwrapping(initType, accType)) {
-        errors.add(
-            spec.getStart().getLine(),
-            spec.getStart().getCharPositionInLine(),
-            "iterate() accumulator init type "
+        reportError(spec, "iterate() accumulator init type "
                 + initType
                 + " does not conform to declared type "
-                + accType,
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+                + accType);
       }
 
       // Body must conform to accumulator type
@@ -5028,12 +4405,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       if (!bodyType.isConformantTo(accType)
           && !conformsWithUnwrapping(bodyType, accType)
           && bodyType != Type.ERROR) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "iterate() body type " + bodyType + " does not conform to accumulator type " + accType,
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(ctx, "iterate() body type " + bodyType + " does not conform to accumulator type " + accType);
       }
 
       nodeTypes.put(ctx, accType);
@@ -5095,12 +4467,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'" + opName + "' requires collection receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'" + opName + "' requires collection receiver");
       return Type.ERROR;
     }
     Type resultType = factory.apply(receiverType.getElementType());
@@ -5122,21 +4489,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     Type argType = visit(ctx.arg);
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'includesAll' requires collection receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'includesAll' requires collection receiver");
       return Type.ERROR;
     }
     if (!argType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'includesAll' argument must be a collection",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'includesAll' argument must be a collection");
     }
     nodeTypes.put(ctx, Type.BOOLEAN);
     return Type.BOOLEAN;
@@ -5154,21 +4511,11 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     Type argType = visit(ctx.arg);
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'excludesAll' requires collection receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'excludesAll' requires collection receiver");
       return Type.ERROR;
     }
     if (!argType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'excludesAll' argument must be a collection",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'excludesAll' argument must be a collection");
     }
     nodeTypes.put(ctx, Type.BOOLEAN);
     return Type.BOOLEAN;
@@ -5187,12 +4534,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'count' requires collection receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'count' requires collection receiver");
       return Type.ERROR;
     }
     Type argType = visit(ctx.arg);
@@ -5200,15 +4542,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (!argType.isConformantTo(elemType)
         && !conformsWithUnwrapping(argType, elemType)
         && argType != Type.ERROR) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "count() argument type "
+      reportWarning(ctx, "count() argument type "
               + argType
               + " incompatible with collection element type "
-              + elemType,
-          ErrorSeverity.WARNING,
-          PHASE_TAG);
+              + elemType);
     }
     nodeTypes.put(ctx, Type.INTEGER);
     return Type.INTEGER;
@@ -5229,12 +4566,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     Type argType = visit(ctx.arg);
     if (!receiverType.isCollection() || !argType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'intersection' requires collection operands",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'intersection' requires collection operands");
       return Type.ERROR;
     }
     Type commonElem = Type.commonSuperType(receiverType.getElementType(), argType.getElementType());
@@ -5269,21 +4601,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     Type argType = visit(ctx.arg);
     if (!receiverType.isCollection() || !argType.isCollection()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'symmetricDifference' requires collection operands",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'symmetricDifference' requires collection operands");
       return Type.ERROR;
     }
     if (!receiverType.isUnique() || !argType.isUnique()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'symmetricDifference' requires Set operands (unique collections)",
-          ErrorSeverity.ERROR, // WARNING → ERROR
-          PHASE_TAG);
+      // WARNING → ERROR
+      reportError(ctx, "'symmetricDifference' requires Set operands (unique collections)");
       return Type.ERROR;
     }
 
@@ -5306,12 +4629,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection() || !receiverType.isOrdered()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'prepend' requires ordered collection (Sequence or OrderedSet)",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'prepend' requires ordered collection (Sequence or OrderedSet)");
       return Type.ERROR;
     }
     Type argType = visit(ctx.arg);
@@ -5319,12 +4637,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (!argType.isConformantTo(elemType)
         && !conformsWithUnwrapping(argType, elemType)
         && argType != Type.ERROR) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "prepend() argument type " + argType + " incompatible with element type " + elemType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "prepend() argument type " + argType + " incompatible with element type " + elemType);
     }
     nodeTypes.put(ctx, receiverType);
     return receiverType;
@@ -5343,37 +4656,22 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection() || !receiverType.isOrdered()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'insertAt' requires ordered collection (Sequence or OrderedSet)",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'insertAt' requires ordered collection (Sequence or OrderedSet)");
       return Type.ERROR;
     }
     Type indexType = visit(ctx.index);
     if (!indexType.isConformantTo(Type.INTEGER)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "insertAt() index must be Integer, got " + indexType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "insertAt() index must be Integer, got " + indexType);
     }
     Type argType = visit(ctx.arg);
     Type elemType = receiverType.getElementType();
     if (!argType.isConformantTo(elemType)
         && !conformsWithUnwrapping(argType, elemType)
         && argType != Type.ERROR) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "insertAt() element type "
+      reportError(ctx, "insertAt() element type "
               + argType
               + " incompatible with collection element type "
-              + elemType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+              + elemType);
     }
     nodeTypes.put(ctx, receiverType);
     return receiverType;
@@ -5392,31 +4690,16 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isCollection() || !receiverType.isOrdered()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'subSequence' requires ordered collection (Sequence or OrderedSet)",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'subSequence' requires ordered collection (Sequence or OrderedSet)");
       return Type.ERROR;
     }
     Type startType = visit(ctx.start);
     Type endType = visit(ctx.end);
     if (!startType.isConformantTo(Type.INTEGER)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "subSequence() start index must be Integer, got " + startType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "subSequence() start index must be Integer, got " + startType);
     }
     if (!endType.isConformantTo(Type.INTEGER)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "subSequence() end index must be Integer, got " + endType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "subSequence() end index must be Integer, got " + endType);
     }
     nodeTypes.put(ctx, receiverType);
     return receiverType;
@@ -5438,33 +4721,18 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if (receiverType.isConformantTo(Type.STRING)) {
       Type indexType = visit(ctx.index);
       if (!indexType.isConformantTo(Type.INTEGER)) {
-        errors.add(
-            ctx.getStart().getLine(),
-            ctx.getStart().getCharPositionInLine(),
-            "at() index must be Integer, got " + indexType,
-            ErrorSeverity.ERROR,
-            PHASE_TAG);
+        reportError(ctx, "at() index must be Integer, got " + indexType);
       }
       nodeTypes.put(ctx, Type.STRING);
       return Type.STRING;
     }
     if (!receiverType.isCollection() || !receiverType.isOrdered()) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'at' requires ordered collection or String receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'at' requires ordered collection or String receiver");
       return Type.ERROR;
     }
     Type indexType = visit(ctx.index);
     if (!indexType.isConformantTo(Type.INTEGER)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "at() index must be Integer, got " + indexType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "at() index must be Integer, got " + indexType);
     }
     Type resultType = Type.singleton(receiverType.getElementType());
     nodeTypes.put(ctx, resultType);
@@ -5500,20 +4768,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type baseArg = argType.isSingleton() ? argType.getElementType() : argType;
 
     if (baseReceiver != Type.INTEGER && baseReceiver != Type.ERROR) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "div() requires Integer receiver, got " + receiverType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "div() requires Integer receiver, got " + receiverType);
     }
     if (baseArg != Type.INTEGER && baseArg != Type.ERROR) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "div() requires Integer argument, got " + argType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "div() requires Integer argument, got " + argType);
     }
     nodeTypes.put(ctx, Type.INTEGER);
     return Type.INTEGER;
@@ -5537,20 +4795,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type baseArg = argType.isSingleton() ? argType.getElementType() : argType;
 
     if (baseReceiver != Type.INTEGER && baseReceiver != Type.ERROR) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "mod() requires Integer receiver, got " + receiverType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "mod() requires Integer receiver, got " + receiverType);
     }
     if (baseArg != Type.INTEGER && baseArg != Type.ERROR) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "mod() requires Integer argument, got " + argType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "mod() requires Integer argument, got " + argType);
     }
     nodeTypes.put(ctx, Type.INTEGER);
     return Type.INTEGER;
@@ -5569,12 +4817,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'toInteger' requires String receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'toInteger' requires String receiver");
       return Type.ERROR;
     }
     nodeTypes.put(ctx, Type.INTEGER);
@@ -5592,12 +4835,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'toReal' requires String receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'toReal' requires String receiver");
       return Type.ERROR;
     }
     nodeTypes.put(ctx, Type.DOUBLE);
@@ -5617,12 +4855,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'characters' requires String receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'characters' requires String receiver");
       return Type.ERROR;
     }
     Type resultType = Type.sequence(Type.STRING);
@@ -5643,22 +4876,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'matches' requires String receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'matches' requires String receiver");
       return Type.ERROR;
     }
     Type argType = visit(ctx.arg);
     if (!argType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "matches() pattern argument must be String, got " + argType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "matches() pattern argument must be String, got " + argType);
     }
     nodeTypes.put(ctx, Type.BOOLEAN);
     return Type.BOOLEAN;
@@ -5695,31 +4918,16 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'" + opName + "' requires String receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'" + opName + "' requires String receiver");
       return Type.ERROR;
     }
     Type patternType = visit(patternCtx);
     if (!patternType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          opName + "() pattern must be String, got " + patternType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, opName + "() pattern must be String, got " + patternType);
     }
     Type replacementType = visit(replacementCtx);
     if (!replacementType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          opName + "() replacement must be String, got " + replacementType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, opName + "() replacement must be String, got " + replacementType);
     }
     nodeTypes.put(ctx, Type.STRING);
     return Type.STRING;
@@ -5738,22 +4946,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
     if (!receiverType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "'tokenize' requires String receiver",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "'tokenize' requires String receiver");
       return Type.ERROR;
     }
     Type argType = visit(ctx.arg);
     if (!argType.isConformantTo(Type.STRING)) {
-      errors.add(
-          ctx.getStart().getLine(),
-          ctx.getStart().getCharPositionInLine(),
-          "tokenize() delimiter must be String, got " + argType,
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(ctx, "tokenize() delimiter must be String, got " + argType);
     }
     Type resultType = Type.sequence(Type.STRING);
     nodeTypes.put(ctx, resultType);
@@ -5779,12 +4977,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       Type optType = visit(option);
       if (optType != Type.ANY) {
         if (hadTypeFilter) {
-          errors.add(
-              option.getStart().getLine(),
-              option.getStart().getCharPositionInLine(),
-              "Duplicate Type filter in correspondence — only one Type filter allowed",
-              ErrorSeverity.WARNING,
-              PHASE_TAG);
+          reportWarning(option, "Duplicate Type filter in correspondence — only one Type filter allowed");
         }
         resolvedType = optType;
         hadTypeFilter = true;

@@ -140,6 +140,11 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
   // ==================== Error Reporting ====================
 
+  @Override
+  protected String phaseTag() {
+    return PHASE_TAG;
+  }
+
   /**
    * Reports an undefined variable error.
    *
@@ -150,12 +155,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   @Override
   protected void handleUndefinedSymbol(String name, org.antlr.v4.runtime.ParserRuleContext ctx) {
-    errors.add(
-        ctx.getStart().getLine(),
-        ctx.getStart().getCharPositionInLine(),
-        "Variable not bound: " + name,
-        ErrorSeverity.ERROR,
-        PHASE_TAG);
+    reportError(ctx, "Variable not bound: " + name);
   }
 
   // ==================== Context Declaration (Entry Point) ====================
@@ -1660,6 +1660,29 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return value;
   }
 
+  /** Binds both iterator variables of a two-var (Cartesian product) iteration as singletons. */
+  private void bindTwoVars(
+      String var1, String var2, Type iterVarType, LocalScope scope,
+      OCLElement elem1, OCLElement elem2) {
+    bindIterVar(var1, iterVarType, scope, elem1);
+    bindIterVar(var2, iterVarType, scope, elem2);
+  }
+
+  /** Binds {@code name} to {@code elem} as a singleton value in the given scope. */
+  private void bindIterVar(String name, Type iterVarType, LocalScope scope, OCLElement elem) {
+    VariableSymbol symbol = new VariableSymbol(name, iterVarType, scope, true);
+    symbol.setValue(new Value(List.of(elem), iterVarType));
+    symbolTable.defineVariable(symbol);
+  }
+
+  /** Evaluates {@code body} and extracts its result as a boolean predicate (default false). */
+  private boolean evalBooleanBody(ParserRuleContext body) {
+    Value bodyResult = visit(body);
+    Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
+        : bodyResult.getElements().get(0).tryGetBool();
+    return condition != null && condition;
+  }
+
   /**
    * Evaluates forAll operation with a single iterator variable.
    *
@@ -1674,28 +1697,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private Value evaluateForAllSingleVar(
       VitruvOCLParser.ForAllOpContext ctx, Value receiver, String iterVar) {
-    Type elemType = receiver.getRuntimeType().getElementType();
-    // each iterated element is ¡T! — wrap to singleton so the variable type
-    // matches what TypeCheckVisitor registered via normalizeToSingleton()
-    Type iterVarType = Type.singleton(elemType);
+    Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
-
     try {
       for (OCLElement elem : receiver.getElements()) {
-        // Bind current element as singleton ¡T! value
-        VariableSymbol iterSymbol = new VariableSymbol(iterVar, iterVarType, iterScope, true);
-        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
-        symbolTable.defineVariable(iterSymbol);
-
-        Value bodyResult = visit(ctx.body);
-        Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
-            : bodyResult.getElements().get(0).tryGetBool();
-        if (condition == null) condition = Boolean.FALSE;
-
-        // Short-circuit on first false result
-        if (!condition) {
-          return Value.boolValue(false);
+        bindIterVar(iterVar, iterVarType, iterScope, elem);
+        if (!evalBooleanBody(ctx.body)) {
+          return Value.boolValue(false); // short-circuit on first false result
         }
       }
       return Value.boolValue(true);
@@ -1717,33 +1726,16 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private Value evaluateForAllTwoVars(
       VitruvOCLParser.ForAllOpContext ctx, Value receiver, String var1, String var2) {
-    Type elemType = receiver.getRuntimeType().getElementType();
-    Type iterVarType = Type.singleton(elemType);
+    Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
-
     try {
       List<OCLElement> elements = receiver.getElements();
-
       for (OCLElement elem1 : elements) {
         for (OCLElement elem2 : elements) {
-          // Bind both iterator variables as singletons ¡T!
-          VariableSymbol var1Symbol = new VariableSymbol(var1, iterVarType, iterScope, true);
-          var1Symbol.setValue(new Value(List.of(elem1), iterVarType));
-          symbolTable.defineVariable(var1Symbol);
-
-          VariableSymbol var2Symbol = new VariableSymbol(var2, iterVarType, iterScope, true);
-          var2Symbol.setValue(new Value(List.of(elem2), iterVarType));
-          symbolTable.defineVariable(var2Symbol);
-
-          Value bodyResult = visit(ctx.body);
-          Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
-              : bodyResult.getElements().get(0).tryGetBool();
-          if (condition == null) condition = Boolean.FALSE;
-
-          // Short-circuit on first false result
-          if (!condition) {
-            return Value.boolValue(false);
+          bindTwoVars(var1, var2, iterVarType, iterScope, elem1, elem2);
+          if (!evalBooleanBody(ctx.body)) {
+            return Value.boolValue(false); // short-circuit on first false result
           }
         }
       }
@@ -1765,25 +1757,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private Value evaluateSelectSingleVar(
       VitruvOCLParser.SelectOpContext ctx, Value receiver, String iterVar) {
-    Type elemType = receiver.getRuntimeType().getElementType();
-    Type iterVarType = Type.singleton(elemType);
+    Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
-
     try {
       List<OCLElement> results = new ArrayList<>();
       for (OCLElement elem : receiver.getElements()) {
-        // Bind current element as singleton ¡T!
-        VariableSymbol iterSymbol = new VariableSymbol(iterVar, iterVarType, iterScope, true);
-        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
-        symbolTable.defineVariable(iterSymbol);
-
-        Value bodyResult = visit(ctx.body);
-        Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
-            : bodyResult.getElements().get(0).tryGetBool();
-        if (condition == null) condition = Boolean.FALSE;
-
-        if (condition) {
+        bindIterVar(iterVar, iterVarType, iterScope, elem);
+        if (evalBooleanBody(ctx.body)) {
           results.add(elem);
         }
       }
@@ -1806,39 +1787,22 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private Value evaluateSelectTwoVars(
       VitruvOCLParser.SelectOpContext ctx, Value receiver, String var1, String var2) {
-    Type elemType = receiver.getRuntimeType().getElementType();
-    Type iterVarType = Type.singleton(elemType);
+    Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
-
     try {
       List<OCLElement> results = new ArrayList<>();
       List<OCLElement> elements = receiver.getElements();
-
       for (OCLElement elem1 : elements) {
         for (OCLElement elem2 : elements) {
-          // Bind both iterator variables as singletons ¡T!
-          VariableSymbol var1Symbol = new VariableSymbol(var1, iterVarType, iterScope, true);
-          var1Symbol.setValue(new Value(List.of(elem1), iterVarType));
-          symbolTable.defineVariable(var1Symbol);
-
-          VariableSymbol var2Symbol = new VariableSymbol(var2, iterVarType, iterScope, true);
-          var2Symbol.setValue(new Value(List.of(elem2), iterVarType));
-          symbolTable.defineVariable(var2Symbol);
-
-          Value bodyResult = visit(ctx.body);
-          Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
-              : bodyResult.getElements().get(0).tryGetBool();
-          if (condition == null) condition = Boolean.FALSE;
-
-          if (condition) {
+          bindTwoVars(var1, var2, iterVarType, iterScope, elem1, elem2);
+          if (evalBooleanBody(ctx.body)) {
             results.add(elem1);
             results.add(elem2);
           }
         }
       }
       return Value.of(results, receiver.getRuntimeType());
-
     } finally {
       symbolTable.exitScope();
     }
@@ -1856,26 +1820,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private Value evaluateRejectSingleVar(
       VitruvOCLParser.RejectOpContext ctx, Value receiver, String iterVar) {
-    Type elemType = receiver.getRuntimeType().getElementType();
-    Type iterVarType = Type.singleton(elemType);
+    Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
-
     try {
       List<OCLElement> results = new ArrayList<>();
       for (OCLElement elem : receiver.getElements()) {
-        // Bind current element as singleton ¡T!
-        VariableSymbol iterSymbol = new VariableSymbol(iterVar, iterVarType, iterScope, true);
-        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
-        symbolTable.defineVariable(iterSymbol);
-
-        Value bodyResult = visit(ctx.body);
-        Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
-            : bodyResult.getElements().get(0).tryGetBool();
-        if (condition == null) condition = Boolean.FALSE;
-
-        // Collect elements where predicate is false
-        if (!condition) {
+        bindIterVar(iterVar, iterVarType, iterScope, elem);
+        if (!evalBooleanBody(ctx.body)) {
           results.add(elem);
         }
       }
@@ -1906,25 +1858,10 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     try {
       List<OCLElement> results = new ArrayList<>();
       List<OCLElement> elements = receiver.getElements();
-
       for (OCLElement elem1 : elements) {
         for (OCLElement elem2 : elements) {
-          // Bind both iterator variables as singletons ¡T!
-          VariableSymbol var1Symbol = new VariableSymbol(var1, iterVarType, iterScope, true);
-          var1Symbol.setValue(new Value(List.of(elem1), iterVarType));
-          symbolTable.defineVariable(var1Symbol);
-
-          VariableSymbol var2Symbol = new VariableSymbol(var2, iterVarType, iterScope, true);
-          var2Symbol.setValue(new Value(List.of(elem2), iterVarType));
-          symbolTable.defineVariable(var2Symbol);
-
-          Value bodyResult = visit(ctx.body);
-          Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
-              : bodyResult.getElements().get(0).tryGetBool();
-          if (condition == null) condition = Boolean.FALSE;
-
-          // Add pair if predicate is FALSE
-          if (!condition) {
+          bindTwoVars(var1, var2, iterVarType, iterScope, elem1, elem2);
+          if (!evalBooleanBody(ctx.body)) {
             results.add(elem1);
             results.add(elem2);
           }
@@ -1948,22 +1885,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private Value evaluateCollectSingleVar(
       VitruvOCLParser.CollectOpContext ctx, Value receiver, String iterVar) {
-    Type elemType = receiver.getRuntimeType().getElementType();
-    Type iterVarType = Type.singleton(elemType);
+    Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
-
     try {
       List<OCLElement> results = new ArrayList<>();
       for (OCLElement elem : receiver.getElements()) {
-        // Bind current element as singleton ¡T!
-        VariableSymbol iterSymbol = new VariableSymbol(iterVar, iterVarType, iterScope, true);
-        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
-        symbolTable.defineVariable(iterSymbol);
-
-        // Evaluate transformation and flatten all result elements into list
-        Value bodyResult = visit(ctx.body);
-        results.addAll(bodyResult.getElements());
+        bindIterVar(iterVar, iterVarType, iterScope, elem);
+        results.addAll(visit(ctx.body).getElements());
       }
       Type resultType = nodeTypes.get(ctx);
       return Value.of(results, resultType != null ? resultType : Type.set(Type.ANY));
@@ -1985,29 +1914,16 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private Value evaluateCollectTwoVars(
       VitruvOCLParser.CollectOpContext ctx, Value receiver, String var1, String var2) {
-    Type elemType = receiver.getRuntimeType().getElementType();
-    Type iterVarType = Type.singleton(elemType);
+    Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
-
     try {
       List<OCLElement> results = new ArrayList<>();
       List<OCLElement> elements = receiver.getElements();
-
       for (OCLElement elem1 : elements) {
         for (OCLElement elem2 : elements) {
-          // Bind both iterator variables as singletons ¡T!
-          VariableSymbol var1Symbol = new VariableSymbol(var1, iterVarType, iterScope, true);
-          var1Symbol.setValue(new Value(List.of(elem1), iterVarType));
-          symbolTable.defineVariable(var1Symbol);
-
-          VariableSymbol var2Symbol = new VariableSymbol(var2, iterVarType, iterScope, true);
-          var2Symbol.setValue(new Value(List.of(elem2), iterVarType));
-          symbolTable.defineVariable(var2Symbol);
-
-          // Evaluate transformation and flatten into results
-          Value bodyResult = visit(ctx.body);
-          results.addAll(bodyResult.getElements());
+          bindTwoVars(var1, var2, iterVarType, iterScope, elem1, elem2);
+          results.addAll(visit(ctx.body).getElements());
         }
       }
       Type resultType = nodeTypes.get(ctx);
@@ -2029,26 +1945,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private Value evaluateExistsSingleVar(
       VitruvOCLParser.ExistsOpContext ctx, Value receiver, String iterVar) {
-    Type elemType = receiver.getRuntimeType().getElementType();
-    Type iterVarType = Type.singleton(elemType);
+    Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
-
     try {
       for (OCLElement elem : receiver.getElements()) {
-        // Bind current element as singleton ¡T!
-        VariableSymbol iterSymbol = new VariableSymbol(iterVar, iterVarType, iterScope, true);
-        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
-        symbolTable.defineVariable(iterSymbol);
-
-        Value bodyResult = visit(ctx.body);
-        Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
-            : bodyResult.getElements().get(0).tryGetBool();
-        if (condition == null) condition = Boolean.FALSE;
-
-        // Short-circuit on first true result
-        if (condition) {
-          return Value.boolValue(true);
+        bindIterVar(iterVar, iterVarType, iterScope, elem);
+        if (evalBooleanBody(ctx.body)) {
+          return Value.boolValue(true); // short-circuit on first true result
         }
       }
       return Value.boolValue(false);
@@ -2070,33 +1974,16 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private Value evaluateExistsTwoVars(
       VitruvOCLParser.ExistsOpContext ctx, Value receiver, String var1, String var2) {
-    Type elemType = receiver.getRuntimeType().getElementType();
-    Type iterVarType = Type.singleton(elemType);
+    Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(iterScope);
-
     try {
       List<OCLElement> elements = receiver.getElements();
-
       for (OCLElement elem1 : elements) {
         for (OCLElement elem2 : elements) {
-          // Bind both iterator variables as singletons ¡T!
-          VariableSymbol var1Symbol = new VariableSymbol(var1, iterVarType, iterScope, true);
-          var1Symbol.setValue(new Value(List.of(elem1), iterVarType));
-          symbolTable.defineVariable(var1Symbol);
-
-          VariableSymbol var2Symbol = new VariableSymbol(var2, iterVarType, iterScope, true);
-          var2Symbol.setValue(new Value(List.of(elem2), iterVarType));
-          symbolTable.defineVariable(var2Symbol);
-
-          Value bodyResult = visit(ctx.body);
-          Boolean condition = bodyResult.isEmpty() ? Boolean.FALSE
-              : bodyResult.getElements().get(0).tryGetBool();
-          if (condition == null) condition = Boolean.FALSE;
-
-          // Short-circuit on first true result
-          if (condition) {
-            return Value.boolValue(true);
+          bindTwoVars(var1, var2, iterVarType, iterScope, elem1, elem2);
+          if (evalBooleanBody(ctx.body)) {
+            return Value.boolValue(true); // short-circuit on first true result
           }
         }
       }
@@ -2580,12 +2467,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
 
     if (leftValue.size() != 1 || rightValue.size() != 1) {
-      errors.add(
-          errorCtx.getStart().getLine(),
-          errorCtx.getStart().getCharPositionInLine(),
-          "Comparison requires singleton operands",
-          ErrorSeverity.ERROR,
-          PHASE_TAG);
+      reportError(errorCtx, "Comparison requires singleton operands");
       return Value.boolValue(false);
     }
 

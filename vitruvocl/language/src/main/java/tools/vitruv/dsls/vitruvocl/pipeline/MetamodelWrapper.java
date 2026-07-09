@@ -504,13 +504,8 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    */
   @Override
   public EClass resolveEClass(String metamodelName, String className) {
-    EPackage ePackage = metamodelRegistry.get(metamodelName);
-    if (ePackage == null) {
-      return null;
-    }
-
-    EClassifier classifier = ePackage.getEClassifier(className);
-    return (classifier instanceof EClass ec) ? ec : null;
+    return MetamodelWrapperInterface.resolveEClassInRegistry(
+        metamodelRegistry, metamodelName, className);
   }
 
   /**
@@ -614,57 +609,12 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    */
   @Override
   public EClass resolveEClassByShortName(String shortName) {
-    for (EPackage ePackage : metamodelRegistry.values()) {
-      EClass found = resolveEClassInPackage(ePackage, shortName);
-      if (found != null) {
-        return found;
-      }
-    }
-    return null;
+    return MetamodelWrapperInterface.resolveEClassByShortNameInRegistry(metamodelRegistry, shortName);
   }
 
-  /**
-   * Resolves an {@link EEnum} by name across all registered metamodel packages.
-   *
-   * <p>Searches each {@link EPackage} in the metamodel registry in iteration order, delegating to
-   * {@link #resolveEEnumInPackage} for each package. Returns the first match found, or {@code null}
-   * if no {@code EEnum} with the given name exists in any registered package.
-   *
-   * @param enumName the simple name of the {@code EEnum} to resolve
-   * @return the first matching {@link EEnum}, or {@code null} if not found
-   */
   @Override
   public EEnum resolveEEnum(String enumName) {
-    for (EPackage ePackage : metamodelRegistry.values()) {
-      EEnum found = resolveEEnumInPackage(ePackage, enumName);
-      if (found != null) {
-        return found;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Resolves an {@link EEnum} by name within an {@link EPackage} and its subpackages.
-   *
-   * <p>Searches the package's classifiers for an {@code EEnum} with the given name, then recurses
-   * into subpackages if no match is found.
-   *
-   * @param ePackage the root package to search in
-   * @param enumName the name of the enum to resolve
-   * @return the matching {@link EEnum}, or {@code null} if not found
-   */
-  private EEnum resolveEEnumInPackage(EPackage ePackage, String enumName) {
-    for (EClassifier classifier : ePackage.getEClassifiers()) {
-      if (classifier instanceof EEnum eEnum && eEnum.getName().equals(enumName)) {
-        return eEnum;
-      }
-    }
-    for (EPackage subPackage : ePackage.getESubpackages()) {
-      EEnum found = resolveEEnumInPackage(subPackage, enumName);
-      if (found != null) return found;
-    }
-    return null;
+    return MetamodelWrapperInterface.resolveEEnumInRegistry(metamodelRegistry, enumName);
   }
 
   /**
@@ -678,30 +628,6 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    */
   public EPackage getEPackage(String metamodelName) {
     return metamodelRegistry.get(metamodelName);
-  }
-
-  /**
-   * Searches {@code ePackage} and its direct subpackages for an {@link EClass} with the given short
-   * name.
-   *
-   * @param ePackage the package to search
-   * @param shortName the unqualified class name
-   * @return the matching {@link EClass}, or {@code null}
-   */
-  private EClass resolveEClassInPackage(EPackage ePackage, String shortName) {
-    // Search classifiers in this package
-    EClassifier classifier = ePackage.getEClassifier(shortName);
-    if (classifier instanceof EClass eClass) {
-      return eClass;
-    }
-    // Recurse into sub-packages (one level — sufficient for standard Ecore layouts)
-    for (EPackage subPkg : ePackage.getESubpackages()) {
-      EClassifier subClassifier = subPkg.getEClassifier(shortName);
-      if (subClassifier instanceof EClass eClass) {
-        return eClass;
-      }
-    }
-    return null;
   }
 
   /**
