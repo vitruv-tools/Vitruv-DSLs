@@ -10,12 +10,22 @@ import java.net.URLClassLoader;
  */
 public class MutableUrlClassLoader extends URLClassLoader {
 
-	public MutableUrlClassLoader(ClassLoader parent) {
-		super(new URL[0], parent);
-	}
+  /**
+   * Creates a new, empty {@link MutableUrlClassLoader} delegating to {@code parent}.
+   *
+   * @param parent - the parent {@link ClassLoader}
+   */
+  public MutableUrlClassLoader(ClassLoader parent) {
+    super(new URL[0], parent);
+  }
 
-	public void addUrl(URL url) {
-		addURL(url);
-	}
+  /**
+   * Adds {@code url} to the set of URLs this class loader resolves classes and resources from.
+   *
+   * @param url - the {@link URL} to add
+   */
+  public void addUrl(URL url) {
+    addURL(url);
+  }
 
 }

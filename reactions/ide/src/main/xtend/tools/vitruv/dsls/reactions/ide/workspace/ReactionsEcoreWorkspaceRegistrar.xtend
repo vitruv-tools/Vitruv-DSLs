@@ -30,7 +30,7 @@ import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl
  * Since the language server's global {@code ProjectManager}/workspace machinery lives in a
  * separate, language-agnostic Guice injector that this language's ide module cannot influence,
  * the registration is instead triggered lazily, right when a metamodel reference fails to
- * resolve (see {@link ReactionsIdeLinkingService}), by searching the project containing the file
+ * resolve (see {@link tools.vitruv.dsls.reactions.ide.linking.ReactionsIdeLinkingService}), by searching the project containing the file
  * being linked for {@code .ecore} files.
  */
 class ReactionsEcoreWorkspaceRegistrar {

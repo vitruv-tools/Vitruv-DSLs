@@ -8,10 +8,10 @@ package tools.vitruv.dsls.reactions.ide.workspace;
  */
 public final class MutableUrlClassLoaderHolder {
 
-	public static final MutableUrlClassLoader INSTANCE = new MutableUrlClassLoader(
-			MutableUrlClassLoaderHolder.class.getClassLoader());
+  public static final MutableUrlClassLoader INSTANCE = new MutableUrlClassLoader(
+      MutableUrlClassLoaderHolder.class.getClassLoader());
 
-	private MutableUrlClassLoaderHolder() {
-	}
+  private MutableUrlClassLoaderHolder() {
+  }
 
 }
