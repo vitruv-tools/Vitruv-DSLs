@@ -1,4 +1,4 @@
-﻿package tools.vitruv.dsls.vitruvOCL;
+package tools.vitruv.dsls.vitruvOCL;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

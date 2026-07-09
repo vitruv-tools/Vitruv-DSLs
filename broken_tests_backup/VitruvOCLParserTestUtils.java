@@ -1,4 +1,4 @@
-﻿package tools.vitruv.dsls.vitruvOCL;
+package tools.vitruv.dsls.vitruvOCL;
 
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;

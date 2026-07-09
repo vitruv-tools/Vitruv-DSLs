@@ -1,4 +1,4 @@
-﻿package test.java.tools.vitruv.dsls.vitruvOCL;
+package test.java.tools.vitruv.dsls.vitruvOCL;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;

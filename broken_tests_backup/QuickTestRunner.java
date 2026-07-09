@@ -1,4 +1,4 @@
-﻿package tools.vitruv.dsls.vitruvOCL; // <-- matcht das Verzeichnis unter target/generated-sources
+package tools.vitruv.dsls.vitruvOCL; // <-- matcht das Verzeichnis unter target/generated-sources
 
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
