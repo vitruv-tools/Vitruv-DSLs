@@ -1,21 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
   <parent>
     <groupId>tools.vitruv</groupId>
     <artifactId>tools.vitruv.dsls</artifactId>
-    <version>3.2.3-SNAPSHOT</version>
+    <version>4.0.1-SNAPSHOT</version>
   </parent>
-
   <artifactId>tools.vitruv.dsls.common</artifactId>
-
   <name>Vitruv DSLs Common</name>
   <description>Common functionality for DSLs for consistency specification</description>
-
   <build>
     <plugins>
       <plugin>
@@ -27,7 +22,7 @@
         <artifactId>exec-maven-plugin</artifactId>
       </plugin>
       <plugin>
-        <groupId>org.eclipse.xtend</groupId>
+        <groupId>org.eclipse.xtext</groupId>
         <artifactId>xtend-maven-plugin</artifactId>
       </plugin>
       <plugin>
@@ -40,7 +35,6 @@
       </plugin>
     </plugins>
   </build>
-
   <dependencies>
     <!-- external compile dependencies -->
     <dependency>
@@ -60,7 +54,7 @@
       <artifactId>org.eclipse.emf.ecore</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.eclipse.xtend</groupId>
+      <groupId>org.eclipse.xtext</groupId>
       <artifactId>org.eclipse.xtend.lib</artifactId>
     </dependency>
     <dependency>
@@ -79,7 +73,11 @@
       <groupId>org.eclipse.xtext</groupId>
       <artifactId>org.eclipse.xtext.xbase.lib</artifactId>
     </dependency>
-
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
     <!-- p2 compile dependencies -->
     <dependency>
       <groupId>${project.groupId}</groupId>

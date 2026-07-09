@@ -9,7 +9,7 @@ import static extension tools.vitruv.dsls.commonalities.language.extensions.Comm
 
 @Utility
 class IntermediateModelConstants {
-	static val INTERMEDIATE_METAMODEL_PACKAGE_PREFIX = 'tools.vitruv.commonalities'
+	static val INTERMEDIATE_METAMODEL_PACKAGE_PREFIX = 'tools.vitruv.dsls.commonalities'
 	static val METAMODEL_FILE_EXTENSION = '.ecore'
 
 	@Pure

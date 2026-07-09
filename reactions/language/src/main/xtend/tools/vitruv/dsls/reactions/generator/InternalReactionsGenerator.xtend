@@ -60,7 +60,7 @@ class InternalReactionsGenerator implements IReactionsGenerator {
 	def private ReactionsSegment getCorrespondingReactionsSegmentInTempResource(String sourceFileName,
 		ReactionsSegment reactionsSegment) {
 		for (res : artificialReactionsResourceSet.resources) {
-			if (res.getURI.segmentsList.last.equals(sourceFileName + ".reactions")) {
+			if (res.getURI.segmentsList.lastOrNull.equals(sourceFileName + ".reactions")) {
 				val reactionsFile = res.reactionsFile
 				var ReactionsSegment foundSegment = null;
 				for (segment : reactionsFile.reactionsSegments) {
