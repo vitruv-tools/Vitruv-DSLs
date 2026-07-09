@@ -450,13 +450,7 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
 
     String filename = xmiPath.getFileName().toString();
 
-        + " | contents=" + resource.getContents().size()
-        + " | errors=" + resource.getErrors().size());
-    if (!resource.getErrors().isEmpty()) {
-    }
-
     for (EObject root : resource.getContents()) {
-          + " (pkg=" + root.eClass().getEPackage().getNsURI() + ")");
       addInstanceRecursiveInternal(root, filename);
       // Register root as context candidate (one entry per root EObject per file)
       contextObjects.add(root);
@@ -755,7 +749,6 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
           }
         }
       }
-          + " | entries=" + correspondenceUriMap.size());
     } catch (Exception e) {
     }
   }

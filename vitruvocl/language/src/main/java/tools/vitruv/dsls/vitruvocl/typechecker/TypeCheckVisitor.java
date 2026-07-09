@@ -1370,7 +1370,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     List<VitruvOCLParser.NavigationChainCSContext> navChain = ctx.navigationChainCS();
     receiverStack.push(currentType);
     for (VitruvOCLParser.NavigationChainCSContext nav : navChain) {
-          + " text='" + nav.getText() + "'");
       Type resultType = visit(nav);
       receiverStack.pop();
       receiverStack.push(resultType);
@@ -1594,8 +1593,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitOperationNav(VitruvOCLParser.OperationNavContext ctx) {
-        + "' opCall class=" + ctx.operationCall().getClass().getSimpleName()
-        + " children=" + ctx.operationCall().getChildCount());
     return visit(ctx.operationCall());
   }
 
@@ -3405,9 +3402,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   @SuppressWarnings("java:S3776")
   public Type visitExistsOp(VitruvOCLParser.ExistsOpContext ctx) {
-        + " body=" + ctx.body
-        + " bodyChildCount=" + (ctx.body == null ? "null" : ctx.body.getChildCount())
-        + " bodyException=" + (ctx.body == null ? "null" : ctx.body.exception));
     Type receiverType = receiverStack.peek();
     if (receiverType == Type.ERROR) return Type.ERROR; // already reported upstream
 
