@@ -325,12 +325,11 @@ public class HoverProvider {
   private static Hover buildDiagnosticHover(List<Diagnostic> hits) {
     StringBuilder sb = new StringBuilder();
     for (Diagnostic d : hits) {
-      String icon =
-          switch (d.getSeverity()) {
-            case Error -> "$(error)";
-            case Warning -> "$(warning)";
-            default -> "$(info)";
-          };
+      String icon = switch (d.getSeverity()) {
+        case Error -> "$(error)";
+        case Warning -> "$(warning)";
+        default -> "$(info)";
+      };
       sb.append(icon).append(" **").append(d.getMessage()).append("**\n\n");
     }
     return hover(sb.toString().stripTrailing());

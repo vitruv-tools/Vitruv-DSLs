@@ -512,18 +512,17 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       }
     }
 
-    Type collectionType =
-        switch (kind) {
-          case "Set" -> Type.set(elementType);
-          case "Sequence" -> Type.sequence(elementType);
-          case "Bag" -> Type.bag(elementType);
-          case "OrderedSet" -> Type.orderedSet(elementType);
-          case "Collection" -> Type.set(elementType); // Generic → Set
-          default -> {
-            reportError(ctx, "Unknown collection type: " + kind);
-            yield Type.ERROR;
-          }
-        };
+    Type collectionType = switch (kind) {
+      case "Set" -> Type.set(elementType);
+      case "Sequence" -> Type.sequence(elementType);
+      case "Bag" -> Type.bag(elementType);
+      case "OrderedSet" -> Type.orderedSet(elementType);
+      case "Collection" -> Type.set(elementType); // Generic → Set
+      default -> {
+        reportError(ctx, "Unknown collection type: " + kind);
+        yield Type.ERROR;
+      }
+    };
 
     nodeTypes.put(ctx, collectionType);
     return collectionType;
@@ -564,17 +563,16 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   public Type visitPrimitiveTypeCS(VitruvOCLParser.PrimitiveTypeCSContext ctx) {
     String typeName = ctx.getText();
 
-    Type primitiveType =
-        switch (typeName) {
-          case TYPE_BOOLEAN -> Type.BOOLEAN;
-          case TYPE_INTEGER -> Type.INTEGER;
-          case "Real" -> Type.DOUBLE;
-          case TYPE_STRING -> Type.STRING;
-          case "ID" -> Type.STRING; // Map to String
-          case "UnlimitedNatural" -> Type.INTEGER; // Map to Integer
-          case "OclAny" -> Type.ANY;
-          default -> null;
-        };
+    Type primitiveType = switch (typeName) {
+      case TYPE_BOOLEAN -> Type.BOOLEAN;
+      case TYPE_INTEGER -> Type.INTEGER;
+      case "Real" -> Type.DOUBLE;
+      case TYPE_STRING -> Type.STRING;
+      case "ID" -> Type.STRING; // Map to String
+      case "UnlimitedNatural" -> Type.INTEGER; // Map to Integer
+      case "OclAny" -> Type.ANY;
+      default -> null;
+    };
 
     if (primitiveType == null) {
       reportError(ctx, "Unknown primitive type: " + typeName);
@@ -621,15 +619,14 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     // Check primitives first
-    Type primitiveType =
-        switch (typeName) {
-          case TYPE_INTEGER -> Type.INTEGER;
-          case TYPE_STRING -> Type.STRING;
-          case TYPE_BOOLEAN -> Type.BOOLEAN;
-          case "Real", "Double" -> Type.DOUBLE;
-          case "OclAny" -> Type.ANY;
-          default -> null;
-        };
+    Type primitiveType = switch (typeName) {
+      case TYPE_INTEGER -> Type.INTEGER;
+      case TYPE_STRING -> Type.STRING;
+      case TYPE_BOOLEAN -> Type.BOOLEAN;
+      case "Real", "Double" -> Type.DOUBLE;
+      case "OclAny" -> Type.ANY;
+      default -> null;
+    };
 
     if (primitiveType != null) {
       nodeTypes.put(ctx, primitiveType);
@@ -870,14 +867,13 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     visit(ctx.right);
 
     String op = ctx.op.getText();
-    String hint =
-        switch (op) {
-          case "<>" -> " — did you mean `!=`? (OCL standard `<>` is not supported)";
-          case "><" -> " — did you mean `!=` or a comparison?";
-          case "+-" -> " — use `+` or `-` as separate operators";
-          case "-+" -> " — use `-` or `+` as separate operators";
-          default -> "";
-        };
+    String hint = switch (op) {
+      case "<>" -> " — did you mean `!=`? (OCL standard `<>` is not supported)";
+      case "><" -> " — did you mean `!=` or a comparison?";
+      case "+-" -> " — use `+` or `-` as separate operators";
+      case "-+" -> " — use `-` or `+` as separate operators";
+      default -> "";
+    };
 
     org.antlr.v4.runtime.Token tok = ctx.op;
     int endCol = tok.getCharPositionInLine() + tok.getText().length();

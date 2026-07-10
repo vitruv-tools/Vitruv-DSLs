@@ -526,15 +526,14 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
     }
 
     // Check primitive types first
-    Type primitiveType =
-        switch (typeName) {
-          case "Integer" -> Type.INTEGER;
-          case "String" -> Type.STRING;
-          case "Boolean" -> Type.BOOLEAN;
-          case "Real", "Double" -> Type.DOUBLE;
-          case "OclAny" -> Type.ANY;
-          default -> null;
-        };
+    Type primitiveType = switch (typeName) {
+      case "Integer" -> Type.INTEGER;
+      case "String" -> Type.STRING;
+      case "Boolean" -> Type.BOOLEAN;
+      case "Real", "Double" -> Type.DOUBLE;
+      case "OclAny" -> Type.ANY;
+      default -> null;
+    };
 
     if (primitiveType != null) {
       return primitiveType;
