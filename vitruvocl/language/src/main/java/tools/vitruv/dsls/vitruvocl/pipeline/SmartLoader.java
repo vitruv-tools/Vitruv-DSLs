@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
 import java.io.IOException;
@@ -42,15 +43,22 @@ public class SmartLoader {
 
   /** Result of loading operation with wrapper, errors, and warnings. */
   public static class LoadResult {
-    /** Configured wrapper with loaded metamodels and instances */
+    /** Configured wrapper with loaded metamodels and instances. */
     public final MetamodelWrapper wrapper;
 
-    /** File-level errors preventing loading */
+    /** File-level errors preventing loading. */
     public final List<FileError> fileErrors;
 
-    /** Non-fatal warnings about unused or duplicate files */
+    /** Non-fatal warnings about unused or duplicate files. */
     public final List<Warning> warnings;
 
+    /**
+     * Creates a load result.
+     *
+     * @param wrapper configured wrapper with loaded metamodels and instances
+     * @param fileErrors file-level errors preventing loading
+     * @param warnings non-fatal warnings about unused or duplicate files
+     */
     public LoadResult(
         MetamodelWrapper wrapper, List<FileError> fileErrors, List<Warning> warnings) {
       this.wrapper = wrapper;
@@ -59,6 +67,8 @@ public class SmartLoader {
     }
 
     /**
+     * Returns whether any file errors occurred.
+     *
      * @return {@code true} if any file errors occurred
      */
     public boolean hasErrors() {
@@ -91,8 +101,6 @@ public class SmartLoader {
     MetamodelWrapper wrapper = new MetamodelWrapper();
     List<FileError> fileErrors = new ArrayList<>();
     List<Warning> warnings = new ArrayList<>();
-
-    Set<String> requiredPackages = DependencyAnalyzer.analyzeConstraint(constraint);
 
     // Validate and resolve all files
     List<Path> resolvedEcores = new ArrayList<>();
@@ -160,6 +168,7 @@ public class SmartLoader {
       return new LoadResult(wrapper, fileErrors, warnings);
     }
 
+    Set<String> requiredPackages = DependencyAnalyzer.analyzeConstraint(constraint);
     // Always load correspondence instances when present — the ecore is embedded in the JAR
     // and auto-registered, so no explicit .ecore file is required for it.
     requiredPackages.add(PKG_CORRESPONDENCE);

@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
 import java.io.IOException;
@@ -43,13 +44,13 @@ import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
  */
 public class VitruvOCLCompiler {
 
-  /** Metamodel and instance access interface */
+  /** Metamodel and instance access interface. */
   private final MetamodelWrapperInterface wrapper;
 
-  /** Optional OCL file path (for file-based compilation) */
+  /** Optional OCL file path (for file-based compilation). */
   private final Path oclFile;
 
-  /** Accumulates errors across all passes */
+  /** Accumulates errors across all passes. */
   private final ErrorCollector errors = new ErrorCollector();
 
   /**
@@ -79,6 +80,35 @@ public class VitruvOCLCompiler {
    */
   public Value compile(Path sourcePath) {
     return runPipeline(CharStreams.fromString(sourcePath.toString()));
+  }
+
+  /**
+   * Compiles constraint from configured file path.
+   *
+   * @return Validation result with errors (evaluation results not captured)
+   * @throws IOException If file cannot be read
+   */
+  public ValidationResult compile() throws IOException {
+    runPipeline(CharStreams.fromPath(oclFile));
+    return new ValidationResult(errors.getErrors(), java.util.List.of());
+  }
+
+  /**
+   * Compiles constraint from string source with debug output.
+   *
+   * <p>Prints error messages to stderr after each pass for debugging.
+   *
+   * @param oclSource OCL constraint expression
+   * @return Evaluation result, or null if any pass fails
+   */
+  public Value compile(String oclSource) {
+    Value result = runPipeline(CharStreams.fromString(oclSource));
+
+    if (errors.hasErrors()) {
+      return null;
+    }
+
+    return result;
   }
 
   /**
@@ -131,35 +161,8 @@ public class VitruvOCLCompiler {
   }
 
   /**
-   * Compiles constraint from configured file path.
+   * Returns whether any compilation errors occurred.
    *
-   * @return Validation result with errors (evaluation results not captured)
-   * @throws IOException If file cannot be read
-   */
-  public ValidationResult compile() throws IOException {
-    runPipeline(CharStreams.fromPath(oclFile));
-    return new ValidationResult(errors.getErrors(), java.util.List.of());
-  }
-
-  /**
-   * Compiles constraint from string source with debug output.
-   *
-   * <p>Prints error messages to stderr after each pass for debugging.
-   *
-   * @param oclSource OCL constraint expression
-   * @return Evaluation result, or null if any pass fails
-   */
-  public Value compile(String oclSource) {
-    Value result = runPipeline(CharStreams.fromString(oclSource));
-
-    if (errors.hasErrors()) {
-      return null;
-    }
-
-    return result;
-  }
-
-  /**
    * @return {@code true} if any compilation errors occurred
    */
   public boolean hasErrors() {
@@ -167,6 +170,8 @@ public class VitruvOCLCompiler {
   }
 
   /**
+   * Returns the error collector with all accumulated errors.
+   *
    * @return Error collector with all accumulated errors
    */
   public ErrorCollector getErrors() {

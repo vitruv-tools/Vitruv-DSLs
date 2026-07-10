@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.symboltable;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -46,11 +47,13 @@ import org.antlr.v4.runtime.tree.ParseTreeProperty;
  *
  * // Pass 1: Build symbol table and annotate scopes
  * SymbolTableImpl symbolTable = new SymbolTableImpl(wrapper);
- * SymbolTableBuilder builder = new SymbolTableBuilder(symbolTable, wrapper, errors, scopeAnnotator);
+ * SymbolTableBuilder builder =
+ *     new SymbolTableBuilder(symbolTable, wrapper, errors, scopeAnnotator);
  * builder.visit(parseTree);
  *
  * // Pass 2: Type check using annotated scopes
- * TypeCheckVisitor typeChecker = new TypeCheckVisitor(symbolTable, wrapper, errors, scopeAnnotator);
+ * TypeCheckVisitor typeChecker =
+ *     new TypeCheckVisitor(symbolTable, wrapper, errors, scopeAnnotator);
  * typeChecker.visit(parseTree);
  * }</pre>
  *

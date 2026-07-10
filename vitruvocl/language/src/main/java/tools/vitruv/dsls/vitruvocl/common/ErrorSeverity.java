@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,13 +10,14 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.common;
 
-/** severity-level for compile errors */
+/** Severity level for compile errors. */
 public enum ErrorSeverity {
-  /** critical error - compilation cannot be continued */
+  /** Critical error - compilation cannot be continued. */
   ERROR,
 
-  /** warning - only potential problem */
+  /** Warning - only potential problem. */
   WARNING,
 }

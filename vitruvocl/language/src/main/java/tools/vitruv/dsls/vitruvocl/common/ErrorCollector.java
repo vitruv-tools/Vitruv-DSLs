@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.common;
 
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ import org.antlr.v4.runtime.Token;
  */
 public class ErrorCollector {
 
-  /** All collected errors, warnings, and informational messages */
+  /** All collected errors, warnings, and informational messages. */
   private final List<CompileError> errors = new ArrayList<>();
 
   /**

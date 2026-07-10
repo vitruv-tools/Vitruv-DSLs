@@ -11,7 +11,7 @@ vitruvocl implements OCL# semantics for type-safe constraint evaluation across m
 - **Cross-Metamodel Constraints**: Reference entities across different metamodels in one expression
 - **Type Safety**: Full static type checking before evaluation
 - **EMF Integration**: Native support for Ecore metamodels and XMI instances
-- **Vitruvius Framework Integration**: First-class VSUM support via `VSUMWrapper`
+- **Vitruvius Framework Integration**: First-class VSUM support via `VsumWrapper`
 - **Language Server**: LSP-based language server with diagnostics, completion, hover, and signature help
 - **VSCode Extension**: Syntax highlighting, real-time error reporting, constraint explorer
 

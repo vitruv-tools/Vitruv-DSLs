@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.typechecker;
 
 /**
@@ -269,7 +270,7 @@ public class TypeResolver {
    */
   public static Type resolveUnaryOp(String operator, Type operandType) {
     return switch (operator) {
-        // Unary minus: preserve numeric type (INTEGER → INTEGER, FLOAT → FLOAT, DOUBLE → DOUBLE)
+      // Unary minus: preserve numeric type (INTEGER → INTEGER, FLOAT → FLOAT, DOUBLE → DOUBLE)
       case "-" -> isNumeric(operandType) ? operandType : Type.ERROR;
       case "not" -> operandType.isConformantTo(Type.BOOLEAN) ? Type.BOOLEAN : Type.ERROR;
       default -> Type.ERROR;
@@ -297,7 +298,7 @@ public class TypeResolver {
     Type elementType = sourceType.getElementType();
 
     switch (operationName) {
-        // Universally allowed: ¡T!, ¿T?, and all collection types
+      // Universally allowed: ¡T!, ¿T?, and all collection types
       case "includes", "excludes", "isEmpty", "notEmpty":
         return Type.BOOLEAN;
 

@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.common;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -47,13 +48,13 @@ import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
  */
 public abstract class AbstractPhaseVisitor<T> extends VitruvOCLBaseVisitor<T> {
 
-  /** Symbol table for variable resolution across scopes */
+  /** Symbol table for variable resolution across scopes. */
   protected final SymbolTable symbolTable;
 
-  /** Collector for compilation errors and warnings */
+  /** Collector for compilation errors and warnings. */
   protected final ErrorCollector errors;
 
-  /** Interface to VSUM for metamodel and EObject access */
+  /** Interface to VSUM for metamodel and EObject access. */
   protected final MetamodelWrapperInterface specification;
 
   /**
@@ -122,6 +123,16 @@ public abstract class AbstractPhaseVisitor<T> extends VitruvOCLBaseVisitor<T> {
   }
 
   /**
+   * Records an error at the given token's position.
+   *
+   * @param token Token providing the error location
+   * @param message Human-readable error message
+   */
+  protected void reportError(Token token, String message) {
+    errors.add(token, message, ErrorSeverity.ERROR, phaseTag());
+  }
+
+  /**
    * Records a warning at the start position of the given context.
    *
    * @param ctx Parse tree context providing the warning location
@@ -134,16 +145,6 @@ public abstract class AbstractPhaseVisitor<T> extends VitruvOCLBaseVisitor<T> {
         message,
         ErrorSeverity.WARNING,
         phaseTag());
-  }
-
-  /**
-   * Records an error at the given token's position.
-   *
-   * @param token Token providing the error location
-   * @param message Human-readable error message
-   */
-  protected void reportError(Token token, String message) {
-    errors.add(token, message, ErrorSeverity.ERROR, phaseTag());
   }
 
   /**

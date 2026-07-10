@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.evaluator;
 
 import java.util.ArrayDeque;
@@ -46,14 +47,14 @@ import tools.vitruv.dsls.vitruvocl.typechecker.Type;
  *
  * <h2>Architecture</h2>
  *
- * The evaluator uses pre-computed type information from the type checking phase stored in {@code
- * nodeTypes} (a {@code ParseTreeProperty<Type>}) to perform type-dependent operations correctly. It
- * maintains a {@code receiverStack} to handle method chaining (e.g., {@code
+ * <p>The evaluator uses pre-computed type information from the type checking phase stored in
+ * {@code nodeTypes} (a {@code ParseTreeProperty<Type>}) to perform type-dependent operations
+ * correctly. It maintains a {@code receiverStack} to handle method chaining (e.g., {@code
  * collection.select(...).size()}) and uses the symbol table for variable resolution.
  *
  * <h2>Error Handling</h2>
  *
- * Runtime errors (e.g., division by zero, type mismatches) are reported through the {@link
+ * <p>Runtime errors (e.g., division by zero, type mismatches) are reported through the {@link
  * ErrorCollector} with source location information. The evaluator returns {@code
  * Value.empty(Type.ERROR)} for failed operations.
  *
@@ -3698,7 +3699,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private boolean checkCorrespondence(EObject obj1, EObject obj2) {
     // VSUM-Pfad: über MetamodelWrapperInterface (funktioniert sowohl mit
-    // VSUMWrapper als auch mit MetamodelWrapper falls getCorrespondingObjects
+    // VsumWrapper als auch mit MetamodelWrapper falls getCorrespondingObjects
     // dort implementiert ist)
     Set<EObject> correspondents = specification.getCorrespondingObjects(obj1);
     if (correspondents.contains(obj2)) {
@@ -4392,8 +4393,6 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitExistsCorrespondence(VitruvOCLParser.ExistsCorrespondenceContext ctx) {
 
-    Value receiver = receiverStack.peek();
-
     VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
     if  (selfSymbol == null) {
       return Value.boolValue(false);
@@ -4410,6 +4409,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     String tagFilter = extractTagFilter(ctx.corrFilter);
     EClass typeFilter = extractTypeFilter(ctx.corrFilter);
 
+    Value receiver = receiverStack.peek();
     for (OCLElement elem : receiver.getElements()) {
       EObject elemObject = elem.tryGetInstance();
 

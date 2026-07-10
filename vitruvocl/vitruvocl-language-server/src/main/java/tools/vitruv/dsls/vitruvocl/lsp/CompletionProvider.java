@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.lsp;
 
 import java.util.ArrayList;
@@ -119,6 +120,11 @@ public class CompletionProvider {
 
   private final MetamodelWrapper wrapper;
 
+  /**
+   * Creates a completion provider backed by the given metamodel wrapper.
+   *
+   * @param wrapper metamodel and instance access used to resolve completion candidates
+   */
   public CompletionProvider(MetamodelWrapper wrapper) {
     this.wrapper = wrapper;
   }

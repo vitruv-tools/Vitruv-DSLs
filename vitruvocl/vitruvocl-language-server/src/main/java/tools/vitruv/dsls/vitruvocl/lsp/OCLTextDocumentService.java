@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.lsp;
 
 import java.util.ArrayList;
@@ -90,6 +91,12 @@ public class OCLTextDocumentService implements TextDocumentService {
             return t;
           });
 
+  /**
+   * Creates the text document service, wiring up its language feature providers.
+   *
+   * @param analyzer analyzer used to produce document analyses on each debounced edit
+   * @param wrapper metamodel and instance access used by the completion provider
+   */
   public OCLTextDocumentService(DocumentAnalyzer analyzer, MetamodelWrapper wrapper) {
     this.analyzer = analyzer;
     this.completionProvider = new CompletionProvider(wrapper);
@@ -323,6 +330,7 @@ public class OCLTextDocumentService implements TextDocumentService {
     documents.forEach(this::scheduleAnalysis);
   }
 
+  /** Stops the debounce executor, cancelling any pending analysis tasks. */
   public void shutdown() {
     debouncer.shutdownNow();
   }

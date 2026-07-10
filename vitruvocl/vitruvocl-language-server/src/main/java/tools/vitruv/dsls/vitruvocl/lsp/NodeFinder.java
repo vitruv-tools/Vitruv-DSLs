@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.lsp;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -62,10 +63,6 @@ final class NodeFinder {
       int startLine = ctx.start.getLine() - 1;
       int startChar = ctx.start.getCharPositionInLine();
       int endLine = ctx.stop != null ? ctx.stop.getLine() - 1 : startLine;
-      int endChar =
-          ctx.stop != null
-              ? ctx.stop.getCharPositionInLine() + ctx.stop.getText().length()
-              : startChar + 1;
 
       // Quick range check before recursing.
       if  (lspLine < startLine) {
@@ -77,6 +74,10 @@ final class NodeFinder {
       if  (lspLine == startLine && lspChar < startChar) {
         return null;
       }
+      int endChar =
+          ctx.stop != null
+              ? ctx.stop.getCharPositionInLine() + ctx.stop.getText().length()
+              : startChar + 1;
       if  (lspLine == endLine && lspChar >= endChar) {
         return null;
       }

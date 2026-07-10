@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.lsp;
 
 import java.io.IOException;
@@ -43,6 +44,12 @@ public class OCLWorkspaceService implements WorkspaceService {
   private final MetamodelWrapper wrapper;
   private final OCLTextDocumentService textDocumentService;
 
+  /**
+   * Creates the workspace service.
+   *
+   * @param wrapper metamodel and instance access shared with the text document service
+   * @param textDocumentService service to notify of workspace-level changes (e.g. hot-reload)
+   */
   public OCLWorkspaceService(MetamodelWrapper wrapper, OCLTextDocumentService textDocumentService) {
     this.wrapper = wrapper;
     this.textDocumentService = textDocumentService;

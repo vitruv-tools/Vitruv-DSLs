@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -83,7 +83,7 @@ class VitruviusOCLCLITest {
   /** Tests that the version command prints version information. */
   @Test
   void testVersionCommand() {
-    VitruvOCLCLI.main(new String[] {"version"});
+    VitruvOclCli.main(new String[] {"version"});
     assertTrue(output().contains("OCL"), "Version output should contain 'OCL'");
   }
 
@@ -97,7 +97,7 @@ class VitruviusOCLCLITest {
     Path oclFile = tempDir.resolve("test.ocl");
     Files.writeString(oclFile, "context spaceMission::Spacecraft inv:\n  self.mass > 0");
 
-    VitruvOCLCLI.main(
+    VitruvOclCli.main(
         new String[] {
           "check", oclFile.toString(),
           "--ecore", SPACEMISSION_ECORE.toString()
@@ -115,7 +115,7 @@ class VitruviusOCLCLITest {
     Files.writeString(
         oclFile, "context spaceMission::Spacecraft inv:\n  self.nonExistentProperty > 0");
 
-    VitruvOCLCLI.main(
+    VitruvOclCli.main(
         new String[] {
           "check", oclFile.toString(),
           "--ecore", SPACEMISSION_ECORE.toString()
@@ -133,7 +133,7 @@ class VitruviusOCLCLITest {
     Files.writeString(
         oclFile, "context spaceMission::Spacecraft inv:\n  self.nonExistentProperty > 0");
 
-    VitruvOCLCLI.main(
+    VitruvOclCli.main(
         new String[] {
           "check", oclFile.toString(),
           "--ecore", SPACEMISSION_ECORE.toString()
@@ -151,7 +151,7 @@ class VitruviusOCLCLITest {
     Path oclFile = tempDir.resolve("test.ocl");
     Files.writeString(oclFile, "context spaceMission::Spacecraft inv:\n  self.mass >= 0");
 
-    VitruvOCLCLI.main(
+    VitruvOclCli.main(
         new String[] {
           "check", oclFile.toString(),
           "--ecore", SPACEMISSION_ECORE.toString()
@@ -172,7 +172,7 @@ class VitruviusOCLCLITest {
     Path oclFile = tempDir.resolve("test.ocl");
     Files.writeString(oclFile, "context spaceMission::Spacecraft inv:\n  self.mass > 0");
 
-    VitruvOCLCLI.main(
+    VitruvOclCli.main(
         new String[] {
           "eval", oclFile.toString(),
           "--ecore", SPACEMISSION_ECORE.toString(),
@@ -190,7 +190,7 @@ class VitruviusOCLCLITest {
     Path oclFile = tempDir.resolve("test.ocl");
     Files.writeString(oclFile, "context spaceMission::Spacecraft inv:\n  self.mass < 0");
 
-    VitruvOCLCLI.main(
+    VitruvOclCli.main(
         new String[] {
           "eval", oclFile.toString(),
           "--ecore", SPACEMISSION_ECORE.toString(),
@@ -208,7 +208,7 @@ class VitruviusOCLCLITest {
     Path oclFile = tempDir.resolve("test.ocl");
     Files.writeString(oclFile, "context spaceMission::Spacecraft inv:\n  self.mass > 0");
 
-    VitruvOCLCLI.main(
+    VitruvOclCli.main(
         new String[] {
           "eval", oclFile.toString(),
           "--ecore", SPACEMISSION_ECORE.toString(),
@@ -228,7 +228,7 @@ class VitruviusOCLCLITest {
     Path oclFile = tempDir.resolve("test.ocl");
     Files.writeString(oclFile, "context spaceMission::Spacecraft inv:\n  self.mass > 0");
 
-    VitruvOCLCLI.main(
+    VitruvOclCli.main(
         new String[] {
           "eval", oclFile.toString(),
           "--ecore", SPACEMISSION_ECORE.toString()
@@ -249,7 +249,7 @@ class VitruviusOCLCLITest {
         "context spaceMission::Spacecraft inv:\n"
             + "  satelliteSystem::Satellite.allInstances().size() >= 0");
 
-    VitruvOCLCLI.main(
+    VitruvOclCli.main(
         new String[] {
           "eval", oclFile.toString(),
           "--ecore", SPACEMISSION_ECORE + "," + SATELLITE_ECORE,
@@ -267,7 +267,7 @@ class VitruviusOCLCLITest {
     Files.writeString(
         oclFile, "context spaceMission::Spacecraft inv massIsPositive:\n  self.mass > 0");
 
-    VitruvOCLCLI.main(
+    VitruvOclCli.main(
         new String[] {
           "eval", oclFile.toString(),
           "--ecore", SPACEMISSION_ECORE.toString(),
@@ -295,7 +295,7 @@ class VitruviusOCLCLITest {
           self.mass >= 0
         """);
 
-    VitruvOCLCLI.main(
+    VitruvOclCli.main(
         new String[] {
           "eval-batch", oclFile.toString(),
           "--ecore", SPACEMISSION_ECORE.toString(),
@@ -323,7 +323,7 @@ class VitruviusOCLCLITest {
           self.mass < 0
         """);
 
-    VitruvOCLCLI.main(
+    VitruvOclCli.main(
         new String[] {
           "eval-batch", oclFile.toString(),
           "--ecore", SPACEMISSION_ECORE.toString(),
@@ -347,7 +347,7 @@ class VitruviusOCLCLITest {
           self.mass > 0
         """);
 
-    VitruvOCLCLI.main(
+    VitruvOclCli.main(
         new String[] {
           "eval-batch", oclFile.toString(),
           "--ecore", SPACEMISSION_ECORE.toString(),
@@ -365,7 +365,7 @@ class VitruviusOCLCLITest {
     Path oclFile = tempDir.resolve("unnamed.ocl");
     Files.writeString(oclFile, "context spaceMission::Spacecraft inv:\n  self.mass > 0\n");
 
-    VitruvOCLCLI.main(
+    VitruvOclCli.main(
         new String[] {
           "eval-batch", oclFile.toString(),
           "--ecore", SPACEMISSION_ECORE.toString(),
@@ -382,7 +382,7 @@ class VitruviusOCLCLITest {
     Files.writeString(
         oclFile, "context spaceMission::Spacecraft inv myConstraint:\n  self.mass > 0\n");
 
-    VitruvOCLCLI.main(
+    VitruvOclCli.main(
         new String[] {
           "eval-batch", oclFile.toString(),
           "--ecore", SPACEMISSION_ECORE.toString(),
@@ -401,7 +401,7 @@ class VitruviusOCLCLITest {
     Path oclFile = tempDir.resolve("single.ocl");
     Files.writeString(oclFile, "context spaceMission::Spacecraft inv onlyOne:\n  self.mass >= 0\n");
 
-    VitruvOCLCLI.main(
+    VitruvOclCli.main(
         new String[] {
           "eval-batch", oclFile.toString(),
           "--ecore", SPACEMISSION_ECORE.toString(),
@@ -421,42 +421,42 @@ class VitruviusOCLCLITest {
   @Test
   void testExtractNamedConstraint() {
     String constraint = "context spaceMission::Spacecraft inv myInvariant:\n  self.mass > 0";
-    assertEquals("myInvariant", VitruvOCLCLI.extractConstraintName(constraint));
+    assertEquals("myInvariant", VitruvOclCli.extractConstraintName(constraint));
   }
 
   /** Tests that unnamed invariant returns 'unknown'. */
   @Test
   void testExtractUnnamedConstraint() {
     String constraint = "context spaceMission::Spacecraft inv:\n  self.mass > 0";
-    assertEquals("unknown", VitruvOCLCLI.extractConstraintName(constraint));
+    assertEquals("unknown", VitruvOclCli.extractConstraintName(constraint));
   }
 
   /** Tests extraction with whitespace around constraint name. */
   @Test
   void testExtractConstraintNameWithWhitespace() {
     String constraint = "context spaceMission::Spacecraft inv  myName  :\n  self.mass > 0";
-    assertEquals("myName", VitruvOCLCLI.extractConstraintName(constraint));
+    assertEquals("myName", VitruvOclCli.extractConstraintName(constraint));
   }
 
   /** Tests extraction from single-line constraint. */
   @Test
   void testExtractConstraintNameSingleLine() {
     String constraint = "context spaceMission::Spacecraft inv singleLine: self.mass > 0";
-    assertEquals("singleLine", VitruvOCLCLI.extractConstraintName(constraint));
+    assertEquals("singleLine", VitruvOclCli.extractConstraintName(constraint));
   }
 
   /** Tests extraction from qualified context name. */
   @Test
   void testExtractConstraintNameQualifiedContext() {
     String constraint = "context brakesystem::BrakeDisk inv overlapping:\n  self.radius > 0";
-    assertEquals("overlapping", VitruvOCLCLI.extractConstraintName(constraint));
+    assertEquals("overlapping", VitruvOclCli.extractConstraintName(constraint));
   }
 
   /** Tests extraction returns 'unknown' when no inv keyword present. */
   @Test
   void testExtractConstraintNameNoInv() {
     String constraint = "context spaceMission::Spacecraft\n  self.mass > 0";
-    assertEquals("unknown", VitruvOCLCLI.extractConstraintName(constraint));
+    assertEquals("unknown", VitruvOclCli.extractConstraintName(constraint));
   }
 
   /** Tests extraction from constraint with parenthesized name. */
@@ -465,6 +465,6 @@ class VitruviusOCLCLITest {
     String constraint = "context spaceMission::Spacecraft inv myName(self.mass > 0): true";
     // The method extracts up to the colon — parenthesized form may not be standard
     // but the fallback should still not crash
-    assertNotNull(VitruvOCLCLI.extractConstraintName(constraint));
+    assertNotNull(VitruvOclCli.extractConstraintName(constraint));
   }
 }

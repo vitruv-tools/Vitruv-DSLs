@@ -91,8 +91,8 @@ tools.vitruv.dsls.vitruvocl/
 ├── pipeline/        Public API + orchestration
 │   ├── VitruvOCLCompiler      Main entry point
 │   ├── MetamodelWrapper       EMF model access (loads .ecore + .xmi files)
-│   ├── MetamodelWrapperInterface  Abstraction over MetamodelWrapper / VSUMWrapper
-│   ├── VSUMWrapper            Vitruvius VSUM integration
+│   ├── MetamodelWrapperInterface  Abstraction over MetamodelWrapper / VsumWrapper
+│   ├── VsumWrapper            Vitruvius VSUM integration
 │   ├── BatchValidationResult  Aggregate result for multiple constraints/files
 │   ├── ConstraintResult       Result for a single constraint
 │   ├── FileValidator          Validates one .ocl file against a model set
@@ -101,7 +101,7 @@ tools.vitruv.dsls.vitruvocl/
 │   └── Warning                Non-fatal issues
 │
 └── cli/
-    └── VitruvOCLCLI           Command-line interface
+    └── VitruvOclCli           Command-line interface
 ```
 
 ## Language Server (vitruvocl-language-server/)
@@ -145,4 +145,4 @@ The extension is built as part of the Maven reactor (`mvn package`):
 | EMF Ecore XMI | Loading `.ecore` and `.xmi` instance files |
 | LSP4J 0.21.2 | Language Server Protocol implementation |
 | Gson 2.8.9 | JSON serialization in CLI output |
-| Vitruvius VSUM | VSUM integration via `VSUMWrapper` |
+| Vitruvius VSUM | VSUM integration via `VsumWrapper` |

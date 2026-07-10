@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.lsp;
 
 import java.io.PrintStream;
@@ -26,6 +27,12 @@ import org.eclipse.lsp4j.services.LanguageClient;
  */
 public class LspMain {
 
+  /**
+   * Starts the language server on stdio.
+   *
+   * @param args unused
+   * @throws Exception if the server fails to start or the connection is interrupted
+   */
   @SuppressWarnings("java:S106")
   public static void main(String[] args) throws Exception {
     // Capture the real stdout before anything else touches it.

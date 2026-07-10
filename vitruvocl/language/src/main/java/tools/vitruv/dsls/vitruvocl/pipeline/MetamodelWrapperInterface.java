@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
 import java.util.List;
@@ -98,6 +99,12 @@ public interface MetamodelWrapperInterface {
    */
   EClass resolveEClassByShortName(String shortName);
 
+  /**
+   * Returns the source filename an instance was loaded from.
+   *
+   * @param instance the model instance
+   * @return the source filename, or {@code null} if unknown
+   */
   String getSourceFileForInstance(EObject instance);
 
   /**

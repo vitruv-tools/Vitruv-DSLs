@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ import java.util.List;
  * @see ConstraintResult for individual constraint evaluation results
  */
 public class BatchValidationResult {
-  /** Individual results for each validated constraint */
+  /** Individual results for each validated constraint. */
   private final List<ConstraintResult> results;
 
   /**

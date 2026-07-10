@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.common;
 
 /**
@@ -25,10 +26,10 @@ package tools.vitruv.dsls.vitruvocl.common;
  */
 public class CompileError {
 
-  /** Line number where the error occurred (1-based) */
+  /** Line number where the error occurred (1-based). */
   private final int line;
 
-  /** Column number where the error occurred (0-based) */
+  /** Column number where the error occurred (0-based). */
   private final int column;
 
   /** End line of the erroneous range (1-based); -1 when unknown. */
@@ -37,16 +38,16 @@ public class CompileError {
   /** Exclusive end column of the erroneous range (0-based); -1 when unknown. */
   private final int endColumn;
 
-  /** Human-readable error description */
+  /** Human-readable error description. */
   private final String message;
 
-  /** Severity level (ERROR, WARNING, INFO) */
+  /** Severity level (ERROR, WARNING, INFO). */
   private final ErrorSeverity severity;
 
-  /** Source file or context identifier where error occurred */
+  /** Source file or context identifier where error occurred. */
   private final String source;
 
-  /** Optional error code for programmatic error categorization */
+  /** Optional error code for programmatic error categorization. */
   private final String errorCode;
 
   /**
@@ -70,6 +71,16 @@ public class CompileError {
     this(line, column, -1, -1, message, severity, source, null);
   }
 
+  /**
+   * Creates a compile error with an explicit error code.
+   *
+   * @param line Line number where error occurred (1-based)
+   * @param column Column number where error occurred (0-based)
+   * @param message Human-readable error message
+   * @param severity Error severity level
+   * @param source Source file or context identifier
+   * @param errorCode Machine-readable error code
+   */
   public CompileError(
       int line,
       int column,
@@ -133,6 +144,8 @@ public class CompileError {
   }
 
   /**
+   * Returns the line number where the error occurred.
+   *
    * @return Line number where error occurred (1-based)
    */
   public int getLine() {
@@ -140,6 +153,8 @@ public class CompileError {
   }
 
   /**
+   * Returns the column number where the error occurred.
+   *
    * @return Column number where error occurred (0-based)
    */
   public int getColumn() {
@@ -157,6 +172,8 @@ public class CompileError {
   }
 
   /**
+   * Returns the human-readable error message.
+   *
    * @return Human-readable error message
    */
   public String getMessage() {
@@ -164,6 +181,8 @@ public class CompileError {
   }
 
   /**
+   * Returns the error severity level.
+   *
    * @return Error severity level
    */
   public ErrorSeverity getSeverity() {
@@ -171,6 +190,8 @@ public class CompileError {
   }
 
   /**
+   * Returns the source file or context identifier.
+   *
    * @return Source file or context identifier
    */
   public String getSource() {
@@ -178,6 +199,8 @@ public class CompileError {
   }
 
   /**
+   * Returns the optional error code.
+   *
    * @return Optional error code, or null if not specified
    */
   public String getErrorCode() {

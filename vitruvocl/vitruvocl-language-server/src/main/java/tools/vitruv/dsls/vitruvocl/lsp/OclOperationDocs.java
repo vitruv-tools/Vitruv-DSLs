@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.lsp;
 
 import java.util.Collections;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/** Static lookup table of hover/signature-help documentation for built-in OCL# operations. */
 public final class OclOperationDocs {
 
   // S1192 – string-literal constants
@@ -37,11 +39,19 @@ public final class OclOperationDocs {
   private static final String ITER_PARAM_PART = ": T | ";
   private static final String RETURNS_COLL = ": T) → ";
 
+  /** Documentation for a single built-in operation. */
   public record OperationDoc(
       String signature, String description, String returnDescription, List<ParamDoc> params) {}
 
+  /** Documentation for a single operation parameter. */
   public record ParamDoc(String name, String type, String description) {}
 
+  /**
+   * Looks up documentation for the given operation token.
+   *
+   * @param tokenText the operation name as it appears in source (e.g. {@code "select"})
+   * @return the operation's documentation, if known
+   */
   public static Optional<OperationDoc> lookup(String tokenText) {
     return Optional.ofNullable(DOCS.get(tokenText));
   }

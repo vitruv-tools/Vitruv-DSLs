@@ -50,9 +50,9 @@ import tools.vitruv.dsls.vitruvocl.symboltable.VariableSymbol;
  *
  * <h2>Architecture</h2>
  *
- * The type checker uses a {@code receiverStack} to track receiver types during navigation chain
- * type checking. For example, in {@code person.company.employees}, the stack helps propagate types
- * through the chain:
+ * <p>The type checker uses a {@code receiverStack} to track receiver types during navigation chain
+ * type checking. For example, in {@code person.company.employees}, the stack helps propagate
+ * types through the chain:
  *
  * <ol>
  *   <li>Push {@code Person} type
@@ -73,9 +73,9 @@ import tools.vitruv.dsls.vitruvocl.symboltable.VariableSymbol;
  *
  * <h2>Error Handling</h2>
  *
- * Type errors are collected in the {@link ErrorCollector} with severity levels (ERROR, WARNING).
- * The visitor continues checking after errors to report multiple issues in one pass. Errors
- * include:
+ * <p>Type errors are collected in the {@link ErrorCollector} with severity levels (ERROR,
+ * WARNING). The visitor continues checking after errors to report multiple issues in one pass.
+ * Errors include:
  *
  * <ul>
  *   <li>Type mismatches in operations (e.g., {@code 5 + "hello"})
@@ -121,7 +121,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    *   <li>Check {@code .c()} using type from stack
    * </ul>
    *
-   * This allows operation visitor methods to access their receiver type via {@code
+   * <p>This allows operation visitor methods to access their receiver type via {@code
    * receiverStack.peek()}.
    */
   private final Deque<Type> receiverStack = new ArrayDeque<>();
@@ -227,6 +227,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     return PHASE_TAG;
   }
 
+  @Override
   protected void handleUndefinedSymbol(String name, ParserRuleContext ctx) {
     String lower = name.toLowerCase(java.util.Locale.ROOT);
 
@@ -667,8 +668,8 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     // e.g.  self.a == "x"  persons::Person.allInstances().exists(...)
     // Report on the second (unexpected) expression's first token.
     if (ctx.expCS().size() > 1) {
-      for (int _i = 1; _i < ctx.expCS().size(); _i++) {
-        org.antlr.v4.runtime.Token bad = ctx.expCS().get(_i).getStart();
+      for (int i = 1; i < ctx.expCS().size(); i++) {
+        org.antlr.v4.runtime.Token bad = ctx.expCS().get(i).getStart();
         errors.add(
             new CompileError(
                 bad.getLine(),
@@ -1464,7 +1465,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    *       returned.
    * </ul>
    *
-   * The type of the operand is stored in the {@code nodeTypes} map.
+   * <p>The type of the operand is stored in the {@code nodeTypes} map.
    *
    * @param ctx the context of the logical NOT node in the AST
    * @return the type of the operand if valid; otherwise {@link Type#ERROR}
@@ -2427,7 +2428,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    *       returned.
    * </ul>
    *
-   * The type of the receiver is stored in the {@code nodeTypes} map.
+   * <p>The type of the receiver is stored in the {@code nodeTypes} map.
    *
    * @param ctx the context of the 'excluding' operation node in the AST
    * @return the type of the collection receiver if valid; otherwise {@link Type#ERROR}
@@ -2462,7 +2463,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    *   <li>If the type is valid, the resulting type of the operation is {@link Type#BOOLEAN}.
    * </ul>
    *
-   * The resulting type is stored in the {@code nodeTypes} map.
+   * <p>The resulting type is stored in the {@code nodeTypes} map.
    *
    * @param ctx the context of the 'includes' operation node in the AST
    * @return {@link Type#BOOLEAN} if the receiver is a collection; otherwise {@link Type#ERROR}
@@ -2497,7 +2498,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    *   <li>If the type is valid, the resulting type of the operation is {@link Type#BOOLEAN}.
    * </ul>
    *
-   * The resulting type is stored in the {@code nodeTypes} map.
+   * <p>The resulting type is stored in the {@code nodeTypes} map.
    *
    * @param ctx the context of the 'excludes' operation node in the AST
    * @return {@link Type#BOOLEAN} if the receiver is a collection; otherwise {@link Type#ERROR}
@@ -3179,10 +3180,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    // each iterated element is a singleton ¡T! of the receiver's element type
-    Type elemType = receiverType.getElementType();
-    Type iterVarType = normalizeToSingleton(elemType);
-
     List<String> iterVars = new ArrayList<>();
     if (ctx.iteratorVars != null) {
       for (TerminalNode id : ctx.iteratorVarList().ID()) {
@@ -3204,6 +3201,8 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     symbolTable.enterScope(iterScope);
 
     try {
+      // each iterated element is a singleton ¡T! of the receiver's element type
+      Type iterVarType = normalizeToSingleton(receiverType.getElementType());
       for (String iterVar : iterVars) {
         VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
         if (symbol != null && symbol.getType() == Type.ANY) {
@@ -3252,10 +3251,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
-    // each iterated element is a singleton ¡T! of the receiver's element type
-    Type elemType = receiverType.getElementType();
-    Type iterVarType = normalizeToSingleton(elemType);
-
     List<String> iterVars = new ArrayList<>();
     if (ctx.iteratorVars != null) {
       for (TerminalNode id : ctx.iteratorVarList().ID()) {
@@ -3277,6 +3272,8 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     symbolTable.enterScope(iterScope);
 
     try {
+      // each iterated element is a singleton ¡T! of the receiver's element type
+      Type iterVarType = normalizeToSingleton(receiverType.getElementType());
       for (String iterVar : iterVars) {
         VariableSymbol symbol = symbolTable.resolveVariable(iterVar);
         if (symbol != null && symbol.getType() == Type.ANY) {
@@ -3780,7 +3777,6 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
 
     // Unwrap singletons to get base types
     Type baseLeftType = leftType.isSingleton() ? leftType.getElementType() : leftType;
-    Type baseRightType = rightType.isSingleton() ? rightType.getElementType() : rightType;
 
     // Both sides must be single objects (singleton or object type, not multi-valued collection)
     if (leftType.isCollection() && leftType.getMultiplicity() != Multiplicity.SINGLETON) {
@@ -3807,6 +3803,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       return Type.ERROR;
     }
 
+    Type baseRightType = rightType.isSingleton() ? rightType.getElementType() : rightType;
     if (!baseRightType.isMetaclassType() && baseRightType != Type.ANY) {
       reportError(
           ctx.right,
@@ -4160,7 +4157,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     if  (!CORR_OPS_SET.contains(opTok.getText())) {
       return new int[0];
     }
-    int opIdx = idx;
+    final int opIdx = idx;
     idx = nextDefault(idx + 1);
     if  (idx < 0) {
       return new int[0];

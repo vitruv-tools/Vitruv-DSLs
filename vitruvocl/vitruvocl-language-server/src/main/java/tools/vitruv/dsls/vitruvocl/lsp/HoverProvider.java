@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.lsp;
 
 import java.util.List;
@@ -55,6 +56,13 @@ public class HoverProvider {
   /** Maximum number of inherited features shown before a "+N more" line is added. */
   private static final int MAX_INHERITED_SHOWN = 8;
 
+  /**
+   * Returns hover information for the given cursor position, if any.
+   *
+   * @param cursor the cursor position in the document
+   * @param analysis the current document analysis
+   * @return hover content, or {@code null} if nothing is hoverable at this position
+   */
   @SuppressWarnings("java:S3776")
   public Hover getHover(Position cursor, DocumentAnalysis analysis) {
     if  (analysis == null || analysis.getTree() == null) {

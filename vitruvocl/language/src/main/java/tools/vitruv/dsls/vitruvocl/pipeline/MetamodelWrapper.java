@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
 import java.io.IOException;
@@ -70,6 +71,9 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   private static final Logger LOG = Logger.getLogger(MetamodelWrapper.class.getName());
   private static final String FEAT_LEFT_EOBJECTS = "leftEObjects";
   private static final String FEAT_RIGHT_EOBJECTS = "rightEObjects";
+
+  private static final String REACTIONS_NS_URI =
+      "http://vitruv.tools/metamodels/dsls/reactions/runtime/correspondence/1.0";
 
   /** Default directory for test model files (legacy support). */
   private static Path testModelsPath = Path.of("test-models");
@@ -200,8 +204,6 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    * leftEObjects} / {@code rightEObjects} features are resolved via the base class.
    */
   private static void ensureReactionsCorrespondenceRegistered() {
-    final String REACTIONS_NS_URI =
-        "http://vitruv.tools/metamodels/dsls/reactions/runtime/correspondence/1.0";
     if (EPackage.Registry.INSTANCE.containsKey(REACTIONS_NS_URI)) {
       return;
     }
@@ -478,6 +480,16 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   }
 
   /**
+   * Loads model instance from TEST_MODELS_PATH directory (legacy method).
+   *
+   * @param xmiFileName Filename relative to TEST_MODELS_PATH
+   * @throws IOException If file cannot be read
+   */
+  public void loadModelInstance(String xmiFileName) throws IOException {
+    loadModelInstance(testModelsPath.resolve(xmiFileName));
+  }
+
+  /**
    * Returns the context EObject at the given evaluation index.
    *
    * @param index The evaluation index (0-based)
@@ -489,16 +501,6 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
       return contextObjects.get(index);
     }
     return null;
-  }
-
-  /**
-   * Loads model instance from TEST_MODELS_PATH directory (legacy method).
-   *
-   * @param xmiFileName Filename relative to TEST_MODELS_PATH
-   * @throws IOException If file cannot be read
-   */
-  public void loadModelInstance(String xmiFileName) throws IOException {
-    loadModelInstance(testModelsPath.resolve(xmiFileName));
   }
 
   /**
@@ -702,6 +704,7 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
         }
       }
     } catch (Exception e) {
+      // malformed or unreadable correspondence file — skip silently
     }
   }
 

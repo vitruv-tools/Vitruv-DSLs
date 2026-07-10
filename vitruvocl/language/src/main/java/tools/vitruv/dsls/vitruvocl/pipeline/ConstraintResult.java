@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
 import java.util.ArrayList;
@@ -36,19 +37,19 @@ import tools.vitruv.dsls.vitruvocl.common.CompileError;
  * @see BatchValidationResult for aggregated multi-constraint results
  */
 public class ConstraintResult {
-  /** The constraint expression that was evaluated */
+  /** The constraint expression that was evaluated. */
   private final String constraint;
 
-  /** Whether the constraint evaluated to true */
+  /** Whether the constraint evaluated to true. */
   private final boolean satisfied;
 
-  /** Compilation errors from parsing or type checking */
+  /** Compilation errors from parsing or type checking. */
   private final List<CompileError> compilerErrors;
 
-  /** File system errors preventing constraint loading */
+  /** File system errors preventing constraint loading. */
   private final List<FileError> fileErrors;
 
-  /** Non-fatal warnings about the constraint */
+  /** Non-fatal warnings about the constraint. */
   private final List<Warning> warnings;
 
   /**
@@ -98,6 +99,8 @@ public class ConstraintResult {
   }
 
   /**
+   * Returns the constraint expression that was evaluated.
+   *
    * @return The constraint expression that was evaluated
    */
   public String getConstraint() {
@@ -105,6 +108,8 @@ public class ConstraintResult {
   }
 
   /**
+   * Returns the list of compilation errors.
+   *
    * @return Unmodifiable list of compilation errors
    */
   public List<CompileError> getCompilerErrors() {
@@ -112,6 +117,8 @@ public class ConstraintResult {
   }
 
   /**
+   * Returns the list of file system errors.
+   *
    * @return Unmodifiable list of file system errors
    */
   public List<FileError> getFileErrors() {
@@ -119,6 +126,8 @@ public class ConstraintResult {
   }
 
   /**
+   * Returns the list of warnings.
+   *
    * @return Unmodifiable list of warnings
    */
   public List<Warning> getWarnings() {
@@ -126,6 +135,8 @@ public class ConstraintResult {
   }
 
   /**
+   * Returns whether any warnings were recorded.
+   *
    * @return {@code true} if any warnings were recorded
    */
   public boolean hasWarnings() {

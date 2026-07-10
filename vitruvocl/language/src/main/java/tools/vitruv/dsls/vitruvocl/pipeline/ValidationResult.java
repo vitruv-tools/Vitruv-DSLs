@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
 import java.util.ArrayList;
@@ -29,10 +30,10 @@ import tools.vitruv.dsls.vitruvocl.common.CompileError;
  */
 public class ValidationResult {
 
-  /** Compilation or runtime errors */
+  /** Compilation or runtime errors. */
   private final List<CompileError> errors;
 
-  /** Constraint violations with context */
+  /** Constraint violations with context. */
   private final List<ConstraintViolation> violations;
 
   /**
@@ -47,6 +48,8 @@ public class ValidationResult {
   }
 
   /**
+   * Returns whether compilation or evaluation errors occurred.
+   *
    * @return {@code true} if compilation or evaluation errors occurred
    */
   public boolean hasErrors() {
@@ -54,6 +57,8 @@ public class ValidationResult {
   }
 
   /**
+   * Returns whether any constraints were violated.
+   *
    * @return {@code true} if any constraints were violated
    */
   public boolean hasViolations() {
@@ -61,6 +66,8 @@ public class ValidationResult {
   }
 
   /**
+   * Returns the list of errors.
+   *
    * @return Unmodifiable list of errors
    */
   public List<CompileError> getErrors() {
@@ -68,6 +75,8 @@ public class ValidationResult {
   }
 
   /**
+   * Returns the list of violations.
+   *
    * @return Unmodifiable list of violations
    */
   public List<ConstraintViolation> getViolations() {
@@ -76,13 +85,13 @@ public class ValidationResult {
 
   /** Represents a single constraint violation with context. */
   public static class ConstraintViolation {
-    /** Name of violated constraint */
+    /** Name of violated constraint. */
     private final String constraintName;
 
-    /** Human-readable violation description */
+    /** Human-readable violation description. */
     private final String message;
 
-    /** Model object that violated the constraint */
+    /** Model object that violated the constraint. */
     private final Object violatingObject;
 
     /**
@@ -99,6 +108,8 @@ public class ValidationResult {
     }
 
     /**
+     * Returns the name of the violated constraint.
+     *
      * @return Name of violated constraint
      */
     public String getConstraintName() {
@@ -106,6 +117,8 @@ public class ValidationResult {
     }
 
     /**
+     * Returns the violation description.
+     *
      * @return Violation description
      */
     public String getMessage() {
@@ -113,6 +126,8 @@ public class ValidationResult {
     }
 
     /**
+     * Returns the object that violated the constraint.
+     *
      * @return Object that violated constraint
      */
     public Object getViolatingObject() {

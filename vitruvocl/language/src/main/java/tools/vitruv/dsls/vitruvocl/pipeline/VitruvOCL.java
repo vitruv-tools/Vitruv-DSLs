@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
 import java.io.IOException;
@@ -28,22 +29,28 @@ import tools.vitruv.dsls.vitruvocl.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvocl.evaluator.Value;
 import tools.vitruv.framework.vsum.VirtualModel;
 
+/** Static facade for evaluating VitruvOCL constraints against a VSUM or standalone files. */
 public class VitruvOCL {
 
   private VitruvOCL() {}
 
-  private static VSUMWrapper vsumWrapper = null;
+  private static VsumWrapper vsumWrapper = null;
   private static MetamodelWrapperInterface directWrapper = null;
 
   // ---------------------------------------------------------------------------
   // Registration
   // ---------------------------------------------------------------------------
 
+  /**
+   * Registers the VSUM to evaluate constraints against.
+   *
+   * @param vsum the virtual model; must not be {@code null}
+   */
   public static synchronized void registerVSUM(VirtualModel vsum) {
     if (vsum == null) {
       throw new IllegalArgumentException("VSUM must not be null");
     }
-    vsumWrapper = new VSUMWrapper(vsum);
+    vsumWrapper = new VsumWrapper(vsum);
   }
 
   /**
@@ -61,21 +68,52 @@ public class VitruvOCL {
     directWrapper = wrapper;
   }
 
+  /** Clears any registered VSUM or direct wrapper. */
   public static synchronized void clearVSUM() {
     vsumWrapper = null;
     directWrapper = null;
   }
 
+  /**
+   * Returns whether a VSUM or direct wrapper is currently registered.
+   *
+   * @return {@code true} if a VSUM or direct wrapper is registered
+   */
   public static synchronized boolean hasRegisteredVSUM() {
     return vsumWrapper != null || directWrapper != null;
   }
 
   // ---------------------------------------------------------------------------
-  // VSUM-aware evaluation (no file paths needed)
+  // Evaluation (VSUM-aware and file-path-based; overloads kept together per checkstyle)
   // ---------------------------------------------------------------------------
 
+  /**
+   * Evaluates a single constraint against the registered VSUM.
+   *
+   * @param constraint the OCL constraint expression
+   * @return the evaluation result
+   */
   public static ConstraintResult evaluateConstraint(String constraint) {
     return compileAndEvaluate(constraint, getVsumWrapper(), List.of());
+  }
+
+  /**
+   * Evaluates a single constraint against metamodels and instances loaded from files.
+   *
+   * @param constraint the OCL constraint expression
+   * @param ecoreFiles metamodel files to load
+   * @param xmiFiles model instance files to load
+   * @return the evaluation result
+   */
+  public static ConstraintResult evaluateConstraint(
+      String constraint, Path[] ecoreFiles, Path[] xmiFiles) {
+    SmartLoader.LoadResult loadResult =
+        SmartLoader.loadForConstraint(constraint, ecoreFiles, xmiFiles);
+    if (loadResult.hasErrors()) {
+      return new ConstraintResult(
+          constraint, false, List.of(), loadResult.fileErrors, loadResult.warnings);
+    }
+    return compileAndEvaluate(constraint, loadResult.wrapper, loadResult.warnings);
   }
 
   /**
@@ -115,21 +153,14 @@ public class VitruvOCL {
     return evaluateConstraints(constraints, getVsumWrapper());
   }
 
-  // ---------------------------------------------------------------------------
-  // File-path-based evaluation
-  // ---------------------------------------------------------------------------
-
-  public static ConstraintResult evaluateConstraint(
-      String constraint, Path[] ecoreFiles, Path[] xmiFiles) {
-    SmartLoader.LoadResult loadResult =
-        SmartLoader.loadForConstraint(constraint, ecoreFiles, xmiFiles);
-    if (loadResult.hasErrors()) {
-      return new ConstraintResult(
-          constraint, false, List.of(), loadResult.fileErrors, loadResult.warnings);
-    }
-    return compileAndEvaluate(constraint, loadResult.wrapper, loadResult.warnings);
-  }
-
+  /**
+   * Evaluates multiple constraints against metamodels and instances loaded from files.
+   *
+   * @param constraints the OCL constraint expressions
+   * @param ecoreFiles metamodel files to load
+   * @param xmiFiles model instance files to load
+   * @return the batch evaluation result
+   */
   public static BatchValidationResult evaluateConstraints(
       List<String> constraints, Path[] ecoreFiles, Path[] xmiFiles) {
     if (constraints.isEmpty()) {
@@ -149,12 +180,44 @@ public class VitruvOCL {
     return evaluateConstraints(constraints, loadResult.wrapper);
   }
 
+  /**
+   * Evaluates constraints read from a file against metamodels and instances loaded from files.
+   *
+   * @param constraintsFile path to the {@code .ocl} constraints file
+   * @param ecoreFiles metamodel files to load
+   * @param xmiFiles model instance files to load
+   * @return the batch evaluation result
+   * @throws IOException if the constraints file cannot be read
+   */
   public static BatchValidationResult evaluateConstraints(
       Path constraintsFile, Path[] ecoreFiles, Path[] xmiFiles) throws IOException {
     List<String> constraints = parseConstraintsFile(constraintsFile);
     return evaluateConstraints(constraints, ecoreFiles, xmiFiles);
   }
 
+  private static BatchValidationResult evaluateConstraints(
+      List<String> constraints, MetamodelWrapperInterface wrapper) {
+    List<ConstraintResult> results = new ArrayList<>();
+    Set<String> seenConstraints = new HashSet<>();
+    for (String constraint : constraints) {
+      if (seenConstraints.contains(constraint)) {
+        results.add(duplicateResult(constraint));
+        continue;
+      }
+      seenConstraints.add(constraint);
+      results.add(compileAndEvaluate(constraint, wrapper, List.of()));
+    }
+    return new BatchValidationResult(results);
+  }
+
+  /**
+   * Evaluates a project's constraints against its default metamodel and instance directories.
+   *
+   * @param projectDir project root; expects {@code model/src/main/{constraints.ocl,ecore,
+   *     instances}}
+   * @return the batch evaluation result
+   * @throws IOException if the constraints file cannot be read
+   */
   public static BatchValidationResult evaluateProject(Path projectDir) throws IOException {
     Path mainDir = projectDir.resolve("model/src/main");
     Path constraintsFile = mainDir.resolve("constraints.ocl");
@@ -165,6 +228,15 @@ public class VitruvOCL {
     return evaluateConstraints(constraintsFile, ecoreFiles, xmiFiles);
   }
 
+  /**
+   * Evaluates constraints from an explicit file against a project's default metamodel and
+   * instance directories.
+   *
+   * @param constraintsFile path to the {@code .ocl} constraints file
+   * @param resourcesDir project root; expects {@code model/src/main/{ecore,instances}}
+   * @return the batch evaluation result
+   * @throws IOException if the constraints file cannot be read
+   */
   public static BatchValidationResult evaluateProject(Path constraintsFile, Path resourcesDir)
       throws IOException {
     Path mainDir = resourcesDir.resolve("model/src/main");
@@ -222,21 +294,6 @@ public class VitruvOCL {
     }
 
     return new ConstraintResult(constraint, satisfied, compilerErrors, List.of(), warnings);
-  }
-
-  private static BatchValidationResult evaluateConstraints(
-      List<String> constraints, MetamodelWrapperInterface wrapper) {
-    List<ConstraintResult> results = new ArrayList<>();
-    Set<String> seenConstraints = new HashSet<>();
-    for (String constraint : constraints) {
-      if (seenConstraints.contains(constraint)) {
-        results.add(duplicateResult(constraint));
-        continue;
-      }
-      seenConstraints.add(constraint);
-      results.add(compileAndEvaluate(constraint, wrapper, List.of()));
-    }
-    return new BatchValidationResult(results);
   }
 
   // ---------------------------------------------------------------------------

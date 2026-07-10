@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
 import java.util.ArrayList;
@@ -45,7 +46,7 @@ import tools.vitruv.framework.vsum.internal.InternalVirtualModel;
  * @see MetamodelWrapperInterface
  * @see VirtualModel
  */
-public class VSUMWrapper implements MetamodelWrapperInterface {
+public class VsumWrapper implements MetamodelWrapperInterface {
 
   /** The Vitruvius virtual model providing access to all registered model resources. */
   private final VirtualModel vsum;
@@ -77,10 +78,10 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
    * @param vsum the Vitruvius virtual model to wrap, must be an {@link InternalVirtualModel}
    * @throws IllegalArgumentException if {@code vsum} is not an {@link InternalVirtualModel}
    */
-  public VSUMWrapper(VirtualModel vsum) {
+  public VsumWrapper(VirtualModel vsum) {
     if (!(vsum instanceof InternalVirtualModel)) {
       throw new IllegalArgumentException(
-          "VSUMWrapper requires an InternalVirtualModel to access the correspondence model");
+          "VsumWrapper requires an InternalVirtualModel to access the correspondence model");
     }
     this.vsum = vsum;
     this.correspondenceModel = ((InternalVirtualModel) vsum).getCorrespondenceModel();

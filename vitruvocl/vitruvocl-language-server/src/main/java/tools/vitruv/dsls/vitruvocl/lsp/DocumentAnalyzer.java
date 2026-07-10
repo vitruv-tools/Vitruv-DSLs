@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.lsp;
 
 import java.util.ArrayList;
@@ -52,17 +53,18 @@ public class DocumentAnalyzer {
 
   private final MetamodelWrapper wrapper;
 
+  /**
+   * Creates a document analyzer backed by the given metamodel wrapper.
+   *
+   * @param wrapper metamodel and instance access used during type checking
+   */
   public DocumentAnalyzer(MetamodelWrapper wrapper) {
     this.wrapper = wrapper;
   }
 
-  /**
-   * Analyzes {@code documentText} and returns a fresh {@link DocumentAnalysis}.
-   *
-   * <p>Never throws — all exceptions are swallowed and reported as an internal-error diagnostic so
-   * that the language server remains stable even when the document is in an extreme broken state.
+  /*
+   * Strips import declaration lines, preserving line numbers by replacing content with a comment.
    */
-  /* Strips import declaration lines, preserving line numbers by replacing content with a comment. */
   private static String stripImportLines(String text) {
     StringBuilder sb = new StringBuilder(text.length());
     for (String line : text.split("\n", -1)) {
@@ -82,6 +84,15 @@ public class DocumentAnalyzer {
     return sb.toString();
   }
 
+  /**
+   * Analyzes {@code documentText} and returns a fresh {@link DocumentAnalysis}.
+   *
+   * <p>Never throws — all exceptions are swallowed and reported as an internal-error diagnostic so
+   * that the language server remains stable even when the document is in an extreme broken state.
+   *
+   * @param documentText the full document source
+   * @return the analysis result, including any diagnostics
+   */
   @SuppressWarnings("java:S1141")
   public DocumentAnalysis analyze(String documentText) {
     List<Diagnostic> diagnostics = new ArrayList<>();

@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.cli;
 
 import java.io.IOException;
@@ -27,10 +28,15 @@ import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCL;
  * tools.
  */
 @SuppressWarnings("java:S106")
-public class VitruvOCLCLI {
+public class VitruvOclCli {
 
   private static final String JSON_KEY_SUCCESS = "\"success\":";
 
+  /**
+   * CLI entry point.
+   *
+   * @param args command-line arguments; first argument selects the subcommand
+   */
   public static void main(String[] args) {
     if (args.length == 0) {
       printUsage();
@@ -84,9 +90,6 @@ public class VitruvOCLCLI {
   private static void evalBatch(String[] args) throws IOException {
     CLIArgs parsed = parseArgs(args);
 
-    // Read and parse constraints file
-    List<String> constraints = parseConstraintsFile(parsed.constraintFile);
-
     // Build batch result JSON
     StringBuilder json = new StringBuilder();
     json.append("{");
@@ -95,6 +98,8 @@ public class VitruvOCLCLI {
 
     List<String> constraintResults = new ArrayList<>();
 
+    // Read and parse constraints file
+    List<String> constraints = parseConstraintsFile(parsed.constraintFile);
     for (String constraint : constraints) {
       try {
         ConstraintResult result =
@@ -178,6 +183,12 @@ public class VitruvOCLCLI {
     return constraints;
   }
 
+  /**
+   * Extracts the constraint name from an {@code inv NAME:} declaration.
+   *
+   * @param constraint the OCL constraint source
+   * @return the extracted name, or a fallback value if none is found
+   */
   public static String extractConstraintName(String constraint) {
     // Extract name from "context ... inv NAME:"
     String[] lines = constraint.split("\n");

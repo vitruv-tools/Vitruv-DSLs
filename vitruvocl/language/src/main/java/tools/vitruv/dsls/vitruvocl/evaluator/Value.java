@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.evaluator;
 
 import java.util.ArrayList;
@@ -489,7 +490,7 @@ public class Value implements Comparable<Value> {
   }
 
   /**
-   * Flattens nested collections: Collection(Collection(T)) → Collection(T)
+   * Flattens nested collections: Collection(Collection(T)) → Collection(T).
    *
    * <p>Example: Set{Set{1,2}, Set{3,4}}.flatten() → Set{1,2,3,4}
    *
@@ -520,6 +521,7 @@ public class Value implements Comparable<Value> {
     return result;
   }
 
+  /** Convenience: Creates a metaclass singleton wrapping an EObject instance. */
   public static Value metaclassValue(EObject instance, Type type) {
     return singleton(new OCLElement.MetaclassValue(instance), type);
   }

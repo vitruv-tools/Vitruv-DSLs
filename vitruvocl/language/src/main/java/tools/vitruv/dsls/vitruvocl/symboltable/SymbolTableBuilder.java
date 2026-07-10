@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.symboltable;
 
 import java.util.ArrayList;
@@ -72,8 +73,8 @@ import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
  *
  * <h2>Variable Shadowing Rules</h2>
  *
- * Inner scopes can shadow variables from outer scopes, but redeclaration within the same scope is
- * an error:
+ * <p>Inner scopes can shadow variables from outer scopes, but redeclaration within the same scope
+ * is an error:
  *
  * <pre>{@code
  * let x = 5 in              // Defines x in let scope
@@ -123,13 +124,13 @@ import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
  *
  * <h2>Parse Tree Annotation</h2>
  *
- * This pass annotates grammar nodes with their associated scopes using {@link ScopeAnnotator}. Pass
- * 2 retrieves these annotations to determine which scope to use for variable lookups.
+ * <p>This pass annotates grammar nodes with their associated scopes using {@link ScopeAnnotator}.
+ * Pass 2 retrieves these annotations to determine which scope to use for variable lookups.
  *
  * <h2>Error Handling</h2>
  *
- * Errors are collected but do not halt traversal. This allows detecting multiple errors in a single
- * pass. Common errors:
+ * <p>Errors are collected but do not halt traversal. This allows detecting multiple errors in a
+ * single pass. Common errors:
  *
  * <ul>
  *   <li>Duplicate variable in same scope

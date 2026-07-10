@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.lsp;
 
 import java.util.List;
@@ -28,6 +29,13 @@ public final class DocumentAnalysis {
   private final ParseTreeProperty<Type> nodeTypes;
   private final List<Diagnostic> diagnostics;
 
+  /**
+   * Creates a document analysis snapshot.
+   *
+   * @param tree the parsed context declaration
+   * @param nodeTypes types resolved during type checking, keyed by parse tree node
+   * @param diagnostics diagnostics collected during the analysis cycle
+   */
   public DocumentAnalysis(
       VitruvOCLParser.ContextDeclCSContext tree,
       ParseTreeProperty<Type> nodeTypes,

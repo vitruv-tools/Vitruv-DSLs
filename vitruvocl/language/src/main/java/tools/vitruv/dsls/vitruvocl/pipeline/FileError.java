@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
 import java.nio.file.Path;
@@ -22,27 +23,27 @@ import java.nio.file.Path;
  * file-level failures from compilation or runtime errors.
  */
 public class FileError {
-  /** Path to the problematic file */
+  /** Path to the problematic file. */
   private final Path path;
 
-  /** Category of file error */
+  /** Category of file error. */
   private final FileErrorType type;
 
-  /** Detailed error description */
+  /** Detailed error description. */
   private final String message;
 
   /** Categories of file-related errors. */
   public enum FileErrorType {
-    /** File does not exist at specified path */
+    /** File does not exist at specified path. */
     NOT_FOUND("File not found"),
 
-    /** File exists but cannot be read (permissions, locks) */
+    /** File exists but cannot be read (permissions, locks). */
     NOT_READABLE("File is not readable"),
 
-    /** File content does not match expected format */
+    /** File content does not match expected format. */
     INVALID_FORMAT("Invalid file format"),
 
-    /** Error occurred while parsing file content */
+    /** Error occurred while parsing file content. */
     PARSE_ERROR("Error parsing file");
 
     private final String description;
@@ -52,6 +53,8 @@ public class FileError {
     }
 
     /**
+     * Returns a human-readable description of the error type.
+     *
      * @return Human-readable description of error type
      */
     public String getDescription() {
@@ -73,6 +76,8 @@ public class FileError {
   }
 
   /**
+   * Returns the path to the file that caused the error.
+   *
    * @return Path to the file that caused the error
    */
   public Path getPath() {
@@ -80,6 +85,8 @@ public class FileError {
   }
 
   /**
+   * Returns the error category.
+   *
    * @return Error category
    */
   public FileErrorType getType() {
@@ -87,6 +94,8 @@ public class FileError {
   }
 
   /**
+   * Returns the detailed error message.
+   *
    * @return Detailed error message
    */
   public String getMessage() {

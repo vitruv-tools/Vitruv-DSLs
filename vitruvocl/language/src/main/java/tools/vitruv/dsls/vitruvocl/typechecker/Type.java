@@ -864,6 +864,12 @@ public abstract class Type {
   }
 
   // Factory-Methode:
+  /**
+   * Creates an enum type wrapping the given EEnum.
+   *
+   * @param eEnum the EMF enum
+   * @return the wrapped enum type
+   */
   public static Type enumType(org.eclipse.emf.ecore.EEnum eEnum) {
     return new EnumType(eEnum);
   }

@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
 import java.nio.file.Path;
@@ -27,22 +28,22 @@ public class Warning {
 
   /** Categories of warnings. */
   public enum WarningType {
-    /** Same constraint appears multiple times */
+    /** Same constraint appears multiple times. */
     DUPLICATE_CONSTRAINT("Duplicate constraint"),
 
-    /** Same metamodel loaded from multiple files */
+    /** Same metamodel loaded from multiple files. */
     DUPLICATE_METAMODEL("Duplicate metamodel"),
 
-    /** Same model instance loaded multiple times */
+    /** Same model instance loaded multiple times. */
     DUPLICATE_MODEL("Duplicate model instance"),
 
-    /** Metamodel file not referenced by any constraint */
+    /** Metamodel file not referenced by any constraint. */
     UNUSED_METAMODEL("Unused metamodel"),
 
-    /** No instances found for required metamodel */
+    /** No instances found for required metamodel. */
     UNUSED_MODEL("Unused model instance"),
 
-    /** Constraint evaluated but was not satisfied */
+    /** Constraint evaluated but was not satisfied. */
     CONSTRAINT_VIOLATION("Constraint violation");
 
     private final String description;
@@ -52,6 +53,8 @@ public class Warning {
     }
 
     /**
+     * Returns the human-readable warning category.
+     *
      * @return Human-readable warning category
      */
     public String getDescription() {
@@ -83,6 +86,8 @@ public class Warning {
   }
 
   /**
+   * Returns the warning category.
+   *
    * @return Warning category
    */
   public WarningType getType() {
@@ -90,6 +95,8 @@ public class Warning {
   }
 
   /**
+   * Returns the detailed message.
+   *
    * @return Detailed message
    */
   public String getMessage() {
@@ -97,6 +104,8 @@ public class Warning {
   }
 
   /**
+   * Returns the associated file, if any.
+   *
    * @return Associated file, or null if not file-specific
    */
   public Path getAffectedFile() {

@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
  * Copyright (c) 2026 Max Oesterle
  *
  * This program and the accompanying materials are made available under the
@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.lsp;
 
 import java.io.IOException;
@@ -62,6 +63,7 @@ public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
   private final OCLTextDocumentService textDocumentService;
   private final OCLWorkspaceService workspaceService;
 
+  /** Creates the language server, wiring up its text document and workspace services. */
   public OCLLanguageServer() {
     DocumentAnalyzer analyzer = new DocumentAnalyzer(wrapper);
     textDocumentService = new OCLTextDocumentService(analyzer, wrapper);
