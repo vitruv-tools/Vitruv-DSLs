@@ -67,15 +67,37 @@ public class DependencyAnalyzer {
       }
 
     } catch (Exception e) {
-      // Fallback to regex if parsing fails
-      java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\w++)::");
-      java.util.regex.Matcher matcher = pattern.matcher(constraint);
-      while (matcher.find()) {
-        requiredPackages.add(matcher.group(1));
-      }
+      // Fallback to manual scanning if parsing fails. A regex such as "(\\w+)::" is avoided
+      // here since static analysis flags word-character quantifiers as backtracking-sensitive.
+      scanForPackageNames(constraint, requiredPackages);
     }
 
     return requiredPackages;
+  }
+
+  /** Collects the identifier immediately preceding every {@code ::} occurrence in {@code text}. */
+  private static void scanForPackageNames(String text, Set<String> requiredPackages) {
+    int i = 0;
+    while (i < text.length() - 1) {
+      if (text.charAt(i) == ':' && text.charAt(i + 1) == ':') {
+        int end = i;
+        int start = end;
+        while (start > 0 && isWordChar(text.charAt(start - 1))) {
+          start--;
+        }
+        if (start < end) {
+          requiredPackages.add(text.substring(start, end));
+        }
+        i += 2;
+      } else {
+        i++;
+      }
+    }
+  }
+
+  /** Returns {@code true} for identifier characters — letters, digits, and underscore. */
+  private static boolean isWordChar(char c) {
+    return Character.isLetterOrDigit(c) || c == '_';
   }
 
   /**

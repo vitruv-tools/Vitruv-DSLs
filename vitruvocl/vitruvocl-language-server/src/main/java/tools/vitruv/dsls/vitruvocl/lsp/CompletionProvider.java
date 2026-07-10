@@ -12,6 +12,7 @@ package tools.vitruv.dsls.vitruvocl.lsp;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -53,8 +54,9 @@ public class CompletionProvider {
   private static final String ANNOTATION_SEVERITY = "@severity";
 
   // Regex patterns for context detection (applied to the text before the cursor).
-  private static final Pattern MM_COLON_COLON = Pattern.compile("(\\w++)::$");
-  private static final Pattern MM_CLASS_DOT = Pattern.compile("(\\w++)::(\\w++)\\.$");
+  // Note: 'PackageName::' and 'PackageName::ClassName.' suffixes are detected via manual
+  // scanning (see matchTrailingPackageColonColon/matchTrailingClassDot) rather than regex, to
+  // avoid backtracking-sensitive patterns for such a simple suffix check.
   private static final Pattern SELF_DOT = Pattern.compile("\\bself\\.$");
   private static final Pattern CONTEXT_DECL = Pattern.compile("\\bcontext\\s+(\\w+)::(\\w+)");
 
@@ -143,7 +145,7 @@ public class CompletionProvider {
     String textBefore = textBefore(documentText, cursor);
     String currentLine = textBefore.substring(textBefore.lastIndexOf('\n') + 1);
 
-    List<Supplier<List<CompletionItem>>> candidates =
+    List<Supplier<Optional<List<CompletionItem>>>> candidates =
         List.of(
             () -> contextPackageCompletions(currentLine),
             () -> contextInvCompletions(currentLine),
@@ -157,10 +159,10 @@ public class CompletionProvider {
             () -> selfFeatureCompletions(textBefore, documentText, cursor),
             () -> dotCompletions(textBefore, cursor, lastAnalysis));
 
-    for (Supplier<List<CompletionItem>> candidate : candidates) {
-      List<CompletionItem> result = candidate.get();
-      if (result != null) {
-        return result;
+    for (Supplier<Optional<List<CompletionItem>>> candidate : candidates) {
+      Optional<List<CompletionItem>> result = candidate.get();
+      if (result.isPresent()) {
+        return result.get();
       }
     }
 
@@ -171,11 +173,11 @@ public class CompletionProvider {
   }
 
   /**
-   * 'context ' (no '::' yet) → suggest all metamodel package names, or {@code null} if no match.
+   * 'context ' (no '::' yet) → suggest all metamodel package names, or empty if no match.
    */
-  private List<CompletionItem> contextPackageCompletions(String currentLine) {
+  private Optional<List<CompletionItem>> contextPackageCompletions(String currentLine) {
     if (!CONTEXT_NEEDS_PKG.matcher(currentLine).find()) {
-      return null;
+      return Optional.empty();
     }
     List<CompletionItem> items = new ArrayList<>();
     for (String pkgName : wrapper.getAvailableMetamodels()) {
@@ -184,108 +186,99 @@ public class CompletionProvider {
       item.setDetail("Metamodel package");
       items.add(item);
     }
-    return items;
+    return Optional.of(items);
   }
 
-  /** 'context Pkg::Class ' without 'inv' yet → only 'inv', or {@code null} if no match. */
-  private List<CompletionItem> contextInvCompletions(String currentLine) {
+  /** 'context Pkg::Class ' without 'inv' yet → only 'inv', or empty if no match. */
+  private Optional<List<CompletionItem>> contextInvCompletions(String currentLine) {
     if (!CONTEXT_NEEDS_INV.matcher(currentLine).find()) {
-      return null;
+      return Optional.empty();
     }
     CompletionItem inv = new CompletionItem("inv");
     inv.setKind(CompletionItemKind.Keyword);
     inv.setDetail("Introduce a named invariant");
     inv.setInsertText("inv $1:\n  $0");
     inv.setInsertTextFormat(InsertTextFormat.Snippet);
-    return List.of(inv);
+    return Optional.of(List.of(inv));
   }
 
   /**
    * Guard: never offer completions while the cursor is still on the {@code context Pkg::Class inv
-   * name:} header line itself. Returns {@code null} if the cursor is not on such a line.
+   * name:} header line itself. Returns empty if the cursor is not on such a line.
    */
-  private List<CompletionItem> invHeaderGuard(String currentLine) {
+  private Optional<List<CompletionItem>> invHeaderGuard(String currentLine) {
     if (currentLine.matches(".*\\binv\\s+\\w+\\s*:.*")) {
-      return List.of();
+      return Optional.of(List.of());
     }
-    return null;
+    return Optional.empty();
   }
 
   /**
    * Blank line in the annotation zone (between {@code inv …:} and the OCL body) → offer
-   * {@code @severity} / {@code @message}. Returns {@code null} if both are already present, so
-   * the caller falls through to body completions.
+   * {@code @severity} / {@code @message}. Returns empty if both are already present, so the
+   * caller falls through to body completions.
    */
-  private List<CompletionItem> annotationZoneCompletions(String currentLine, String textBefore) {
+  private Optional<List<CompletionItem>> annotationZoneCompletions(
+      String currentLine, String textBefore) {
     if (!currentLine.isBlank() || !isInAnnotationZone(textBefore)) {
-      return null;
+      return Optional.empty();
     }
     List<CompletionItem> annItems = annotationKeywordItems(true, textBefore);
-    return annItems.isEmpty() ? null : annItems;
+    return annItems.isEmpty() ? Optional.empty() : Optional.of(annItems);
   }
 
   /**
    * {@code @} or {@code @<partial>} after an {@code inv … :} → annotation keyword suggestions,
-   * insertText without {@code @} because the user already typed it. Returns {@code null} if no
-   * match.
+   * insertText without {@code @} because the user already typed it. Returns empty if no match.
    */
-  private List<CompletionItem> annotationKeywordCompletions(String textBefore) {
+  private Optional<List<CompletionItem>> annotationKeywordCompletions(String textBefore) {
     if (AT_ANNOTATION_START.matcher(textBefore).find()
         && INV_BEFORE_CURSOR.matcher(textBefore).find()) {
-      return annotationKeywordItems(false, textBefore);
+      return Optional.of(annotationKeywordItems(false, textBefore));
     }
-    return null;
+    return Optional.empty();
   }
 
   /**
    * {@code @severity } (space just typed) or {@code @severity <partial>} → severity level
-   * completions, or {@code null} if no match.
+   * completions, or empty if no match.
    */
-  private List<CompletionItem> severityCompletions(String textBefore) {
+  private Optional<List<CompletionItem>> severityCompletions(String textBefore) {
     if (AT_SEVERITY_SPACE.matcher(textBefore).find()
         || AT_SEVERITY_PREFIX.matcher(textBefore).find()) {
-      return severityItems();
+      return Optional.of(severityItems());
     }
-    return null;
+    return Optional.empty();
   }
 
   /**
    * Type-position: after "let x :" or inside oclIsKindOf/oclAsType/oclIsTypeOf( → primitive type
-   * names + all metamodel packages + qualified EClass names, or {@code null} if no match.
+   * names + all metamodel packages + qualified EClass names, or empty if no match.
    */
-  private List<CompletionItem> typePositionCompletions(String textBefore) {
+  private Optional<List<CompletionItem>> typePositionCompletions(String textBefore) {
     if (LET_TYPE_POS.matcher(textBefore).find() || TYPE_CAST_POS.matcher(textBefore).find()) {
-      return typeItems();
+      return Optional.of(typeItems());
     }
-    return null;
+    return Optional.empty();
   }
 
-  /** {@code PackageName::} → list EClass names, or {@code null} if no match. */
-  private List<CompletionItem> packageClassNameCompletions(String textBefore) {
-    Matcher mmMatcher = MM_COLON_COLON.matcher(textBefore);
-    if (mmMatcher.find()) {
-      return classNamesFor(mmMatcher.group(1));
-    }
-    return null;
+  /** {@code PackageName::} → list EClass names, or empty if no match. */
+  private Optional<List<CompletionItem>> packageClassNameCompletions(String textBefore) {
+    return matchTrailingPackageColonColon(textBefore).map(this::classNamesFor);
   }
 
-  /** {@code PackageName::ClassName.} → list EClass features, or {@code null} if no match. */
-  private List<CompletionItem> classFeatureCompletions(String textBefore) {
-    Matcher mmClassDotMatcher = MM_CLASS_DOT.matcher(textBefore);
-    if (mmClassDotMatcher.find()) {
-      EClass eClass = wrapper.resolveEClass(mmClassDotMatcher.group(1), mmClassDotMatcher.group(2));
-      if (eClass != null) {
-        return featuresFor(eClass);
-      }
-    }
-    return null;
+  /** {@code PackageName::ClassName.} → list EClass features, or empty if no match. */
+  private Optional<List<CompletionItem>> classFeatureCompletions(String textBefore) {
+    return matchTrailingClassDot(textBefore)
+        .map(names -> wrapper.resolveEClass(names[0], names[1]))
+        .map(this::featuresFor);
   }
 
-  /** {@code self.} → features of the context class declared above, or {@code null} if no match. */
-  private List<CompletionItem> selfFeatureCompletions(
+  /** {@code self.} → features of the context class declared above, or empty if no match. */
+  private Optional<List<CompletionItem>> selfFeatureCompletions(
       String textBefore, String documentText, Position cursor) {
     if (!SELF_DOT.matcher(textBefore).find()) {
-      return null;
+      return Optional.empty();
     }
     Matcher ctxMatcher = CONTEXT_DECL.matcher(documentText);
     // Find the last context declaration before the cursor offset.
@@ -299,26 +292,26 @@ public class CompletionProvider {
       }
     }
     if (matchedPkg == null) {
-      return null;
+      return Optional.empty();
     }
     EClass eClass = wrapper.resolveEClass(matchedPkg, matchedClass);
-    return eClass != null ? featuresFor(eClass) : null;
+    return eClass != null ? Optional.of(featuresFor(eClass)) : Optional.empty();
   }
 
   /**
-   * {@code expr.} → look up the type of the receiver from the last analysis. Returns {@code null}
-   * if there is no last analysis to consult (the caller then falls through to top-level items).
+   * {@code expr.} → look up the type of the receiver from the last analysis. Returns empty if
+   * there is no last analysis to consult (the caller then falls through to top-level items).
    */
-  private List<CompletionItem> dotCompletions(
+  private Optional<List<CompletionItem>> dotCompletions(
       String textBefore, Position cursor, DocumentAnalysis lastAnalysis) {
     boolean canLookUpType =
         textBefore.endsWith(".") && lastAnalysis != null && lastAnalysis.getNodeTypes() != null;
     if (!canLookUpType) {
-      return null;
+      return Optional.empty();
     }
     List<CompletionItem> fromType = completionsFromType(cursor, lastAnalysis);
     // Fall through to collection ops as default dot-completion.
-    return !fromType.isEmpty() ? fromType : collectionOpItems();
+    return Optional.of(!fromType.isEmpty() ? fromType : collectionOpItems());
   }
 
   // ---------------------------------------------------------------------------
@@ -350,6 +343,61 @@ public class CompletionProvider {
   // ---------------------------------------------------------------------------
   // Context-specific builders
   // ---------------------------------------------------------------------------
+
+  /** Returns {@code true} for identifier characters — letters, digits, and underscore. */
+  private static boolean isWordChar(char c) {
+    return Character.isLetterOrDigit(c) || c == '_';
+  }
+
+  /**
+   * Returns the package name if {@code text} ends with {@code <word>::}, or empty otherwise.
+   * Uses manual scanning instead of a regex to avoid a backtracking-sensitive pattern for this
+   * simple suffix check.
+   */
+  private static Optional<String> matchTrailingPackageColonColon(String text) {
+    if (!text.endsWith("::")) {
+      return Optional.empty();
+    }
+    int end = text.length() - 2;
+    int start = end;
+    while (start > 0 && isWordChar(text.charAt(start - 1))) {
+      start--;
+    }
+    return start < end ? Optional.of(text.substring(start, end)) : Optional.empty();
+  }
+
+  /**
+   * Returns the {@code {packageName, className}} pair if {@code text} ends with {@code
+   * <word>::<word>.}, or empty otherwise. Uses manual scanning instead of a regex to avoid a
+   * backtracking-sensitive pattern for this simple suffix check.
+   */
+  private static Optional<String[]> matchTrailingClassDot(String text) {
+    if (!text.endsWith(".")) {
+      return Optional.empty();
+    }
+    int classEnd = text.length() - 1;
+    int classStart = classEnd;
+    while (classStart > 0 && isWordChar(text.charAt(classStart - 1))) {
+      classStart--;
+    }
+    boolean hasColonColon =
+        classStart >= 2
+            && text.charAt(classStart - 1) == ':'
+            && text.charAt(classStart - 2) == ':';
+    if (classStart == classEnd || !hasColonColon) {
+      return Optional.empty();
+    }
+    int pkgEnd = classStart - 2;
+    int pkgStart = pkgEnd;
+    while (pkgStart > 0 && isWordChar(text.charAt(pkgStart - 1))) {
+      pkgStart--;
+    }
+    if (pkgStart == pkgEnd) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        new String[] {text.substring(pkgStart, pkgEnd), text.substring(classStart, classEnd)});
+  }
 
   private List<CompletionItem> classNamesFor(String pkgName) {
     EPackage pkg = wrapper.getEPackage(pkgName);
