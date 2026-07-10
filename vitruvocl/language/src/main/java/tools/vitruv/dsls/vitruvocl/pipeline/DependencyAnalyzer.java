@@ -12,9 +12,14 @@
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
-import java.util.*;
-import org.antlr.v4.runtime.*;
-import tools.vitruv.dsls.vitruvocl.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.Token;
+import tools.vitruv.dsls.vitruvocl.VitruvOCLLexer;
 
 /**
  * Analyzes VitruvOCL constraints to extract metamodel dependencies.

@@ -12,7 +12,9 @@
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import tools.vitruv.dsls.vitruvocl.common.CompileError;
 
 /**

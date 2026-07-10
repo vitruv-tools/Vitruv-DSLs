@@ -31,7 +31,10 @@ import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvocl.common.AbstractPhaseVisitor;
 import tools.vitruv.dsls.vitruvocl.common.ErrorCollector;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapperInterface;
-import tools.vitruv.dsls.vitruvocl.symboltable.*;
+import tools.vitruv.dsls.vitruvocl.symboltable.LocalScope;
+import tools.vitruv.dsls.vitruvocl.symboltable.Scope;
+import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTable;
+import tools.vitruv.dsls.vitruvocl.symboltable.VariableSymbol;
 import tools.vitruv.dsls.vitruvocl.typechecker.Type;
 
 /**

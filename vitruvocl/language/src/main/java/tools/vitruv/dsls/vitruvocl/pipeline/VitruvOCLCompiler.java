@@ -14,7 +14,9 @@ package tools.vitruv.dsls.vitruvocl.pipeline;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLLexer;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvocl.common.ErrorCollector;
