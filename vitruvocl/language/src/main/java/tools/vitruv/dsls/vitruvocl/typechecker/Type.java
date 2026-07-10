@@ -577,10 +577,10 @@ public abstract class Type {
 
     @Override
     public boolean equals(Object obj) {
-      if  (this == obj) {
+      if (this == obj) {
         return true;
       }
-      if  (!(obj instanceof MetaclassType other)) {
+      if (!(obj instanceof MetaclassType other)) {
         return false;
       }
       return eClass.equals(other.eClass);
@@ -694,10 +694,10 @@ public abstract class Type {
 
     @Override
     public boolean equals(Object obj) {
-      if  (this == obj) {
+      if (this == obj) {
         return true;
       }
-      if  (!(obj instanceof CollectionType other)) {
+      if (!(obj instanceof CollectionType other)) {
         return false;
       }
       return elementType.equals(other.elementType) && multiplicity == other.multiplicity;
@@ -832,7 +832,7 @@ public abstract class Type {
 
     @Override
     public boolean isConformantTo(Type other) {
-      if  (other == ERROR || other == ANY) {
+      if (other == ERROR || other == ANY) {
         return true;
       }
       if (other instanceof EnumType otherEnum) {
@@ -848,10 +848,10 @@ public abstract class Type {
 
     @Override
     public boolean equals(Object obj) {
-      if  (this == obj) {
+      if (this == obj) {
         return true;
       }
-      if  (!(obj instanceof EnumType other)) {
+      if (!(obj instanceof EnumType other)) {
         return false;
       }
       return getTypeName().equals(other.getTypeName());
@@ -890,10 +890,10 @@ public abstract class Type {
    */
   @Override
   public boolean equals(Object obj) {
-    if  (this == obj) {
+    if (this == obj) {
       return true;
     }
-    if  (!(obj instanceof Type other)) {
+    if (!(obj instanceof Type other)) {
       return false;
     }
 

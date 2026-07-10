@@ -25,7 +25,7 @@ import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
 
 /**
- * Type Matrix: Ordering (< <= > >=)
+ * Type Matrix: Ordering (< <= > >=).
  *
  * <pre>
  * Valid (→ ¡Boolean!): ¡Numeric! × ¡Numeric! (Integer, Float, Double in all 9 combos)

@@ -17,7 +17,7 @@ import tools.vitruv.dsls.vitruvocl.pipeline.ConstraintResult;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
 import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCL;
 
-/** Type Matrix: allInstances() on metaclass receiver → Set{T} */
+/** Type Matrix: allInstances() on metaclass receiver → Set{T}. */
 class AllInstancesMetamodelTest {
   private static final Path BS_ECORE =
       Path.of("src/test/resources/test-metamodels/brakesystem.ecore");

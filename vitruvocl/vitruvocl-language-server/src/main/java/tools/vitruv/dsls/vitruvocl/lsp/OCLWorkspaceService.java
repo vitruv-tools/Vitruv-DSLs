@@ -66,7 +66,7 @@ public class OCLWorkspaceService implements WorkspaceService {
 
     for (FileEvent event : params.getChanges()) {
       String uri = event.getUri();
-      if  (!uri.endsWith(".ecore")) {
+      if (!uri.endsWith(".ecore")) {
         continue;
       }
 
@@ -109,7 +109,7 @@ public class OCLWorkspaceService implements WorkspaceService {
   // ---------------------------------------------------------------------------
 
   private static Path uriToPath(String uriString) {
-    if  (uriString == null) {
+    if (uriString == null) {
       return null;
     }
     try {

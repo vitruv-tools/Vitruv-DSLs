@@ -16,7 +16,7 @@ import tools.vitruv.dsls.vitruvocl.pipeline.ConstraintResult;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
 import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCL;
 
-/** Type Matrix: oclIsTypeOf(T) — recv x target type (exact match) */
+/** Type Matrix: oclIsTypeOf(T) — recv x target type (exact match). */
 class OclIsTypeOfMetamodelTest {
   private static final Path CAD_ECORE = Path.of("src/test/resources/test-metamodels/cad.ecore");
   private static final Path CAD_INST = Path.of("brake_disc_and_caliper_plate.cad");

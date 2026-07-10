@@ -170,7 +170,7 @@ public class DocumentAnalyzer {
             break;
           }
         }
-        if  (orphaned) {
+        if (orphaned) {
           continue;
         }
 
@@ -224,7 +224,7 @@ public class DocumentAnalyzer {
       while (m.find()) {
         String word = m.group(1);
         // Exact match — valid annotation keyword, skip.
-        if  (ANNOTATION_KEYWORDS.contains(word)) {
+        if (ANNOTATION_KEYWORDS.contains(word)) {
           continue;
         }
 
@@ -241,7 +241,7 @@ public class DocumentAnalyzer {
 
         // Only flag if within edit distance 3 (generous — covers @Severity, @severit, @sev, @msg).
         int threshold = EditDistance.editThreshold(word.length());
-        if  (bestKeyword == null || bestDist > threshold) {
+        if (bestKeyword == null || bestDist > threshold) {
           continue;
         }
 
@@ -281,12 +281,12 @@ public class DocumentAnalyzer {
       VitruvOCLParser.ContextDeclCSContext tree, List<Diagnostic> syntaxDiags) {
 
     List<int[]> orphaned = new ArrayList<>();
-    if  (tree == null || syntaxDiags.isEmpty()) {
+    if (tree == null || syntaxDiags.isEmpty()) {
       return orphaned;
     }
 
     for (VitruvOCLParser.ClassifierContextCSContext ctx : tree.classifierContextCS()) {
-      if  (ctx.getStart() == null) {
+      if (ctx.getStart() == null) {
         continue;
       }
       int ctxStart = ctx.getStart().getLine() - 1; // 0-based
@@ -301,12 +301,12 @@ public class DocumentAnalyzer {
         }
       }
 
-      if  (firstErrLine == Integer.MAX_VALUE) {
+      if (firstErrLine == Integer.MAX_VALUE) {
         continue;
       }
 
       for (VitruvOCLParser.InvCSContext inv : ctx.invCS()) {
-        if  (inv.getStart() == null) {
+        if (inv.getStart() == null) {
           continue;
         }
         int invStart = inv.getStart().getLine() - 1; // 0-based

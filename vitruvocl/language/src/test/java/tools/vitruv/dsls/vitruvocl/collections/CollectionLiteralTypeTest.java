@@ -28,7 +28,7 @@ import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
 
 /**
- * Type Matrix: Collection Literals
+ * Type Matrix: Collection Literals.
  *
  * <pre>
  * Tests collection literal syntax for all 4 collection types:

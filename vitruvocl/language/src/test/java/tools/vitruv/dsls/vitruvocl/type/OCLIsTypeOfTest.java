@@ -207,7 +207,9 @@ class OCLIsTypeOfTest extends DummyTestSpecification {
     assertSize(result, 3);
     int trueCount = 0;
     for (OCLElement elem : result.getElements()) {
-      if (((OCLElement.BoolValue) elem).value()) trueCount++;
+      if (((OCLElement.BoolValue) elem).value()) {
+        trueCount++;
+      }
     }
     assertEquals(1, trueCount, "Exactly one element should be Boolean");
   }
@@ -261,11 +263,11 @@ class OCLIsTypeOfTest extends DummyTestSpecification {
         """
 context spaceMission::Spacecraft inv typeOfSpacecraft:
   spaceMission::Spacecraft.allInstances().oclIsTypeOf(spaceMission::Spacecraft).forAll(b | b)
-""",
+        """,
         """
 context satelliteSystem::Satellite inv typeOfSatellite:
   satelliteSystem::Satellite.allInstances().oclIsTypeOf(satelliteSystem::Satellite).forAll(b | b)
-""");
+        """);
   }
 
   /** Spacecraft is NOT exactly of type Satellite → constraint fails. */
@@ -275,7 +277,7 @@ context satelliteSystem::Satellite inv typeOfSatellite:
         """
 context spaceMission::Spacecraft inv typeOfSatellite:
   spaceMission::Spacecraft.allInstances().oclIsTypeOf(satelliteSystem::Satellite).forAll(b | b)
-""";
+        """;
     ConstraintResult r =
         VitruvOCL.evaluateConstraint(
             constraint,

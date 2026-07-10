@@ -16,7 +16,7 @@ import tools.vitruv.dsls.vitruvocl.pipeline.ConstraintResult;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
 import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCL;
 
-/** Type Matrix: self — context type x property access */
+/** Type Matrix: self — context type x property access. */
 class SelfContextMetamodelTest {
   private static final Path BS_ECORE =
       Path.of("src/test/resources/test-metamodels/brakesystem.ecore");

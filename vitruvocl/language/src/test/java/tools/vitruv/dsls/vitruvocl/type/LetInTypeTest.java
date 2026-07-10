@@ -28,7 +28,7 @@ import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
 
 /**
- * Type Matrix: let-in expression
+ * Type Matrix: let-in expression.
  *
  * <pre>
  * Syntax: let x : DeclaredType = initExpr in bodyExpr

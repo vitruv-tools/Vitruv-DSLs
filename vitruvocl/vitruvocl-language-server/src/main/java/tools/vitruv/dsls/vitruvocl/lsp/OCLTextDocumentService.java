@@ -287,7 +287,7 @@ public class OCLTextDocumentService implements TextDocumentService {
 
           for (Diagnostic diag : params.getContext().getDiagnostics()) {
             Object data = diag.getData();
-            if  (data == null) {
+            if (data == null) {
               continue;
             }
 
@@ -299,7 +299,7 @@ public class OCLTextDocumentService implements TextDocumentService {
                 && suggestion.length() >= 2) {
               suggestion = suggestion.substring(1, suggestion.length() - 1);
             }
-            if  (suggestion.isBlank()) {
+            if (suggestion.isBlank()) {
               continue;
             }
 

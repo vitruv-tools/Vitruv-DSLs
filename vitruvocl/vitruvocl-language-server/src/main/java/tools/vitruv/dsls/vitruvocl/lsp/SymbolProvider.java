@@ -37,7 +37,7 @@ public class SymbolProvider {
    * @return list of top-level symbols (each may have children); empty if nothing is parsed
    */
   public List<Either<SymbolInformation, DocumentSymbol>> getSymbols(DocumentAnalysis analysis) {
-    if  (analysis == null || analysis.getTree() == null) {
+    if (analysis == null || analysis.getTree() == null) {
       return List.of();
     }
 
@@ -94,7 +94,7 @@ public class SymbolProvider {
   private static Range ruleRange(ParserRuleContext ctx) {
     Token start = ctx.getStart();
     Token stop = ctx.getStop();
-    if  (start == null) {
+    if (start == null) {
       return zero();
     }
     int startLine = Math.max(0, start.getLine() - 1);

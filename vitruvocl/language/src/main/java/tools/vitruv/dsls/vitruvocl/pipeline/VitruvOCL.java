@@ -229,8 +229,8 @@ public class VitruvOCL {
   }
 
   /**
-   * Evaluates constraints from an explicit file against a project's default metamodel and
-   * instance directories.
+   * Evaluates constraints from an explicit file against a project's default metamodel and instance
+   * directories.
    *
    * @param constraintsFile path to the {@code .ocl} constraints file
    * @param resourcesDir project root; expects {@code model/src/main/{ecore,instances}}
@@ -334,7 +334,7 @@ public class VitruvOCL {
           parts.add(feature.getName() + "=\"" + value + "\"");
         }
       }
-      if  (parts.size() >= 3) {
+      if (parts.size() >= 3) {
         break;
       }
     }
@@ -394,7 +394,7 @@ public class VitruvOCL {
   }
 
   private static Path[] collectFiles(Path directory, String... extensions) throws IOException {
-    if  (!Files.exists(directory) || !Files.isDirectory(directory)) {
+    if (!Files.exists(directory) || !Files.isDirectory(directory)) {
       return new Path[0];
     }
     try (Stream<Path> stream = Files.walk(directory)) {
@@ -404,7 +404,7 @@ public class VitruvOCL {
               p -> {
                 String name = p.getFileName().toString().toLowerCase();
                 for (String ext : extensions) {
-                  if  (name.endsWith(ext)) {
+                  if (name.endsWith(ext)) {
                     return true;
                   }
                 }
@@ -416,7 +416,7 @@ public class VitruvOCL {
   }
 
   private static Path[] collectAllFiles(Path directory) throws IOException {
-    if  (!Files.exists(directory) || !Files.isDirectory(directory)) {
+    if (!Files.exists(directory) || !Files.isDirectory(directory)) {
       return new Path[0];
     }
     try (Stream<Path> stream = Files.walk(directory)) {

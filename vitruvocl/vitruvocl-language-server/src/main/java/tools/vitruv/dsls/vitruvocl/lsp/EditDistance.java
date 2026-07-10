@@ -22,32 +22,32 @@ final class EditDistance {
 
   /** Maximum edit distance that still counts as a plausible typo for a word of the given length. */
   static int editThreshold(int len) {
-    if  (len <= 3) {
+    if (len <= 3) {
       return 1;
     }
-    if  (len <= 6) {
+    if (len <= 6) {
       return 2;
     }
     return 3;
   }
 
   static int damerauLevenshtein(String a, String b) {
-    if  (a.equals(b)) {
+    if (a.equals(b)) {
       return 0;
     }
-    if  (a.isEmpty()) {
+    if (a.isEmpty()) {
       return b.length();
     }
-    if  (b.isEmpty()) {
+    if (b.isEmpty()) {
       return a.length();
     }
     int la = a.length();
     int lb = b.length();
     int[][] d = new int[la + 1][lb + 1];
-    for  (int i = 0; i <= la; i++) {
+    for (int i = 0; i <= la; i++) {
       d[i][0] = i;
     }
-    for  (int j = 0; j <= lb; j++) {
+    for (int j = 0; j <= lb; j++) {
       d[0][j] = j;
     }
     for (int i = 1; i <= la; i++) {

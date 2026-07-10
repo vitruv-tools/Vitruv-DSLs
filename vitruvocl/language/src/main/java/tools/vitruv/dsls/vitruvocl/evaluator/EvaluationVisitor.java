@@ -47,9 +47,9 @@ import tools.vitruv.dsls.vitruvocl.typechecker.Type;
  *
  * <h2>Architecture</h2>
  *
- * <p>The evaluator uses pre-computed type information from the type checking phase stored in
- * {@code nodeTypes} (a {@code ParseTreeProperty<Type>}) to perform type-dependent operations
- * correctly. It maintains a {@code receiverStack} to handle method chaining (e.g., {@code
+ * <p>The evaluator uses pre-computed type information from the type checking phase stored in {@code
+ * nodeTypes} (a {@code ParseTreeProperty<Type>}) to perform type-dependent operations correctly. It
+ * maintains a {@code receiverStack} to handle method chaining (e.g., {@code
  * collection.select(...).size()}) and uses the symbol table for variable resolution.
  *
  * <h2>Error Handling</h2>
@@ -722,7 +722,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         continue;
       }
       double val = elem.toDoubleValue();
-      if  (val > max) {
+      if (val > max) {
         max = val;
       }
     }
@@ -757,7 +757,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         continue;
       }
       double val = elem.toDoubleValue();
-      if  (val < min) {
+      if (val < min) {
         min = val;
       }
     }
@@ -935,22 +935,22 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitConcatOp(VitruvOCLParser.ConcatOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if  (receiver.isEmpty()) {
+    if (receiver.isEmpty()) {
       return receiver;
     }
 
     String str = receiver.getElements().get(0).tryGetString();
-    if  (str == null) {
+    if (str == null) {
       return receiver;
     }
 
     Value arg = visit(ctx.arg);
-    if  (arg.isEmpty()) {
+    if (arg.isEmpty()) {
       return receiver;
     }
 
     String argStr = arg.getElements().get(0).tryGetString();
-    if  (argStr == null) {
+    if (argStr == null) {
       return receiver;
     }
 
@@ -1013,12 +1013,12 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitToUpperOp(VitruvOCLParser.ToUpperOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if  (receiver.isEmpty()) {
+    if (receiver.isEmpty()) {
       return receiver;
     }
 
     String str = receiver.getElements().get(0).tryGetString();
-    if  (str == null) {
+    if (str == null) {
       return receiver;
     }
 
@@ -1038,12 +1038,12 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitToLowerOp(VitruvOCLParser.ToLowerOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if  (receiver.isEmpty()) {
+    if (receiver.isEmpty()) {
       return receiver;
     }
 
     String str = receiver.getElements().get(0).tryGetString();
-    if  (str == null) {
+    if (str == null) {
       return receiver;
     }
 
@@ -1063,22 +1063,22 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitIndexOfOp(VitruvOCLParser.IndexOfOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if  (receiver.isEmpty()) {
+    if (receiver.isEmpty()) {
       return Value.intValue(0);
     }
 
     String str = receiver.getElements().get(0).tryGetString();
-    if  (str == null) {
+    if (str == null) {
       return Value.intValue(0);
     }
 
     Value arg = visit(ctx.arg);
-    if  (arg.isEmpty()) {
+    if (arg.isEmpty()) {
       return Value.intValue(0);
     }
 
     String searchStr = arg.getElements().get(0).tryGetString();
-    if  (searchStr == null) {
+    if (searchStr == null) {
       return Value.intValue(0);
     }
 
@@ -1101,22 +1101,22 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitEqualsIgnoreCaseOp(VitruvOCLParser.EqualsIgnoreCaseOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if  (receiver.isEmpty()) {
+    if (receiver.isEmpty()) {
       return Value.boolValue(false);
     }
 
     String str = receiver.getElements().get(0).tryGetString();
-    if  (str == null) {
+    if (str == null) {
       return Value.boolValue(false);
     }
 
     Value arg = visit(ctx.arg);
-    if  (arg.isEmpty()) {
+    if (arg.isEmpty()) {
       return Value.boolValue(false);
     }
 
     String compareStr = arg.getElements().get(0).tryGetString();
-    if  (compareStr == null) {
+    if (compareStr == null) {
       return Value.boolValue(false);
     }
 
@@ -1179,7 +1179,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     for (TerminalNode id : ctx.iteratorVarList().ID()) {
       iterVars.add(id.getText());
     }
-    if  (iterVars.isEmpty()) {
+    if (iterVars.isEmpty()) {
       return Value.boolValue(false);
     }
 
@@ -1196,7 +1196,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         symbolTable.defineVariable(iterSymbol);
         Value bodyResult = visit(ctx.body);
         Boolean condition = bodyResult.getElements().get(0).tryGetBool();
-        if  (condition != null && condition) {
+        if (condition != null && condition) {
           count++;
         }
       }
@@ -1229,7 +1229,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     for (TerminalNode id : ctx.iteratorVarList().ID()) {
       iterVars.add(id.getText());
     }
-    if  (iterVars.isEmpty()) {
+    if (iterVars.isEmpty()) {
       return Value.empty(Type.optional(Type.ANY));
     }
 
@@ -1279,7 +1279,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     for (TerminalNode id : ctx.iteratorVarList().ID()) {
       iterVars.add(id.getText());
     }
-    if  (iterVars.isEmpty()) {
+    if (iterVars.isEmpty()) {
       return Value.boolValue(true);
     }
 
@@ -1305,7 +1305,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
                 break;
               }
             }
-            if  (allEqual) {
+            if (allEqual) {
               return Value.boolValue(false);
             }
           }
@@ -1365,7 +1365,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
 
     List<Integer> indices = new ArrayList<>();
-    for  (int i = 0; i < elements.size(); i++) {
+    for (int i = 0; i < elements.size(); i++) {
       indices.add(i);
     }
     indices.sort(
@@ -1376,7 +1376,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         });
 
     List<OCLElement> sorted = new ArrayList<>();
-    for  (int i : indices) {
+    for (int i : indices) {
       sorted.add(elements.get(i));
     }
     return Value.of(sorted, Type.orderedSet(elemType));
@@ -2193,17 +2193,17 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value receiver = receiverStack.peek();
     Value indexVal = visit(ctx.index);
     Value arg = visit(ctx.arg);
-    if  (indexVal.isEmpty()) {
+    if (indexVal.isEmpty()) {
       return receiver;
     }
     Integer index = indexVal.getElements().get(0).tryGetInt();
-    if  (index == null) {
+    if (index == null) {
       return receiver;
     }
-    if  (arg.isEmpty()) {
+    if (arg.isEmpty()) {
       return receiver;
     }
-    if  (index < 1 || index > receiver.size() + 1) {
+    if (index < 1 || index > receiver.size() + 1) {
       return receiver;
     }
     List<OCLElement> elements = new ArrayList<>(receiver.getElements());
@@ -2272,15 +2272,15 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitDivOp(VitruvOCLParser.DivOpContext ctx) {
     Value receiver = receiverStack.peek();
     Value arg = visit(ctx.arg);
-    if  (receiver.isEmpty() || arg.isEmpty()) {
+    if (receiver.isEmpty() || arg.isEmpty()) {
       return Value.intValue(0);
     }
     Integer left = receiver.getElements().get(0).tryGetInt();
     Integer right = arg.getElements().get(0).tryGetInt();
-    if  (left == null || right == null) {
+    if (left == null || right == null) {
       return Value.intValue(0);
     }
-    if  (right == 0) {
+    if (right == 0) {
       return Value.intValue(0);
     }
     return Value.intValue(left / right);
@@ -2304,12 +2304,12 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitModOp(VitruvOCLParser.ModOpContext ctx) {
     Value receiver = receiverStack.peek();
     Value arg = visit(ctx.arg);
-    if  (receiver.isEmpty() || arg.isEmpty()) {
+    if (receiver.isEmpty() || arg.isEmpty()) {
       return Value.intValue(0);
     }
     Integer left = receiver.getElements().get(0).tryGetInt();
     Integer right = arg.getElements().get(0).tryGetInt();
-    if  (left == null || right == null) {
+    if (left == null || right == null) {
       return Value.intValue(0);
     }
     if (right == 0) {
@@ -2343,7 +2343,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value rightValue = visit(ctx.right);
     String operator = ctx.op.getText();
 
-    if  (leftValue.isEmpty() || rightValue.isEmpty()) {
+    if (leftValue.isEmpty() || rightValue.isEmpty()) {
       return Value.empty(Type.INTEGER);
     }
 
@@ -2402,7 +2402,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value rightValue = visit(ctx.right);
     String operator = ctx.op.getText();
 
-    if  (leftValue.isEmpty() || rightValue.isEmpty()) {
+    if (leftValue.isEmpty() || rightValue.isEmpty()) {
       return Value.empty(Type.INTEGER);
     }
 
@@ -2622,10 +2622,10 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value leftValue = visit(leftCtx);
     Value rightValue = visit(rightCtx);
 
-    if  (leftValue.isEmpty() || rightValue.isEmpty()) {
+    if (leftValue.isEmpty() || rightValue.isEmpty()) {
       return Value.boolValue(false);
     }
-    if  (leftValue.size() != 1 || rightValue.size() != 1) {
+    if (leftValue.size() != 1 || rightValue.size() != 1) {
       return Value.boolValue(false);
     }
 
@@ -2635,7 +2635,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Boolean left = leftElem.tryGetBool();
     Boolean right = rightElem.tryGetBool();
 
-    if  (left == null || right == null) {
+    if (left == null || right == null) {
       return Value.boolValue(false);
     }
 
@@ -2666,10 +2666,10 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value leftValue = visit(ctx.left);
     Value rightValue = visit(ctx.right);
 
-    if  (leftValue.isEmpty() || rightValue.isEmpty()) {
+    if (leftValue.isEmpty() || rightValue.isEmpty()) {
       return Value.boolValue(true);
     }
-    if  (leftValue.size() != 1 || rightValue.size() != 1) {
+    if (leftValue.size() != 1 || rightValue.size() != 1) {
       return Value.boolValue(true);
     }
 
@@ -2679,7 +2679,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Boolean left = leftElem.tryGetBool();
     Boolean right = rightElem.tryGetBool();
 
-    if  (left == null || right == null) {
+    if (left == null || right == null) {
       return Value.boolValue(true);
     }
 
@@ -2732,10 +2732,10 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitUnaryMinus(VitruvOCLParser.UnaryMinusContext ctx) {
     Value operandValue = visit(ctx.operand);
 
-    if  (operandValue == null || operandValue.isEmpty()) {
+    if (operandValue == null || operandValue.isEmpty()) {
       return Value.empty(Type.INTEGER);
     }
-    if  (operandValue.size() != 1) {
+    if (operandValue.size() != 1) {
       return Value.empty(Type.INTEGER);
     }
 
@@ -2749,7 +2749,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return Value.doubleValue(-dblValue);
     }
     Integer value = elem.tryGetInt();
-    if  (value == null) {
+    if (value == null) {
       return Value.empty(Type.INTEGER);
     }
 
@@ -2770,7 +2770,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitLogicalNot(VitruvOCLParser.LogicalNotContext ctx) {
     Value operandValue = visit(ctx.operand);
 
-    if  (operandValue == null) {
+    if (operandValue == null) {
       return Value.empty(Type.BOOLEAN);
     }
 
@@ -2778,7 +2778,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     List<OCLElement> results = new ArrayList<>();
     for (OCLElement elem : operandValue.getElements()) {
       Boolean value = elem.tryGetBool();
-      if  (value == null) {
+      if (value == null) {
         continue;
       }
       results.add(new OCLElement.BoolValue(!value));
@@ -2952,12 +2952,12 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           if (feature.isMany()) {
             List<?> list = (List<?>) value;
             for (Object item : list) {
-              if  (item != null) {
+              if (item != null) {
                 results.add(wrapValue(item));
               }
             }
           } else {
-            if  (value == null) {
+            if (value == null) {
               continue; // unset optional attribute → ?T? = []
             }
             results.add(wrapValue(value));
@@ -3331,10 +3331,10 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     if (ctx.expCS().size() == 2) {
       Value secondValue = visit(ctx.expCS(1));
 
-      if  (firstValue.isEmpty() || secondValue.isEmpty()) {
+      if (firstValue.isEmpty() || secondValue.isEmpty()) {
         return Value.empty(Type.INTEGER);
       }
-      if  (firstValue.size() != 1 || secondValue.size() != 1) {
+      if (firstValue.size() != 1 || secondValue.size() != 1) {
         return Value.empty(Type.INTEGER);
       }
 
@@ -3344,7 +3344,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       Integer start = firstElem.tryGetInt();
       Integer end = secondElem.tryGetInt();
 
-      if  (start == null || end == null) {
+      if (start == null || end == null) {
         return Value.empty(Type.INTEGER);
       }
 
@@ -3666,10 +3666,10 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value rightValue = visit(ctx.right);
 
     // Both sides must be singletons
-    if  (leftValue.isEmpty() || rightValue.isEmpty()) {
+    if (leftValue.isEmpty() || rightValue.isEmpty()) {
       return Value.boolValue(false);
     }
-    if  (leftValue.size() != 1 || rightValue.size() != 1) {
+    if (leftValue.size() != 1 || rightValue.size() != 1) {
       return Value.boolValue(false);
     }
 
@@ -3677,7 +3677,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     EObject leftObject = leftValue.getElements().get(0).tryGetInstance();
     EObject rightObject = rightValue.getElements().get(0).tryGetInstance();
 
-    if  (leftObject == null || rightObject == null) {
+    if (leftObject == null || rightObject == null) {
       return Value.boolValue(false);
     }
 
@@ -3954,25 +3954,25 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value receiver = receiverStack.peek();
     Value indexVal = visit(ctx.index);
 
-    if  (indexVal.isEmpty()) {
+    if (indexVal.isEmpty()) {
       return Value.empty(Type.ANY);
     }
     Integer index = indexVal.getElements().get(0).tryGetInt();
-    if  (index == null) {
+    if (index == null) {
       return Value.empty(Type.ANY);
     }
 
     // String case
     String str = receiver.isEmpty() ? null : receiver.getElements().get(0).tryGetString();
     if (str != null) {
-      if  (index < 1 || index > str.length()) {
+      if (index < 1 || index > str.length()) {
         return Value.empty(Type.STRING);
       }
       return Value.stringValue(String.valueOf(str.charAt(index - 1)));
     }
 
     // Collection case (1-based)
-    if  (index < 1 || index > receiver.size()) {
+    if (index < 1 || index > receiver.size()) {
       return Value.empty(Type.ANY);
     }
     OCLElement elem = receiver.getElements().get(index - 1);
@@ -4011,7 +4011,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Integer start = startVal.getElements().get(0).tryGetInt();
     Integer end = endVal.getElements().get(0).tryGetInt();
 
-    if  (start == null || end == null) {
+    if (start == null || end == null) {
       return Value.of(List.of(), receiver.getRuntimeType());
     }
     if (start < 1 || end > receiver.size() || start > end) {
@@ -4038,11 +4038,11 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitCharactersOp(VitruvOCLParser.CharactersOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if  (receiver.isEmpty()) {
+    if (receiver.isEmpty()) {
       return Value.of(List.of(), Type.sequence(Type.STRING));
     }
     String str = receiver.getElements().get(0).tryGetString();
-    if  (str == null) {
+    if (str == null) {
       return Value.of(List.of(), Type.sequence(Type.STRING));
     }
     List<OCLElement> chars = new ArrayList<>();
@@ -4071,11 +4071,11 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitTokenizeOp(VitruvOCLParser.TokenizeOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if  (receiver.isEmpty()) {
+    if (receiver.isEmpty()) {
       return Value.of(List.of(), Type.sequence(Type.STRING));
     }
     String str = receiver.getElements().get(0).tryGetString();
-    if  (str == null) {
+    if (str == null) {
       return Value.of(List.of(), Type.sequence(Type.STRING));
     }
     Value argVal = visit(ctx.arg);
@@ -4152,11 +4152,11 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitToIntegerOp(VitruvOCLParser.ToIntegerOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if  (receiver.isEmpty()) {
+    if (receiver.isEmpty()) {
       return Value.intValue(0);
     }
     String str = receiver.getElements().get(0).tryGetString();
-    if  (str == null) {
+    if (str == null) {
       return Value.intValue(0);
     }
     try {
@@ -4183,11 +4183,11 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitToRealOp(VitruvOCLParser.ToRealOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if  (receiver.isEmpty()) {
+    if (receiver.isEmpty()) {
       return Value.doubleValue(0.0);
     }
     String str = receiver.getElements().get(0).tryGetString();
-    if  (str == null) {
+    if (str == null) {
       return Value.doubleValue(0.0);
     }
     try {
@@ -4216,21 +4216,21 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitSubstituteAllOp(VitruvOCLParser.SubstituteAllOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if  (receiver.isEmpty()) {
+    if (receiver.isEmpty()) {
       return receiver;
     }
     String str = receiver.getElements().get(0).tryGetString();
-    if  (str == null) {
+    if (str == null) {
       return receiver;
     }
     Value patternVal = visit(ctx.pattern);
     Value replacementVal = visit(ctx.replacement);
-    if  (patternVal.isEmpty() || replacementVal.isEmpty()) {
+    if (patternVal.isEmpty() || replacementVal.isEmpty()) {
       return receiver;
     }
     String pattern = patternVal.getElements().get(0).tryGetString();
     String replacement = replacementVal.getElements().get(0).tryGetString();
-    if  (pattern == null || replacement == null) {
+    if (pattern == null || replacement == null) {
       return receiver;
     }
     return Value.stringValue(str.replace(pattern, replacement));
@@ -4255,25 +4255,25 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitSubstituteFirstOp(VitruvOCLParser.SubstituteFirstOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if  (receiver.isEmpty()) {
+    if (receiver.isEmpty()) {
       return receiver;
     }
     String str = receiver.getElements().get(0).tryGetString();
-    if  (str == null) {
+    if (str == null) {
       return receiver;
     }
     Value patternVal = visit(ctx.pattern);
     Value replacementVal = visit(ctx.replacement);
-    if  (patternVal.isEmpty() || replacementVal.isEmpty()) {
+    if (patternVal.isEmpty() || replacementVal.isEmpty()) {
       return receiver;
     }
     String pattern = patternVal.getElements().get(0).tryGetString();
     String replacement = replacementVal.getElements().get(0).tryGetString();
-    if  (pattern == null || replacement == null) {
+    if (pattern == null || replacement == null) {
       return receiver;
     }
     int idx = str.indexOf(pattern);
-    if  (idx == -1) {
+    if (idx == -1) {
       return Value.stringValue(str);
     }
     return Value.stringValue(
@@ -4298,19 +4298,19 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitMatchesOp(VitruvOCLParser.MatchesOpContext ctx) {
     Value receiver = receiverStack.peek();
-    if  (receiver.isEmpty()) {
+    if (receiver.isEmpty()) {
       return Value.boolValue(false);
     }
     String str = receiver.getElements().get(0).tryGetString();
-    if  (str == null) {
+    if (str == null) {
       return Value.boolValue(false);
     }
     Value argVal = visit(ctx.arg);
-    if  (argVal.isEmpty()) {
+    if (argVal.isEmpty()) {
       return Value.boolValue(false);
     }
     String pattern = argVal.getElements().get(0).tryGetString();
-    if  (pattern == null) {
+    if (pattern == null) {
       return Value.boolValue(false);
     }
     return Value.boolValue(str.matches(pattern));
@@ -4322,7 +4322,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value receiver = receiverStack.peek();
 
     VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
-    if  (selfSymbol == null) {
+    if (selfSymbol == null) {
       return Value.of(List.of(), receiver.getRuntimeType());
     }
     Value selfValue = selfSymbol.getValue();
@@ -4330,7 +4330,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return Value.of(List.of(), receiver.getRuntimeType());
     }
     EObject selfObject = selfValue.getElements().get(0).tryGetInstance();
-    if  (selfObject == null) {
+    if (selfObject == null) {
       return Value.of(List.of(), receiver.getRuntimeType());
     }
 
@@ -4359,7 +4359,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value receiver = receiverStack.peek();
 
     VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
-    if  (selfSymbol == null) {
+    if (selfSymbol == null) {
       return Value.of(List.of(), receiver.getRuntimeType());
     }
     Value selfValue = selfSymbol.getValue();
@@ -4367,7 +4367,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return Value.of(List.of(), receiver.getRuntimeType());
     }
     EObject selfObject = selfValue.getElements().get(0).tryGetInstance();
-    if  (selfObject == null) {
+    if (selfObject == null) {
       return Value.of(List.of(), receiver.getRuntimeType());
     }
 
@@ -4394,15 +4394,15 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitExistsCorrespondence(VitruvOCLParser.ExistsCorrespondenceContext ctx) {
 
     VariableSymbol selfSymbol = symbolTable.resolveVariable("self");
-    if  (selfSymbol == null) {
+    if (selfSymbol == null) {
       return Value.boolValue(false);
     }
     Value selfValue = selfSymbol.getValue();
-    if  (selfValue.isEmpty() || selfValue.size() != 1) {
+    if (selfValue.isEmpty() || selfValue.size() != 1) {
       return Value.boolValue(false);
     }
     EObject selfObject = selfValue.getElements().get(0).tryGetInstance();
-    if  (selfObject == null) {
+    if (selfObject == null) {
       return Value.boolValue(false);
     }
 
@@ -4434,7 +4434,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         corrFilter.correspondenceOptions().correspondenceOption()) {
       if (opt instanceof VitruvOCLParser.CorrTagFilterContext tagCtx) {
         Value tagVal = visit(tagCtx.tag);
-        if  (tagVal.isEmpty()) {
+        if (tagVal.isEmpty()) {
           return null;
         }
         return tagVal.getElements().get(0).tryGetString();

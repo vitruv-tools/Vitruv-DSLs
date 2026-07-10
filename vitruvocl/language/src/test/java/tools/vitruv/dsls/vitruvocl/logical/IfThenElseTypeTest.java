@@ -29,7 +29,7 @@ import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
 
 /**
- * Type Matrix: if-then-else expression
+ * Type Matrix: if-then-else expression.
  *
  * <pre>
  * Condition must be ¡Boolean!. All other condition types → ERROR.

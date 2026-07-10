@@ -45,15 +45,15 @@ public class DefinitionProvider {
    * definition can be found (i.e. the token is not a known metaclass reference).
    */
   public Location getDefinition(Position cursor, DocumentAnalysis analysis) {
-    if  (analysis == null || analysis.getTree() == null) {
+    if (analysis == null || analysis.getTree() == null) {
       return null;
     }
-    if  (analysis.getNodeTypes() == null) {
+    if (analysis.getNodeTypes() == null) {
       return null;
     }
 
     ParseTree node = NodeFinder.findAt(analysis.getTree(), cursor.getLine(), cursor.getCharacter());
-    if  (node == null) {
+    if (node == null) {
       return null;
     }
 
@@ -78,17 +78,17 @@ public class DefinitionProvider {
 
   private static Location locationFor(EClass eClass) {
     Resource resource = eClass.eResource();
-    if  (resource == null) {
+    if (resource == null) {
       return null;
     }
 
     org.eclipse.emf.common.util.URI emfUri = resource.getURI();
-    if  (emfUri == null) {
+    if (emfUri == null) {
       return null;
     }
 
     String filePath = emfUri.toFileString();
-    if  (filePath == null) {
+    if (filePath == null) {
       return null;
     }
 
@@ -107,7 +107,7 @@ public class DefinitionProvider {
    * {@code name="…"} as one of its attributes on the same element line.
    */
   private static Range findClassRange(Path ecoreFile, String className) {
-    if  (className == null || className.isEmpty()) {
+    if (className == null || className.isEmpty()) {
       return null;
     }
     String needle = "name=\"" + className + "\"";

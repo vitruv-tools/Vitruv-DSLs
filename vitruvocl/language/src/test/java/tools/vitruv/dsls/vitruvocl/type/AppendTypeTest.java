@@ -28,7 +28,7 @@ import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
 
 /**
- * Type Matrix: append() operation
+ * Type Matrix: append() operation.
  *
  * <pre>
  * append(elem): adds elem to end of ordered collection.

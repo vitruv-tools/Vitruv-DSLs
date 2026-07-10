@@ -190,7 +190,7 @@ public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
   }
 
   private static void scanForEcore(Path root, List<Path> result) {
-    if  (root == null || !Files.isDirectory(root)) {
+    if (root == null || !Files.isDirectory(root)) {
       return;
     }
     try {
@@ -221,7 +221,7 @@ public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
   }
 
   private static Path uriToPath(String uriString) {
-    if  (uriString == null) {
+    if (uriString == null) {
       return null;
     }
     try {

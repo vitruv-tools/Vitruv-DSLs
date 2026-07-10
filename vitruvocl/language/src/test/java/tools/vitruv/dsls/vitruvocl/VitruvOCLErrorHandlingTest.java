@@ -24,7 +24,12 @@ import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import tools.vitruv.dsls.vitruvocl.pipeline.*;
+import tools.vitruv.dsls.vitruvocl.pipeline.BatchValidationResult;
+import tools.vitruv.dsls.vitruvocl.pipeline.ConstraintResult;
+import tools.vitruv.dsls.vitruvocl.pipeline.FileError;
+import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
+import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCL;
+import tools.vitruv.dsls.vitruvocl.pipeline.Warning;
 
 /**
  * Comprehensive test suite for VitruvOCL API error handling and edge cases.
@@ -1258,7 +1263,9 @@ class VitruvOCLErrorHandlingTest {
             """
         context spaceMission::Spacecraft inv:
           self.operational implies
-            spaceMission::Spacecraft.allInstances().reject(~, e, Type = spaceMission::Spacecraft).size() == 3
+            spaceMission::Spacecraft.allInstances()
+                .reject(~, e, Type = spaceMission::Spacecraft)
+                .size() == 3
         """,
             new Path[] {SPACEMISSION_ECORE},
             new Path[] {});
@@ -1339,7 +1346,9 @@ class VitruvOCLErrorHandlingTest {
             """
         context spaceMission::Spacecraft inv:
           self.operational implies
-            spaceMission::Spacecraft.allInstances().reject(~, , , Type = spaceMission::Spacecraft).size() == 3
+            spaceMission::Spacecraft.allInstances()
+                .reject(~, , , Type = spaceMission::Spacecraft)
+                .size() == 3
         """,
             new Path[] {SPACEMISSION_ECORE},
             new Path[] {});
@@ -1428,7 +1437,8 @@ class VitruvOCLErrorHandlingTest {
         VitruvOCL.evaluateConstraint(
             """
         context spaceMission::Spacecraft inv:
-          self.operational == true spaceMission::Spacecraft.allInstances().exists(~, Type = spaceMission::Spacecraft)
+          self.operational == true
+            spaceMission::Spacecraft.allInstances().exists(~, Type = spaceMission::Spacecraft)
         """,
             new Path[] {SPACEMISSION_ECORE},
             new Path[] {});

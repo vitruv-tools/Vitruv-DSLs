@@ -42,18 +42,18 @@ final class SignatureHelpProvider {
 
   /** Scans the document and returns a {@link SignatureHelp}, or {@code null} if not applicable. */
   SignatureHelp getSignatureHelp(String documentText, Position cursor) {
-    if  (documentText == null) {
+    if (documentText == null) {
       return null;
     }
 
     String prefix = textUpToPosition(documentText, cursor);
     ActiveCall call = findActiveCall(prefix);
-    if  (call == null) {
+    if (call == null) {
       return null;
     }
 
     Optional<OclOperationDocs.OperationDoc> docOpt = OclOperationDocs.lookup(call.name());
-    if  (docOpt.isEmpty()) {
+    if (docOpt.isEmpty()) {
       return null;
     }
 
@@ -111,7 +111,7 @@ final class SignatureHelpProvider {
 
   private static int computeActiveParam(ActiveCall call, OclOperationDocs.OperationDoc doc) {
     List<OclOperationDocs.ParamDoc> params = doc.params();
-    if  (params.isEmpty()) {
+    if (params.isEmpty()) {
       return 0;
     }
 
@@ -151,11 +151,11 @@ final class SignatureHelpProvider {
           // Found the opening paren — extract the identifier immediately before it.
           // Skip any whitespace, then grab letters/digits/underscores.
           int end = i;
-          while  (end > 0 && Character.isWhitespace(prefix.charAt(end - 1))) {
+          while (end > 0 && Character.isWhitespace(prefix.charAt(end - 1))) {
             end--;
           }
           int start = end;
-          while  (start > 0 && isIdentChar(prefix.charAt(start - 1))) {
+          while (start > 0 && isIdentChar(prefix.charAt(start - 1))) {
             start--;
           }
 

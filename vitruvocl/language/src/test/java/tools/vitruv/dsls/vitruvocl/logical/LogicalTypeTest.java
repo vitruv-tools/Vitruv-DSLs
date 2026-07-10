@@ -25,7 +25,7 @@ import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
 
 /**
- * Type Matrix: Logical (and or xor implies not)
+ * Type Matrix: Logical (and or xor implies not).
  *
  * <pre>
  * Valid (→ ¡Boolean!): ¡Boolean! × ¡Boolean! only (1 valid cell per binary op)

@@ -201,8 +201,9 @@ class OCLAsTypeTest extends DummyTestSpecification {
     String constraint =
         """
 context spaceMission::Spacecraft inv asTypeSpacecraft:
-  spaceMission::Spacecraft.allInstances().oclAsType(spaceMission::Spacecraft).size() == spaceMission::Spacecraft.allInstances().size()
-""";
+  spaceMission::Spacecraft.allInstances().oclAsType(spaceMission::Spacecraft).size()
+    == spaceMission::Spacecraft.allInstances().size()
+        """;
 
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
@@ -227,7 +228,7 @@ context spaceMission::Spacecraft inv selectThenAsType:
     .select(sc | sc.oclIsKindOf(spaceMission::Spacecraft))
     .oclAsType(spaceMission::Spacecraft)
     .size() > 0
-""";
+        """;
 
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(

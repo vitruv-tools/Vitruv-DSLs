@@ -313,7 +313,7 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
         java.lang.reflect.Field f = cls.getField("eINSTANCE");
         f.get(null); // triggers static init
         EPackage pkg = (EPackage) EPackage.Registry.INSTANCE.get(CORR_NS_URI);
-        if  (pkg != null) {
+        if (pkg != null) {
           return pkg;
         }
       } catch (Exception e) {
@@ -422,7 +422,7 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
       }
     }
 
-    if  (toRemove == null) {
+    if (toRemove == null) {
       return; // file was never loaded — nothing to do
     }
 
@@ -748,13 +748,13 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   public Set<EObject> getCorrespondingObjects(EObject source) {
     // Resolve the source object's absolute URI (file URI + fragment)
     URI sourceUri = EcoreUtil.getURI(source);
-    if  (sourceUri == null) {
+    if (sourceUri == null) {
       return Collections.emptySet();
     }
     String sourceUriStr = sourceUri.toString();
 
     Set<String> correspondingUris = correspondenceUriMap.get(sourceUriStr);
-    if  (correspondingUris == null || correspondingUris.isEmpty()) {
+    if (correspondingUris == null || correspondingUris.isEmpty()) {
       return Collections.emptySet();
     }
 
@@ -777,7 +777,7 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   public boolean correspondenceHasTag(EObject obj1, EObject obj2, String tag) {
     URI uri1 = EcoreUtil.getURI(obj1);
     URI uri2 = EcoreUtil.getURI(obj2);
-    if  (uri1 == null || uri2 == null) {
+    if (uri1 == null || uri2 == null) {
       return false;
     }
     String key = uri1.toString() + "|" + uri2.toString();

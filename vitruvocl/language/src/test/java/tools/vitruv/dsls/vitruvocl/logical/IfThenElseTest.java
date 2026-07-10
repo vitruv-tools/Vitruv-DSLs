@@ -395,7 +395,7 @@ class IfThenElseTest extends DummyTestSpecification {
 
   /** Tests grade A: 95 >= 90 → {@code ["A"]}. */
   @Test
-  void testIfThenElse_gradeCalculation_a() {
+  void testIfThenElse_gradeCalculation_gradeA() {
     assertSingleString(
         compile("if 95 >= 90 then \"A\" else (if 95 >= 80 then \"B\" else \"C\" endif) endif"),
         "A");
@@ -403,7 +403,7 @@ class IfThenElseTest extends DummyTestSpecification {
 
   /** Tests grade C: 70 < 80 → {@code ["C"]}. */
   @Test
-  void testIfThenElse_gradeCalculation_c() {
+  void testIfThenElse_gradeCalculation_gradeC() {
     assertSingleString(
         compile("if 70 >= 90 then \"A\" else (if 70 >= 80 then \"B\" else \"C\" endif) endif"),
         "C");

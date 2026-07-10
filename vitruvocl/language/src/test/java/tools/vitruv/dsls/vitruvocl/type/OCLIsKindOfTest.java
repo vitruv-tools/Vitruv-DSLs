@@ -185,7 +185,9 @@ class OCLIsKindOfTest extends DummyTestSpecification {
     assertFalse(((OCLElement.BoolValue) elements.get(2)).value());
   }
 
-  /** Tests mixed types checking for String: {1,"hello",true,"world"} → {false,true,false,true}. */
+  /**
+   * Tests mixed types checking for String: {1,"hello",true,"world"} → {false,true,false,true}.
+   */
   @Test
   void testMixedTypesCheckingForString() {
     Value result = compile("Sequence{1, \"hello\", true, \"world\"}.oclIsKindOf(String)");
@@ -204,7 +206,9 @@ class OCLIsKindOfTest extends DummyTestSpecification {
     assertSize(result, 3);
     int trueCount = 0;
     for (OCLElement elem : result.getElements()) {
-      if (((OCLElement.BoolValue) elem).value()) trueCount++;
+      if (((OCLElement.BoolValue) elem).value()) {
+        trueCount++;
+      }
     }
     assertEquals(1, trueCount, "Exactly one element should be Boolean");
   }
@@ -257,16 +261,21 @@ class OCLIsKindOfTest extends DummyTestSpecification {
     return Stream.of(
         """
 context spaceMission::Spacecraft inv kindOfSpacecraft:
-  spaceMission::Spacecraft.allInstances().oclIsKindOf(spaceMission::Spacecraft).select(b | b).size() == spaceMission::Spacecraft.allInstances().size()
-""",
+  spaceMission::Spacecraft.allInstances().oclIsKindOf(spaceMission::Spacecraft).select(b | b).size()
+    == spaceMission::Spacecraft.allInstances().size()
+        """,
         """
 context spaceMission::Spacecraft inv kindOfSatellite:
-  spaceMission::Spacecraft.allInstances().oclIsKindOf(satelliteSystem::Satellite).select(b | b).size() == 0
-""",
+  spaceMission::Spacecraft.allInstances()
+    .oclIsKindOf(satelliteSystem::Satellite).select(b | b).size()
+    == 0
+        """,
         """
 context satelliteSystem::Satellite inv kindOfSatellite:
-  satelliteSystem::Satellite.allInstances().oclIsKindOf(satelliteSystem::Satellite).select(b | b).size() == satelliteSystem::Satellite.allInstances().size()
-""");
+  satelliteSystem::Satellite.allInstances()
+    .oclIsKindOf(satelliteSystem::Satellite).select(b | b).size()
+    == satelliteSystem::Satellite.allInstances().size()
+        """);
   }
 
   /** Tests oclIsKindOf used inside select iterator (uses extra instance file SPACECRAFT_ATLAS). */

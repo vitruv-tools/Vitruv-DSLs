@@ -13,13 +13,14 @@
 
 package tools.vitruv.dsls.vitruvocl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -61,9 +62,8 @@ import tools.vitruv.dsls.vitruvocl.parser.VitruvOCLParserTestUtils;
  * @see VitruvOCLParser ANTLR-generated parser
  * @see VitruvOCLParserTestUtils Parse tree visualization utilities
  */
-@SuppressWarnings(
-    "java:S5786") // class must be public — referenced from tools.vitruv.dsls.vitruvocl.parser
-                  // package
+// class must be public — referenced from tools.vitruv.dsls.vitruvocl.parser package
+@SuppressWarnings("java:S5786")
 public class VitruvOCLFileParsingTest {
 
   /**

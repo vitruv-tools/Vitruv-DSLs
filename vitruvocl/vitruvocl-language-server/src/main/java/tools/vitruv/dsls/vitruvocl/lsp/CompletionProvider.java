@@ -184,7 +184,7 @@ public class CompletionProvider {
     // -----------------------------------------------------------------------
     if (currentLine.isBlank() && isInAnnotationZone(textBefore)) {
       List<CompletionItem> annItems = annotationKeywordItems(true, textBefore);
-      if  (!annItems.isEmpty()) {
+      if (!annItems.isEmpty()) {
         return annItems;
       }
       // Both annotations present — fall through to body completions below.
@@ -291,13 +291,13 @@ public class CompletionProvider {
     // Start from the line just before the current (blank) line.
     for (int i = lines.length - 2; i >= 0; i--) {
       String line = lines[i];
-      if  (line.isBlank()) {
+      if (line.isBlank()) {
         continue;
       }
-      if  (INV_BEFORE_CURSOR.matcher(line).find()) {
+      if (INV_BEFORE_CURSOR.matcher(line).find()) {
         return true;
       }
-      if  (ANNOTATION_LINE.matcher(line).find()) {
+      if (ANNOTATION_LINE.matcher(line).find()) {
         continue;
       }
       return false; // OCL body line — not in annotation zone
@@ -515,10 +515,10 @@ public class CompletionProvider {
     String blockText = textBefore;
     java.util.regex.Matcher invMatcher = INV_BEFORE_CURSOR.matcher(textBefore);
     int lastInvEnd = 0;
-    while  (invMatcher.find()) {
+    while (invMatcher.find()) {
       lastInvEnd = invMatcher.end();
     }
-    if  (lastInvEnd > 0) {
+    if (lastInvEnd > 0) {
       blockText = textBefore.substring(lastInvEnd);
     }
 
@@ -574,12 +574,12 @@ public class CompletionProvider {
     // The cursor is right after '.'. We want the type of the expression that ends just before '.'.
     // Find the parse-tree node at (cursor.line, cursor.character - 2) — just before the dot.
     int dotCharPos = cursor.getCharacter() - 1;
-    if  (dotCharPos < 0) {
+    if (dotCharPos < 0) {
       return List.of();
     }
 
     Position beforeDot = new Position(cursor.getLine(), dotCharPos - 1);
-    if  (beforeDot.getCharacter() < 0) {
+    if (beforeDot.getCharacter() < 0) {
       return List.of();
     }
 
@@ -612,7 +612,7 @@ public class CompletionProvider {
   /** Returns the substring of {@code text} from the start up to (but not including) the cursor. */
   private static String textBefore(String text, Position cursor) {
     int offset = offsetOf(text, cursor);
-    if  (offset <= 0) {
+    if (offset <= 0) {
       return "";
     }
     return text.substring(0, offset);
@@ -623,7 +623,7 @@ public class CompletionProvider {
     int line = 0;
     int offset = 0;
     while (offset < text.length() && line < pos.getLine()) {
-      if  (text.charAt(offset) == '\n') {
+      if (text.charAt(offset) == '\n') {
         line++;
       }
       offset++;

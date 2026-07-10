@@ -89,7 +89,7 @@ public class DependencyAnalyzer {
     // Walk backwards, skipping whitespace / hidden-channel tokens
     for (int j = index - 1; j >= 0; j--) {
       Token t = tokens.get(j);
-      if  (t.getChannel() != Token.DEFAULT_CHANNEL) {
+      if (t.getChannel() != Token.DEFAULT_CHANNEL) {
         continue; // skip hidden tokens
       }
       String txt = t.getText();

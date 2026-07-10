@@ -73,7 +73,7 @@ final class InlayHintProvider {
     }
 
     void visit(ParseTree node) {
-      if  (node == null) {
+      if (node == null) {
         return;
       }
 
@@ -114,7 +114,7 @@ final class InlayHintProvider {
 
     private void handleVarDecl(VitruvOCLParser.VariableDeclarationContext ctx) {
       // Only hint when the user wrote no explicit type annotation.
-      if  (ctx.varType != null || ctx.varInit == null || ctx.varName == null) {
+      if (ctx.varType != null || ctx.varInit == null || ctx.varName == null) {
         return;
       }
       Type t = resolveExpType(ctx.varInit);
@@ -125,7 +125,7 @@ final class InlayHintProvider {
 
     private void handleIteratorVars(
         VitruvOCLParser.IteratorVarListContext varList, VitruvOCLParser.ExpCSContext body) {
-      if  (varList == null || body == null) {
+      if (varList == null || body == null) {
         return;
       }
       for (TerminalNode idNode : varList.ID()) {
@@ -139,24 +139,24 @@ final class InlayHintProvider {
     }
 
     private void handlePropertyNav(VitruvOCLParser.PropertyNavContext ctx) {
-      if  (ctx.propertyAccess() == null) {
+      if (ctx.propertyAccess() == null) {
         return;
       }
       Token tok = ctx.propertyAccess().propertyName;
-      if  (tok == null) {
+      if (tok == null) {
         return;
       }
 
       // Prefer annotation on the nav-target context; fall back to property-access child.
       Type t = types.get(ctx);
-      if  (t == null) {
+      if (t == null) {
         t = types.get(ctx.propertyAccess());
       }
-      if  (t == null || t.isError()) {
+      if (t == null || t.isError()) {
         return;
       }
 
-      if  (!t.isCollection() && !t.isMetaclassType() && !t.isOptional()) {
+      if (!t.isCollection() && !t.isMetaclassType() && !t.isOptional()) {
         return;
       }
 
@@ -170,11 +170,11 @@ final class InlayHintProvider {
      * expCS → infixedExpCS}) that the TypeCheckVisitor may annotate on either node.
      */
     private Type resolveExpType(VitruvOCLParser.ExpCSContext ctx) {
-      if  (ctx == null) {
+      if (ctx == null) {
         return null;
       }
       Type t = types.get(ctx);
-      if  (t != null) {
+      if (t != null) {
         return t;
       }
       // expCS: infixedExpCS — try the single child
@@ -193,7 +193,7 @@ final class InlayHintProvider {
      */
     @SuppressWarnings("java:S3776")
     private Type findFirstUsageType(ParseTree node, String varName) {
-      if  (node == null) {
+      if (node == null) {
         return null;
       }
 
@@ -202,7 +202,7 @@ final class InlayHintProvider {
           && ctx.varName != null
           && varName.equals(ctx.varName.getText())) {
         Type t = types.get(ctx);
-        if  (t != null && !t.isError()) {
+        if (t != null && !t.isError()) {
           return t;
         }
       }
@@ -211,17 +211,17 @@ final class InlayHintProvider {
           && ctx.variableExpCS() != null
           && varName.equals(ctx.variableExpCS().varName.getText())) {
         Type t = types.get(ctx);
-        if  (t == null) {
+        if (t == null) {
           t = types.get(ctx.variableExpCS());
         }
-        if  (t != null && !t.isError()) {
+        if (t != null && !t.isError()) {
           return t;
         }
       }
 
       for (int i = 0; i < node.getChildCount(); i++) {
         Type found = findFirstUsageType(node.getChild(i), varName);
-        if  (found != null) {
+        if (found != null) {
           return found;
         }
       }
@@ -231,14 +231,14 @@ final class InlayHintProvider {
     // ── Hint placement ────────────────────────────────────────────────────────
 
     private void addHint(Token tok, String label) {
-      if  (tok == null) {
+      if (tok == null) {
         return;
       }
       // ANTLR line is 1-based; LSP is 0-based.
       int line = tok.getLine() - 1;
       int col = tok.getCharPositionInLine() + tok.getText().length();
       Position pos = new Position(line, col);
-      if  (!posInRange(pos)) {
+      if (!posInRange(pos)) {
         return;
       }
 
@@ -249,7 +249,7 @@ final class InlayHintProvider {
     }
 
     private boolean posInRange(Position pos) {
-      if  (range == null) {
+      if (range == null) {
         return true;
       }
       int line = pos.getLine();
@@ -258,7 +258,7 @@ final class InlayHintProvider {
       int sc = range.getStart().getCharacter();
       int el = range.getEnd().getLine();
       int ec = range.getEnd().getCharacter();
-      if  (line < sl || (line == sl && col < sc)) {
+      if (line < sl || (line == sl && col < sc)) {
         return false;
       }
       return !(line > el || (line == el && col > ec));

@@ -65,7 +65,7 @@ public class HoverProvider {
    */
   @SuppressWarnings("java:S3776")
   public Hover getHover(Position cursor, DocumentAnalysis analysis) {
-    if  (analysis == null || analysis.getTree() == null) {
+    if (analysis == null || analysis.getTree() == null) {
       return null;
     }
 
@@ -84,7 +84,7 @@ public class HoverProvider {
     }
 
     ParseTree node = NodeFinder.findAt(analysis.getTree(), cursor.getLine(), cursor.getCharacter());
-    if  (node == null) {
+    if (node == null) {
       return null;
     }
 
@@ -117,7 +117,7 @@ public class HoverProvider {
     if (node instanceof TerminalNode terminal2) {
       String tokenText = terminal2.getSymbol().getText();
       Optional<OperationDoc> doc = OclOperationDocs.lookup(tokenText);
-      if  (doc.isPresent()) {
+      if (doc.isPresent()) {
         return buildOperationHover(doc.get());
       }
     }
@@ -125,7 +125,7 @@ public class HoverProvider {
     // ------------------------------------------------------------------
     // 2. Walk up the parse tree looking for a type annotation
     // ------------------------------------------------------------------
-    if  (analysis.getNodeTypes() == null) {
+    if (analysis.getNodeTypes() == null) {
       return null;
     }
 
@@ -232,16 +232,16 @@ public class HoverProvider {
   private static String multiplicity(EStructuralFeature f) {
     int lo = f.getLowerBound();
     int hi = f.getUpperBound();
-    if  (lo == 1 && hi == 1) {
+    if (lo == 1 && hi == 1) {
       return "[1]";
     }
-    if  (lo == 0 && hi == 1) {
+    if (lo == 0 && hi == 1) {
       return "[0..1]";
     }
-    if  (lo == 0 && hi == -1) {
+    if (lo == 0 && hi == -1) {
       return "[0..*]";
     }
-    if  (lo == 1 && hi == -1) {
+    if (lo == 1 && hi == -1) {
       return "[1..*]";
     }
     return "[" + lo + ".." + (hi == -1 ? "*" : hi) + "]";
@@ -256,7 +256,7 @@ public class HoverProvider {
     for (EAnnotation ann : annotations) {
       if ("http://www.eclipse.org/emf/2002/GenModel".equals(ann.getSource())) {
         String doc = ann.getDetails().get("documentation");
-        if  (doc != null && !doc.isBlank()) {
+        if (doc != null && !doc.isBlank()) {
           return doc.strip();
         }
       }
@@ -338,12 +338,12 @@ public class HoverProvider {
 
   /** Returns true when {@code range} contains {@code cursor} (end is exclusive). */
   private static boolean containsCursor(Range range, Position cursor) {
-    if  (range == null || cursor == null) {
+    if (range == null || cursor == null) {
       return false;
     }
     Position start = range.getStart();
     Position end = range.getEnd();
-    if  (cursor.getLine() < start.getLine() || cursor.getLine() > end.getLine()) {
+    if (cursor.getLine() < start.getLine() || cursor.getLine() > end.getLine()) {
       return false;
     }
     if (cursor.getLine() == start.getLine() && cursor.getCharacter() < start.getCharacter()) {

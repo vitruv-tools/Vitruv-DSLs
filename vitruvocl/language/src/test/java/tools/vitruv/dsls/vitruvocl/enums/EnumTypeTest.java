@@ -156,8 +156,12 @@ class EnumTypeTest extends DummyTestSpecification {
 
       @Override
       public org.eclipse.emf.ecore.EEnum resolveEEnum(String enumName) {
-        if ("Status".equals(enumName)) return STATUS_ENUM;
-        if ("Direction".equals(enumName)) return DIRECTION_ENUM;
+        if ("Status".equals(enumName)) {
+          return STATUS_ENUM;
+        }
+        if ("Direction".equals(enumName)) {
+          return DIRECTION_ENUM;
+        }
         return null;
       }
 

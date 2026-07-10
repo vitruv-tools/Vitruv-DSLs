@@ -44,7 +44,7 @@ final class OclErrorStrategy extends DefaultErrorStrategy {
 
   @Override
   protected void reportUnwantedToken(Parser recognizer) {
-    if  (inErrorRecoveryMode(recognizer)) {
+    if (inErrorRecoveryMode(recognizer)) {
       return;
     }
 
