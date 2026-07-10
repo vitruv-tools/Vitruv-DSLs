@@ -16,10 +16,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Stream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -85,8 +85,7 @@ class OCLAsTypeTest extends DummyTestSpecification {
     return Stream.of(
         "Set{1, 2, 3}.oclAsType(Integer)",
         "Set{\"a\", \"b\", \"c\"}.oclAsType(String)",
-        "Sequence{1, 2, 3}.collect(p | p.oclAsType(Integer))"
-    );
+        "Sequence{1, 2, 3}.collect(p | p.oclAsType(Integer))");
   }
 
   // ==================== String Cast ====================
@@ -98,7 +97,6 @@ class OCLAsTypeTest extends DummyTestSpecification {
     assertSize(result, 1);
     assertEquals("hello", ((OCLElement.StringValue) result.getElements().get(0)).value());
   }
-
 
   // ==================== Boolean Cast ====================
 
@@ -191,7 +189,6 @@ class OCLAsTypeTest extends DummyTestSpecification {
     assertEquals(1, ((OCLElement.IntValue) elements.get(0)).value());
     assertEquals(2, ((OCLElement.IntValue) elements.get(1)).value());
   }
-
 
   // ==================== Metamodel Type Checking ====================
 

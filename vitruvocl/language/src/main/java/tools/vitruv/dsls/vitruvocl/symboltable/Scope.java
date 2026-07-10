@@ -92,4 +92,3 @@ public interface Scope {
    */
   Scope getEnclosingScope();
 }
-

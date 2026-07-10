@@ -10,10 +10,10 @@ package tools.vitruv.dsls.vitruvocl.collections;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.stream.Stream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -196,8 +196,7 @@ class CollectionLiteralComputedTest extends DummyTestSpecification {
         "Set{Set{1, 2}, Set{3}}.size()",
         "Sequence{Sequence{1, 2}, Sequence{3, 4}}.size()",
         "Bag{Bag{1}, Bag{1}}.size()",
-        "OrderedSet{OrderedSet{1, 2}, OrderedSet{3}}.size()"
-    );
+        "OrderedSet{OrderedSet{1, 2}, OrderedSet{3}}.size()");
   }
 
   @Test

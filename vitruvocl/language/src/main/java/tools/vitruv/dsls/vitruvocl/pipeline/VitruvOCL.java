@@ -210,8 +210,11 @@ public class VitruvOCL {
       String sourceFile = wrapper.getSourceFileForInstance(violation.instance());
       String filename = sourceFile != null ? sourceFile : "unknown";
       String instanceLabel = describeInstance(violation.instance());
-      String message = violation.customMessage() != null ? violation.customMessage() : instanceLabel;
-      String block = formatViolationBlock(violation.severity(), constraintName, filename, instanceLabel, message);
+      String message =
+          violation.customMessage() != null ? violation.customMessage() : instanceLabel;
+      String block =
+          formatViolationBlock(
+              violation.severity(), constraintName, filename, instanceLabel, message);
       warnings.add(new Warning(Warning.WarningType.CONSTRAINT_VIOLATION, block));
     }
 
@@ -271,7 +274,9 @@ public class VitruvOCL {
           parts.add(feature.getName() + "=\"" + value + "\"");
         }
       }
-      if (parts.size() >= 3) break;
+      if  (parts.size() >= 3) {
+        break;
+      }
     }
     sb.append(String.join(", ", parts)).append(")");
     return sb.toString();
@@ -281,11 +286,22 @@ public class VitruvOCL {
 
   private static String formatViolationBlock(
       String severity, String constraintName, String model, String object, String message) {
-    return VIOLATION_SEP + "\n"
-        + "[" + severity + "] " + constraintName + "\n"
-        + "Model   : " + model + "\n"
-        + "Object  : " + object + "\n"
-        + "Message : " + message + "\n"
+    return VIOLATION_SEP
+        + "\n"
+        + "["
+        + severity
+        + "] "
+        + constraintName
+        + "\n"
+        + "Model   : "
+        + model
+        + "\n"
+        + "Object  : "
+        + object
+        + "\n"
+        + "Message : "
+        + message
+        + "\n"
         + VIOLATION_SEP;
   }
 
@@ -318,7 +334,9 @@ public class VitruvOCL {
   }
 
   private static Path[] collectFiles(Path directory, String... extensions) throws IOException {
-    if (!Files.exists(directory) || !Files.isDirectory(directory)) return new Path[0];
+    if  (!Files.exists(directory) || !Files.isDirectory(directory)) {
+      return new Path[0];
+    }
     try (Stream<Path> stream = Files.walk(directory)) {
       return stream
           .filter(Files::isRegularFile)
@@ -326,7 +344,9 @@ public class VitruvOCL {
               p -> {
                 String name = p.getFileName().toString().toLowerCase();
                 for (String ext : extensions) {
-                  if (name.endsWith(ext)) return true;
+                  if  (name.endsWith(ext)) {
+                    return true;
+                  }
                 }
                 return false;
               })
@@ -336,7 +356,9 @@ public class VitruvOCL {
   }
 
   private static Path[] collectAllFiles(Path directory) throws IOException {
-    if (!Files.exists(directory) || !Files.isDirectory(directory)) return new Path[0];
+    if  (!Files.exists(directory) || !Files.isDirectory(directory)) {
+      return new Path[0];
+    }
     try (Stream<Path> stream = Files.walk(directory)) {
       return stream.filter(Files::isRegularFile).toList().toArray(new Path[0]);
     }

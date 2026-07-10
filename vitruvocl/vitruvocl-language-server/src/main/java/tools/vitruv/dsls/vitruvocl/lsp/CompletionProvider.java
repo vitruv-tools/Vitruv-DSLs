@@ -57,8 +57,7 @@ public class CompletionProvider {
   private static final Pattern CONTEXT_DECL = Pattern.compile("\\bcontext\\s+(\\w+)::(\\w+)");
 
   // 'context ' with no '::' yet → suggest metamodel package names.
-  private static final Pattern CONTEXT_NEEDS_PKG =
-      Pattern.compile("^\\s*context\\s+\\w*$");
+  private static final Pattern CONTEXT_NEEDS_PKG = Pattern.compile("^\\s*context\\s+\\w*$");
   // 'context Pkg::Class ' without 'inv' yet → only 'inv' makes sense.
   private static final Pattern CONTEXT_NEEDS_INV =
       Pattern.compile("^\\s*context\\s+\\w+::\\w+\\s+\\w*$");
@@ -78,7 +77,7 @@ public class CompletionProvider {
   private static final Pattern INV_BEFORE_CURSOR = Pattern.compile("\\binv\\b[^:]*:");
   // Detect already-present annotations in the constraint block before the cursor.
   private static final Pattern HAS_SEVERITY = Pattern.compile("@severity\\s+\\w+");
-  private static final Pattern HAS_MESSAGE  = Pattern.compile("@message\\s+\"");
+  private static final Pattern HAS_MESSAGE = Pattern.compile("@message\\s+\"");
   // Non-annotation, non-blank line — signals we are in the OCL body, not the annotation zone.
   private static final Pattern ANNOTATION_LINE = Pattern.compile("^\\s*@(severity|message)\\b");
 
@@ -90,33 +89,33 @@ public class CompletionProvider {
   // Iterator-based operations use "x | $0" to place cursor after the body.
   private static final java.util.Map<String, String> COLLECTION_OPS =
       java.util.Map.ofEntries(
-          java.util.Map.entry("select",      "select(${1:x} | $0)"),
-          java.util.Map.entry("reject",      "reject(${1:x} | $0)"),
-          java.util.Map.entry("collect",     "collect(${1:x} | $0)"),
-          java.util.Map.entry("forAll",      "forAll(${1:x} | $0)"),
-          java.util.Map.entry("exists",      "exists(${1:x} | $0)"),
-          java.util.Map.entry("sortedBy",    "sortedBy(${1:x} | $0)"),
-          java.util.Map.entry("includes",    "includes($0)"),
-          java.util.Map.entry("excludes",    "excludes($0)"),
-          java.util.Map.entry("including",   "including($0)"),
-          java.util.Map.entry("excluding",   "excluding($0)"),
-          java.util.Map.entry("union",       "union($0)"),
-          java.util.Map.entry("append",      "append($0)"),
-          java.util.Map.entry("prepend",     "prepend($0)"),
-          java.util.Map.entry("isEmpty",     "isEmpty()"),
-          java.util.Map.entry("notEmpty",    "notEmpty()"),
-          java.util.Map.entry("size",        "size()"),
-          java.util.Map.entry("flatten",     "flatten()"),
-          java.util.Map.entry("sum",         "sum()"),
-          java.util.Map.entry("max",         "max()"),
-          java.util.Map.entry("min",         "min()"),
-          java.util.Map.entry("avg",         "avg()"),
-          java.util.Map.entry("first",       "first()"),
-          java.util.Map.entry("last",        "last()"),
-          java.util.Map.entry("reverse",     "reverse()"),
+          java.util.Map.entry("select", "select(${1:x} | $0)"),
+          java.util.Map.entry("reject", "reject(${1:x} | $0)"),
+          java.util.Map.entry("collect", "collect(${1:x} | $0)"),
+          java.util.Map.entry("forAll", "forAll(${1:x} | $0)"),
+          java.util.Map.entry("exists", "exists(${1:x} | $0)"),
+          java.util.Map.entry("sortedBy", "sortedBy(${1:x} | $0)"),
+          java.util.Map.entry("includes", "includes($0)"),
+          java.util.Map.entry("excludes", "excludes($0)"),
+          java.util.Map.entry("including", "including($0)"),
+          java.util.Map.entry("excluding", "excluding($0)"),
+          java.util.Map.entry("union", "union($0)"),
+          java.util.Map.entry("append", "append($0)"),
+          java.util.Map.entry("prepend", "prepend($0)"),
+          java.util.Map.entry("isEmpty", "isEmpty()"),
+          java.util.Map.entry("notEmpty", "notEmpty()"),
+          java.util.Map.entry("size", "size()"),
+          java.util.Map.entry("flatten", "flatten()"),
+          java.util.Map.entry("sum", "sum()"),
+          java.util.Map.entry("max", "max()"),
+          java.util.Map.entry("min", "min()"),
+          java.util.Map.entry("avg", "avg()"),
+          java.util.Map.entry("first", "first()"),
+          java.util.Map.entry("last", "last()"),
+          java.util.Map.entry("reverse", "reverse()"),
           java.util.Map.entry("oclIsKindOf", "oclIsKindOf($0)"),
           java.util.Map.entry("oclIsTypeOf", "oclIsTypeOf($0)"),
-          java.util.Map.entry("oclAsType",   "oclAsType($0)"));
+          java.util.Map.entry("oclAsType", "oclAsType($0)"));
 
   private final MetamodelWrapper wrapper;
 
@@ -179,7 +178,9 @@ public class CompletionProvider {
     // -----------------------------------------------------------------------
     if (currentLine.isBlank() && isInAnnotationZone(textBefore)) {
       List<CompletionItem> annItems = annotationKeywordItems(true, textBefore);
-      if (!annItems.isEmpty()) return annItems;
+      if  (!annItems.isEmpty()) {
+        return annItems;
+      }
       // Both annotations present — fall through to body completions below.
     }
 
@@ -284,9 +285,15 @@ public class CompletionProvider {
     // Start from the line just before the current (blank) line.
     for (int i = lines.length - 2; i >= 0; i--) {
       String line = lines[i];
-      if (line.isBlank()) continue;
-      if (INV_BEFORE_CURSOR.matcher(line).find()) return true;
-      if (ANNOTATION_LINE.matcher(line).find()) continue;
+      if  (line.isBlank()) {
+        continue;
+      }
+      if  (INV_BEFORE_CURSOR.matcher(line).find()) {
+        return true;
+      }
+      if  (ANNOTATION_LINE.matcher(line).find()) {
+        continue;
+      }
       return false; // OCL body line — not in annotation zone
     }
     return false;
@@ -333,11 +340,29 @@ public class CompletionProvider {
 
     // Also suggest common instance-level operations with their parameter signatures.
     // label = readable call form, filterText = bare name so typing "oclAs" still matches.
-    for (var entry : List.of(
-        new String[]{"oclIsKindOf",  "oclIsKindOf($0)",  "oclIsKindOf(type : OclType) : Boolean", "oclIsKindOf(type)"},
-        new String[]{"oclIsTypeOf",  "oclIsTypeOf($0)",  "oclIsTypeOf(type : OclType) : Boolean",  "oclIsTypeOf(type)"},
-        new String[]{"oclAsType",    "oclAsType($0)",    "oclAsType(type : OclType) : T",           "oclAsType(type)"},
-        new String[]{OP_ALL_INSTANCES, OP_ALL_INSTANCES_CALL, "allInstances() : Set(self)", OP_ALL_INSTANCES_CALL})) {
+    for (var entry :
+        List.of(
+            new String[] {
+              "oclIsKindOf",
+              "oclIsKindOf($0)",
+              "oclIsKindOf(type : OclType) : Boolean",
+              "oclIsKindOf(type)"
+            },
+            new String[] {
+              "oclIsTypeOf",
+              "oclIsTypeOf($0)",
+              "oclIsTypeOf(type : OclType) : Boolean",
+              "oclIsTypeOf(type)"
+            },
+            new String[] {
+              "oclAsType", "oclAsType($0)", "oclAsType(type : OclType) : T", "oclAsType(type)"
+            },
+            new String[] {
+              OP_ALL_INSTANCES,
+              OP_ALL_INSTANCES_CALL,
+              "allInstances() : Set(self)",
+              OP_ALL_INSTANCES_CALL
+            })) {
       CompletionItem item = new CompletionItem(entry[3]);
       item.setFilterText(entry[0]);
       item.setKind(CompletionItemKind.Method);
@@ -354,9 +379,11 @@ public class CompletionProvider {
     List<CompletionItem> items = new ArrayList<>();
     for (var entry : COLLECTION_OPS.entrySet()) {
       // Label shows the readable signature; filterText ensures typing the name still matches.
-      String label = entry.getValue()
-          .replaceAll("\\$\\{\\d+:([^}]+)\\}", "$1")  // ${1:x} → x
-          .replaceAll("\\$\\d+", "");                  // $0 → (removed)
+      String label =
+          entry
+              .getValue()
+              .replaceAll("\\$\\{\\d+:([^}]+)\\}", "$1") // ${1:x} → x
+              .replaceAll("\\$\\d+", ""); // $0 → (removed)
       CompletionItem item = new CompletionItem(label);
       item.setFilterText(entry.getKey());
       item.setKind(CompletionItemKind.Method);
@@ -434,8 +461,10 @@ public class CompletionProvider {
     }
 
     // ── Group 2: Keywords ────────────────────────────────────────────────────
-    for (String kw : List.of("self", "let", "in", "if", "then", "else", "endif",
-                              "not", "and", "or", "xor", "implies", "null")) {
+    for (String kw :
+        List.of(
+            "self", "let", "in", "if", "then", "else", "endif", "not", "and", "or", "xor",
+            "implies", "null")) {
       CompletionItem item = new CompletionItem(kw);
       item.setKind(CompletionItemKind.Keyword);
       item.setSortText("2_" + kw);
@@ -480,11 +509,15 @@ public class CompletionProvider {
     String blockText = textBefore;
     java.util.regex.Matcher invMatcher = INV_BEFORE_CURSOR.matcher(textBefore);
     int lastInvEnd = 0;
-    while (invMatcher.find()) lastInvEnd = invMatcher.end();
-    if (lastInvEnd > 0) blockText = textBefore.substring(lastInvEnd);
+    while  (invMatcher.find()) {
+      lastInvEnd = invMatcher.end();
+    }
+    if  (lastInvEnd > 0) {
+      blockText = textBefore.substring(lastInvEnd);
+    }
 
     boolean severityPresent = HAS_SEVERITY.matcher(blockText).find();
-    boolean messagePresent  = HAS_MESSAGE.matcher(blockText).find();
+    boolean messagePresent = HAS_MESSAGE.matcher(blockText).find();
 
     List<CompletionItem> items = new ArrayList<>();
 
@@ -530,16 +563,19 @@ public class CompletionProvider {
    * Tries to determine the receiver type by finding the parse-tree node just before the trailing
    * {@code .} and looking up its type in the last analysis.
    */
-  private List<CompletionItem> completionsFromType(
-      Position cursor, DocumentAnalysis analysis) {
+  private List<CompletionItem> completionsFromType(Position cursor, DocumentAnalysis analysis) {
 
     // The cursor is right after '.'. We want the type of the expression that ends just before '.'.
     // Find the parse-tree node at (cursor.line, cursor.character - 2) — just before the dot.
     int dotCharPos = cursor.getCharacter() - 1;
-    if (dotCharPos < 0) return List.of();
+    if  (dotCharPos < 0) {
+      return List.of();
+    }
 
     Position beforeDot = new Position(cursor.getLine(), dotCharPos - 1);
-    if (beforeDot.getCharacter() < 0) return List.of();
+    if  (beforeDot.getCharacter() < 0) {
+      return List.of();
+    }
 
     ParseTreeProperty<Type> nodeTypes = analysis.getNodeTypes();
     ParseTree node =
@@ -570,7 +606,9 @@ public class CompletionProvider {
   /** Returns the substring of {@code text} from the start up to (but not including) the cursor. */
   private static String textBefore(String text, Position cursor) {
     int offset = offsetOf(text, cursor);
-    if (offset <= 0) return "";
+    if  (offset <= 0) {
+      return "";
+    }
     return text.substring(0, offset);
   }
 
@@ -579,7 +617,9 @@ public class CompletionProvider {
     int line = 0;
     int offset = 0;
     while (offset < text.length() && line < pos.getLine()) {
-      if (text.charAt(offset) == '\n') line++;
+      if  (text.charAt(offset) == '\n') {
+        line++;
+      }
       offset++;
     }
     return Math.min(offset + pos.getCharacter(), text.length());

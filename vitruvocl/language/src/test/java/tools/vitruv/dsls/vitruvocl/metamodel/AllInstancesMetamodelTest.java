@@ -63,7 +63,8 @@ class AllInstancesMetamodelTest {
         "context cad::Namespace inv:\n  cad::Shape.allInstances().size() > 0",
         "context cad::Namespace inv:\n  cad::Parameter.allInstances().size() >= 0",
         // chaining
-        "context cad::Sphere inv:\n  cad::Sphere.allInstances().select(s | s.radius > 0).size() > 0",
+        "context cad::Sphere inv:\n"
+            + "  cad::Sphere.allInstances().select(s | s.radius > 0).size() > 0",
         """
         context cad::Sphere inv:
           cad::Sphere.allInstances().forAll(s | s.radius > 0)""",
@@ -80,8 +81,7 @@ class AllInstancesMetamodelTest {
         """
         context cad::Sphere inv:
           cad::Sphere.allInstances().one(s | s.radius > 0) or
-          cad::Sphere.allInstances().size() != 1"""
-    );
+          cad::Sphere.allInstances().size() != 1""");
   }
 
   // ── cad metaclass receivers: success only (no isSatisfied) ──────
@@ -98,8 +98,7 @@ class AllInstancesMetamodelTest {
         "context cad::Box inv:\n  cad::Box.allInstances().size() >= 0",
         "context cad::Prism inv:\n  cad::Prism.allInstances().size() >= 0",
         "context cad::Pyramid inv:\n  cad::Pyramid.allInstances().size() >= 0",
-        "context cad::Cylinder inv:\n  cad::Cylinder.allInstances().first().notEmpty()"
-    );
+        "context cad::Cylinder inv:\n  cad::Cylinder.allInstances().first().notEmpty()");
   }
 
   // ── brakesystem receivers ────────────────────────────────────────
@@ -115,14 +114,16 @@ class AllInstancesMetamodelTest {
   static Stream<String> brakeSatisfiedConstraints() {
     return Stream.of(
         "context brakesystem::BrakeDisk inv:\n  brakesystem::BrakeDisk.allInstances().size() > 0",
-        "context brakesystem::BrakeCaliper inv:\n  brakesystem::BrakeCaliper.allInstances().size() > 0"
-    );
+        "context brakesystem::BrakeCaliper inv:\n"
+            + "  brakesystem::BrakeCaliper.allInstances().size() > 0");
   }
 
   @Test
   void testBrakePadAllInstancesEvaluates() {
-    ConstraintResult r = evalBrake(
-        "context brakesystem::BrakePad inv:\n  brakesystem::BrakePad.allInstances().size() >= 0");
+    ConstraintResult r =
+        evalBrake(
+            "context brakesystem::BrakePad inv:\n"
+                + "  brakesystem::BrakePad.allInstances().size() >= 0");
     assertTrue(r.isSuccess(), r.toDetailedErrorString());
   }
 
@@ -130,7 +131,8 @@ class AllInstancesMetamodelTest {
 
   @Test
   void testAllInstancesCrossMetamodel() {
-    String c = """
+    String c =
+        """
         context brakesystem::BrakeDisk inv:
           brakesystem::BrakeDisk.allInstances().size() > 0 and
           cad::Namespace.allInstances().size() > 0""";

@@ -103,8 +103,7 @@ class CrossMetamodelNavigationTest {
           let cadCaliper = cad::Namespace.allInstances()
             .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
           cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
-            .forAll(p | p.oclAsType(cad::Coordinate).x >= self.diameterInMM / 2)"""
-    );
+            .forAll(p | p.oclAsType(cad::Coordinate).x >= self.diameterInMM / 2)""");
   }
 
   @Test
@@ -160,7 +159,6 @@ class CrossMetamodelNavigationTest {
               let dz = self.center.z - o.bottomCenter.z in
               let rSum = self.radius + o.radius in
               dx*dx + dy*dy + dz*dz >= rSum * rSum
-            )"""
-    );
+            )""");
   }
 }

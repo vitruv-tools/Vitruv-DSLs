@@ -139,4 +139,3 @@ public interface SymbolTable {
    */
   Type lookupType(String typeName);
 }
-

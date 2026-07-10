@@ -8,7 +8,6 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvocl.lsp;
-import java.util.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.CodeActionParams;
@@ -262,48 +262,55 @@ public class OCLTextDocumentService implements TextDocumentService {
   /**
    * Returns quick-fix code actions for diagnostics that carry a suggestion.
    *
-   * <p>When the type checker detects an unknown operation it stores the closest known operation name
-   * in {@link tools.vitruv.dsls.vitruvocl.common.CompileError#getSuggestion()}. The
-   * {@link DocumentAnalyzer} serialises that suggestion into {@link Diagnostic#getData()}. Here we
-   * read it back and produce a {@code QuickFix} {@link CodeAction} whose {@link WorkspaceEdit}
-   * replaces the squiggled token range with the suggestion.
+   * <p>When the type checker detects an unknown operation it stores the closest known operation
+   * name in {@link tools.vitruv.dsls.vitruvocl.common.CompileError#getSuggestion()}. The {@link
+   * DocumentAnalyzer} serialises that suggestion into {@link Diagnostic#getData()}. Here we read it
+   * back and produce a {@code QuickFix} {@link CodeAction} whose {@link WorkspaceEdit} replaces the
+   * squiggled token range with the suggestion.
    *
-   * <p>VS Code renders each action as a blue-highlighted item in the "Quick Fix…" menu (⌘. / Ctrl+.)
-   * directly below the squiggle.
+   * <p>VS Code renders each action as a blue-highlighted item in the "Quick Fix…" menu (⌘. /
+   * Ctrl+.) directly below the squiggle.
    */
   @Override
   public CompletableFuture<List<Either<Command, CodeAction>>> codeAction(CodeActionParams params) {
-    return CompletableFuture.supplyAsync(() -> {
-      List<Either<Command, CodeAction>> actions = new ArrayList<>();
-      String uri = params.getTextDocument().getUri();
+    return CompletableFuture.supplyAsync(
+        () -> {
+          List<Either<Command, CodeAction>> actions = new ArrayList<>();
+          String uri = params.getTextDocument().getUri();
 
-      for (Diagnostic diag : params.getContext().getDiagnostics()) {
-        Object data = diag.getData();
-        if (data == null) continue;
+          for (Diagnostic diag : params.getContext().getDiagnostics()) {
+            Object data = diag.getData();
+            if  (data == null) {
+              continue;
+            }
 
-        // data is a String (the replacement text) serialised as a JSON string by lsp4j
-        String suggestion = data instanceof String s ? s : data.toString();
-        // lsp4j may wrap the value in quotes when deserialised via Gson
-        if (suggestion.startsWith("\"") && suggestion.endsWith("\"") && suggestion.length() >= 2) {
-          suggestion = suggestion.substring(1, suggestion.length() - 1);
-        }
-        if (suggestion.isBlank()) continue;
+            // data is a String (the replacement text) serialised as a JSON string by lsp4j
+            String suggestion = data instanceof String s ? s : data.toString();
+            // lsp4j may wrap the value in quotes when deserialised via Gson
+            if (suggestion.startsWith("\"")
+                && suggestion.endsWith("\"")
+                && suggestion.length() >= 2) {
+              suggestion = suggestion.substring(1, suggestion.length() - 1);
+            }
+            if  (suggestion.isBlank()) {
+              continue;
+            }
 
-        TextEdit edit = new TextEdit(diag.getRange(), suggestion);
-        WorkspaceEdit wsEdit = new WorkspaceEdit(Map.of(uri, List.of(edit)));
+            TextEdit edit = new TextEdit(diag.getRange(), suggestion);
+            WorkspaceEdit wsEdit = new WorkspaceEdit(Map.of(uri, List.of(edit)));
 
-        CodeAction action = new CodeAction("Replace with '" + suggestion + "'");
-        action.setKind(CodeActionKind.QuickFix);
-        action.setDiagnostics(List.of(diag));
-        action.setEdit(wsEdit);
-        // Mark as preferred so VS Code highlights it in blue
-        action.setIsPreferred(true);
+            CodeAction action = new CodeAction("Replace with '" + suggestion + "'");
+            action.setKind(CodeActionKind.QuickFix);
+            action.setDiagnostics(List.of(diag));
+            action.setEdit(wsEdit);
+            // Mark as preferred so VS Code highlights it in blue
+            action.setIsPreferred(true);
 
-        actions.add(Either.forRight(action));
-      }
+            actions.add(Either.forRight(action));
+          }
 
-      return actions;
-    });
+          return actions;
+        });
   }
 
   /**

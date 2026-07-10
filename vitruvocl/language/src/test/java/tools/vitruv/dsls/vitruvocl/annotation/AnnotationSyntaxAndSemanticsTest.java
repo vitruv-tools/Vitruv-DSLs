@@ -49,9 +49,9 @@ import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCLCompiler;
  *       violation records when a constraint is not satisfied
  * </ol>
  *
- * <p>Tests that exercise the full evaluation pipeline use the {@code brakesystem} metamodel so
- * the context class ({@code BrakeDisk}) resolves correctly and annotation validation inside
- * {@code visitInvCS} is actually reached.
+ * <p>Tests that exercise the full evaluation pipeline use the {@code brakesystem} metamodel so the
+ * context class ({@code BrakeDisk}) resolves correctly and annotation validation inside {@code
+ * visitInvCS} is actually reached.
  */
 @DisplayName("@severity and @message annotation tests")
 class AnnotationSyntaxAndSemanticsTest {
@@ -60,8 +60,7 @@ class AnnotationSyntaxAndSemanticsTest {
   // Shared metamodel paths (brakesystem provides BrakeDisk with diameterInMM)
   // ---------------------------------------------------------------------------
 
-  private static final Path ECORE =
-      Path.of("src/test/resources/test-metamodels/brakesystem.ecore");
+  private static final Path ECORE = Path.of("src/test/resources/test-metamodels/brakesystem.ecore");
   private static final Path XMI = Path.of("brakesystem.brakesystem");
 
   @BeforeAll
@@ -74,8 +73,7 @@ class AnnotationSyntaxAndSemanticsTest {
     EPackage.Registry.INSTANCE.remove("http://vitruv.tools/brakesystem/model");
     EPackage.Registry.INSTANCE.remove(
         "http://vitruv.tools/metamodels/dsls/reactions/runtime/correspondence/1.0");
-    EPackage.Registry.INSTANCE.remove(
-        "http://vitruv.tools/metamodels/change/correspondence/1.0");
+    EPackage.Registry.INSTANCE.remove("http://vitruv.tools/metamodels/change/correspondence/1.0");
   }
 
   // ---------------------------------------------------------------------------
@@ -84,7 +82,7 @@ class AnnotationSyntaxAndSemanticsTest {
 
   /** Runs the full three-pass pipeline and returns a {@link ConstraintResult}. */
   private static ConstraintResult eval(String constraint) {
-    return VitruvOCL.evaluateConstraint(constraint, new Path[]{ECORE}, new Path[]{XMI});
+    return VitruvOCL.evaluateConstraint(constraint, new Path[] {ECORE}, new Path[] {XMI});
   }
 
   /**
@@ -270,38 +268,40 @@ class AnnotationSyntaxAndSemanticsTest {
     @Test
     @DisplayName("Error message always mentions the offending value")
     void errorMentionsValue() {
-      ConstraintResult r = eval(
-          "context brakesystem::BrakeDisk inv:\n    @severity TYPO\n    self.diameterInMM > 0");
+      ConstraintResult r =
+          eval(
+              "context brakesystem::BrakeDisk inv:\n    @severity TYPO\n    self.diameterInMM > 0");
       assertFalse(r.isSuccess());
       assertTrue(
           r.getCompilerErrors().stream().anyMatch(e -> e.getMessage().contains("TYPO")),
-          "Error message should contain the offending value 'TYPO', got: "
-              + r.getCompilerErrors());
+          "Error message should contain the offending value 'TYPO', got: " + r.getCompilerErrors());
     }
 
     @Test
     @DisplayName("Error message lists all valid levels")
     void errorListsValidLevels() {
-      ConstraintResult r = eval(
-          "context brakesystem::BrakeDisk inv:\n    @severity NOPE\n    self.diameterInMM > 0");
+      ConstraintResult r =
+          eval(
+              "context brakesystem::BrakeDisk inv:\n    @severity NOPE\n    self.diameterInMM > 0");
       assertFalse(r.isSuccess());
       String msg = firstError(r);
       // The error must guide the user to valid options
       assertTrue(msg.contains("CRITICAL"), "Error should mention CRITICAL, got: " + msg);
-      assertTrue(msg.contains("WARNING"),  "Error should mention WARNING, got: "  + msg);
-      assertTrue(msg.contains("MAJOR"),    "Error should mention MAJOR, got: "    + msg);
-      assertTrue(msg.contains("MINOR"),    "Error should mention MINOR, got: "    + msg);
-      assertTrue(msg.contains("INFO"),     "Error should mention INFO, got: "     + msg);
+      assertTrue(msg.contains("WARNING"), "Error should mention WARNING, got: " + msg);
+      assertTrue(msg.contains("MAJOR"), "Error should mention MAJOR, got: " + msg);
+      assertTrue(msg.contains("MINOR"), "Error should mention MINOR, got: " + msg);
+      assertTrue(msg.contains("INFO"), "Error should mention INFO, got: " + msg);
     }
 
     // -- helper --
 
     private void assertSeverityError(String value) {
-      ConstraintResult r = eval(
-          "context brakesystem::BrakeDisk inv:\n    @severity " + value
-              + "\n    self.diameterInMM > 0");
-      assertFalse(r.isSuccess(),
-          "@severity " + value + " should be rejected but was accepted");
+      ConstraintResult r =
+          eval(
+              "context brakesystem::BrakeDisk inv:\n    @severity "
+                  + value
+                  + "\n    self.diameterInMM > 0");
+      assertFalse(r.isSuccess(), "@severity " + value + " should be rejected but was accepted");
     }
   }
 
@@ -318,9 +318,10 @@ class AnnotationSyntaxAndSemanticsTest {
     @DisplayName("@severity with an integer value causes a syntax error")
     void integerValue() {
       // "42" is an INT token, not an ID — the grammar expects ID after @severity
-      VitruvOCLParser p = parse(
-          "context brakesystem::BrakeDisk inv:\n    @severity 42\n    self.diameterInMM > 0");
-      assertTrue(p.getNumberOfSyntaxErrors() > 0,
+      VitruvOCLParser p =
+          parse("context brakesystem::BrakeDisk inv:\n    @severity 42\n    self.diameterInMM > 0");
+      assertTrue(
+          p.getNumberOfSyntaxErrors() > 0,
           "Integer value after @severity should be a syntax error");
     }
 
@@ -328,9 +329,10 @@ class AnnotationSyntaxAndSemanticsTest {
     @DisplayName("@severity with a quoted string causes a syntax error")
     void quotedStringValue() {
       // "\"CRITICAL\"" is a STRING token, not an ID
-      VitruvOCLParser p = parse(
-          "context brakesystem::BrakeDisk inv:\n    @severity \"CRITICAL\"\n    self.x > 0");
-      assertTrue(p.getNumberOfSyntaxErrors() > 0,
+      VitruvOCLParser p =
+          parse("context brakesystem::BrakeDisk inv:\n    @severity \"CRITICAL\"\n    self.x > 0");
+      assertTrue(
+          p.getNumberOfSyntaxErrors() > 0,
           "Quoted string after @severity should be a syntax error");
     }
 
@@ -340,46 +342,50 @@ class AnnotationSyntaxAndSemanticsTest {
       // ANTLR lexer silently drops the unrecognised '@' character and records a lexer error.
       // The remaining tokens ("Severity CRITICAL self.x > 0") form a garbled expression that
       // the type-checker cannot resolve → compilation must fail.
-      ConstraintResult r = eval(
-          "context brakesystem::BrakeDisk inv:\n    @Severity CRITICAL\n    self.diameterInMM > 0");
-      assertFalse(r.isSuccess(),
-          "@Severity (capital S) should not compile successfully");
+      ConstraintResult r =
+          eval(
+              "context brakesystem::BrakeDisk inv:\n"
+                  + "    @Severity CRITICAL\n"
+                  + "    self.diameterInMM > 0");
+      assertFalse(r.isSuccess(), "@Severity (capital S) should not compile successfully");
     }
 
     @Test
     @DisplayName("@SEVERITY (all caps) — lexer drops '@', causing downstream errors")
     void allCapsSeverity() {
-      ConstraintResult r = eval(
-          "context brakesystem::BrakeDisk inv:\n    @SEVERITY CRITICAL\n    self.diameterInMM > 0");
-      assertFalse(r.isSuccess(),
-          "@SEVERITY (all caps) should not compile successfully");
+      ConstraintResult r =
+          eval(
+              "context brakesystem::BrakeDisk inv:\n"
+                  + "    @SEVERITY CRITICAL\n"
+                  + "    self.diameterInMM > 0");
+      assertFalse(r.isSuccess(), "@SEVERITY (all caps) should not compile successfully");
     }
 
     @Test
     @DisplayName("@sev (abbreviated) — lexer drops '@', causing downstream errors")
     void abbreviatedSev() {
-      ConstraintResult r = eval(
-          "context brakesystem::BrakeDisk inv:\n    @sev CRITICAL\n    self.diameterInMM > 0");
-      assertFalse(r.isSuccess(),
-          "@sev should not compile successfully");
+      ConstraintResult r =
+          eval("context brakesystem::BrakeDisk inv:\n    @sev CRITICAL\n    self.diameterInMM > 0");
+      assertFalse(r.isSuccess(), "@sev should not compile successfully");
     }
 
     @Test
     @DisplayName("@MESSAGE (uppercase) — lexer drops '@', causing downstream errors")
     void uppercaseMessage() {
-      ConstraintResult r = eval(
-          "context brakesystem::BrakeDisk inv:\n    @MESSAGE \"text\"\n    self.diameterInMM > 0");
-      assertFalse(r.isSuccess(),
-          "@MESSAGE (uppercase) should not compile successfully");
+      ConstraintResult r =
+          eval(
+              "context brakesystem::BrakeDisk inv:\n"
+                  + "    @MESSAGE \"text\"\n"
+                  + "    self.diameterInMM > 0");
+      assertFalse(r.isSuccess(), "@MESSAGE (uppercase) should not compile successfully");
     }
 
     @Test
     @DisplayName("@msg (abbreviated) — lexer drops '@', causing downstream errors")
     void abbreviatedMsg() {
-      ConstraintResult r = eval(
-          "context brakesystem::BrakeDisk inv:\n    @msg \"text\"\n    self.diameterInMM > 0");
-      assertFalse(r.isSuccess(),
-          "@msg should not compile successfully");
+      ConstraintResult r =
+          eval("context brakesystem::BrakeDisk inv:\n    @msg \"text\"\n    self.diameterInMM > 0");
+      assertFalse(r.isSuccess(), "@msg should not compile successfully");
     }
   }
 
@@ -424,8 +430,7 @@ class AnnotationSyntaxAndSemanticsTest {
           """
           context brakesystem::BrakeDisk inv:
               @message ""
-              self.diameterInMM > 0"""
-      );
+              self.diameterInMM > 0""");
     }
   }
 
@@ -479,19 +484,21 @@ class AnnotationSyntaxAndSemanticsTest {
           context brakesystem::BrakeDisk inv:
               @message "Diameter must be positive"
               self.diameterInMM > 0""",
-          "context brakesystem::BrakeDisk inv:\n    self.diameterInMM > 0"
-      );
+          "context brakesystem::BrakeDisk inv:\n    self.diameterInMM > 0");
     }
 
     @Test
     @DisplayName("Invalid @severity alongside valid @message still fails")
     void invalidSeverityWithValidMessage() {
-      ConstraintResult r = eval("""
+      ConstraintResult r =
+          eval(
+              """
           context brakesystem::BrakeDisk inv:
               @severity IMPORTANT
               @message "Disk {self.name} is invalid"
               self.diameterInMM > 0""");
-      assertFalse(r.isSuccess(),
+      assertFalse(
+          r.isSuccess(),
           "A constraint with invalid @severity should fail even when @message is valid");
     }
   }
@@ -510,8 +517,9 @@ class AnnotationSyntaxAndSemanticsTest {
      * list directly from the evaluator.
      */
     private List<EvaluationVisitor.ViolationRecord> getRecords(String constraint) {
-      var loadResult = tools.vitruv.dsls.vitruvocl.pipeline.SmartLoader
-          .loadForConstraint(constraint, new Path[]{ECORE}, new Path[]{XMI});
+      var loadResult =
+          tools.vitruv.dsls.vitruvocl.pipeline.SmartLoader.loadForConstraint(
+              constraint, new Path[] {ECORE}, new Path[] {XMI});
       assertFalse(loadResult.hasErrors(), "Load must succeed");
       var compiler = new VitruvOCLCompiler(loadResult.wrapper, null);
       compiler.compile(constraint);
@@ -525,30 +533,32 @@ class AnnotationSyntaxAndSemanticsTest {
     @Test
     @DisplayName("Default severity is WARNING when @severity is absent")
     void defaultSeverityIsWarning() {
-      List<EvaluationVisitor.ViolationRecord> records = getRecords(
-          "context brakesystem::BrakeDisk inv:\n    0 > 0");
+      List<EvaluationVisitor.ViolationRecord> records =
+          getRecords("context brakesystem::BrakeDisk inv:\n    0 > 0");
       assertFalse(records.isEmpty(), "There should be at least one violation");
-      records.forEach(r ->
-          assertEquals("WARNING", r.severity(),
-              "Default severity should be WARNING, got: " + r.severity()));
+      records.forEach(
+          r ->
+              assertEquals(
+                  "WARNING",
+                  r.severity(),
+                  "Default severity should be WARNING, got: " + r.severity()));
     }
 
     @Test
     @DisplayName("@severity CRITICAL is stored in the ViolationRecord")
     void severityCriticalInRecord() {
-      List<EvaluationVisitor.ViolationRecord> records = getRecords(
-          "context brakesystem::BrakeDisk inv:\n    @severity CRITICAL\n    0 > 0");
+      List<EvaluationVisitor.ViolationRecord> records =
+          getRecords("context brakesystem::BrakeDisk inv:\n    @severity CRITICAL\n    0 > 0");
       assertFalse(records.isEmpty());
-      records.forEach(r ->
-          assertEquals("CRITICAL", r.severity(),
-              "Expected CRITICAL, got: " + r.severity()));
+      records.forEach(
+          r -> assertEquals("CRITICAL", r.severity(), "Expected CRITICAL, got: " + r.severity()));
     }
 
     @Test
     @DisplayName("@severity MINOR is stored in the ViolationRecord")
     void severityMinorInRecord() {
-      List<EvaluationVisitor.ViolationRecord> records = getRecords(
-          "context brakesystem::BrakeDisk inv:\n    @severity MINOR\n    0 > 0");
+      List<EvaluationVisitor.ViolationRecord> records =
+          getRecords("context brakesystem::BrakeDisk inv:\n    @severity MINOR\n    0 > 0");
       assertFalse(records.isEmpty());
       records.forEach(r -> assertEquals("MINOR", r.severity()));
     }
@@ -558,61 +568,79 @@ class AnnotationSyntaxAndSemanticsTest {
     @Test
     @DisplayName("customMessage is null when @message annotation is absent")
     void noAnnotationGivesNullCustomMessage() {
-      List<EvaluationVisitor.ViolationRecord> records = getRecords(
-          "context brakesystem::BrakeDisk inv BD_AlwaysFails:\n    0 > 0");
+      List<EvaluationVisitor.ViolationRecord> records =
+          getRecords("context brakesystem::BrakeDisk inv BD_AlwaysFails:\n    0 > 0");
       assertFalse(records.isEmpty());
-      records.forEach(r ->
-          assertNull(r.customMessage(),
-              "customMessage should be null when no @message present, got: " + r.customMessage()));
+      records.forEach(
+          r ->
+              assertNull(
+                  r.customMessage(),
+                  "customMessage should be null when no @message present, got: "
+                      + r.customMessage()));
     }
 
     @Test
     @DisplayName("@message plain text is stored verbatim in customMessage")
     void plainMessageInCustomMessage() {
-      List<EvaluationVisitor.ViolationRecord> records = getRecords("""
+      List<EvaluationVisitor.ViolationRecord> records =
+          getRecords(
+              """
           context brakesystem::BrakeDisk inv:
               @message "Diameter constraint violated"
               0 > 0""");
       assertFalse(records.isEmpty());
-      records.forEach(r ->
-          assertEquals("Diameter constraint violated", r.customMessage(),
-              "customMessage should match template verbatim, got: " + r.customMessage()));
+      records.forEach(
+          r ->
+              assertEquals(
+                  "Diameter constraint violated",
+                  r.customMessage(),
+                  "customMessage should match template verbatim, got: " + r.customMessage()));
     }
 
     @Test
     @DisplayName("@message with {self.attr} is interpolated — placeholder is resolved")
     void selfAttrInterpolation() {
-      List<EvaluationVisitor.ViolationRecord> records = getRecords("""
+      List<EvaluationVisitor.ViolationRecord> records =
+          getRecords(
+              """
           context brakesystem::BrakeDisk inv:
               @message "Disk {self.name} is invalid"
               0 > 0""");
       assertFalse(records.isEmpty());
-      records.forEach(r -> {
-        assertNotNull(r.customMessage(), "customMessage should not be null");
-        assertFalse(r.customMessage().contains("{self.name}"),
-            "Template placeholder should be resolved, got: " + r.customMessage());
-        assertTrue(r.customMessage().startsWith("Disk ") && r.customMessage().endsWith(" is invalid"),
-            "Interpolated form expected, got: " + r.customMessage());
-      });
+      records.forEach(
+          r -> {
+            assertNotNull(r.customMessage(), "customMessage should not be null");
+            assertFalse(
+                r.customMessage().contains("{self.name}"),
+                "Template placeholder should be resolved, got: " + r.customMessage());
+            assertTrue(
+                r.customMessage().startsWith("Disk ") && r.customMessage().endsWith(" is invalid"),
+                "Interpolated form expected, got: " + r.customMessage());
+          });
     }
 
     @Test
     @DisplayName("@severity and @message both appear correctly in the same ViolationRecord")
     void severityAndMessageBothPresent() {
-      List<EvaluationVisitor.ViolationRecord> records = getRecords("""
+      List<EvaluationVisitor.ViolationRecord> records =
+          getRecords(
+              """
           context brakesystem::BrakeDisk inv:
               @severity INFO
               @message "Informational: disk {self.name} failed"
               0 > 0""");
       assertFalse(records.isEmpty());
-      records.forEach(r -> {
-        assertEquals("INFO", r.severity());
-        assertNotNull(r.customMessage());
-        assertFalse(r.customMessage().contains("{self.name}"),
-            "Template should be interpolated, got: " + r.customMessage());
-        assertTrue(r.customMessage().startsWith("Informational:"),
-            "Message prefix expected, got: " + r.customMessage());
-      });
+      records.forEach(
+          r -> {
+            assertEquals("INFO", r.severity());
+            assertNotNull(r.customMessage());
+            assertFalse(
+                r.customMessage().contains("{self.name}"),
+                "Template should be interpolated, got: " + r.customMessage());
+            assertTrue(
+                r.customMessage().startsWith("Informational:"),
+                "Message prefix expected, got: " + r.customMessage());
+          });
     }
 
     // ---- ConstraintResult warnings — combined format ------------------------
@@ -620,15 +648,16 @@ class AnnotationSyntaxAndSemanticsTest {
     @Test
     @DisplayName("Warning contains [MAJOR] when @severity MAJOR is set")
     void warningContainsViolationAndSeverity() {
-      ConstraintResult result = eval("""
+      ConstraintResult result =
+          eval(
+              """
           context brakesystem::BrakeDisk inv:
               @severity MAJOR
               0 > 0""");
       assertTrue(result.isSuccess(), "Compilation must succeed");
       assertFalse(result.isSatisfied());
       assertTrue(
-          result.getWarnings().stream()
-              .anyMatch(w -> w.getMessage().contains("[MAJOR]")),
+          result.getWarnings().stream().anyMatch(w -> w.getMessage().contains("[MAJOR]")),
           "Warning should contain [MAJOR], got: " + result.getWarnings());
     }
 
@@ -636,21 +665,21 @@ class AnnotationSyntaxAndSemanticsTest {
     @DisplayName("Warning still contains instance attributes when @message is absent")
     void warningContainsInstanceAttributesWithoutMessage() {
       // No @message — instance label (from describeInstance) must appear
-      ConstraintResult result = eval(
-          "context brakesystem::BrakeDisk inv:\n    0 > 0");
+      ConstraintResult result = eval("context brakesystem::BrakeDisk inv:\n    0 > 0");
       assertTrue(result.isSuccess());
       assertFalse(result.isSatisfied());
       // describeInstance includes EClass name or attribute values
       assertTrue(
-          result.getWarnings().stream()
-              .anyMatch(w -> w.getMessage().contains("[WARNING]")),
+          result.getWarnings().stream().anyMatch(w -> w.getMessage().contains("[WARNING]")),
           "Warning must contain [WARNING], got: " + result.getWarnings());
     }
 
     @Test
     @DisplayName("Warning contains interpolated @message when annotation is present")
     void warningContainsInterpolatedMessage() {
-      ConstraintResult result = eval("""
+      ConstraintResult result =
+          eval(
+              """
           context brakesystem::BrakeDisk inv:
               @message "Custom: disk {self.name} failed"
               0 > 0""");
@@ -658,15 +687,19 @@ class AnnotationSyntaxAndSemanticsTest {
       assertFalse(result.isSatisfied());
       assertTrue(
           result.getWarnings().stream()
-              .anyMatch(w -> w.getMessage().contains("Custom:")
-                  && !w.getMessage().contains("{self.name}")),
+              .anyMatch(
+                  w ->
+                      w.getMessage().contains("Custom:")
+                          && !w.getMessage().contains("{self.name}")),
           "Warning should contain interpolated @message, got: " + result.getWarnings());
     }
 
     @Test
     @DisplayName("Warning contains both instance label and custom message when @message is set")
     void warningContainsBothInstanceLabelAndMessage() {
-      ConstraintResult result = eval("""
+      ConstraintResult result =
+          eval(
+              """
           context brakesystem::BrakeDisk inv:
               @severity CRITICAL
               @message "Disk failed"
@@ -675,8 +708,10 @@ class AnnotationSyntaxAndSemanticsTest {
       assertFalse(result.isSatisfied());
       assertTrue(
           result.getWarnings().stream()
-              .anyMatch(w -> w.getMessage().contains("[CRITICAL]")
-                  && w.getMessage().contains("Disk failed")),
+              .anyMatch(
+                  w ->
+                      w.getMessage().contains("[CRITICAL]")
+                          && w.getMessage().contains("Disk failed")),
           "Warning should contain severity and custom message, got: " + result.getWarnings());
     }
   }

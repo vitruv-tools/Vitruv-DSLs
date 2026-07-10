@@ -17,13 +17,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
-import org.junit.jupiter.params.provider.Arguments;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.dsls.vitruvocl.DummyTestSpecification;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLLexer;
@@ -79,9 +79,7 @@ class OCLIsTypeOfTest extends DummyTestSpecification {
   static Stream<String> singleElementTrueExpressions() {
     return Stream.of(
         "Set{5}.oclIsTypeOf(Integer)",
-        "Set{\"hello\"}.oclIsTypeOf(String)",
-        "Set{true}.oclIsTypeOf(Boolean)"
-    );
+        "Set{\"hello\"}.oclIsTypeOf(String)", "Set{true}.oclIsTypeOf(Boolean)");
   }
 
   @ParameterizedTest
@@ -97,8 +95,7 @@ class OCLIsTypeOfTest extends DummyTestSpecification {
         "Set{\"hello\"}.oclIsTypeOf(Integer)",
         "Set{\"hello\"}.oclIsTypeOf(Boolean)",
         "Set{true}.oclIsTypeOf(Integer)",
-        "Set{false}.oclIsTypeOf(String)"
-    );
+        "Set{false}.oclIsTypeOf(String)");
   }
 
   // ==================== Multiple Elements ====================
@@ -119,8 +116,7 @@ class OCLIsTypeOfTest extends DummyTestSpecification {
         Arguments.of("Set{1, 2, 3}.oclIsTypeOf(String)", 3, false),
         Arguments.of("Set{\"a\", \"b\", \"c\"}.oclIsTypeOf(String)", 3, true),
         Arguments.of("Set{true, false, true}.oclIsTypeOf(Boolean)", 2, true),
-        Arguments.of("Sequence{1, 2, 3}.oclIsTypeOf(Integer)", 3, true)
-    );
+        Arguments.of("Sequence{1, 2, 3}.oclIsTypeOf(Integer)", 3, true));
   }
 
   // ==================== Empty Collection ====================
@@ -248,10 +244,11 @@ class OCLIsTypeOfTest extends DummyTestSpecification {
   @ParameterizedTest
   @MethodSource("metamodelTypeOfSatisfiedConstraints")
   void testMetamodelTypeOfConstraintSatisfied(String constraint) {
-    ConstraintResult r = VitruvOCL.evaluateConstraint(
-        constraint,
-        new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-        new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
+    ConstraintResult r =
+        VitruvOCL.evaluateConstraint(
+            constraint,
+            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
     assertTrue(r.isSuccess(), "Evaluation should succeed");
     assertTrue(r.isSatisfied());
   }
@@ -265,8 +262,7 @@ context spaceMission::Spacecraft inv typeOfSpacecraft:
         """
 context satelliteSystem::Satellite inv typeOfSatellite:
   satelliteSystem::Satellite.allInstances().oclIsTypeOf(satelliteSystem::Satellite).forAll(b | b)
-"""
-    );
+""");
   }
 
   /** Spacecraft is NOT exactly of type Satellite → constraint fails. */
@@ -277,10 +273,11 @@ context satelliteSystem::Satellite inv typeOfSatellite:
 context spaceMission::Spacecraft inv typeOfSatellite:
   spaceMission::Spacecraft.allInstances().oclIsTypeOf(satelliteSystem::Satellite).forAll(b | b)
 """;
-    ConstraintResult r = VitruvOCL.evaluateConstraint(
-        constraint,
-        new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-        new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
+    ConstraintResult r =
+        VitruvOCL.evaluateConstraint(
+            constraint,
+            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
     assertTrue(r.isSuccess(), "Evaluation should succeed");
     assertFalse(r.isSatisfied(), "Spacecraft is not of type Satellite");
   }
@@ -295,10 +292,11 @@ context spaceMission::Spacecraft inv typeOfSatellite:
             sc.oclIsTypeOf(spaceMission::Spacecraft)
           ).size() > 0
         """;
-    ConstraintResult r = VitruvOCL.evaluateConstraint(
-        constraint,
-        new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-        new Path[] {SPACECRAFT_VOYAGER, SPACECRAFT_ATLAS, SATELLITE_VOYAGER});
+    ConstraintResult r =
+        VitruvOCL.evaluateConstraint(
+            constraint,
+            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            new Path[] {SPACECRAFT_VOYAGER, SPACECRAFT_ATLAS, SATELLITE_VOYAGER});
     assertTrue(r.isSuccess(), "Evaluation should succeed");
     assertTrue(r.isSatisfied(), "Should find Spacecraft instances via oclIsTypeOf");
   }
@@ -330,8 +328,8 @@ context spaceMission::Spacecraft inv typeOfSatellite:
   /** Overrides parse entry point to use {@code infixedExpCS()} for oclIsTypeOf expressions. */
   @Override
   protected ParseTree parse(String input) {
-    CommonTokenStream tokens = new CommonTokenStream(new VitruvOCLLexer(CharStreams.fromString(input)));
+    CommonTokenStream tokens =
+        new CommonTokenStream(new VitruvOCLLexer(CharStreams.fromString(input)));
     return new VitruvOCLParser(tokens).infixedExpCS();
   }
-
 }

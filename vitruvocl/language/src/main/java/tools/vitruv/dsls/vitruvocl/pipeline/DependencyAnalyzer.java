@@ -76,15 +76,16 @@ public class DependencyAnalyzer {
    * Returns {@code true} if the token at {@code index} is immediately preceded (ignoring hidden
    * channel tokens) by a comparison or logical operator token.
    *
-   * <p>Used to detect enum-literal references such as {@code p.unit == Unit::MM}: there the
-   * {@code "Unit"} token is preceded by {@code "=="} and must not be treated as a metamodel
-   * package name.
+   * <p>Used to detect enum-literal references such as {@code p.unit == Unit::MM}: there the {@code
+   * "Unit"} token is preceded by {@code "=="} and must not be treated as a metamodel package name.
    */
   private static boolean isPrecededByComparisonOrLogicalOp(List<Token> tokens, int index) {
     // Walk backwards, skipping whitespace / hidden-channel tokens
     for (int j = index - 1; j >= 0; j--) {
       Token t = tokens.get(j);
-      if (t.getChannel() != Token.DEFAULT_CHANNEL) continue; // skip hidden tokens
+      if  (t.getChannel() != Token.DEFAULT_CHANNEL) {
+        continue; // skip hidden tokens
+      }
       String txt = t.getText();
       // Only equality operators reliably indicate an enum-literal value context.
       // Single '=', '<', '>', 'and', 'or', etc. may appear in let-bindings or

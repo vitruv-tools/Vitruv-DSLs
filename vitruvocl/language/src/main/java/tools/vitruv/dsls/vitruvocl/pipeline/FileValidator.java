@@ -59,9 +59,9 @@ public class FileValidator {
   }
 
   /**
-   * Extracts the names of the root package and all of its nested {@code eSubpackages}, since
-   * model instances reference sub-package names directly (e.g. Palladio PCM's {@code repository}
-   * and {@code allocation} sub-packages of {@code pcm.ecore}), not just the top-level name.
+   * Extracts the names of the root package and all of its nested {@code eSubpackages}, since model
+   * instances reference sub-package names directly (e.g. Palladio PCM's {@code repository} and
+   * {@code allocation} sub-packages of {@code pcm.ecore}), not just the top-level name.
    */
   public static Set<String> extractAllPackageNamesFromEcore(Path ecorePath) throws IOException {
     try {
@@ -125,11 +125,11 @@ public class FileValidator {
    * Extracts all package names referenced by an .xmi file's root element: the root tag's own
    * namespace prefix (if any) plus every {@code xmlns:xxx} declaration on the root.
    *
-   * <p>PCM instance files are heterogeneous — e.g. a {@code repository:Repository} root can
-   * contain deeply nested {@code xsi:type="seff:..."} elements (inline SEFFs on a
-   * {@code BasicComponent}), so the package(s) actually instantiated in the file are not limited
-   * to the root tag's own package. Every {@code xmlns:xxx} declaration on the root corresponds to
-   * a package that {@code xsi:type} references inside the document may use.
+   * <p>PCM instance files are heterogeneous — e.g. a {@code repository:Repository} root can contain
+   * deeply nested {@code xsi:type="seff:..."} elements (inline SEFFs on a {@code BasicComponent}),
+   * so the package(s) actually instantiated in the file are not limited to the root tag's own
+   * package. Every {@code xmlns:xxx} declaration on the root corresponds to a package that {@code
+   * xsi:type} references inside the document may use.
    */
   public static Set<String> extractAllPackageNamesFromXmi(Path xmiPath) throws IOException {
     try {
@@ -147,7 +147,8 @@ public class FileValidator {
       for (int i = 0; i < attrs.getLength(); i++) {
         Node attr = attrs.item(i);
         String attrName = attr.getNodeName();
-        if (attrName.startsWith("xmlns:") && !attrName.equals("xmlns:xmi")
+        if (attrName.startsWith("xmlns:")
+            && !attrName.equals("xmlns:xmi")
             && !attrName.equals("xmlns:xsi")) {
           names.add(attrName.substring(6)); // Remove "xmlns:"
         }
@@ -178,8 +179,7 @@ public class FileValidator {
    * Creates a {@link DocumentBuilder} with external entity access disabled to prevent XXE attacks.
    * All XML parsing in this class must go through this factory method.
    */
-  private static DocumentBuilder newSecureDocumentBuilder()
-      throws ParserConfigurationException {
+  private static DocumentBuilder newSecureDocumentBuilder() throws ParserConfigurationException {
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
     factory.setFeature("http://xml.org/sax/features/external-general-entities", false);

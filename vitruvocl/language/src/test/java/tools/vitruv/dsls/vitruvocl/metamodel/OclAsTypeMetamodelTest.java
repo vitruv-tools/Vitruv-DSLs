@@ -109,8 +109,7 @@ class OclAsTypeMetamodelTest {
             .collect(p | p.oclAsType(cad::Coordinate).x).sum() >= 0
           or
           self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
-            .collect(p | p.oclAsType(cad::Coordinate).x).sum() < 0"""
-    );
+            .collect(p | p.oclAsType(cad::Coordinate).x).sum() < 0""");
   }
 
   // ── Singleton cast: ¡T!.oclAsType(U) → ¡U! ──────────────────

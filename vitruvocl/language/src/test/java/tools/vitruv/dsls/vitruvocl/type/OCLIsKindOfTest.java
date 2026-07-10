@@ -16,14 +16,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.file.Path;
 import java.util.List;
-import org.junit.jupiter.params.provider.Arguments;
+import java.util.stream.Stream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.dsls.vitruvocl.DummyTestSpecification;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLLexer;
@@ -76,9 +76,7 @@ class OCLIsKindOfTest extends DummyTestSpecification {
   static Stream<String> singleElementTrueExpressions() {
     return Stream.of(
         "Set{5}.oclIsKindOf(Integer)",
-        "Set{\"hello\"}.oclIsKindOf(String)",
-        "Set{true}.oclIsKindOf(Boolean)"
-    );
+        "Set{\"hello\"}.oclIsKindOf(String)", "Set{true}.oclIsKindOf(Boolean)");
   }
 
   @ParameterizedTest
@@ -94,8 +92,7 @@ class OCLIsKindOfTest extends DummyTestSpecification {
         "Set{\"hello\"}.oclIsKindOf(Integer)",
         "Set{\"hello\"}.oclIsKindOf(Boolean)",
         "Set{true}.oclIsKindOf(Integer)",
-        "Set{false}.oclIsKindOf(String)"
-    );
+        "Set{false}.oclIsKindOf(String)");
   }
 
   // ==================== Multiple Elements ====================
@@ -116,8 +113,7 @@ class OCLIsKindOfTest extends DummyTestSpecification {
         Arguments.of("Set{1, 2, 3}.oclIsKindOf(String)", 3, false),
         Arguments.of("Set{\"a\", \"b\", \"c\"}.oclIsKindOf(String)", 3, true),
         Arguments.of("Set{true, false, true}.oclIsKindOf(Boolean)", 2, true),
-        Arguments.of("Sequence{1, 2, 3}.oclIsKindOf(Integer)", 3, true)
-    );
+        Arguments.of("Sequence{1, 2, 3}.oclIsKindOf(Integer)", 3, true));
   }
 
   // ==================== Empty Collection ====================
@@ -245,10 +241,11 @@ class OCLIsKindOfTest extends DummyTestSpecification {
   @ParameterizedTest
   @MethodSource("metamodelKindOfSatisfiedConstraints")
   void testMetamodelKindOfConstraintSatisfied(String constraint) {
-    ConstraintResult r = VitruvOCL.evaluateConstraint(
-        constraint,
-        new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-        new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
+    ConstraintResult r =
+        VitruvOCL.evaluateConstraint(
+            constraint,
+            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
     assertTrue(r.isSuccess(), "Evaluation should succeed");
     assertTrue(r.isSatisfied());
   }
@@ -266,8 +263,7 @@ context spaceMission::Spacecraft inv kindOfSatellite:
         """
 context satelliteSystem::Satellite inv kindOfSatellite:
   satelliteSystem::Satellite.allInstances().oclIsKindOf(satelliteSystem::Satellite).select(b | b).size() == satelliteSystem::Satellite.allInstances().size()
-"""
-    );
+""");
   }
 
   /** Tests oclIsKindOf used inside select iterator (uses extra instance file SPACECRAFT_ATLAS). */
@@ -280,10 +276,11 @@ context satelliteSystem::Satellite inv kindOfSatellite:
             sc.oclIsKindOf(spaceMission::Spacecraft)
           ).size() > 0
         """;
-    ConstraintResult r = VitruvOCL.evaluateConstraint(
-        constraint,
-        new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
-        new Path[] {SPACECRAFT_VOYAGER, SPACECRAFT_ATLAS, SATELLITE_VOYAGER});
+    ConstraintResult r =
+        VitruvOCL.evaluateConstraint(
+            constraint,
+            new Path[] {SPACEMISSION_ECORE, SATELLITE_ECORE},
+            new Path[] {SPACECRAFT_VOYAGER, SPACECRAFT_ATLAS, SATELLITE_VOYAGER});
     assertTrue(r.isSuccess(), "Evaluation should succeed: " + r.toDetailedErrorString());
     assertTrue(r.isSatisfied(), "Should find Spacecraft instances via oclIsKindOf");
   }

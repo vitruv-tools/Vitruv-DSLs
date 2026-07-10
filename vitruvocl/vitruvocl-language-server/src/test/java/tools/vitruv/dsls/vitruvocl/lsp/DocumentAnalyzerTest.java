@@ -71,16 +71,18 @@ class DocumentAnalyzerTest {
 
     DocumentAnalysis result = analyzer.analyze(ocl);
 
-    List<Diagnostic> errors = result.getDiagnostics().stream()
-        .filter(d -> d.getSeverity() == DiagnosticSeverity.Error)
-        .toList();
+    List<Diagnostic> errors =
+        result.getDiagnostics().stream()
+            .filter(d -> d.getSeverity() == DiagnosticSeverity.Error)
+            .toList();
     assertThat(errors).isNotEmpty();
   }
 
   @Test
   void annotationKeywordTypo_producesDiagnosticWithSuggestion() {
     // '@severit' is close to '@severity' — should be flagged with a quick-fix suggestion
-    String ocl = """
+    String ocl =
+        """
         context spaceMission::Spacecraft inv check:
           @severit WARNING
           self.mass > 0
@@ -88,9 +90,10 @@ class DocumentAnalyzerTest {
 
     DocumentAnalysis result = analyzer.analyze(ocl);
 
-    List<Diagnostic> typos = result.getDiagnostics().stream()
-        .filter(d -> d.getMessage().contains("Did you mean"))
-        .toList();
+    List<Diagnostic> typos =
+        result.getDiagnostics().stream()
+            .filter(d -> d.getMessage().contains("Did you mean"))
+            .toList();
     assertThat(typos).isNotEmpty();
     assertThat(typos.get(0).getData()).isEqualTo("@severity");
   }
@@ -99,7 +102,8 @@ class DocumentAnalyzerTest {
   void importLines_areStrippedAndLineNumbersPreserved() {
     // The import line must be stripped; the constraint starts on line 1 (0-based).
     // A syntax error on line 2 (0-based) must still point to line 2, not line 1.
-    String ocl = """
+    String ocl =
+        """
         import spaceMission.ecore
         context spaceMission::Spacecraft inv check:
           INVALID_EXPRESSION_@@@
@@ -109,8 +113,9 @@ class DocumentAnalyzerTest {
 
     assertThat(result.getDiagnostics()).isNotEmpty();
     // All diagnostics must be on line >= 1 (the import line was line 0 and must be invisible)
-    result.getDiagnostics().forEach(d ->
-        assertThat(d.getRange().getStart().getLine()).isGreaterThan(0));
+    result
+        .getDiagnostics()
+        .forEach(d -> assertThat(d.getRange().getStart().getLine()).isGreaterThan(0));
   }
 
   @Test
@@ -123,7 +128,8 @@ class DocumentAnalyzerTest {
 
   @Test
   void multipleConstraints_allValidated() {
-    String ocl = """
+    String ocl =
+        """
         context spaceMission::Spacecraft inv massPositive: self.mass > 0
         context spaceMission::Spacecraft inv nameNotEmpty: self.name.size() > 0
         """;
@@ -140,11 +146,14 @@ class DocumentAnalyzerTest {
 
     DocumentAnalysis result = analyzer.analyze(ocl);
 
-    result.getDiagnostics().forEach(d -> {
-      assertThat(d.getRange().getStart().getLine()).isGreaterThanOrEqualTo(0);
-      assertThat(d.getRange().getStart().getCharacter()).isGreaterThanOrEqualTo(0);
-      assertThat(d.getRange().getEnd().getLine()).isGreaterThanOrEqualTo(0);
-      assertThat(d.getRange().getEnd().getCharacter()).isGreaterThanOrEqualTo(0);
-    });
+    result
+        .getDiagnostics()
+        .forEach(
+            d -> {
+              assertThat(d.getRange().getStart().getLine()).isGreaterThanOrEqualTo(0);
+              assertThat(d.getRange().getStart().getCharacter()).isGreaterThanOrEqualTo(0);
+              assertThat(d.getRange().getEnd().getLine()).isGreaterThanOrEqualTo(0);
+              assertThat(d.getRange().getEnd().getCharacter()).isGreaterThanOrEqualTo(0);
+            });
   }
 }

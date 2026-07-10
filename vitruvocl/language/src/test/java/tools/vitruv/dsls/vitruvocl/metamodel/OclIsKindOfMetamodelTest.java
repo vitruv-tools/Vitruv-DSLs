@@ -82,7 +82,6 @@ class OclIsKindOfMetamodelTest {
         """
         context cad::Namespace inv:
           self.parameters.select(p | p.oclIsKindOf(cad::Parameter)).size()
-            >= self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size()"""
-    );
+            >= self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size()""");
   }
 }

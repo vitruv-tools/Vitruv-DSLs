@@ -257,17 +257,21 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
         String mmName = ctx.metamodel.getText();
         String clsName = ctx.className.getText();
         if (!specification.getAvailableMetamodels().contains(mmName)) {
-          errors.add(ctx.metamodel, "Unknown metamodel '" + mmName + "'",
-              ErrorSeverity.ERROR, PHASE_TAG);
+          errors.add(
+              ctx.metamodel, "Unknown metamodel '" + mmName + "'", ErrorSeverity.ERROR, PHASE_TAG);
         } else {
-          errors.add(ctx.className,
+          errors.add(
+              ctx.className,
               "Unknown class '" + clsName + "' in metamodel '" + mmName + "'",
-              ErrorSeverity.ERROR, PHASE_TAG);
+              ErrorSeverity.ERROR,
+              PHASE_TAG);
         }
       } else if (ctx.contextName != null) {
-        errors.add(ctx.contextName,
+        errors.add(
+            ctx.contextName,
             "Unknown context type '" + ctx.contextName.getText() + "'",
-            ErrorSeverity.ERROR, PHASE_TAG);
+            ErrorSeverity.ERROR,
+            PHASE_TAG);
       }
       return null;
     }
@@ -1949,4 +1953,3 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
     return null;
   }
 }
-

@@ -280,7 +280,8 @@ class SimpleMathTest extends DummyTestSpecification {
   /** Overrides parse entry point to use {@code infixedExpCS()} for arithmetic expressions. */
   @Override
   protected ParseTree parse(String input) {
-    CommonTokenStream tokens = new CommonTokenStream(new VitruvOCLLexer(CharStreams.fromString(input)));
+    CommonTokenStream tokens =
+        new CommonTokenStream(new VitruvOCLLexer(CharStreams.fromString(input)));
     return new VitruvOCLParser(tokens).infixedExpCS();
   }
 }

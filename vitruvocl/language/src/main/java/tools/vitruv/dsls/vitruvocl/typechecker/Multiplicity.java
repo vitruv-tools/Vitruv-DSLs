@@ -155,4 +155,3 @@ public enum Multiplicity {
     return this == SEQUENCE && other == BAG;
   }
 }
-

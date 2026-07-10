@@ -11,12 +11,12 @@
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvocl.pipeline;
-import java.util.logging.Logger;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Intelligent loader that analyzes constraints to load only required metamodels and instances.
@@ -145,8 +145,10 @@ public class SmartLoader {
         xmiPackageNames.add(packageNames);
       } catch (IOException e) {
         // Non-XML or unrecognised files (e.g. Vitruvius-internal metadata) are skipped silently.
-        warnings.add(new Warning(Warning.WarningType.UNUSED_MODEL,
-            "Skipping unrecognised instance file: " + xmi.getFileName()));
+        warnings.add(
+            new Warning(
+                Warning.WarningType.UNUSED_MODEL,
+                "Skipping unrecognised instance file: " + xmi.getFileName()));
       }
     }
 
@@ -157,7 +159,6 @@ public class SmartLoader {
     // Always load correspondence instances when present — the ecore is embedded in the JAR
     // and auto-registered, so no explicit .ecore file is required for it.
     requiredPackages.add(PKG_CORRESPONDENCE);
-
 
     // Load only required metamodels and the instances that match them.
     boolean[] loaded = new boolean[xmiOccurrences.size()];
@@ -193,22 +194,22 @@ public class SmartLoader {
           // Already loaded for a different package name found in the same occurrence
           // (e.g. a repository:Repository root with nested xsi:type="seff:..." elements).
           loaded[i] = true;
-        Path xmi = xmiOccurrences.get(i);
-        try {
-          wrapper.loadModelInstance(xmi);
-        } catch (IOException e) {
-          fileErrors.add(
-              new FileError(
-                  xmi,
-                  FileError.FileErrorType.PARSE_ERROR,
-                  "Failed to load model: " + e.getMessage()));
-        } catch (Exception e) {
-          fileErrors.add(
-              new FileError(
-                  xmi,
-                  FileError.FileErrorType.PARSE_ERROR,
-                  "Failed to load model (runtime error): " + e.getMessage()));
-        }
+          Path xmi = xmiOccurrences.get(i);
+          try {
+            wrapper.loadModelInstance(xmi);
+          } catch (IOException e) {
+            fileErrors.add(
+                new FileError(
+                    xmi,
+                    FileError.FileErrorType.PARSE_ERROR,
+                    "Failed to load model: " + e.getMessage()));
+          } catch (Exception e) {
+            fileErrors.add(
+                new FileError(
+                    xmi,
+                    FileError.FileErrorType.PARSE_ERROR,
+                    "Failed to load model (runtime error): " + e.getMessage()));
+          }
         }
       }
 

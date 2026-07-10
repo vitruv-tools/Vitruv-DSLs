@@ -207,8 +207,7 @@ class CorrespondenceOperatorTest {
                 self ~ sat
               ).isEmpty()
             """,
-            noCorr)
-    );
+            noCorr));
   }
 
   // ── Parameterized: success-only constraints ───────────────────────────────
@@ -301,8 +300,7 @@ class CorrespondenceOperatorTest {
                 )
               )
             """,
-            multiSat)
-    );
+            multiSat));
   }
 
   // ── Standalone tests ──────────────────────────────────────────────────────
@@ -317,10 +315,10 @@ class CorrespondenceOperatorTest {
             self ~ sat
           ).isEmpty()
         """;
-    ConstraintResult result =
-        eval(constraint, SPACECRAFT_ATLAS, SATELLITE_HUBBLE, CORRESPONDENCES);
+    ConstraintResult result = eval(constraint, SPACECRAFT_ATLAS, SATELLITE_HUBBLE, CORRESPONDENCES);
     assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Atlas spacecraft should have no correspondence to Hubble satellite");
+    assertTrue(
+        result.isSatisfied(), "Atlas spacecraft should have no correspondence to Hubble satellite");
   }
 
   /** Same as above but with select(~) shorthand. */
@@ -331,10 +329,10 @@ class CorrespondenceOperatorTest {
         context spaceMission::Spacecraft inv:
           satelliteSystem::Satellite.allInstances().select(~).isEmpty()
         """;
-    ConstraintResult result =
-        eval(constraint, SPACECRAFT_ATLAS, SATELLITE_HUBBLE, CORRESPONDENCES);
+    ConstraintResult result = eval(constraint, SPACECRAFT_ATLAS, SATELLITE_HUBBLE, CORRESPONDENCES);
     assertTrue(result.isSuccess());
-    assertTrue(result.isSatisfied(), "Atlas spacecraft should have no correspondence to Hubble satellite");
+    assertTrue(
+        result.isSatisfied(), "Atlas spacecraft should have no correspondence to Hubble satellite");
   }
 
   /** Tests bidirectional correspondence: spacecraft → satellite AND satellite → spacecraft. */

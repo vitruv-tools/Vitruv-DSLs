@@ -8,7 +8,6 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvocl.lsp;
-import java.util.logging.Logger;
 
 import java.io.IOException;
 import java.net.URI;
@@ -20,6 +19,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Logger;
 import org.eclipse.lsp4j.CompletionOptions;
 import org.eclipse.lsp4j.DidChangeWatchedFilesRegistrationOptions;
 import org.eclipse.lsp4j.FileSystemWatcher;
@@ -39,7 +39,6 @@ import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
-
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
 
 /**
@@ -189,7 +188,9 @@ public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
   }
 
   private static void scanForEcore(Path root, List<Path> result) {
-    if (root == null || !Files.isDirectory(root)) return;
+    if  (root == null || !Files.isDirectory(root)) {
+      return;
+    }
     try {
       Files.walkFileTree(
           root,
@@ -218,7 +219,9 @@ public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
   }
 
   private static Path uriToPath(String uriString) {
-    if (uriString == null) return null;
+    if  (uriString == null) {
+      return null;
+    }
     try {
       return Path.of(URI.create(uriString));
     } catch (Exception e) {
@@ -226,5 +229,3 @@ public class OCLLanguageServer implements LanguageServer, LanguageClientAware {
     }
   }
 }
-
-

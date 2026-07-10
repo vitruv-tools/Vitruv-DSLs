@@ -294,8 +294,7 @@ class CrossMetamodelConstraintTest {
               Path.of("src/test/resources/test-models/spacecraft-atlas.spacemission"),
               Path.of("src/test/resources/test-models/satellite-voyager.satellitesystem"),
               Path.of("src/test/resources/test-models/satellite-atlas.satellitesystem")
-            })
-    );
+            }));
   }
 
   // ── Parameterized: success-only constraints ───────────────────────────────
@@ -311,7 +310,9 @@ class CrossMetamodelConstraintTest {
     Path[] voy = {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER};
     Path[] voy2 = {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS};
     Path[] voy3 = {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER, SATELLITE_ATLAS, SATELLITE_HUBBLE};
-    Path[] sc2sat3 = {SPACECRAFT_VOYAGER, SPACECRAFT_ATLAS, SATELLITE_VOYAGER, SATELLITE_ATLAS, SATELLITE_HUBBLE};
+    Path[] sc2sat3 = {
+      SPACECRAFT_VOYAGER, SPACECRAFT_ATLAS, SATELLITE_VOYAGER, SATELLITE_ATLAS, SATELLITE_HUBBLE
+    };
     return Stream.of(
         // Multiple models aggregation
         Arguments.of(
@@ -504,8 +505,7 @@ class CrossMetamodelConstraintTest {
                 sat.serialNumber.toUpper() == self.serialNumber.toUpper()
               )
             """,
-            voy)
-    );
+            voy));
   }
 
   // ── Tests with satellite-only ecores (two-variable iterators) ─────────────
@@ -599,9 +599,7 @@ class CrossMetamodelConstraintTest {
         """;
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
-            constraint,
-            SM_SAT_ECORES,
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_HUBBLE});
+            constraint, SM_SAT_ECORES, new Path[] {SPACECRAFT_VOYAGER, SATELLITE_HUBBLE});
     assertTrue(result.isSuccess());
     assertFalse(result.isSatisfied(), "Spacecraft SC-001 should NOT match Satellite SAT-099");
   }
@@ -618,9 +616,7 @@ class CrossMetamodelConstraintTest {
         """;
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
-            constraint,
-            SM_SAT_ECORES,
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
+            constraint, SM_SAT_ECORES, new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
     assertTrue(result.isSuccess());
     assertFalse(result.isSatisfied(), "exists on empty collection should be false");
   }
@@ -637,9 +633,7 @@ class CrossMetamodelConstraintTest {
         """;
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
-            constraint,
-            SM_SAT_ECORES,
-            new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
+            constraint, SM_SAT_ECORES, new Path[] {SPACECRAFT_VOYAGER, SATELLITE_VOYAGER});
     assertTrue(result.isSuccess());
     assertFalse(result.isSatisfied(), "All satellites having negative mass should be false");
   }

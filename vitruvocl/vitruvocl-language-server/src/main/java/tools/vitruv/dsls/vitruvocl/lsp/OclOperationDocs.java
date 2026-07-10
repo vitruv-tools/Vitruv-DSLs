@@ -33,8 +33,7 @@ public final class OclOperationDocs {
   private static final String T_OCL_TYPE = "OclType";
   private static final String T_STRING = "String";
   private static final String PARAM_PATTERN = "pattern";
-  private static final String DESC_NO_STRING_ORDERING =
-      "String ordering is NOT supported in OCL#.";
+  private static final String DESC_NO_STRING_ORDERING = "String ordering is NOT supported in OCL#.";
   private static final String ITER_PARAM_PART = ": T | ";
   private static final String RETURNS_COLL = ": T) → ";
 
@@ -104,7 +103,15 @@ public final class OclOperationDocs {
     m.put(
         "select",
         op(
-            T_COLLECTION + ".select(" + PARAM_ITERATOR + ITER_PARAM_PART + PARAM_CONDITION + ": " + T_BOOLEAN + ") → " + T_COLLECTION,
+            T_COLLECTION
+                + ".select("
+                + PARAM_ITERATOR
+                + ITER_PARAM_PART
+                + PARAM_CONDITION
+                + ": "
+                + T_BOOLEAN
+                + ") → "
+                + T_COLLECTION,
             "Filters a collection to the subset for which the body expression evaluates to `true`. "
                 + "Preserves the collection kind (Set stays Set, Sequence stays Sequence).",
             "A sub-collection containing only the elements that satisfy `condition`",
@@ -114,7 +121,15 @@ public final class OclOperationDocs {
     m.put(
         "reject",
         op(
-            T_COLLECTION + ".reject(" + PARAM_ITERATOR + ITER_PARAM_PART + PARAM_CONDITION + ": " + T_BOOLEAN + ") → " + T_COLLECTION,
+            T_COLLECTION
+                + ".reject("
+                + PARAM_ITERATOR
+                + ITER_PARAM_PART
+                + PARAM_CONDITION
+                + ": "
+                + T_BOOLEAN
+                + ") → "
+                + T_COLLECTION,
             "Filters a collection to the subset for which the body expression evaluates to `false`."
                 + " Complementary to `select`.",
             "A sub-collection of elements for which `condition` is `false`",
@@ -134,7 +149,15 @@ public final class OclOperationDocs {
     m.put(
         "forAll",
         op(
-            T_COLLECTION + ".forAll(" + PARAM_ITERATOR + ITER_PARAM_PART + PARAM_CONDITION + ": " + T_BOOLEAN + ") → " + T_BOOLEAN,
+            T_COLLECTION
+                + ".forAll("
+                + PARAM_ITERATOR
+                + ITER_PARAM_PART
+                + PARAM_CONDITION
+                + ": "
+                + T_BOOLEAN
+                + ") → "
+                + T_BOOLEAN,
             "Universal quantifier. Returns `true` when the body evaluates to `true` for every "
                 + "element. Returns `true` for empty collections (vacuous truth).",
             "`true` if `condition` holds for all elements; `false` as soon as one element fails",
@@ -144,7 +167,15 @@ public final class OclOperationDocs {
     m.put(
         "exists",
         op(
-            T_COLLECTION + ".exists(" + PARAM_ITERATOR + ITER_PARAM_PART + PARAM_CONDITION + ": " + T_BOOLEAN + ") → " + T_BOOLEAN,
+            T_COLLECTION
+                + ".exists("
+                + PARAM_ITERATOR
+                + ITER_PARAM_PART
+                + PARAM_CONDITION
+                + ": "
+                + T_BOOLEAN
+                + ") → "
+                + T_BOOLEAN,
             "Existential quantifier. Returns `true` when the body evaluates to `true` for at least "
                 + "one element. Returns `false` for empty collections.",
             "`true` if at least one element satisfies `condition`",
@@ -154,7 +185,15 @@ public final class OclOperationDocs {
     m.put(
         "one",
         op(
-            T_COLLECTION + ".one(" + PARAM_ITERATOR + ITER_PARAM_PART + PARAM_CONDITION + ": " + T_BOOLEAN + ") → " + T_BOOLEAN,
+            T_COLLECTION
+                + ".one("
+                + PARAM_ITERATOR
+                + ITER_PARAM_PART
+                + PARAM_CONDITION
+                + ": "
+                + T_BOOLEAN
+                + ") → "
+                + T_BOOLEAN,
             "Returns `true` if exactly one element satisfies the predicate.",
             "`true` if exactly one element satisfies `condition`",
             param(PARAM_ITERATOR, "T", DESC_ITERATOR),
@@ -163,7 +202,14 @@ public final class OclOperationDocs {
     m.put(
         "any",
         op(
-            T_COLLECTION + ".any(" + PARAM_ITERATOR + ITER_PARAM_PART + PARAM_CONDITION + ": " + T_BOOLEAN + ") → T",
+            T_COLLECTION
+                + ".any("
+                + PARAM_ITERATOR
+                + ITER_PARAM_PART
+                + PARAM_CONDITION
+                + ": "
+                + T_BOOLEAN
+                + ") → T",
             "Returns an arbitrary element satisfying the predicate. "
                 + "Result is undefined if no element matches.",
             "A singleton containing one matching element, or empty if none found",
@@ -193,7 +239,10 @@ public final class OclOperationDocs {
     m.put(
         "collectNested",
         op(
-            T_COLLECTION + ".collectNested(" + PARAM_ITERATOR + ": T | expr: V) → Collection<Collection<V>>",
+            T_COLLECTION
+                + ".collectNested("
+                + PARAM_ITERATOR
+                + ": T | expr: V) → Collection<Collection<V>>",
             "Like `collect` but does NOT flatten — returns a collection of collections.",
             "A collection of collections (not flattened)",
             param(PARAM_ITERATOR, "T", "The loop variable bound to each source element"),
@@ -314,7 +363,13 @@ public final class OclOperationDocs {
     m.put(
         "intersection",
         op(
-            T_COLLECTION + ".intersection(" + PARAM_OTHER + ": " + T_COLLECTION + ") → " + T_COLLECTION,
+            T_COLLECTION
+                + ".intersection("
+                + PARAM_OTHER
+                + ": "
+                + T_COLLECTION
+                + ") → "
+                + T_COLLECTION,
             "Returns the elements present in both collections. "
                 + "Result is unique if either operand is unique (Set/OrderedSet).",
             "A collection containing elements common to both",
@@ -348,7 +403,11 @@ public final class OclOperationDocs {
     m.put(
         "insertAt",
         op(
-            "Sequence<T>.insertAt(index: " + T_INTEGER + ", " + PARAM_ELEMENT + ": T) → Sequence<T>",
+            "Sequence<T>.insertAt(index: "
+                + T_INTEGER
+                + ", "
+                + PARAM_ELEMENT
+                + ": T) → Sequence<T>",
             "Inserts `element` at the given 1-based `index` in the sequence.",
             "A new `Sequence<T>` with `element` inserted at `index`",
             param("index", T_INTEGER, "1-based insertion position"),
@@ -357,7 +416,11 @@ public final class OclOperationDocs {
     m.put(
         "subSequence",
         op(
-            "Sequence<T>.subSequence(lower: " + T_INTEGER + ", upper: " + T_INTEGER + ") → Sequence<T>",
+            "Sequence<T>.subSequence(lower: "
+                + T_INTEGER
+                + ", upper: "
+                + T_INTEGER
+                + ") → Sequence<T>",
             "Returns the sub-sequence from index `lower` to `upper` (1-based, inclusive).",
             "A new `Sequence<T>` with elements from `lower` to `upper`",
             param("lower", T_INTEGER, "Start index (1-based, inclusive)"),
@@ -470,23 +533,23 @@ public final class OclOperationDocs {
         op(
             "Number.abs() → Number",
             "Returns the absolute value. Preserves the numeric type (Integer stays Integer, "
-                + "Real stays Real). " + DESC_SCALAR_RECEIVER + " not a collection.",
+                + "Real stays Real). "
+                + DESC_SCALAR_RECEIVER
+                + " not a collection.",
             "The non-negative magnitude of `self`"));
 
     m.put(
         "floor",
         op(
             "Real.floor() → " + T_INTEGER,
-            "Returns the largest integer less than or equal to `self`. "
-                + DESC_SCALAR_RECEIVER,
+            "Returns the largest integer less than or equal to `self`. " + DESC_SCALAR_RECEIVER,
             "The floor of `self` as an `Integer`"));
 
     m.put(
         "ceil",
         op(
             "Real.ceil() → " + T_INTEGER,
-            "Returns the smallest integer greater than or equal to `self`. "
-                + DESC_SCALAR_RECEIVER,
+            "Returns the smallest integer greater than or equal to `self`. " + DESC_SCALAR_RECEIVER,
             "The ceiling of `self` as an `Integer`"));
 
     m.put(
@@ -619,7 +682,13 @@ public final class OclOperationDocs {
     m.put(
         "substring",
         op(
-            T_STRING + ".substring(lower: " + T_INTEGER + ", upper: " + T_INTEGER + ") → " + T_STRING,
+            T_STRING
+                + ".substring(lower: "
+                + T_INTEGER
+                + ", upper: "
+                + T_INTEGER
+                + ") → "
+                + T_STRING,
             "Extracts the substring between index `lower` and `upper` (1-based, inclusive).",
             "The extracted substring",
             param("lower", T_INTEGER, "Start index (1-based, inclusive)"),
@@ -681,7 +750,15 @@ public final class OclOperationDocs {
     m.put(
         "substituteAll",
         op(
-            T_STRING + ".substituteAll(" + PARAM_PATTERN + ": " + T_STRING + ", replacement: " + T_STRING + ") → " + T_STRING,
+            T_STRING
+                + ".substituteAll("
+                + PARAM_PATTERN
+                + ": "
+                + T_STRING
+                + ", replacement: "
+                + T_STRING
+                + ") → "
+                + T_STRING,
             "Replaces all occurrences of `pattern` (regex) with `replacement`.",
             "A new string with all matches replaced",
             param(PARAM_PATTERN, T_STRING, "The regex pattern to find"),
@@ -690,7 +767,15 @@ public final class OclOperationDocs {
     m.put(
         "substituteFirst",
         op(
-            T_STRING + ".substituteFirst(" + PARAM_PATTERN + ": " + T_STRING + ", replacement: " + T_STRING + ") → " + T_STRING,
+            T_STRING
+                + ".substituteFirst("
+                + PARAM_PATTERN
+                + ": "
+                + T_STRING
+                + ", replacement: "
+                + T_STRING
+                + ") → "
+                + T_STRING,
             "Replaces the first occurrence of `pattern` (regex) with `replacement`.",
             "A new string with the first match replaced",
             param(PARAM_PATTERN, T_STRING, "The regex pattern to find"),
@@ -737,7 +822,8 @@ public final class OclOperationDocs {
         op(
             "Number >= Number → " + T_BOOLEAN,
             "Greater-than-or-equal comparison. Only valid for numeric types (Integer, Float, Real)."
-                + " " + DESC_NO_STRING_ORDERING,
+                + " "
+                + DESC_NO_STRING_ORDERING,
             "`true` if `self` is greater than or equal to the right operand"));
 
     m.put(
@@ -769,5 +855,3 @@ public final class OclOperationDocs {
 
   private OclOperationDocs() {}
 }
-
-

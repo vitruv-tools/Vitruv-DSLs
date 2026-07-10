@@ -8,10 +8,10 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvocl.lsp;
-import java.util.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.antlr.v4.runtime.CharStreams;
@@ -159,17 +159,21 @@ public class DocumentAnalyzer {
             break;
           }
         }
-        if (orphaned) continue;
+        if  (orphaned) {
+          continue;
+        }
 
         Diagnostic d = toDiagnostic(error);
         diagnostics.add(d);
-        LOG.fine(() -> String.format(
-            "[OCL-LS] DIAG type-checker  L%d:C%d → L%d:C%d  %s",
-            d.getRange().getStart().getLine(),
-            d.getRange().getStart().getCharacter(),
-            d.getRange().getEnd().getLine(),
-            d.getRange().getEnd().getCharacter(),
-            d.getMessage()));
+        LOG.fine(
+            () ->
+                String.format(
+                    "[OCL-LS] DIAG type-checker  L%d:C%d → L%d:C%d  %s",
+                    d.getRange().getStart().getLine(),
+                    d.getRange().getStart().getCharacter(),
+                    d.getRange().getEnd().getLine(),
+                    d.getRange().getEnd().getCharacter(),
+                    d.getMessage()));
       }
 
     } catch (Exception e) {
@@ -198,8 +202,8 @@ public class DocumentAnalyzer {
   private static final List<String> ANNOTATION_KEYWORDS = List.of("severity", "message");
 
   /**
-   * Scans {@code text} for {@code @word} tokens that look like misspellings of
-   * {@code @severity} or {@code @message} and appends a diagnostic with a quick-fix suggestion.
+   * Scans {@code text} for {@code @word} tokens that look like misspellings of {@code @severity} or
+   * {@code @message} and appends a diagnostic with a quick-fix suggestion.
    */
   @SuppressWarnings("java:S3776")
   private static void checkAnnotationKeywordTypos(String text, List<Diagnostic> diagnostics) {
@@ -209,36 +213,46 @@ public class DocumentAnalyzer {
       while (m.find()) {
         String word = m.group(1);
         // Exact match — valid annotation keyword, skip.
-        if (ANNOTATION_KEYWORDS.contains(word)) continue;
+        if  (ANNOTATION_KEYWORDS.contains(word)) {
+          continue;
+        }
 
         // Find the closest known annotation keyword.
         String bestKeyword = null;
         int bestDist = Integer.MAX_VALUE;
         for (String kw : ANNOTATION_KEYWORDS) {
           int dist = EditDistance.damerauLevenshtein(word.toLowerCase(), kw);
-          if (dist < bestDist) { bestDist = dist; bestKeyword = kw; }
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestKeyword = kw;
+          }
         }
 
         // Only flag if within edit distance 3 (generous — covers @Severity, @severit, @sev, @msg).
         int threshold = EditDistance.editThreshold(word.length());
-        if (bestKeyword == null || bestDist > threshold) continue;
+        if  (bestKeyword == null || bestDist > threshold) {
+          continue;
+        }
 
         int startCol = m.start(); // position of '@'
-        int endCol   = m.end();
+        int endCol = m.end();
         String suggestion = "@" + bestKeyword;
         String badAnnotation = "@" + word;
 
-        Diagnostic d = new Diagnostic(
-            new Range(new Position(lineIdx, startCol), new Position(lineIdx, endCol)),
-            "Unknown annotation '" + badAnnotation + "'. Did you mean '" + suggestion + "'?",
-            DiagnosticSeverity.Error,
-            LANGUAGE_ID);
+        Diagnostic d =
+            new Diagnostic(
+                new Range(new Position(lineIdx, startCol), new Position(lineIdx, endCol)),
+                "Unknown annotation '" + badAnnotation + "'. Did you mean '" + suggestion + "'?",
+                DiagnosticSeverity.Error,
+                LANGUAGE_ID);
         d.setData(suggestion); // picked up by the code-action handler for the quick fix
         diagnostics.add(d);
         final int capturedLine = lineIdx;
-        LOG.fine(() -> String.format(
-            "[OCL-LS] DIAG annotation-typo L%d:C%d  %s → %s",
-            capturedLine, startCol, badAnnotation, suggestion));
+        LOG.fine(
+            () ->
+                String.format(
+                    "[OCL-LS] DIAG annotation-typo L%d:C%d  %s → %s",
+                    capturedLine, startCol, badAnnotation, suggestion));
       }
     }
   }
@@ -256,10 +270,14 @@ public class DocumentAnalyzer {
       VitruvOCLParser.ContextDeclCSContext tree, List<Diagnostic> syntaxDiags) {
 
     List<int[]> orphaned = new ArrayList<>();
-    if (tree == null || syntaxDiags.isEmpty()) return orphaned;
+    if  (tree == null || syntaxDiags.isEmpty()) {
+      return orphaned;
+    }
 
     for (VitruvOCLParser.ClassifierContextCSContext ctx : tree.classifierContextCS()) {
-      if (ctx.getStart() == null) continue;
+      if  (ctx.getStart() == null) {
+        continue;
+      }
       int ctxStart = ctx.getStart().getLine() - 1; // 0-based
       int ctxStop = ctx.getStop() != null ? ctx.getStop().getLine() - 1 : Integer.MAX_VALUE;
 
@@ -272,10 +290,14 @@ public class DocumentAnalyzer {
         }
       }
 
-      if (firstErrLine == Integer.MAX_VALUE) continue;
+      if  (firstErrLine == Integer.MAX_VALUE) {
+        continue;
+      }
 
       for (VitruvOCLParser.InvCSContext inv : ctx.invCS()) {
-        if (inv.getStart() == null) continue;
+        if  (inv.getStart() == null) {
+          continue;
+        }
         int invStart = inv.getStart().getLine() - 1; // 0-based
         int invStop = inv.getStop() != null ? inv.getStop().getLine() - 1 : invStart;
 
@@ -325,11 +347,12 @@ public class DocumentAnalyzer {
             ? DiagnosticSeverity.Error
             : DiagnosticSeverity.Warning;
 
-    Diagnostic d = new Diagnostic(
-        new Range(new Position(startLine, startCol), new Position(endLine, endCol)),
-        error.getMessage(),
-        severity,
-        LANGUAGE_ID);
+    Diagnostic d =
+        new Diagnostic(
+            new Range(new Position(startLine, startCol), new Position(endLine, endCol)),
+            error.getMessage(),
+            severity,
+            LANGUAGE_ID);
 
     // Attach the quick-fix suggestion as diagnostic data so the codeAction handler
     // can build a WorkspaceEdit without re-analysing the document.

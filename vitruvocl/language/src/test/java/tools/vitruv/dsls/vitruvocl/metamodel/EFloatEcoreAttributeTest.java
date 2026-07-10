@@ -93,7 +93,8 @@ class EFloatEcoreAttributeTest {
         "context cad::Sphere inv:\n  self.radius.ceiling() > 0",
         // EFloat in collections
         "context cad::Sphere inv:\n  cad::Sphere.allInstances().collect(s | s.radius).size() > 0",
-        "context cad::Sphere inv:\n  cad::Sphere.allInstances().select(s | s.radius > 0).size() > 0",
+        "context cad::Sphere inv:\n"
+            + "  cad::Sphere.allInstances().select(s | s.radius > 0).size() > 0",
         """
         context cad::Sphere inv:
           cad::Sphere.allInstances().forAll(s | s.radius > 0)""",
@@ -129,8 +130,7 @@ class EFloatEcoreAttributeTest {
           if self.outerRadius > self.innerRadius
           then self.outerRadius
           else self.innerRadius
-          endif > 0"""
-    );
+          endif > 0""");
   }
 
   @Test

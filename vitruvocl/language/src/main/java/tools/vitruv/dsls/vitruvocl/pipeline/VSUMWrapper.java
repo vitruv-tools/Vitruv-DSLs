@@ -149,10 +149,14 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
   @Override
   public String getInstanceNameByIndex(int index) {
     List<EObject> roots = getAllRootObjects();
-    if (index < 0 || index >= roots.size()) return null;
+    if  (index < 0 || index >= roots.size()) {
+      return null;
+    }
     EObject root = roots.get(index);
     Resource resource = root.eResource();
-    if (resource == null || resource.getURI() == null) return null;
+    if  (resource == null || resource.getURI() == null) {
+      return null;
+    }
     return resource.getURI().lastSegment();
   }
 
@@ -233,7 +237,8 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
 
   @Override
   public EClass resolveEClassByShortName(String shortName) {
-    return MetamodelWrapperInterface.resolveEClassByShortNameInRegistry(metamodelRegistry, shortName);
+    return MetamodelWrapperInterface.resolveEClassByShortNameInRegistry(
+        metamodelRegistry, shortName);
   }
 
   @Override
@@ -260,7 +265,9 @@ public class VSUMWrapper implements MetamodelWrapperInterface {
     // getCorrespondingEObjects(obj1, tag) returns only objects linked via a
     // correspondence that carries exactly that tag
     Set<EObject> taggedCorrespondents = correspondenceModel.getCorrespondingEObjects(obj1, tag);
-    if (taggedCorrespondents.contains(obj2)) return true;
+    if  (taggedCorrespondents.contains(obj2)) {
+      return true;
+    }
     // bidirectional
     return correspondenceModel.getCorrespondingEObjects(obj2, tag).contains(obj1);
   }

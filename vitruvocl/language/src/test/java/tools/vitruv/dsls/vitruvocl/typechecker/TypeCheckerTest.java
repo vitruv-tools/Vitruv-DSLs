@@ -136,7 +136,8 @@ class TypeCheckerTest extends DummyTestSpecification {
         Arguments.of("(5 > 3)", Type.BOOLEAN),
         // Complex expressions
         Arguments.of("let x = Set{1, 2, 3}.select(n | n > 1) in x.size()", Type.INTEGER),
-        Arguments.of("Set{1, 2, 3, 4}.select(x | x > 1).collect(y | y * 2).includes(4)", Type.BOOLEAN),
+        Arguments.of(
+            "Set{1, 2, 3, 4}.select(x | x > 1).collect(y | y * 2).includes(4)", Type.BOOLEAN),
         Arguments.of("if Set{1, 2, 3}.forAll(x | x > 0) then 100 else 0 endif", Type.INTEGER),
         Arguments.of("let x = 5 in let y = 10 in let z = x + y in z * 2", Type.INTEGER),
         Arguments.of("(5 > 3 and 10 < 20) or (false and true)", Type.BOOLEAN),
@@ -159,7 +160,9 @@ class TypeCheckerTest extends DummyTestSpecification {
         Arguments.of("let minimum = 0 in Set{1,2,3}.forAll(x | x > minimum)", Type.BOOLEAN),
         Arguments.of("Set{1,2,3}.exists(x | x == 2)", Type.BOOLEAN),
         // Nested if
-        Arguments.of("if true then (if false then 1 else 2 endif) else (if true then 3 else 4 endif) endif", Type.INTEGER),
+        Arguments.of(
+            "if true then (if false then 1 else 2 endif) else (if true then 3 else 4 endif) endif",
+            Type.INTEGER),
         Arguments.of("if let x = 5 in x > 3 then 100 else 0 endif", Type.INTEGER),
         Arguments.of("if Set{1,2,3}.forAll(x | x > 0) then \"yes\" else \"no\" endif", Type.STRING),
         // Operation chaining
@@ -188,8 +191,7 @@ class TypeCheckerTest extends DummyTestSpecification {
         Arguments.of("Sequence{}.notEmpty()", Type.BOOLEAN),
         // Parenthesized complex
         Arguments.of("((true and false) or true)", Type.BOOLEAN),
-        Arguments.of("((5 + 3) * 2) - ((10 / 2) + 1)", Type.DOUBLE)
-    );
+        Arguments.of("((5 + 3) * 2) - ((10 / 2) + 1)", Type.DOUBLE));
   }
 
   // ==================== Parameterized: expression → type error ====================
@@ -242,11 +244,11 @@ class TypeCheckerTest extends DummyTestSpecification {
         "true + false",
         "\"hello\" < 5",
         "not 42",
-        "\"true\" xor \"false\""
-    );
+        "\"true\" xor \"false\"");
   }
 
-  // ==================== Parameterized: expression → collection with element type ====================
+  // ==================== Parameterized: expression → collection with element type
+  // ====================
 
   @ParameterizedTest
   @MethodSource("collectionElementTypeExpressions")
@@ -281,8 +283,7 @@ class TypeCheckerTest extends DummyTestSpecification {
         Arguments.of("if true then Set{1, 2} else Set{3, 4} endif", Type.INTEGER),
         // Complex iterator nesting
         Arguments.of("Set{1,2,3,4,5}.select(x|x>1).select(y|y<5).select(z|z!=3)", Type.INTEGER),
-        Arguments.of("Set{1,2,3}.collect(x | if x > 1 then x * 2 else x endif)", Type.INTEGER)
-    );
+        Arguments.of("Set{1,2,3}.collect(x | if x > 1 then x * 2 else x endif)", Type.INTEGER));
   }
 
   // ==================== Standalone tests with complex assertions ====================
@@ -319,10 +320,7 @@ class TypeCheckerTest extends DummyTestSpecification {
 
   static Stream<String> isEmptyBooleanElementExpressions() {
     return Stream.of(
-        "Set{1, 2}.isEmpty()",
-        "Set{}.isEmpty()",
-        "Set{1,2,3}.reject(x | x > 5).isEmpty()"
-    );
+        "Set{1, 2}.isEmpty()", "Set{}.isEmpty()", "Set{1,2,3}.reject(x | x > 5).isEmpty()");
   }
 
   @Test

@@ -12,20 +12,17 @@
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
-import java.util.logging.Logger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.*;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -34,6 +31,9 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 /**
  * Manages metamodel and model instance loading for OCL constraint evaluation.
@@ -82,8 +82,8 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   private final Map<EObject, String> instanceSourceFile = new IdentityHashMap<>();
 
   /**
-   * Correspondences loaded from .correspondence files via DOM (not EMF).
-   * Maps an absolute EMF URI string to the set of corresponding absolute URI strings.
+   * Correspondences loaded from .correspondence files via DOM (not EMF). Maps an absolute EMF URI
+   * string to the set of corresponding absolute URI strings.
    */
   private final Map<String, Set<String>> correspondenceUriMap = new HashMap<>();
 
@@ -112,12 +112,13 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    * configuration.
    *
    * <p>How it works:
+   *
    * <ol>
-   *   <li>Build a {@code filename → file URI} map from {@code ecorePaths} (e.g.
-   *       {@code "stoex.ecore" → file:/C:/…/stoex.ecore}).
+   *   <li>Build a {@code filename → file URI} map from {@code ecorePaths} (e.g. {@code
+   *       "stoex.ecore" → file:/C:/…/stoex.ecore}).
    *   <li>For each ecore file, grep its raw text for {@code platform:/plugin/…/name.ecore}.
-   *   <li>If the referenced filename is found in the workspace, add the exact mapping to
-   *       the EMF {@link org.eclipse.emf.ecore.resource.URIConverter} of this resource set.
+   *   <li>If the referenced filename is found in the workspace, add the exact mapping to the EMF
+   *       {@link org.eclipse.emf.ecore.resource.URIConverter} of this resource set.
    * </ol>
    *
    * <p>Call this <em>before</em> {@link #loadMetamodel(Path)} so that inherited features from
@@ -174,14 +175,14 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    * base {@code Correspondence} class when the Vitruvius reactions runtime JAR is not on the
    * classpath.
    *
-   * <p>The correspondence files produced by Vitruvius use
-   * {@code xsi:type="correspondence_1:ReactionsCorrespondence"} (namespace URI
-   * {@code http://vitruv.tools/metamodels/dsls/reactions/runtime/correspondence/1.0}). When the
-   * reactions runtime is absent, EMF cannot resolve this type and silently drops all correspondence
-   * entries, causing every {@code ~} operator to evaluate to {@code false}. Registering a minimal
-   * dynamic EPackage containing {@code ReactionsCorrespondence} as a subtype of the known
-   * {@code Correspondence} class is sufficient to let EMF load the entries correctly; the inherited
-   * {@code leftEObjects} / {@code rightEObjects} features are resolved via the base class.
+   * <p>The correspondence files produced by Vitruvius use {@code
+   * xsi:type="correspondence_1:ReactionsCorrespondence"} (namespace URI {@code
+   * http://vitruv.tools/metamodels/dsls/reactions/runtime/correspondence/1.0}). When the reactions
+   * runtime is absent, EMF cannot resolve this type and silently drops all correspondence entries,
+   * causing every {@code ~} operator to evaluate to {@code false}. Registering a minimal dynamic
+   * EPackage containing {@code ReactionsCorrespondence} as a subtype of the known {@code
+   * Correspondence} class is sufficient to let EMF load the entries correctly; the inherited {@code
+   * leftEObjects} / {@code rightEObjects} features are resolved via the base class.
    */
   private static void ensureReactionsCorrespondenceRegistered() {
     final String REACTIONS_NS_URI =
@@ -220,9 +221,8 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    *
    * <p>Creates a minimal structural copy of the real package: a {@code Correspondences} root class
    * (with {@code correspondences} containment using {@code EObject} as element type so that any
-   * concrete subtype can be held without type-compatibility issues) and a concrete
-   * {@code Correspondence} class carrying {@code leftEObjects}, {@code rightEObjects}, and
-   * {@code tag}.
+   * concrete subtype can be held without type-compatibility issues) and a concrete {@code
+   * Correspondence} class carrying {@code leftEObjects}, {@code rightEObjects}, and {@code tag}.
    */
   private static EPackage buildBaseCorrespondencePackage(String nsUri) {
     EPackage pkg = EcoreFactory.eINSTANCE.createEPackage();
@@ -278,8 +278,8 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    *
    * <p>In standalone (non-OSGi) mode the EMF generated classes are in the fat JAR but their static
    * initializers are not automatically called. Accessing {@code CorrespondencePackage.eINSTANCE}
-   * triggers {@code CorrespondencePackageImpl.init()}, which registers the package in
-   * {@link EPackage.Registry#INSTANCE}.
+   * triggers {@code CorrespondencePackageImpl.init()}, which registers the package in {@link
+   * EPackage.Registry#INSTANCE}.
    *
    * @return the registered {@link EPackage}, or {@code null} if reflection fails
    */
@@ -296,7 +296,9 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
         java.lang.reflect.Field f = cls.getField("eINSTANCE");
         f.get(null); // triggers static init
         EPackage pkg = (EPackage) EPackage.Registry.INSTANCE.get(CORR_NS_URI);
-        if (pkg != null) return pkg;
+        if  (pkg != null) {
+          return pkg;
+        }
       } catch (Exception e) {
         // class not on classpath — expected in standalone mode, fall through to dynamic build
       }
@@ -347,13 +349,13 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   }
 
   /**
-   * Registers an {@link EPackage} and all its sub-packages recursively in both
-   * {@link EPackage.Registry#INSTANCE} (by nsURI, for EMF XMI loading) and
-   * {@link #metamodelRegistry} (by package name, for constraint type resolution).
+   * Registers an {@link EPackage} and all its sub-packages recursively in both {@link
+   * EPackage.Registry#INSTANCE} (by nsURI, for EMF XMI loading) and {@link #metamodelRegistry} (by
+   * package name, for constraint type resolution).
    *
-   * <p>Without this, model instance files that reference sub-package types (e.g.
-   * {@code xmlns:tires="tires"}) cause a {@code PackageNotFoundException} during loading
-   * because only the root package's nsURI is known to EMF.
+   * <p>Without this, model instance files that reference sub-package types (e.g. {@code
+   * xmlns:tires="tires"}) cause a {@code PackageNotFoundException} during loading because only the
+   * root package's nsURI is known to EMF.
    */
   private void registerPackageRecursively(EPackage pkg) {
     if (pkg.getNsURI() != null) {
@@ -403,7 +405,9 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
       }
     }
 
-    if (toRemove == null) return; // file was never loaded — nothing to do
+    if  (toRemove == null) {
+      return; // file was never loaded — nothing to do
+    }
 
     // Remove the EPackage from our registry and from the global EMF registry.
     if (!toRemove.getContents().isEmpty()
@@ -609,7 +613,8 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    */
   @Override
   public EClass resolveEClassByShortName(String shortName) {
-    return MetamodelWrapperInterface.resolveEClassByShortNameInRegistry(metamodelRegistry, shortName);
+    return MetamodelWrapperInterface.resolveEClassByShortNameInRegistry(
+        metamodelRegistry, shortName);
   }
 
   @Override
@@ -631,17 +636,17 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   }
 
   /**
-   * Loads a Vitruvius {@code .correspondence} file via DOM (not EMF) and populates
-   * {@link #correspondenceUriMap}.
+   * Loads a Vitruvius {@code .correspondence} file via DOM (not EMF) and populates {@link
+   * #correspondenceUriMap}.
    *
-   * <p>EMF cannot reliably load correspondence XMI files in standalone mode because the
-   * {@code ReactionsCorrespondence} type is only available as a dynamic EClass with no Java
-   * backing class, which triggers {@code IllegalValueException} during containment validation.
-   * Parsing the XML directly with a DOM parser is simpler and avoids all type-checking issues.
+   * <p>EMF cannot reliably load correspondence XMI files in standalone mode because the {@code
+   * ReactionsCorrespondence} type is only available as a dynamic EClass with no Java backing class,
+   * which triggers {@code IllegalValueException} during containment validation. Parsing the XML
+   * directly with a DOM parser is simpler and avoids all type-checking issues.
    *
    * <p>Each {@code <correspondences>} element's {@code leftEObjects} and {@code rightEObjects}
-   * child hrefs are resolved to absolute EMF URIs relative to the correspondence file location
-   * and stored bidirectionally in {@link #correspondenceUriMap}.
+   * child hrefs are resolved to absolute EMF URIs relative to the correspondence file location and
+   * stored bidirectionally in {@link #correspondenceUriMap}.
    */
   @SuppressWarnings("java:S3776")
   private void loadCorrespondenceViaDOM(Path corrPath) {
@@ -659,18 +664,24 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
         //   (a) inline attributes:  <correspondences leftEObjects="..." rightEObjects="..."/>
         //   (b) child elements:     <correspondences><leftEObjects href="..."/></correspondences>
         List<String> lefts = collectHrefsFromAttr(corrEl, FEAT_LEFT_EOBJECTS, baseUri);
-        if (lefts.isEmpty()) lefts = collectHrefsFromChildElements(corrEl, FEAT_LEFT_EOBJECTS, baseUri);
+        if (lefts.isEmpty()) {
+          lefts = collectHrefsFromChildElements(corrEl, FEAT_LEFT_EOBJECTS, baseUri);
+        }
         List<String> rights = collectHrefsFromAttr(corrEl, FEAT_RIGHT_EOBJECTS, baseUri);
-        if (rights.isEmpty()) rights = collectHrefsFromChildElements(corrEl, FEAT_RIGHT_EOBJECTS, baseUri);
+        if (rights.isEmpty()) {
+          rights = collectHrefsFromChildElements(corrEl, FEAT_RIGHT_EOBJECTS, baseUri);
+        }
         for (String l : lefts) {
           for (String r : rights) {
             correspondenceUriMap.computeIfAbsent(l, k -> new LinkedHashSet<>()).add(r);
             correspondenceUriMap.computeIfAbsent(r, k -> new LinkedHashSet<>()).add(l);
             if (tag != null && !tag.isEmpty()) {
               correspondenceTagMap
-                  .computeIfAbsent(l + "|" + r, k -> new LinkedHashSet<>()).add(tag);
+                  .computeIfAbsent(l + "|" + r, k -> new LinkedHashSet<>())
+                  .add(tag);
               correspondenceTagMap
-                  .computeIfAbsent(r + "|" + l, k -> new LinkedHashSet<>()).add(tag);
+                  .computeIfAbsent(r + "|" + l, k -> new LinkedHashSet<>())
+                  .add(tag);
             }
           }
         }
@@ -719,11 +730,15 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   public Set<EObject> getCorrespondingObjects(EObject source) {
     // Resolve the source object's absolute URI (file URI + fragment)
     URI sourceUri = EcoreUtil.getURI(source);
-    if (sourceUri == null) return Collections.emptySet();
+    if  (sourceUri == null) {
+      return Collections.emptySet();
+    }
     String sourceUriStr = sourceUri.toString();
 
     Set<String> correspondingUris = correspondenceUriMap.get(sourceUriStr);
-    if (correspondingUris == null || correspondingUris.isEmpty()) return Collections.emptySet();
+    if  (correspondingUris == null || correspondingUris.isEmpty()) {
+      return Collections.emptySet();
+    }
 
     Set<EObject> result = new LinkedHashSet<>();
     for (String targetUriStr : correspondingUris) {
@@ -744,7 +759,9 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   public boolean correspondenceHasTag(EObject obj1, EObject obj2, String tag) {
     URI uri1 = EcoreUtil.getURI(obj1);
     URI uri2 = EcoreUtil.getURI(obj2);
-    if (uri1 == null || uri2 == null) return false;
+    if  (uri1 == null || uri2 == null) {
+      return false;
+    }
     String key = uri1.toString() + "|" + uri2.toString();
     Set<String> tags = correspondenceTagMap.get(key);
     return tags != null && tags.contains(tag);

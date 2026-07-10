@@ -46,9 +46,11 @@ public sealed interface OCLElement
 
   /**
    * Try to get boolean value; returns {@code null} if not a {@link BoolValue}. Avoids instanceof
-   * checks in calling code. Null is the documented "not-a-Boolean" sentinel for this type hierarchy.
+   * checks in calling code. Null is the documented "not-a-Boolean" sentinel for this type
+   * hierarchy.
    */
-  @SuppressWarnings("java:S2447") // null is intentional sentinel meaning "this element is not a Boolean"
+  @SuppressWarnings(
+      "java:S2447") // null is intentional sentinel meaning "this element is not a Boolean"
   default Boolean tryGetBool() {
     return null;
   }
@@ -489,4 +491,3 @@ public sealed interface OCLElement
     return 7;
   }
 }
-

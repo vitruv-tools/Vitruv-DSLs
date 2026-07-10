@@ -224,8 +224,8 @@ public abstract class Type {
   }
 
   /**
-   * Returns true only for explicit {@link CollectionType} wrappers (Set, Bag, Sequence,
-   * OrderedSet, Singleton ¡T!, Optional ¿T?).
+   * Returns true only for explicit {@link CollectionType} wrappers (Set, Bag, Sequence, OrderedSet,
+   * Singleton ¡T!, Optional ¿T?).
    *
    * <p>Raw primitive types (INTEGER, BOOLEAN, STRING, FLOAT, DOUBLE) return {@code false} even
    * though they technically have SINGLETON multiplicity. Use this instead of {@link #isSingleton()}
@@ -577,8 +577,12 @@ public abstract class Type {
 
     @Override
     public boolean equals(Object obj) {
-      if (this == obj) return true;
-      if (!(obj instanceof MetaclassType other)) return false;
+      if  (this == obj) {
+        return true;
+      }
+      if  (!(obj instanceof MetaclassType other)) {
+        return false;
+      }
       return eClass.equals(other.eClass);
     }
 
@@ -690,8 +694,12 @@ public abstract class Type {
 
     @Override
     public boolean equals(Object obj) {
-      if (this == obj) return true;
-      if (!(obj instanceof CollectionType other)) return false;
+      if  (this == obj) {
+        return true;
+      }
+      if  (!(obj instanceof CollectionType other)) {
+        return false;
+      }
       return elementType.equals(other.elementType) && multiplicity == other.multiplicity;
     }
 
@@ -824,7 +832,9 @@ public abstract class Type {
 
     @Override
     public boolean isConformantTo(Type other) {
-      if (other == ERROR || other == ANY) return true;
+      if  (other == ERROR || other == ANY) {
+        return true;
+      }
       if (other instanceof EnumType otherEnum) {
         return this.eEnum.equals(otherEnum.eEnum);
       }
@@ -838,8 +848,12 @@ public abstract class Type {
 
     @Override
     public boolean equals(Object obj) {
-      if (this == obj) return true;
-      if (!(obj instanceof EnumType other)) return false;
+      if  (this == obj) {
+        return true;
+      }
+      if  (!(obj instanceof EnumType other)) {
+        return false;
+      }
       return getTypeName().equals(other.getTypeName());
     }
 
@@ -870,8 +884,12 @@ public abstract class Type {
    */
   @Override
   public boolean equals(Object obj) {
-    if (this == obj) return true;
-    if (!(obj instanceof Type other)) return false;
+    if  (this == obj) {
+      return true;
+    }
+    if  (!(obj instanceof Type other)) {
+      return false;
+    }
 
     if (!this.getTypeName().equals(other.getTypeName())) {
       return false;

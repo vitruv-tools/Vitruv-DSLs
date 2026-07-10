@@ -34,11 +34,15 @@ final class NodeFinder {
    */
   @SuppressWarnings("java:S3776")
   static ParseTree findAt(ParseTree tree, int lspLine, int lspChar) {
-    if (tree == null) return null;
+    if  (tree == null) {
+      return null;
+    }
 
     if (tree instanceof TerminalNode terminal) {
       Token token = terminal.getSymbol();
-      if (token == null || token.getType() == Token.EOF) return null;
+      if  (token == null || token.getType() == Token.EOF) {
+        return null;
+      }
 
       int tokenLine = token.getLine() - 1; // 0-based
       int tokenStart = token.getCharPositionInLine();
@@ -51,7 +55,9 @@ final class NodeFinder {
     }
 
     if (tree instanceof ParserRuleContext ctx) {
-      if (ctx.start == null) return null;
+      if  (ctx.start == null) {
+        return null;
+      }
 
       int startLine = ctx.start.getLine() - 1;
       int startChar = ctx.start.getCharPositionInLine();
@@ -62,15 +68,25 @@ final class NodeFinder {
               : startChar + 1;
 
       // Quick range check before recursing.
-      if (lspLine < startLine) return null;
-      if (lspLine > endLine) return null;
-      if (lspLine == startLine && lspChar < startChar) return null;
-      if (lspLine == endLine && lspChar >= endChar) return null;
+      if  (lspLine < startLine) {
+        return null;
+      }
+      if  (lspLine > endLine) {
+        return null;
+      }
+      if  (lspLine == startLine && lspChar < startChar) {
+        return null;
+      }
+      if  (lspLine == endLine && lspChar >= endChar) {
+        return null;
+      }
 
       // Prefer the deepest child match.
       for (int i = 0; i < ctx.getChildCount(); i++) {
         ParseTree found = findAt(ctx.getChild(i), lspLine, lspChar);
-        if (found != null) return found;
+        if  (found != null) {
+          return found;
+        }
       }
 
       // Cursor is within this rule but no child matched (e.g. whitespace between tokens).
@@ -80,5 +96,3 @@ final class NodeFinder {
     return null;
   }
 }
-
-

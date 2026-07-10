@@ -8,17 +8,16 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvocl.lsp;
-import java.util.logging.Logger;
 
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.logging.Logger;
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams;
 import org.eclipse.lsp4j.FileChangeType;
 import org.eclipse.lsp4j.FileEvent;
 import org.eclipse.lsp4j.services.WorkspaceService;
-
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
 
 /**
@@ -60,7 +59,9 @@ public class OCLWorkspaceService implements WorkspaceService {
 
     for (FileEvent event : params.getChanges()) {
       String uri = event.getUri();
-      if (!uri.endsWith(".ecore")) continue;
+      if  (!uri.endsWith(".ecore")) {
+        continue;
+      }
 
       Path ecorePath = uriToPath(uri);
       if (ecorePath == null) {
@@ -83,8 +84,8 @@ public class OCLWorkspaceService implements WorkspaceService {
           LOG.fine(() -> "[OCL-LS] Metamodel reloaded: " + ecorePath);
           anyChange = true;
         } catch (IOException e) {
-          LOG.fine(() -> 
-              "[OCL-LS] Failed to reload metamodel " + ecorePath + ": " + e.getMessage());
+          LOG.fine(
+              () -> "[OCL-LS] Failed to reload metamodel " + ecorePath + ": " + e.getMessage());
         }
       }
     }
@@ -101,7 +102,9 @@ public class OCLWorkspaceService implements WorkspaceService {
   // ---------------------------------------------------------------------------
 
   private static Path uriToPath(String uriString) {
-    if (uriString == null) return null;
+    if  (uriString == null) {
+      return null;
+    }
     try {
       return Path.of(URI.create(uriString));
     } catch (Exception e) {
@@ -109,5 +112,3 @@ public class OCLWorkspaceService implements WorkspaceService {
     }
   }
 }
-
-

@@ -99,8 +99,7 @@ class CollectionChainingTest extends DummyTestSpecification {
         "Set{}.isEmpty().forAll(x | x > 0)",
         "Set{}.isEmpty().exists(x | x > 0)",
         "Set{}.isEmpty().size()",
-        "Set{}.isEmpty().first()"
-    );
+        "Set{}.isEmpty().first()");
   }
 
   // ==================== Parameterized: assertSingleBool ====================
@@ -127,8 +126,7 @@ class CollectionChainingTest extends DummyTestSpecification {
         Arguments.of("Set{1,2,3}.exists(x | x == 2) or false", true),
         Arguments.of("Set{1,2,3}.size() > 2", true),
         Arguments.of("Set{}.isEmpty() and true", true),
-        Arguments.of("Set{1,2,3}.reject(x | x > 5).exists(x | x == 2)", true)
-    );
+        Arguments.of("Set{1,2,3}.reject(x | x > 5).exists(x | x == 2)", true));
   }
 
   // ==================== Parameterized: assertSingleInt ====================
@@ -145,7 +143,8 @@ class CollectionChainingTest extends DummyTestSpecification {
         Arguments.of("Set{1,2,3,4,5}.reject(x | x > 3).size()", 3),
         Arguments.of("Set{1,2,3}.collect(x | x * 2).size()", 3),
         Arguments.of("Set{1,2,3,4,5,6}.select(x | x > 1).reject(x | x > 4).size()", 3),
-        Arguments.of("Set{1,2,3,4}.select(x | x > 1).collect(x | x * 2).select(x | x > 5).size()", 2),
+        Arguments.of(
+            "Set{1,2,3,4}.select(x | x > 1).collect(x | x * 2).select(x | x > 5).size()", 2),
         Arguments.of("Set{1,2,3}.including(4).excluding(2).size()", 3),
         Arguments.of("Sequence{3,1,4}.first() + 10", 13),
         Arguments.of("Sequence{3,1,4}.last() * 2", 8),
@@ -155,8 +154,7 @@ class CollectionChainingTest extends DummyTestSpecification {
         Arguments.of("Sequence{1,2,3}.collect(x | x * 2).first()", 2),
         Arguments.of("Sequence{1,2,3}.collect(x | x * 2).last()", 6),
         Arguments.of("Sequence{1,2,3,4,5}.reject(x | x > 3).first()", 1),
-        Arguments.of("Sequence{1,2,3,4,5}.reject(x | x > 3).last()", 3)
-    );
+        Arguments.of("Sequence{1,2,3,4,5}.reject(x | x > 3).last()", 3));
   }
 
   // ==================== Parameterized: assertSize only ====================
@@ -171,8 +169,7 @@ class CollectionChainingTest extends DummyTestSpecification {
     return Stream.of(
         Arguments.of("Set{1,2,3,4,5}.reject(x | x > 3).select(x | x > 1)", 2),
         Arguments.of("Set{1,2,3,4,5}.reject(x | x > 4).reject(x | x < 2)", 3),
-        Arguments.of("Set{1,2,3,4}.reject(x | x > 3).collect(x | x * 2)", 3)
-    );
+        Arguments.of("Set{1,2,3,4}.reject(x | x > 3).collect(x | x * 2)", 3));
   }
 
   // ==================== Parameterized: assertSize + 2 includes ====================
@@ -190,8 +187,7 @@ class CollectionChainingTest extends DummyTestSpecification {
     return Stream.of(
         Arguments.of("Set{1,2,3,4,5}.select(x | x > 1).reject(x | x > 3)", 2, 2, 3),
         Arguments.of("Set{1,2,3,4}.select(x | x > 2).collect(x | x * 2)", 2, 6, 8),
-        Arguments.of("Set{1,2,3}.collect(x | x * 2).reject(x | x > 4)", 2, 2, 4)
-    );
+        Arguments.of("Set{1,2,3}.collect(x | x * 2).reject(x | x > 4)", 2, 2, 4));
   }
 
   // ==================== Parameterized: assertSize + 3 includes ====================
@@ -209,8 +205,7 @@ class CollectionChainingTest extends DummyTestSpecification {
   static Stream<Arguments> sizeThreeIncludesExpressions() {
     return Stream.of(
         Arguments.of("Set{1,2,3,4,5}.select(x | x > 1).select(x | x < 5)", 3, 2, 3, 4),
-        Arguments.of("Set{1,2,3}.collect(x | x * 2).collect(x | x + 1)", 3, 3, 5, 7)
-    );
+        Arguments.of("Set{1,2,3}.collect(x | x * 2).collect(x | x + 1)", 3, 3, 5, 7));
   }
 
   // ==================== Standalone ====================
@@ -225,7 +220,6 @@ class CollectionChainingTest extends DummyTestSpecification {
   // ==================== Helper ====================
 
   private void assertTypeError(String input) {
-    assertThrows(AssertionError.class, () -> compile(input),
-        "Expected type error for: " + input);
+    assertThrows(AssertionError.class, () -> compile(input), "Expected type error for: " + input);
   }
 }

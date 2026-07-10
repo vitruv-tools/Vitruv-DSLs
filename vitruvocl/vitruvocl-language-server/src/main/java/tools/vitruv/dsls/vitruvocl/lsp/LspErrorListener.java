@@ -8,11 +8,11 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvocl.lsp;
-import java.util.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.logging.Logger;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
@@ -25,19 +25,19 @@ import org.eclipse.lsp4j.Range;
 /**
  * ANTLR error listener that converts parser/lexer errors to LSP {@link Diagnostic} objects.
  *
- * <p>Installed on both the {@code VitruvOCLLexer} and {@code VitruvOCLParser} so that all syntax errors are
- * captured in one place. ANTLR reports 1-based lines; LSP uses 0-based — the conversion is applied
- * here.
+ * <p>Installed on both the {@code VitruvOCLLexer} and {@code VitruvOCLParser} so that all syntax
+ * errors are captured in one place. ANTLR reports 1-based lines; LSP uses 0-based — the conversion
+ * is applied here.
  */
 final class LspErrorListener extends BaseErrorListener {
 
   private static final Logger LOG = Logger.getLogger(LspErrorListener.class.getName());
 
   /** OCL structure keywords users might mistype — checked for "did you mean?" suggestions. */
-  private static final List<String> OCL_KEYWORDS = List.of(
-      "context", "inv", "self", "implies", "and", "or", "xor", "not",
-      "if", "then", "else", "endif", "let", "in", "null", "true", "false"
-  );
+  private static final List<String> OCL_KEYWORDS =
+      List.of(
+          "context", "inv", "self", "implies", "and", "or", "xor", "not", "if", "then", "else",
+          "endif", "let", "in", "null", "true", "false");
 
   private final List<Diagnostic> diagnostics = new ArrayList<>();
 
@@ -65,9 +65,12 @@ final class LspErrorListener extends BaseErrorListener {
 
       if (!text.equals("<EOF>") && text.chars().allMatch(Character::isLetterOrDigit)) {
         String lower = text.toLowerCase(Locale.ROOT);
-        String best = OCL_KEYWORDS.stream()
-            .min(java.util.Comparator.comparingInt(k -> EditDistance.damerauLevenshtein(lower, k)))
-            .orElse(null);
+        String best =
+            OCL_KEYWORDS.stream()
+                .min(
+                    java.util.Comparator.comparingInt(
+                        k -> EditDistance.damerauLevenshtein(lower, k)))
+                .orElse(null);
         int dist = best == null ? Integer.MAX_VALUE : EditDistance.damerauLevenshtein(lower, best);
         int threshold = EditDistance.editThreshold(text.length());
 
@@ -79,7 +82,7 @@ final class LspErrorListener extends BaseErrorListener {
     }
 
     Position start = new Position(lspLine, lspStart);
-    Position end   = new Position(lspLine, lspEnd);
+    Position end = new Position(lspLine, lspEnd);
 
     Diagnostic diag =
         new Diagnostic(new Range(start, end), msg, DiagnosticSeverity.Error, "vitruvOCL");
@@ -91,14 +94,14 @@ final class LspErrorListener extends BaseErrorListener {
     final int capStart = lspStart;
     final int capEnd = lspEnd;
     final String capMsg = msg;
-    LOG.fine(() -> String.format(
-        "[OCL-LS] DIAG syntax-error   L%d:C%d → L%d:C%d  %s",
-        capLine, capStart, capLine, capEnd, capMsg));
+    LOG.fine(
+        () ->
+            String.format(
+                "[OCL-LS] DIAG syntax-error   L%d:C%d → L%d:C%d  %s",
+                capLine, capStart, capLine, capEnd, capMsg));
   }
 
   List<Diagnostic> getDiagnostics() {
     return diagnostics;
   }
 }
-
-

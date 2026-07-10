@@ -93,7 +93,8 @@ class SymbolProviderTest {
 
   @Test
   void multipleContextBlocks_produceMultipleClassSymbols() {
-    String ocl = """
+    String ocl =
+        """
         context MM::ClassA inv ruleA: self = self
         context MM::ClassB inv ruleB: self = self
         """;
@@ -118,7 +119,8 @@ class SymbolProviderTest {
     assertThat(symbols).hasSize(1);
     List<DocumentSymbol> children = symbols.get(0).getRight().getChildren();
     assertThat(children).hasSize(3);
-    assertThat(children).extracting(DocumentSymbol::getName)
+    assertThat(children)
+        .extracting(DocumentSymbol::getName)
         .containsExactlyInAnyOrder("ruleA", "ruleB", "ruleC");
   }
 

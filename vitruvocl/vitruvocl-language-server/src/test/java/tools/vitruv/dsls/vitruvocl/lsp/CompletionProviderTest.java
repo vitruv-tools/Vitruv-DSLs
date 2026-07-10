@@ -59,8 +59,8 @@ class CompletionProviderTest {
   }
 
   /**
-   * Creates a {@link MetamodelWrapper} stub backed by the given in-memory {@link EPackage}.
-   * Avoids file I/O and does not require Mockito.
+   * Creates a {@link MetamodelWrapper} stub backed by the given in-memory {@link EPackage}. Avoids
+   * file I/O and does not require Mockito.
    */
   private static MetamodelWrapper stubWrapper(EPackage pkg, EClass cls) {
     return new MetamodelWrapper() {
@@ -92,8 +92,7 @@ class CompletionProviderTest {
     List<CompletionItem> items = provider.getCompletions(text, cursor, null);
 
     assertThat(items).extracting(CompletionItem::getLabel).contains("TestMM");
-    assertThat(items).extracting(CompletionItem::getKind)
-        .containsOnly(CompletionItemKind.Module);
+    assertThat(items).extracting(CompletionItem::getKind).containsOnly(CompletionItemKind.Module);
   }
 
   @Test
@@ -118,8 +117,7 @@ class CompletionProviderTest {
     List<CompletionItem> items = provider.getCompletions(text, cursor, null);
 
     assertThat(items).extracting(CompletionItem::getLabel).contains("Foo");
-    assertThat(items).extracting(CompletionItem::getKind)
-        .containsOnly(CompletionItemKind.Class);
+    assertThat(items).extracting(CompletionItem::getKind).containsOnly(CompletionItemKind.Class);
   }
 
   @Test
@@ -143,8 +141,7 @@ class CompletionProviderTest {
 
     List<CompletionItem> items = provider.getCompletions(text, cursor, null);
 
-    assertThat(items).extracting(CompletionItem::getLabel)
-        .anyMatch(label -> label.contains("bar"));
+    assertThat(items).extracting(CompletionItem::getLabel).anyMatch(label -> label.contains("bar"));
   }
 
   @Test
@@ -154,8 +151,7 @@ class CompletionProviderTest {
 
     List<CompletionItem> items = provider.getCompletions(text, cursor, null);
 
-    assertThat(items).extracting(CompletionItem::getLabel)
-        .anyMatch(label -> label.contains("bar"));
+    assertThat(items).extracting(CompletionItem::getLabel).anyMatch(label -> label.contains("bar"));
   }
 
   // ── annotation completions ─────────────────────────────────────────────────
@@ -168,7 +164,8 @@ class CompletionProviderTest {
 
     List<CompletionItem> items = provider.getCompletions(text, cursor, null);
 
-    assertThat(items).extracting(CompletionItem::getLabel)
+    assertThat(items)
+        .extracting(CompletionItem::getLabel)
         .containsExactlyInAnyOrder("CRITICAL", "WARNING", "MAJOR", "MINOR", "INFO");
   }
 
@@ -179,7 +176,8 @@ class CompletionProviderTest {
 
     List<CompletionItem> items = provider.getCompletions(text, cursor, null);
 
-    assertThat(items).extracting(CompletionItem::getLabel)
+    assertThat(items)
+        .extracting(CompletionItem::getLabel)
         .anyMatch(label -> label.contains("severity"));
   }
 
@@ -203,8 +201,7 @@ class CompletionProviderTest {
 
     List<CompletionItem> items = provider.getCompletions(text, cursor, null);
 
-    assertThat(items).extracting(CompletionItem::getKind)
-        .contains(CompletionItemKind.Constructor);
+    assertThat(items).extracting(CompletionItem::getKind).contains(CompletionItemKind.Constructor);
   }
 
   // ── let / type-cast position completions ──────────────────────────────────

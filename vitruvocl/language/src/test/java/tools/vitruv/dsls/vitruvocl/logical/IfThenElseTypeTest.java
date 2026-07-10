@@ -10,10 +10,10 @@ package tools.vitruv.dsls.vitruvocl.logical;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.stream.Stream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -179,8 +179,7 @@ class IfThenElseTypeTest extends DummyTestSpecification {
         "if false then Set{1, 2} else Set{3, 4} endif",
         "if true then Sequence{1, 2} else Sequence{3, 4} endif",
         "if true then Bag{1, 1} else Bag{2, 2} endif",
-        "if false then OrderedSet{1, 2} else OrderedSet{3, 4} endif"
-    );
+        "if false then OrderedSet{1, 2} else OrderedSet{3, 4} endif");
   }
 
   // ── condition derived from expression ─────────────────────────

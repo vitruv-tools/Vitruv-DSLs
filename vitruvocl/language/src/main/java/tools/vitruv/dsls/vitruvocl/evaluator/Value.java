@@ -207,7 +207,9 @@ public class Value implements Comparable<Value> {
 
     for (OCLElement elem : elements) {
       if (OCLElement.semanticEquals(elem, element) && (isUnique || !foundFirst)) {
-        if (!isUnique) foundFirst = true;
+        if  (!isUnique) {
+          foundFirst = true;
+        }
       } else {
         result.add(elem);
       }
@@ -539,17 +541,24 @@ public class Value implements Comparable<Value> {
    */
   @Override
   public int compareTo(Value other) {
-    if (this == other) return 0;
-    if (other == null) return 1;
+    if  (this == other) {
+      return 0;
+    }
+    if  (other == null) {
+      return 1;
+    }
     int sizeCompare = Integer.compare(this.size(), other.size());
-    if (sizeCompare != 0) return sizeCompare;
+    if  (sizeCompare != 0) {
+      return sizeCompare;
+    }
     List<OCLElement> elems1 = this.getElements();
     List<OCLElement> elems2 = other.getElements();
     for (int i = 0; i < elems1.size(); i++) {
       int elemCompare = OCLElement.compare(elems1.get(i), elems2.get(i));
-      if (elemCompare != 0) return elemCompare;
+      if  (elemCompare != 0) {
+        return elemCompare;
+      }
     }
     return 0;
   }
 }
-

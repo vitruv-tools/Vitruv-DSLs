@@ -1152,7 +1152,8 @@ class CorrespondenceFilterTest {
   void debugStep3_trivialConstraint() {
     ConstraintResult result =
         VitruvOCL.evaluateConstraint("context family::Member inv: true", ECORES, MODELS);
-    assertTrue(result.isSuccess(), "Trivial constraint should compile: " + result.getWarningsSummary());
+    assertTrue(
+        result.isSuccess(), "Trivial constraint should compile: " + result.getWarningsSummary());
     assertTrue(result.isSatisfied(), "Trivial 'true' constraint must be satisfied");
   }
 
@@ -1174,7 +1175,8 @@ class CorrespondenceFilterTest {
   void debugStep_trivialTrue() {
     ConstraintResult result =
         VitruvOCL.evaluateConstraint("context family::Member inv: true", ECORES, MODELS);
-    assertTrue(result.isSuccess(), "Trivial constraint must compile: " + result.toDetailedErrorString());
+    assertTrue(
+        result.isSuccess(), "Trivial constraint must compile: " + result.toDetailedErrorString());
     assertTrue(result.isSatisfied(), "Trivial 'true' constraint must be satisfied");
   }
 
@@ -1198,8 +1200,7 @@ class CorrespondenceFilterTest {
         errors.contains("Tag") && errors.contains("String"),
         "Error should mention Tag and String, got: " + errors);
     assertFalse(
-        errors.contains("implies"),
-        "Should NOT produce an 'implies' error, got: " + errors);
+        errors.contains("implies"), "Should NOT produce an 'implies' error, got: " + errors);
   }
 
   @Test
@@ -1218,8 +1219,7 @@ class CorrespondenceFilterTest {
         errors.contains("metaclass") || errors.contains("Type filter"),
         "Error should mention metaclass or Type filter, got: " + errors);
     assertFalse(
-        errors.contains("implies"),
-        "Should NOT produce an 'implies' error, got: " + errors);
+        errors.contains("implies"), "Should NOT produce an 'implies' error, got: " + errors);
   }
 
   // ================================================================
@@ -1230,7 +1230,8 @@ class CorrespondenceFilterTest {
   @DisplayName("Tags = '...' reports unknown-option error with 'Tag' suggestion, no implies error")
   void testTagsTypoReportsFilterOptionError() {
     ConstraintResult result =
-        eval("""
+        eval(
+            """
             context family::Member inv:
               self.firstName == "Homer" implies
                 persons::Person.allInstances().select(~, Tags = "Husband").size() == 1
@@ -1240,15 +1241,15 @@ class CorrespondenceFilterTest {
     assertTrue(
         errors.contains("Tags") && (errors.contains("Tag") || errors.contains("filter option")),
         "Error should mention 'Tags' and suggest 'Tag', got: " + errors);
-    assertFalse(errors.contains("implies"),
-        "Should NOT cascade to implies error, got: " + errors);
+    assertFalse(errors.contains("implies"), "Should NOT cascade to implies error, got: " + errors);
   }
 
   @Test
   @DisplayName("Types = T reports unknown-option error with 'Type' suggestion")
   void testTypesTypoReportsFilterOptionError() {
     ConstraintResult result =
-        eval("""
+        eval(
+            """
             context family::Member inv:
               self.firstName == "Homer" implies
                 persons::Person.allInstances().select(~, Types = persons::Person).size() == 1
@@ -1258,8 +1259,7 @@ class CorrespondenceFilterTest {
     assertTrue(
         errors.contains("Types") && (errors.contains("Type") || errors.contains("filter option")),
         "Error should mention 'Types' and suggest 'Type', got: " + errors);
-    assertFalse(errors.contains("implies"),
-        "Should NOT cascade to implies error, got: " + errors);
+    assertFalse(errors.contains("implies"), "Should NOT cascade to implies error, got: " + errors);
   }
 
   // ================================================================
@@ -1270,50 +1270,55 @@ class CorrespondenceFilterTest {
   @DisplayName("++ reports invalid-operator error, no cascade to inv/implies")
   void testDoublePlusReportsError() {
     ConstraintResult result =
-        eval("""
+        eval(
+            """
             context family::Member inv:
               self.firstName == "Homer" implies
                 persons::Person.allInstances().select(~).size() ++ 1 == 1
             """);
     assertFalse(result.isSuccess(), "Should fail: ++ is not a valid operator");
     String errors = result.toDetailedErrorString();
-    assertTrue(errors.contains("++") || errors.contains("Invalid operator"),
+    assertTrue(
+        errors.contains("++") || errors.contains("Invalid operator"),
         "Error should mention ++, got: " + errors);
-    assertFalse(errors.contains("implies"),
-        "Should NOT cascade to implies error, got: " + errors);
+    assertFalse(errors.contains("implies"), "Should NOT cascade to implies error, got: " + errors);
   }
 
   @Test
   @DisplayName("+-+ reports invalid-operator error, no cascade to inv/implies")
   void testPlusMinusPlusReportsError() {
     ConstraintResult result =
-        eval("""
+        eval(
+            """
             context family::Member inv:
               self.firstName == "Homer" implies
                 persons::Person.allInstances().select(~).size() +-+ 1 == 1
             """);
     assertFalse(result.isSuccess(), "Should fail: +-+ is not a valid operator");
     String errors = result.toDetailedErrorString();
-    assertTrue(errors.contains("+-+") || errors.contains("Invalid operator"),
+    assertTrue(
+        errors.contains("+-+") || errors.contains("Invalid operator"),
         "Error should mention +-+, got: " + errors);
-    assertFalse(errors.contains("implies"),
-        "Should NOT cascade to implies error, got: " + errors);
+    assertFalse(errors.contains("implies"), "Should NOT cascade to implies error, got: " + errors);
   }
 
   @Test
   @DisplayName("selcft(~, ...) gives 'did you mean select?' not a cryptic ~ error")
   void testSelectTypo_selcft_suggests_select() {
     ConstraintResult result =
-        eval("""
+        eval(
+            """
             context family::Member inv:
               persons::Person.allInstances().selcft(~, Tag = "Husband").isEmpty()
             """);
     assertFalse(result.isSuccess(), "Should fail: 'selcft' is unknown");
     String errors = result.toDetailedErrorString();
     // Must NOT produce the cryptic ANTLR '~' token error
-    assertFalse(errors.contains("mismatched input"),
+    assertFalse(
+        errors.contains("mismatched input"),
         "Should not show cryptic parser error, got: " + errors);
-    assertTrue(errors.contains("did you mean") && errors.contains("select"),
+    assertTrue(
+        errors.contains("did you mean") && errors.contains("select"),
         "Should suggest 'select' for 'selcft', got: " + errors);
   }
 
@@ -1321,15 +1326,18 @@ class CorrespondenceFilterTest {
   @DisplayName("rejct(~) gives 'did you mean reject?'")
   void testRejectTypo_rejct_suggests_reject() {
     ConstraintResult result =
-        eval("""
+        eval(
+            """
             context family::Member inv:
               persons::Person.allInstances().rejct(~).isEmpty()
             """);
     assertFalse(result.isSuccess());
     String errors = result.toDetailedErrorString();
-    assertFalse(errors.contains("mismatched input"),
+    assertFalse(
+        errors.contains("mismatched input"),
         "Should not show cryptic parser error, got: " + errors);
-    assertTrue(errors.contains("did you mean") && errors.contains("reject"),
+    assertTrue(
+        errors.contains("did you mean") && errors.contains("reject"),
         "Should suggest 'reject' for 'rejct', got: " + errors);
   }
 
@@ -1343,7 +1351,8 @@ class CorrespondenceFilterTest {
               self.firstName == "Homer" implies
                 persons::Person.allInstances().select(~, Type = persons::Person).size() == 1
             """);
-    assertTrue(result.isSuccess(),
+    assertTrue(
+        result.isSuccess(),
         "Type = persons::Person should be valid, errors: " + result.getWarningsSummary());
   }
 
@@ -1364,11 +1373,9 @@ class CorrespondenceFilterTest {
     assertFalse(result.isSuccess(), "Should fail: <> is not a valid operator");
     String errors = result.toDetailedErrorString();
     assertTrue(
-        errors.contains("<>"),
-        "Error should mention the invalid operator <>, got: " + errors);
+        errors.contains("<>"), "Error should mention the invalid operator <>, got: " + errors);
     assertFalse(
-        errors.contains("implies"),
-        "Should NOT produce an 'implies' error, got: " + errors);
+        errors.contains("implies"), "Should NOT produce an 'implies' error, got: " + errors);
   }
 
   @Test
@@ -1384,8 +1391,7 @@ class CorrespondenceFilterTest {
     assertFalse(result.isSuccess(), "Should fail: +- is not a valid operator");
     String errors = result.toDetailedErrorString();
     assertTrue(
-        errors.contains("+-"),
-        "Error should mention the invalid operator +-, got: " + errors);
+        errors.contains("+-"), "Error should mention the invalid operator +-, got: " + errors);
   }
 
   @Test
@@ -1398,6 +1404,8 @@ class CorrespondenceFilterTest {
               self.firstName == "Homer" implies
                 persons::Person.allInstances().select(~, Tag = "Husband").size() == 1
             """);
-    assertTrue(result.isSuccess(), "Tag = \"Husband\" should be valid, errors: " + result.getWarningsSummary());
+    assertTrue(
+        result.isSuccess(),
+        "Tag = \"Husband\" should be valid, errors: " + result.getWarningsSummary());
   }
 }

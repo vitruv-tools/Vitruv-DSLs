@@ -56,7 +56,8 @@ class BrakeSystemConstraintTest {
 
   private static ConstraintResult eval(String c) {
     return VitruvOCL.evaluateConstraint(
-        c, new Path[] {BRAKESYSTEM_ECORE, CAD_ECORE},
+        c,
+        new Path[] {BRAKESYSTEM_ECORE, CAD_ECORE},
         new Path[] {BRAKESYSTEM_INSTANCE, CAD_INSTANCE});
   }
 
@@ -101,8 +102,7 @@ class BrakeSystemConstraintTest {
           let cadCaliper = cad::Namespace.allInstances()
             .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
           cadCaliper.parameters.select(p | p.oclIsKindOf(cad::Parameter)).size() == 5
-        """
-    );
+        """);
   }
 
   // ---------------------------------------------------------------------------
@@ -110,8 +110,8 @@ class BrakeSystemConstraintTest {
   // ---------------------------------------------------------------------------
 
   /**
-   * The caliper has Coordinates with x=165 and x=175, disk diameter=330 (radius=165).
-   * x=175 > 165 → constraint should NOT be satisfied.
+   * The caliper has Coordinates with x=165 and x=175, disk diameter=330 (radius=165). x=175 > 165 →
+   * constraint should NOT be satisfied.
    */
   @Test
   void testCaliperCoordinatesWithinDiskRadius() {
@@ -125,7 +125,9 @@ class BrakeSystemConstraintTest {
         """;
     ConstraintResult r = eval(constraint);
     assertTrue(r.isSuccess(), "Evaluation should succeed: " + r.toDetailedErrorString());
-    assertFalse(r.isSatisfied(), "Constraint should fail: caliper coordinate x=175 exceeds disk radius 165");
+    assertFalse(
+        r.isSatisfied(),
+        "Constraint should fail: caliper coordinate x=175 exceeds disk radius 165");
   }
 
   /** oclAsType property access on x-coordinates returns a collection of size 2. */
@@ -142,7 +144,9 @@ class BrakeSystemConstraintTest {
     assertTrue(r.isSuccess(), "Evaluation should succeed: " + r.toDetailedErrorString());
   }
 
-  /** Original constraint using string concatenation; caliper coordinate x=175 exceeds radius 165. */
+  /**
+   * Original constraint using string concatenation; caliper coordinate x=175 exceeds radius 165.
+   */
   @Test
   void testOriginalConstraintExact() {
     String constraint =
@@ -155,7 +159,9 @@ class BrakeSystemConstraintTest {
  p.oclAsType(cad::Coordinate).x <= self.diameterInMM / 2)""";
     ConstraintResult r = eval(constraint);
     assertTrue(r.isSuccess(), "Evaluation should succeed: " + r.toDetailedErrorString());
-    assertFalse(r.isSatisfied(), "Constraint should fail: caliper coordinate x=175 exceeds disk radius 165");
+    assertFalse(
+        r.isSatisfied(),
+        "Constraint should fail: caliper coordinate x=175 exceeds disk radius 165");
   }
 
   // ---------------------------------------------------------------------------
@@ -1196,7 +1202,6 @@ class BrakeSystemConstraintTest {
               let dz: Real = self.apex.z - o.apex.z in
               dx*dx + dy*dy + dz*dz > 0.0
             )
-        """
-    );
+        """);
   }
 }

@@ -36,7 +36,9 @@ public class SymbolProvider {
    * @return list of top-level symbols (each may have children); empty if nothing is parsed
    */
   public List<Either<SymbolInformation, DocumentSymbol>> getSymbols(DocumentAnalysis analysis) {
-    if (analysis == null || analysis.getTree() == null) return List.of();
+    if  (analysis == null || analysis.getTree() == null) {
+      return List.of();
+    }
 
     VitruvOCLParser.ContextDeclCSContext root = analysis.getTree();
     List<Either<SymbolInformation, DocumentSymbol>> result = new ArrayList<>();
@@ -91,7 +93,9 @@ public class SymbolProvider {
   private static Range ruleRange(ParserRuleContext ctx) {
     Token start = ctx.getStart();
     Token stop = ctx.getStop();
-    if (start == null) return zero();
+    if  (start == null) {
+      return zero();
+    }
     int startLine = Math.max(0, start.getLine() - 1);
     int startChar = Math.max(0, start.getCharPositionInLine());
     int stopLine = stop != null ? Math.max(0, stop.getLine() - 1) : startLine;

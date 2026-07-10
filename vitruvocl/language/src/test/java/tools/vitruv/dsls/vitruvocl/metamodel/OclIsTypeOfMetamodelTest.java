@@ -81,7 +81,6 @@ class OclIsTypeOfMetamodelTest {
         """
         context cad::Namespace inv:
           self.shapes.select(s | s.oclIsTypeOf(cad::Sphere))
-            .forAll(s | s.oclIsTypeOf(cad::Cylinder) == false)"""
-    );
+            .forAll(s | s.oclIsTypeOf(cad::Cylinder) == false)""");
   }
 }

@@ -8,12 +8,12 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 package tools.vitruv.dsls.vitruvocl.lsp;
-import java.util.logging.Logger;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.logging.Logger;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.eclipse.emf.ecore.EClass;
@@ -44,11 +44,17 @@ public class DefinitionProvider {
    * definition can be found (i.e. the token is not a known metaclass reference).
    */
   public Location getDefinition(Position cursor, DocumentAnalysis analysis) {
-    if (analysis == null || analysis.getTree() == null) return null;
-    if (analysis.getNodeTypes() == null) return null;
+    if  (analysis == null || analysis.getTree() == null) {
+      return null;
+    }
+    if  (analysis.getNodeTypes() == null) {
+      return null;
+    }
 
     ParseTree node = NodeFinder.findAt(analysis.getTree(), cursor.getLine(), cursor.getCharacter());
-    if (node == null) return null;
+    if  (node == null) {
+      return null;
+    }
 
     // Walk up the parse tree looking for a MetaclassType annotation
     ParseTreeProperty<Type> nodeTypes = analysis.getNodeTypes();
@@ -71,13 +77,19 @@ public class DefinitionProvider {
 
   private static Location locationFor(EClass eClass) {
     Resource resource = eClass.eResource();
-    if (resource == null) return null;
+    if  (resource == null) {
+      return null;
+    }
 
     org.eclipse.emf.common.util.URI emfUri = resource.getURI();
-    if (emfUri == null) return null;
+    if  (emfUri == null) {
+      return null;
+    }
 
     String filePath = emfUri.toFileString();
-    if (filePath == null) return null;
+    if  (filePath == null) {
+      return null;
+    }
 
     Path ecorePath = Path.of(filePath);
     String lspUri = ecorePath.toUri().toString();
@@ -94,7 +106,9 @@ public class DefinitionProvider {
    * {@code name="…"} as one of its attributes on the same element line.
    */
   private static Range findClassRange(Path ecoreFile, String className) {
-    if (className == null || className.isEmpty()) return null;
+    if  (className == null || className.isEmpty()) {
+      return null;
+    }
     String needle = "name=\"" + className + "\"";
     try {
       List<String> lines = Files.readAllLines(ecoreFile);
@@ -122,5 +136,3 @@ public class DefinitionProvider {
     return new Range(new Position(0, 0), new Position(0, 0));
   }
 }
-
-

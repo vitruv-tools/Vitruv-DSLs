@@ -57,7 +57,9 @@ public class HoverProvider {
 
   @SuppressWarnings("java:S3776")
   public Hover getHover(Position cursor, DocumentAnalysis analysis) {
-    if (analysis == null || analysis.getTree() == null) return null;
+    if  (analysis == null || analysis.getTree() == null) {
+      return null;
+    }
 
     // ------------------------------------------------------------------
     // 0. Diagnostics take priority — if the cursor sits inside an error
@@ -74,7 +76,9 @@ public class HoverProvider {
     }
 
     ParseTree node = NodeFinder.findAt(analysis.getTree(), cursor.getLine(), cursor.getCharacter());
-    if (node == null) return null;
+    if  (node == null) {
+      return null;
+    }
 
     // ------------------------------------------------------------------
     // 1. Annotation keywords (@severity / @message)
@@ -84,7 +88,8 @@ public class HoverProvider {
       if ("@severity".equals(tokenText)) {
         return buildAnnotationHover(
             "@severity",
-            "Sets the severity of a constraint violation. Placed after the invariant `:` before the body.",
+            "Sets the severity of a constraint violation. Placed after the invariant `:` before the"
+                + " body.",
             "**Values:** `CRITICAL` | `WARNING` *(default)* | `MAJOR` | `MINOR` | `INFO`",
             "@severity CRITICAL\nself.radius > 0");
       }
@@ -92,7 +97,8 @@ public class HoverProvider {
         return buildAnnotationHover(
             "@message",
             "Custom violation message. Supports `{self}` and `{self.attr}` template variables.",
-            "**Template variables:** `{self}` — the context object · `{self.attr}` — an attribute value",
+            "**Template variables:** `{self}` — the context object · `{self.attr}` — an attribute"
+                + " value",
             "@message \"Brake disk {self.name} has no radius defined\"");
       }
     }
@@ -103,13 +109,17 @@ public class HoverProvider {
     if (node instanceof TerminalNode terminal2) {
       String tokenText = terminal2.getSymbol().getText();
       Optional<OperationDoc> doc = OclOperationDocs.lookup(tokenText);
-      if (doc.isPresent()) return buildOperationHover(doc.get());
+      if  (doc.isPresent()) {
+        return buildOperationHover(doc.get());
+      }
     }
 
     // ------------------------------------------------------------------
     // 2. Walk up the parse tree looking for a type annotation
     // ------------------------------------------------------------------
-    if (analysis.getNodeTypes() == null) return null;
+    if  (analysis.getNodeTypes() == null) {
+      return null;
+    }
 
     ParseTreeProperty<Type> nodeTypes = analysis.getNodeTypes();
     ParseTree current = node;
@@ -214,10 +224,18 @@ public class HoverProvider {
   private static String multiplicity(EStructuralFeature f) {
     int lo = f.getLowerBound();
     int hi = f.getUpperBound();
-    if (lo == 1 && hi == 1) return "[1]";
-    if (lo == 0 && hi == 1) return "[0..1]";
-    if (lo == 0 && hi == -1) return "[0..*]";
-    if (lo == 1 && hi == -1) return "[1..*]";
+    if  (lo == 1 && hi == 1) {
+      return "[1]";
+    }
+    if  (lo == 0 && hi == 1) {
+      return "[0..1]";
+    }
+    if  (lo == 0 && hi == -1) {
+      return "[0..*]";
+    }
+    if  (lo == 1 && hi == -1) {
+      return "[1..*]";
+    }
     return "[" + lo + ".." + (hi == -1 ? "*" : hi) + "]";
   }
 
@@ -230,7 +248,9 @@ public class HoverProvider {
     for (EAnnotation ann : annotations) {
       if ("http://www.eclipse.org/emf/2002/GenModel".equals(ann.getSource())) {
         String doc = ann.getDetails().get("documentation");
-        if (doc != null && !doc.isBlank()) return doc.strip();
+        if  (doc != null && !doc.isBlank()) {
+          return doc.strip();
+        }
       }
     }
     return null;
@@ -281,10 +301,16 @@ public class HoverProvider {
   private static Hover buildAnnotationHover(
       String keyword, String description, String details, String example) {
     String md =
-        MD_CODE_HEADER + keyword + "`\n\n"
-            + description + "\n\n"
-            + details + "\n\n"
-            + "**Example:**\n```ocl\n" + example + "\n```";
+        MD_CODE_HEADER
+            + keyword
+            + "`\n\n"
+            + description
+            + "\n\n"
+            + details
+            + "\n\n"
+            + "**Example:**\n```ocl\n"
+            + example
+            + "\n```";
     return hover(md);
   }
 
@@ -304,12 +330,17 @@ public class HoverProvider {
 
   /** Returns true when {@code range} contains {@code cursor} (end is exclusive). */
   private static boolean containsCursor(Range range, Position cursor) {
-    if (range == null || cursor == null) return false;
+    if  (range == null || cursor == null) {
+      return false;
+    }
     Position start = range.getStart();
     Position end = range.getEnd();
-    if (cursor.getLine() < start.getLine() || cursor.getLine() > end.getLine()) return false;
-    if (cursor.getLine() == start.getLine() && cursor.getCharacter() < start.getCharacter())
+    if  (cursor.getLine() < start.getLine() || cursor.getLine() > end.getLine()) {
       return false;
+    }
+    if (cursor.getLine() == start.getLine() && cursor.getCharacter() < start.getCharacter()) {
+      return false;
+    }
     return !(cursor.getLine() == end.getLine() && cursor.getCharacter() >= end.getCharacter());
   }
 

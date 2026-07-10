@@ -85,8 +85,7 @@ class SelfContextMetamodelTest {
         context cad::Sphere inv:
           cad::Namespace.allInstances()
             .reject(ns | ns.shapes.includes(self))
-            .size() >= 0"""
-    );
+            .size() >= 0""");
   }
 
   @ParameterizedTest
@@ -105,7 +104,6 @@ class SelfContextMetamodelTest {
         context brakesystem::BrakeDisk inv:
           let radius = self.diameterInMM / 2 in
           radius > 0""",
-        "context brakesystem::BrakeCaliper inv:\n  self.id.length() > 0"
-    );
+        "context brakesystem::BrakeCaliper inv:\n  self.id.length() > 0");
   }
 }

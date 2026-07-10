@@ -43,8 +43,8 @@ public final class DocumentAnalysis {
   }
 
   /**
-   * Type annotations produced by {@link tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor}. May
-   * be {@code null} when type checking was skipped due to severe syntax errors.
+   * Type annotations produced by {@link tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor}.
+   * May be {@code null} when type checking was skipped due to severe syntax errors.
    */
   public ParseTreeProperty<Type> getNodeTypes() {
     return nodeTypes;
@@ -57,5 +57,3 @@ public final class DocumentAnalysis {
     return diagnostics;
   }
 }
-
-

@@ -269,7 +269,7 @@ public class TypeResolver {
    */
   public static Type resolveUnaryOp(String operator, Type operandType) {
     return switch (operator) {
-      // Unary minus: preserve numeric type (INTEGER → INTEGER, FLOAT → FLOAT, DOUBLE → DOUBLE)
+        // Unary minus: preserve numeric type (INTEGER → INTEGER, FLOAT → FLOAT, DOUBLE → DOUBLE)
       case "-" -> isNumeric(operandType) ? operandType : Type.ERROR;
       case "not" -> operandType.isConformantTo(Type.BOOLEAN) ? Type.BOOLEAN : Type.ERROR;
       default -> Type.ERROR;
@@ -297,7 +297,7 @@ public class TypeResolver {
     Type elementType = sourceType.getElementType();
 
     switch (operationName) {
-      // Universally allowed: ¡T!, ¿T?, and all collection types
+        // Universally allowed: ¡T!, ¿T?, and all collection types
       case "includes", "excludes", "isEmpty", "notEmpty":
         return Type.BOOLEAN;
 
@@ -327,7 +327,7 @@ public class TypeResolver {
       case "forAll", "exists":
         return Type.BOOLEAN;
 
-      // Including/Excluding → only on multi-valued collections
+        // Including/Excluding → only on multi-valued collections
       case "including", "excluding":
         if (!sourceType.isCollection()) {
           return Type.ERROR;
@@ -337,14 +337,14 @@ public class TypeResolver {
         }
         return sourceType;
 
-      // Element extraction → only on Seq/OrderedSet
+        // Element extraction → only on Seq/OrderedSet
       case "first", "last":
         if (!sourceType.isCollection()) {
           return Type.ERROR;
         }
         return Type.optional(elementType);
 
-      // Flatten/union/intersection → only on multi-valued collections
+        // Flatten/union/intersection → only on multi-valued collections
       case "flatten":
         if (!sourceType.isCollection()) {
           return Type.ERROR;
@@ -367,7 +367,7 @@ public class TypeResolver {
         }
         return Type.ERROR;
 
-      // Sum → preserves numeric element type
+        // Sum → preserves numeric element type
       case "sum":
         if (elementType == Type.INTEGER) {
           return Type.INTEGER;
@@ -380,7 +380,7 @@ public class TypeResolver {
         }
         return Type.ERROR;
 
-      // Type conversion operations
+        // Type conversion operations
       case "asSet":
         return Type.set(elementType);
 
@@ -486,4 +486,3 @@ public class TypeResolver {
     return resolveObjectOperation(sourceType, operationName) != Type.ERROR;
   }
 }
-

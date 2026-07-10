@@ -141,7 +141,9 @@ public interface MetamodelWrapperInterface {
     return null;
   }
 
-  /** Searches an {@link EPackage} and its direct subpackages for an {@link EClass} by short name. */
+  /**
+   * Searches an {@link EPackage} and its direct subpackages for an {@link EClass} by short name.
+   */
   static EClass resolveEClassByShortNameInPackage(EPackage ePackage, String shortName) {
     EClassifier classifier = ePackage.getEClassifier(shortName);
     if (classifier instanceof EClass eClass) {

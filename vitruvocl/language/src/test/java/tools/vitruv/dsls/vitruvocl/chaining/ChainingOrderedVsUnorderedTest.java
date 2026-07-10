@@ -10,10 +10,10 @@ package tools.vitruv.dsls.vitruvocl.chaining;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.stream.Stream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -233,8 +233,7 @@ class ChainingOrderedVsUnorderedTest extends DummyTestSpecification {
         "Set{1, 2, 3}.asSequence().first()",
         "Set{1, 2, 3}.asSequence().last()",
         "Bag{3, 1, 2}.asOrderedSet().first()",
-        "Bag{3, 1, 2}.asOrderedSet().last()"
-    );
+        "Bag{3, 1, 2}.asOrderedSet().last()");
   }
 
   // ══════════════════════════════════════════════════════════════

@@ -26,7 +26,6 @@ import org.eclipse.lsp4j.services.LanguageClient;
  */
 public class LspMain {
 
-
   @SuppressWarnings("java:S106")
   public static void main(String[] args) throws Exception {
     // Capture the real stdout before anything else touches it.
@@ -45,5 +44,3 @@ public class LspMain {
     launcher.startListening().get();
   }
 }
-
-

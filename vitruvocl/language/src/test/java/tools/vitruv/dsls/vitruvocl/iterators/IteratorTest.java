@@ -71,8 +71,7 @@ class IteratorTest extends DummyTestSpecification {
     return Stream.of(
         "Set{1,2,3}.select(x | x > 10)",
         "Set{1,2,3}.reject(x | x > 0)",
-        "Set{}.collect(x | x * 2)"
-    );
+        "Set{}.collect(x | x * 2)");
   }
 
   /** Tests select where all elements match → full collection. */
@@ -137,7 +136,6 @@ class IteratorTest extends DummyTestSpecification {
     assertIncludes(result, 2);
     assertIncludes(result, 3);
   }
-
 
   /** Tests reject with equality: removes element 3 → {1,2,4,5} */
   @Test
@@ -205,7 +203,6 @@ class IteratorTest extends DummyTestSpecification {
     assertIncludes(result, 4);
     assertIncludes(result, 5);
   }
-
 
   /** Tests that collect auto-flattens results — no nested collections in output. */
   @Test

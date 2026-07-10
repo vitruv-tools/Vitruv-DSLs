@@ -99,4 +99,3 @@ public class VariableSymbol extends Symbol {
     this.value = value;
   }
 }
-

@@ -41,14 +41,20 @@ final class SignatureHelpProvider {
 
   /** Scans the document and returns a {@link SignatureHelp}, or {@code null} if not applicable. */
   SignatureHelp getSignatureHelp(String documentText, Position cursor) {
-    if (documentText == null) return null;
+    if  (documentText == null) {
+      return null;
+    }
 
     String prefix = textUpToPosition(documentText, cursor);
     ActiveCall call = findActiveCall(prefix);
-    if (call == null) return null;
+    if  (call == null) {
+      return null;
+    }
 
     Optional<OclOperationDocs.OperationDoc> docOpt = OclOperationDocs.lookup(call.name());
-    if (docOpt.isEmpty()) return null;
+    if  (docOpt.isEmpty()) {
+      return null;
+    }
 
     OclOperationDocs.OperationDoc doc = docOpt.get();
     SignatureInformation sig = buildSignature(doc);
@@ -104,7 +110,9 @@ final class SignatureHelpProvider {
 
   private static int computeActiveParam(ActiveCall call, OclOperationDocs.OperationDoc doc) {
     List<OclOperationDocs.ParamDoc> params = doc.params();
-    if (params.isEmpty()) return 0;
+    if  (params.isEmpty()) {
+      return 0;
+    }
 
     // Iterator operations (signature contains |): pipe position determines active param.
     if (doc.signature().contains("|") && params.size() >= 2) {
@@ -142,9 +150,13 @@ final class SignatureHelpProvider {
           // Found the opening paren — extract the identifier immediately before it.
           // Skip any whitespace, then grab letters/digits/underscores.
           int end = i;
-          while (end > 0 && Character.isWhitespace(prefix.charAt(end - 1))) end--;
+          while  (end > 0 && Character.isWhitespace(prefix.charAt(end - 1))) {
+            end--;
+          }
           int start = end;
-          while (start > 0 && isIdentChar(prefix.charAt(start - 1))) start--;
+          while  (start > 0 && isIdentChar(prefix.charAt(start - 1))) {
+            start--;
+          }
 
           if (start < end) {
             return new ActiveCall(prefix.substring(start, end), commas, cursorAfterPipe);
@@ -202,5 +214,3 @@ final class SignatureHelpProvider {
    */
   private record ActiveCall(String name, int commas, boolean cursorAfterPipe) {}
 }
-
-

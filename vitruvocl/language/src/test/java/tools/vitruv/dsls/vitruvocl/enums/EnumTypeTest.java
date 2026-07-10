@@ -820,7 +820,10 @@ class EnumTypeTest extends DummyTestSpecification {
   @Test
   void testEnumSetSelectThenFirst() {
     // select on Set → Set (unordered) → need asSequence() before first()
-    Value r = compile("Set{Status::ACTIVE, Status::INACTIVE}.select(e | e == Status::ACTIVE).asSequence().first()");
+    Value r =
+        compile(
+            "Set{Status::ACTIVE, Status::INACTIVE}.select(e | e =="
+                + " Status::ACTIVE).asSequence().first()");
     assertEquals(1, r.size());
   }
 

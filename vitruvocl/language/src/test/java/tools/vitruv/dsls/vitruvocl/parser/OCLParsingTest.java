@@ -157,7 +157,8 @@ class OCLParsingTest {
   @Test
   @DisplayName("Should parse @message annotation")
   void testMessageAnnotation() {
-    String input = """
+    String input =
+        """
         context Pkg::Foo inv Bar:
             @message "Foo {self.name} violated"
             self.x > 0""";
@@ -174,7 +175,8 @@ class OCLParsingTest {
   @Test
   @DisplayName("Should parse both @severity and @message annotations")
   void testBothAnnotations() {
-    String input = """
+    String input =
+        """
         context Pkg::Foo inv Bar:
             @severity WARNING
             @message "Object {self.name} failed"

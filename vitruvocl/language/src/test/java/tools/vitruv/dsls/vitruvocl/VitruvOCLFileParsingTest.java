@@ -21,7 +21,6 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-
 import tools.vitruv.dsls.vitruvocl.parser.VitruvOCLParserTestUtils;
 
 /**
@@ -59,7 +58,9 @@ import tools.vitruv.dsls.vitruvocl.parser.VitruvOCLParserTestUtils;
  * @see VitruvOCLParser ANTLR-generated parser
  * @see VitruvOCLParserTestUtils Parse tree visualization utilities
  */
-@SuppressWarnings("java:S5786") // class must be public — referenced from tools.vitruv.dsls.vitruvocl.parser package
+@SuppressWarnings(
+    "java:S5786") // class must be public — referenced from tools.vitruv.dsls.vitruvocl.parser
+                  // package
 public class VitruvOCLFileParsingTest {
 
   /**

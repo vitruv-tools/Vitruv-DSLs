@@ -114,12 +114,7 @@ class SignatureHelpProviderTest {
   }
 
   @ParameterizedTest
-  @CsvSource({
-      "forAll, 0",
-      "exists, 0",
-      "collect, 0",
-      "reject, 0"
-  })
+  @CsvSource({"forAll, 0", "exists, 0", "collect, 0", "reject, 0"})
   void iteratorOperations_firstParamActiveOnOpen(String opName, int expectedParam) {
     String text = "context MM::Foo inv x: self.items->" + opName + "(";
     Position cursor = new Position(0, text.length());
