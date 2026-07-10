@@ -10,9 +10,13 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.metamodel;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import org.eclipse.emf.ecore.EClass;
@@ -30,7 +34,7 @@ import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
  *
  * <h2>Metamodel Integration Overview</h2>
  *
- * The VitruvOCL compiler integrates with EMF metamodels to enable:
+ * <p>The VitruvOCL compiler integrates with EMF metamodels to enable:
  *
  * <ul>
  *   <li><b>Metaclass resolution:</b> Resolving qualified names like {@code
@@ -46,7 +50,7 @@ import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
  *
  * <h2>Test Metamodels</h2>
  *
- * This test suite uses two example metamodels located in {@code
+ * <p>This test suite uses two example metamodels located in {@code
  * src/test/resources/test-metamodels/}:
  *
  * <ul>
@@ -65,7 +69,7 @@ import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
  *
  * <h2>Qualified Name Resolution</h2>
  *
- * VitruvOCL uses qualified names to reference metaclasses from specific metamodels:
+ * <p>VitruvOCL uses qualified names to reference metaclasses from specific metamodels:
  *
  * <pre>{@code
  * metamodel::ClassName
@@ -83,7 +87,7 @@ import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
  *
  * <h2>MetamodelWrapper Responsibilities</h2>
  *
- * The {@link MetamodelWrapper} provides:
+ * <p>The {@link MetamodelWrapper} provides:
  *
  * <ol>
  *   <li><b>Metamodel loading:</b> {@code loadMetamodel(Path)} loads Ecore files into memory

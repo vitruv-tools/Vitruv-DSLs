@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.lsp;
 
 import static org.assertj.core.api.Assertions.assertThat;

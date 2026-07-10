@@ -1,6 +1,7 @@
 package tools.vitruv.dsls.vitruvocl.typechecker;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import org.eclipse.emf.ecore.EPackage;

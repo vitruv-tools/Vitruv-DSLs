@@ -2,6 +2,7 @@
  * Copyright (c) 2026 Max Oesterle
  * SPDX-License-Identifier: EPL-2.0
  ******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.metamodel;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;

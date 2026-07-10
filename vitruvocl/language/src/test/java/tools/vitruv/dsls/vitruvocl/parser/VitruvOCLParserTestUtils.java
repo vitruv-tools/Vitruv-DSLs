@@ -10,6 +10,7 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.parser;
 
 import java.io.IOException;
@@ -39,7 +40,7 @@ import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
  *
  * <h2>ANTLR Parsing Pipeline</h2>
  *
- * The parsing process follows ANTLR's standard pipeline:
+ * <p>The parsing process follows ANTLR's standard pipeline:
  *
  * <pre>
  * Input (String/File)
@@ -57,7 +58,7 @@ import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
  *
  * <h2>Parser Configuration</h2>
  *
- * All parsing operations use consistent configuration:
+ * <p>All parsing operations use consistent configuration:
  *
  * <ul>
  *   <li><b>Entry point:</b> {@code contextDeclCS()} grammar rule for context declarations
@@ -85,7 +86,7 @@ import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
  *
  * <h2>Error Handling Strategy</h2>
  *
- * Parse errors are handled by throwing {@link IllegalStateException} with detailed information:
+ * <p>Parse errors are handled by throwing {@link IllegalStateException} with detailed information:
  *
  * <ul>
  *   <li><b>Location:</b> Line and column of the error
@@ -98,7 +99,7 @@ import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
  *
  * <h2>Debug Capabilities</h2>
  *
- * The class contains commented-out debug code that can be enabled for troubleshooting:
+ * <p>The class contains commented-out debug code that can be enabled for troubleshooting:
  *
  * <ul>
  *   <li><b>Input echo:</b> Print the input string being parsed
@@ -106,11 +107,11 @@ import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
  *   <li><b>Parse tree:</b> Show raw parse tree structure
  * </ul>
  *
- * {@link #parse} method.
+ * <p>{@link #parse} method.
  *
  * <h2>Design Patterns</h2>
  *
- * This utility class follows several design patterns:
+ * <p>This utility class follows several design patterns:
  *
  * <ul>
  *   <li><b>Facade pattern:</b> Simplifies ANTLR's complex API into simple method calls
@@ -218,7 +219,7 @@ public class VitruvOCLParserTestUtils {
    *
    * <h3>Error Handling</h3>
    *
-   * The parser is configured with a custom {@link BaseErrorListener} that:
+   * <p>The parser is configured with a custom {@link BaseErrorListener} that:
    *
    * <ul>
    *   <li>Removes default ANTLR error listeners (which print to stderr)
@@ -229,7 +230,7 @@ public class VitruvOCLParserTestUtils {
    *
    * <h3>Debug Capabilities</h3>
    *
-   * The method contains commented-out debug statements that can be enabled for troubleshooting:
+   * <p>The method contains commented-out debug statements that can be enabled for troubleshooting:
    *
    * <pre>{@code
    * // Uncomment to see input string
@@ -244,7 +245,7 @@ public class VitruvOCLParserTestUtils {
    *
    * <h3>Entry Point</h3>
    *
-   * Uses {@code contextDeclCS()} as the grammar entry point, which expects:
+   * <p>Uses {@code contextDeclCS()} as the grammar entry point, which expects:
    *
    * <pre>{@code
    * context <metamodel>::<class>

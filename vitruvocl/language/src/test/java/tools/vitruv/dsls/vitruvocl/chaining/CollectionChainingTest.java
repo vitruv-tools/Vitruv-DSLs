@@ -8,7 +8,7 @@
 
 package tools.vitruv.dsls.vitruvocl.chaining;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.stream.Stream;
 import org.antlr.v4.runtime.CharStreams;

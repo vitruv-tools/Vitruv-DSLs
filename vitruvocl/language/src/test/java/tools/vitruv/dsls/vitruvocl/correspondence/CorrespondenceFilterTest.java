@@ -10,9 +10,13 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.correspondence;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import org.antlr.v4.runtime.CharStreams;
@@ -61,7 +65,7 @@ import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCL;
  * exists(~)              ✓         ✓         ✓          ✓
  * </pre>
  *
- * Plus chaining tests that mirror the CollectionChaining matrix style.
+ * <p>Plus chaining tests that mirror the CollectionChaining matrix style.
  */
 @DisplayName("Correspondence Filter Type-Matrix Tests")
 class CorrespondenceFilterTest {
@@ -194,7 +198,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testSelectTildeTag_Husband_notEmpty")
-    void testSelectTildeTag_Husband_notEmpty() {
+    void testSelectTildeTag_husband_notEmpty() {
       assertSatisfied(
           eval(
               """
@@ -206,7 +210,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testSelectTildeTag_Husband_sizeOne")
-    void testSelectTildeTag_Husband_sizeOne() {
+    void testSelectTildeTag_husband_sizeOne() {
       assertSatisfied(
           eval(
               """
@@ -218,7 +222,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testSelectTildeTag_Wife_emptyForFather — wrong tag")
-    void testSelectTildeTag_Wife_emptyForFather() {
+    void testSelectTildeTag_wife_emptyForFather() {
       assertSatisfied(
           eval(
               """
@@ -230,7 +234,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testSelectTildeTag_Son_sizeOne")
-    void testSelectTildeTag_Son_sizeOne() {
+    void testSelectTildeTag_son_sizeOne() {
       assertSatisfied(
           eval(
               """
@@ -242,7 +246,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testSelectTildeTag_NonExistent_empty — unknown tag yields empty")
-    void testSelectTildeTag_NonExistent_empty() {
+    void testSelectTildeTag_nonExistent_empty() {
       assertSatisfied(
           eval(
               """
@@ -253,7 +257,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testSelectTildeTag_Wife_notEmpty_forMother")
-    void testSelectTildeTag_Wife_notEmpty_forMother() {
+    void testSelectTildeTag_wife_notEmpty_forMother() {
       assertSatisfied(
           eval(
               """
@@ -274,7 +278,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testSelectTildeType_Male_sizeOneForFather — homer is Male")
-    void testSelectTildeType_Male_sizeOneForFather() {
+    void testSelectTildeType_male_sizeOneForFather() {
       assertSatisfied(
           eval(
               """
@@ -286,7 +290,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testSelectTildeType_Female_emptyForFather — homer is not Female")
-    void testSelectTildeType_Female_emptyForFather() {
+    void testSelectTildeType_female_emptyForFather() {
       assertSatisfied(
           eval(
               """
@@ -298,7 +302,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testSelectTildeType_Female_sizeOneForMother — marge is Female")
-    void testSelectTildeType_Female_sizeOneForMother() {
+    void testSelectTildeType_female_sizeOneForMother() {
       assertSatisfied(
           eval(
               """
@@ -310,7 +314,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testSelectTildeType_Male_emptyForMother — marge is not Male")
-    void testSelectTildeType_Male_emptyForMother() {
+    void testSelectTildeType_male_emptyForMother() {
       assertSatisfied(
           eval(
               """
@@ -322,7 +326,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testSelectTildeType_Person_sizeOne — abstract supertype accepted")
-    void testSelectTildeType_Person_sizeOne() {
+    void testSelectTildeType_person_sizeOne() {
       assertSatisfied(
           eval(
               """
@@ -462,7 +466,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testRejectTildeTag_Husband_sizeThree — removes homer only")
-    void testRejectTildeTag_Husband_sizeThree() {
+    void testRejectTildeTag_husband_sizeThree() {
       assertSatisfied(
           eval(
               """
@@ -474,7 +478,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testRejectTildeTag_Wife_sizeFourForFather — no Wife corr for father")
-    void testRejectTildeTag_Wife_sizeFourForFather() {
+    void testRejectTildeTag_wife_sizeFourForFather() {
       assertSatisfied(
           eval(
               """
@@ -486,7 +490,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testRejectTildeTag_Wife_sizeThreeForMother — removes marge")
-    void testRejectTildeTag_Wife_sizeThreeForMother() {
+    void testRejectTildeTag_wife_sizeThreeForMother() {
       assertSatisfied(
           eval(
               """
@@ -507,7 +511,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testRejectTildeType_Male_sizeThreeForFather — removes homer")
-    void testRejectTildeType_Male_sizeThreeForFather() {
+    void testRejectTildeType_male_sizeThreeForFather() {
       assertSatisfied(
           eval(
               """
@@ -519,7 +523,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testRejectTildeType_Female_sizeFourForFather — type mismatch, all kept")
-    void testRejectTildeType_Female_sizeFourForFather() {
+    void testRejectTildeType_female_sizeFourForFather() {
       assertSatisfied(
           eval(
               """
@@ -531,7 +535,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testRejectTildeType_Female_sizeThreeForMother — removes marge")
-    void testRejectTildeType_Female_sizeThreeForMother() {
+    void testRejectTildeType_female_sizeThreeForMother() {
       assertSatisfied(
           eval(
               """
@@ -633,7 +637,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testExistsTildeTag_Husband_trueForFather")
-    void testExistsTildeTag_Husband_trueForFather() {
+    void testExistsTildeTag_husband_trueForFather() {
       assertSatisfied(
           eval(
               """
@@ -645,7 +649,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testExistsTildeTag_Wife_falseForFather — wrong tag")
-    void testExistsTildeTag_Wife_falseForFather() {
+    void testExistsTildeTag_wife_falseForFather() {
       assertSatisfied(
           eval(
               """
@@ -657,7 +661,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testExistsTildeTag_Son_trueForSon")
-    void testExistsTildeTag_Son_trueForSon() {
+    void testExistsTildeTag_son_trueForSon() {
       assertSatisfied(
           eval(
               """
@@ -669,7 +673,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testExistsTildeTag_NonExistent_false")
-    void testExistsTildeTag_NonExistent_false() {
+    void testExistsTildeTag_nonExistent_false() {
       assertSatisfied(
           eval(
               """
@@ -680,7 +684,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testExistsTildeTag_Wife_trueForMother")
-    void testExistsTildeTag_Wife_trueForMother() {
+    void testExistsTildeTag_wife_trueForMother() {
       assertSatisfied(
           eval(
               """
@@ -701,7 +705,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testExistsTildeType_Male_trueForFather — homer is Male")
-    void testExistsTildeType_Male_trueForFather() {
+    void testExistsTildeType_male_trueForFather() {
       assertSatisfied(
           eval(
               """
@@ -713,7 +717,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testExistsTildeType_Female_falseForFather — homer is not Female")
-    void testExistsTildeType_Female_falseForFather() {
+    void testExistsTildeType_female_falseForFather() {
       assertSatisfied(
           eval(
               """
@@ -725,7 +729,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testExistsTildeType_Female_trueForMother — marge is Female")
-    void testExistsTildeType_Female_trueForMother() {
+    void testExistsTildeType_female_trueForMother() {
       assertSatisfied(
           eval(
               """
@@ -737,7 +741,7 @@ class CorrespondenceFilterTest {
 
     @Test
     @DisplayName("testExistsTildeType_Male_falseForMother — marge is not Male")
-    void testExistsTildeType_Male_falseForMother() {
+    void testExistsTildeType_male_falseForMother() {
       assertSatisfied(
           eval(
               """

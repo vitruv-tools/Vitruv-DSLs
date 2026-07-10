@@ -5,6 +5,7 @@
  * https://www.eclipse.org/legal/epl-2.0/
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.arithmetic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

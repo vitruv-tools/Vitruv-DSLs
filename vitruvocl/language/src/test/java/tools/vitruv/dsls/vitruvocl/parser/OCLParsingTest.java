@@ -10,10 +10,12 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.parser;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -43,7 +45,7 @@ import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
  *
  * <h2>OCL Context Declaration Syntax</h2>
  *
- * The tests validate parsing of context declarations following OCL standard syntax:
+ * <p>The tests validate parsing of context declarations following OCL standard syntax:
  *
  * <pre>{@code
  * // Simple context
@@ -61,7 +63,7 @@ import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
  *
  * <h2>Expression Types Tested</h2>
  *
- * Tests cover various OCL expression patterns:
+ * <p>Tests cover various OCL expression patterns:
  *
  * <ul>
  *   <li><b>Simple comparisons:</b> {@code self.age > 0}
@@ -72,7 +74,7 @@ import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
  *
  * <h2>Testing Approach</h2>
  *
- * This class uses multiple testing strategies:
+ * <p>This class uses multiple testing strategies:
  *
  * <ol>
  *   <li><b>Individual tests:</b> {@link Test} for specific parsing scenarios with detailed
@@ -84,7 +86,7 @@ import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
  *
  * <h2>Parse Tree Inspection</h2>
  *
- * All tests output the generated parse tree structure using {@link
+ * <p>All tests output the generated parse tree structure using {@link
  * VitruvOCLParserTestUtils#treeToString}, enabling:
  *
  * @see OCLLexer ANTLR-generated lexer for tokenization

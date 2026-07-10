@@ -10,9 +10,11 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl.correspondence;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.util.stream.Stream;
@@ -54,7 +56,7 @@ import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCL;
  *
  * <h2>Test Setup</h2>
  *
- * Uses three metamodels:
+ * <p>Uses three metamodels:
  *
  * <ul>
  *   <li>spaceMission: Contains Spacecraft objects

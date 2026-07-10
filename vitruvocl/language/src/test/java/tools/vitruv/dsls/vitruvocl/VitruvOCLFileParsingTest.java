@@ -10,9 +10,12 @@
  * Contributors:
  *    Max Oesterle - initial API and implementation
  *******************************************************************************/
+
 package tools.vitruv.dsls.vitruvocl;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -33,7 +36,7 @@ import tools.vitruv.dsls.vitruvocl.parser.VitruvOCLParserTestUtils;
  *
  * <h2>Purpose and Scope</h2>
  *
- * This test suite validates:
+ * <p>This test suite validates:
  *
  * <ul>
  *   <li><b>File I/O:</b> Loading OCL constraint files from the filesystem
@@ -44,7 +47,7 @@ import tools.vitruv.dsls.vitruvocl.parser.VitruvOCLParserTestUtils;
  *
  * <h2>Test File Organization</h2>
  *
- * Test files are organized in {@code src/test/resources/test-inputs/}:
+ * <p>Test files are organized in {@code src/test/resources/test-inputs/}:
  *
  * <ul>
  *   <li><b>valid/:</b> Directory containing syntactically valid OCL constraint files
