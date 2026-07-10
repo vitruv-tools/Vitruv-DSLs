@@ -29,7 +29,7 @@ import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
 
 /**
- * Type Matrix: Arithmetic (+ - * /)
+ * Type Matrix: Arithmetic (+ - * /).
  *
  * <p>All 9 valid numeric×numeric combinations plus representative ERROR cases.
  *

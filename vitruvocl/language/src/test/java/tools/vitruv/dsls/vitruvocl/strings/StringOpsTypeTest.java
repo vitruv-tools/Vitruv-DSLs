@@ -28,7 +28,7 @@ import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
 
 /**
- * Type Matrix: String Operations
+ * Type Matrix: String Operations.
  *
  * <p>Valid receiver: ¡String! only. All collection types and other singleton types → ERROR.
  *

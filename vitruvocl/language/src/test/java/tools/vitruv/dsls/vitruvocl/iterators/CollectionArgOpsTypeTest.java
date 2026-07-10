@@ -28,7 +28,7 @@ import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
 
 /**
- * Type Matrix: Collection Operations with Argument
+ * Type Matrix: Collection Operations with Argument.
  *
  * <p>Covers: includes, excludes, count, including, excluding, prepend, includesAll, excludesAll,
  * union, intersection, symmetricDifference, div, mod.

@@ -29,13 +29,13 @@ import org.junit.jupiter.api.io.TempDir;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
 
 /**
- * Integration tests for the {@link VitruviusOCLCLI} command-line interface.
+ * Integration tests for the {@link VitruvOclCli} command-line interface.
  *
  * <p>Tests the {@code check}, {@code eval}, {@code eval-batch}, and {@code version} commands with
  * real constraint files and metamodels, verifying JSON output structure and content. Only valid
  * inputs are tested to avoid {@code System.exit} calls that would crash the JVM.
  */
-class VitruviusOCLCLITest {
+class VitruvOclCliTest {
 
   private static final Path SPACEMISSION_ECORE =
       Path.of("src/test/resources/test-metamodels/spaceMission.ecore");

@@ -28,7 +28,7 @@ import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
 
 /**
- * Type Matrix: Collection Operations (no argument)
+ * Type Matrix: Collection Operations (no argument).
  *
  * <p>Valid receiver: Set{T}, Sequence{T}, Bag{T}, OrderedSet{T}.
  * first()/last()/at()/subSequence()/insertAt()/prepend(): ordered collections only (Sequence and

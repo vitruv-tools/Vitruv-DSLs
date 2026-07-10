@@ -28,7 +28,7 @@ import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
 
 /**
- * Type Matrix: Iterator Operations
+ * Type Matrix: Iterator Operations.
  *
  * <p>All 11 iterator operations (5 existing + 6 new ★) on all 4 collection types. Singleton
  * receivers → ERROR for all iterators.

@@ -28,7 +28,7 @@ import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
 
 /**
- * Type Matrix: Operation Chaining
+ * Type Matrix: Operation Chaining.
  *
  * <p>Tests that the result of operation A can (or cannot) be used as receiver for operation B.
  *

@@ -270,7 +270,7 @@ public class TypeResolver {
    */
   public static Type resolveUnaryOp(String operator, Type operandType) {
     return switch (operator) {
-        // Unary minus: preserve numeric type (INTEGER → INTEGER, FLOAT → FLOAT, DOUBLE → DOUBLE)
+      // Unary minus: preserve numeric type (INTEGER → INTEGER, FLOAT → FLOAT, DOUBLE → DOUBLE)
       case "-" -> isNumeric(operandType) ? operandType : Type.ERROR;
       case "not" -> operandType.isConformantTo(Type.BOOLEAN) ? Type.BOOLEAN : Type.ERROR;
       default -> Type.ERROR;
@@ -298,7 +298,7 @@ public class TypeResolver {
     Type elementType = sourceType.getElementType();
 
     switch (operationName) {
-        // Universally allowed: ¡T!, ¿T?, and all collection types
+      // Universally allowed: ¡T!, ¿T?, and all collection types
       case "includes", "excludes", "isEmpty", "notEmpty":
         return Type.BOOLEAN;
 

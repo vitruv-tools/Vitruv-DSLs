@@ -28,7 +28,7 @@ import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
 
 /**
- * Type Matrix: Operation Chaining — Additional Cases
+ * Type Matrix: Operation Chaining — Additional Cases.
  *
  * <p>Covers gaps left in ChainingTypeMatrixTest: - reject → first/last (ordered result only) -
  * collect → first/last - asOrderedSet → first (ordered, valid) - asBag → first (unordered, ERROR) -

@@ -56,7 +56,7 @@ import tools.vitruv.framework.vsum.internal.InternalVirtualModel;
  * files. This validates the full VSUM integration path including metamodel discovery, instance
  * retrieval, and correspondence-based constraint evaluation.
  */
-class VSUMConstraintTest {
+class VsumConstraintTest {
 
   private static final Path SPACEMISSION_ECORE =
       Path.of("src/test/resources/test-metamodels/spaceMission.ecore");
@@ -277,12 +277,12 @@ class VSUMConstraintTest {
   }
 
   @Test
-  void testRegisterVSUMNull() {
+  void testRegisterVsumNull() {
     assertThrows(IllegalArgumentException.class, () -> VitruvOCL.registerVSUM(null));
   }
 
   @Test
-  void testEvaluateWithoutRegisteredVSUMThrows() {
+  void testEvaluateWithoutRegisteredVsumThrows() {
     assertThrows(
         IllegalStateException.class,
         () -> VitruvOCL.evaluateConstraint("context spaceMission::Spacecraft inv: true"));
@@ -511,7 +511,8 @@ class VSUMConstraintTest {
         mock(InternalVirtualModel.class, withSettings().extraInterfaces(ViewSource.class));
 
     EditableCorrespondenceModelView<Correspondence> corrModel1 = mockCorrespondenceModel(List.of());
-    EditableCorrespondenceModelView<Correspondence> corrModel2 = mockCorrespondenceModel(List.of());
+    final EditableCorrespondenceModelView<Correspondence> corrModel2 =
+        mockCorrespondenceModel(List.of());
 
     setupMockVsum(resources1, corrModel1);
     VitruvOCL.registerVSUM(mockVsum);

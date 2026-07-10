@@ -33,7 +33,7 @@ import tools.vitruv.dsls.vitruvocl.symboltable.SymbolTableImpl;
 import tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor;
 
 /**
- * Type Matrix: EEnum — Ecore Enumeration type
+ * Type Matrix: EEnum — Ecore Enumeration type.
  *
  * <p>EEnum is a subtype of EDataType in Ecore. Enum literals use the syntax {@code
  * EnumType::LITERAL} (e.g. {@code Status::ACTIVE}). In OCL# an enum literal evaluates to a

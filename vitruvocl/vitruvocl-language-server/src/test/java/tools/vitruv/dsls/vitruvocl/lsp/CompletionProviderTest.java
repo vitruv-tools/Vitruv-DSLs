@@ -77,7 +77,9 @@ class CompletionProviderTest {
 
       @Override
       public EClass resolveEClass(String mm, String className) {
-        if (pkg.getName().equals(mm) && cls.getName().equals(className)) return cls;
+        if (pkg.getName().equals(mm) && cls.getName().equals(className)) {
+          return cls;
+        }
         return null;
       }
     };
