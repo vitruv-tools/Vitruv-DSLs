@@ -17,8 +17,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.dsls.vitruvocl.pipeline.ConstraintResult;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
 import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCL;
@@ -94,33 +98,21 @@ class LabelGraphCrossMetamodelTest {
     MetamodelWrapper.setTestModelsPath(Path.of("src/test/resources/test-models"));
   }
 
-  // ==================== Constraint 1: exists ====================
+  // ==================== Constraints 1-4: satisfied correspondence checks ====================
 
   /**
-   * Tests that every {@code Labelgraph1::SimpleNode} has a correspondent in {@code Labelgraph2}
-   * identified by matching the three-digit suffix of their names.
+   * Tests the four levels of cross-metamodel correspondence checking described in the class
+   * Javadoc (exists, unique select, label-collection navigation, forAll label consistency).
    *
-   * <p>OCL constraint:
+   * <p>Expected: satisfied for every variant, because every LG1 name suffix appears exactly once
+   * in LG2 with a matching label.
    *
-   * <pre>{@code
-   * context Labelgraph1::SimpleNode inv:
-   *   Labelgraph2::SimpleNode.allInstances().exists(n |
-   *     n.name.substring(7, 9) == self.name.substring(7, 9)
-   *   )
-   * }</pre>
-   *
-   * <p>Expected: satisfied, because every LG1 name suffix appears exactly once in LG2.
+   * @param constraint the OCL constraint variant under test
+   * @param message assertion message describing what satisfaction means for this variant
    */
-  @Test
-  void testExistsCorrespondentByNameSuffix() {
-    String constraint =
-        """
-        context Labelgraph1::SimpleNode inv:
-          Labelgraph2::SimpleNode.allInstances().exists(n |
-            n.name.substring(7, 9) == self.name.substring(7, 9)
-          )
-        """;
-
+  @ParameterizedTest
+  @MethodSource("satisfiedCorrespondenceConstraints")
+  void testCorrespondenceConstraintSatisfied(String constraint, String message) {
     ConstraintResult result =
         VitruvOCL.evaluateConstraint(
             constraint,
@@ -128,128 +120,48 @@ class LabelGraphCrossMetamodelTest {
             new Path[] {BASE_LABELGRAPH1, BASE_LABELGRAPH2});
 
     assertTrue(result.isSuccess(), "Compilation and evaluation should succeed");
-    assertTrue(
-        result.isSatisfied(),
-        "Every LG1 SimpleNode should find at least one matching LG2 SimpleNode by name suffix");
+    assertTrue(result.isSatisfied(), message);
   }
 
-  // ==================== Constraint 2: select + size == 1 ====================
-
-  /**
-   * Tests that the correspondence is unique: for every {@code Labelgraph1::SimpleNode}, the {@code
-   * select} over {@code Labelgraph2::SimpleNode.allInstances()} returns exactly one match.
-   *
-   * <p>OCL constraint:
-   *
-   * <pre>{@code
-   * context Labelgraph1::SimpleNode inv:
-   *   Labelgraph2::SimpleNode.allInstances().select(n |
-   *     n.name.substring(7, 9) == self.name.substring(7, 9)
-   *   ).size() == 1
-   * }</pre>
-   *
-   * <p>Expected: satisfied, because each three-digit suffix is unique within LG2.
-   */
-  @Test
-  void testCorrespondenceIsUnique() {
-    String constraint =
-        """
-        context Labelgraph1::SimpleNode inv:
-          Labelgraph2::SimpleNode.allInstances().select(n |
-            n.name.substring(7, 9) == self.name.substring(7, 9)
-          ).size() == 1
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {LABELGRAPH1_ECORE, LABELGRAPH2_ECORE},
-            new Path[] {BASE_LABELGRAPH1, BASE_LABELGRAPH2});
-
-    assertTrue(result.isSuccess(), "Compilation and evaluation should succeed");
-    assertTrue(
-        result.isSatisfied(),
-        "Each LG1 SimpleNode should find exactly one matching LG2 SimpleNode (unique"
-            + " correspondence)");
-  }
-
-  // ==================== Constraint 3: select + label navigation + size ====================
-
-  /**
-   * Tests flat label-collection navigation over the select result. After selecting the (singleton)
-   * correspondent in LG2, navigating {@code .label} yields a flat collection of label values whose
-   * {@code size()} must equal 1.
-   *
-   * <p>OCL constraint:
-   *
-   * <pre>{@code
-   * context Labelgraph1::SimpleNode inv:
-   *   Labelgraph2::SimpleNode.allInstances().select(n |
-   *     n.name.substring(7, 9) == self.name.substring(7, 9)
-   *   ).label.size() == 1
-   * }</pre>
-   *
-   * <p>Expected: satisfied. The select returns a singleton collection; navigating {@code .label} on
-   * it produces a singleton label collection, so {@code size() == 1}.
-   */
-  @Test
-  void testCorrespondentLabelCollectionSizeIsOne() {
-    String constraint =
-        """
-        context Labelgraph1::SimpleNode inv:
-          Labelgraph2::SimpleNode.allInstances().select(n |
-            n.name.substring(7, 9) == self.name.substring(7, 9)
-          ).label.size() == 1
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {LABELGRAPH1_ECORE, LABELGRAPH2_ECORE},
-            new Path[] {BASE_LABELGRAPH1, BASE_LABELGRAPH2});
-
-    assertTrue(result.isSuccess(), "Compilation and evaluation should succeed");
-    assertTrue(
-        result.isSatisfied(), "Label collection of the singleton select result should have size 1");
-  }
-
-  // ==================== Constraint 4: forAll label consistency ====================
-
-  /**
-   * Tests that corresponding nodes in LG1 and LG2 carry the same label value.
-   *
-   * <p>OCL constraint:
-   *
-   * <pre>{@code
-   * context Labelgraph1::SimpleNode inv:
-   *   Labelgraph2::SimpleNode.allInstances().select(n |
-   *     n.name.substring(7, 9) == self.name.substring(7, 9)
-   *   ).forAll(e | e.label == self.label)
-   * }</pre>
-   *
-   * <p>Expected: satisfied. The base models are generated with identical label assignments for
-   * every corresponding node pair.
-   */
-  @Test
-  void testCorrespondentLabelsMatch() {
-    String constraint =
-        """
-        context Labelgraph1::SimpleNode inv:
-          Labelgraph2::SimpleNode.allInstances().select(n |
-            n.name.substring(7, 9) == self.name.substring(7, 9)
-          ).forAll(e | e.label == self.label)
-        """;
-
-    ConstraintResult result =
-        VitruvOCL.evaluateConstraint(
-            constraint,
-            new Path[] {LABELGRAPH1_ECORE, LABELGRAPH2_ECORE},
-            new Path[] {BASE_LABELGRAPH1, BASE_LABELGRAPH2});
-
-    assertTrue(result.isSuccess(), "Compilation and evaluation should succeed");
-    assertTrue(
-        result.isSatisfied(),
-        "Corresponding LG1/LG2 SimpleNodes should have identical label values");
+  static Stream<Arguments> satisfiedCorrespondenceConstraints() {
+    return Stream.of(
+        // Constraint 1: exists
+        Arguments.of(
+            """
+            context Labelgraph1::SimpleNode inv:
+              Labelgraph2::SimpleNode.allInstances().exists(n |
+                n.name.substring(7, 9) == self.name.substring(7, 9)
+              )
+            """,
+            "Every LG1 SimpleNode should find at least one matching LG2 SimpleNode by name suffix"),
+        // Constraint 2: select + size == 1
+        Arguments.of(
+            """
+            context Labelgraph1::SimpleNode inv:
+              Labelgraph2::SimpleNode.allInstances().select(n |
+                n.name.substring(7, 9) == self.name.substring(7, 9)
+              ).size() == 1
+            """,
+            "Each LG1 SimpleNode should find exactly one matching LG2 SimpleNode (unique"
+                + " correspondence)"),
+        // Constraint 3: select + label navigation + size
+        Arguments.of(
+            """
+            context Labelgraph1::SimpleNode inv:
+              Labelgraph2::SimpleNode.allInstances().select(n |
+                n.name.substring(7, 9) == self.name.substring(7, 9)
+              ).label.size() == 1
+            """,
+            "Label collection of the singleton select result should have size 1"),
+        // Constraint 4: forAll label consistency
+        Arguments.of(
+            """
+            context Labelgraph1::SimpleNode inv:
+              Labelgraph2::SimpleNode.allInstances().select(n |
+                n.name.substring(7, 9) == self.name.substring(7, 9)
+              ).forAll(e | e.label == self.label)
+            """,
+            "Corresponding LG1/LG2 SimpleNodes should have identical label values"));
   }
 
   // ==================== Violation test: forAll vacuously true ====================

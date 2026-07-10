@@ -68,15 +68,13 @@ public class Value implements Comparable<Value> {
 
   /** Wraps a Java object as an OCLElement (for legacy compatibility). */
   private OCLElement wrapAsElement(Object obj) {
-    if (obj instanceof Integer i) {
-      return new OCLElement.IntValue(i);
-    } else if (obj instanceof Boolean b) {
-      return new OCLElement.BoolValue(b);
-    } else if (obj instanceof String s) {
-      return new OCLElement.StringValue(s);
-    } else {
-      throw new IllegalArgumentException("Cannot wrap " + obj.getClass() + " as OCLElement");
-    }
+    return switch (obj) {
+      case Integer i -> new OCLElement.IntValue(i);
+      case Boolean b -> new OCLElement.BoolValue(b);
+      case String s -> new OCLElement.StringValue(s);
+      default ->
+          throw new IllegalArgumentException("Cannot wrap " + obj.getClass() + " as OCLElement");
+    };
   }
 
   // ==================== Factory Methods ====================
@@ -501,9 +499,9 @@ public class Value implements Comparable<Value> {
 
     for (OCLElement elem : elements) {
       // Check if element is a nested collection
-      if (elem instanceof OCLElement.NestedCollection nested) {
+      if (elem instanceof OCLElement.NestedCollection(Value nestedValue)) {
         // Extract all elements from the nested collection
-        flattened.addAll(nested.value().getElements());
+        flattened.addAll(nestedValue.getElements());
       } else {
         // Not a nested collection - add element as-is
         flattened.add(elem);
@@ -562,5 +560,39 @@ public class Value implements Comparable<Value> {
       }
     }
     return 0;
+  }
+
+  /**
+   * Compares this value to {@code obj} for equality, consistent with {@link #compareTo}.
+   *
+   * @param obj the object to compare to
+   * @return {@code true} if {@code obj} is a {@link Value} whose {@link #compareTo} result is zero
+   */
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (!(obj instanceof Value other)) {
+      return false;
+    }
+    return compareTo(other) == 0;
+  }
+
+  /**
+   * Returns a hash code consistent with {@link #equals(Object)}. Numeric elements are hashed by
+   * their {@code double} value so that cross-numeric-type equal values hash identically.
+   *
+   * @return the hash code
+   */
+  @Override
+  public int hashCode() {
+    int result = size();
+    for (OCLElement elem : elements) {
+      int elemHash =
+          OCLElement.isNumeric(elem) ? Double.hashCode(elem.toDoubleValue()) : elem.hashCode();
+      result = 31 * result + elemHash;
+    }
+    return result;
   }
 }

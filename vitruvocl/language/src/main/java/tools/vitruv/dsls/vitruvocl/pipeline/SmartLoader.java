@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * Intelligent loader that analyzes constraints to load only required metamodels and instances.
@@ -34,8 +33,6 @@ import java.util.logging.Logger;
  * resolved via TEST_MODELS_PATH then current working directory.
  */
 public class SmartLoader {
-
-  private static final Logger LOG = Logger.getLogger(SmartLoader.class.getName());
 
   private static final String PKG_CORRESPONDENCE = "correspondence";
 
@@ -95,28 +92,14 @@ public class SmartLoader {
    * @param xmiFiles Model instance files (absolute or relative paths)
    * @return Load result with configured wrapper, errors, and warnings
    */
-  @SuppressWarnings("java:S3776")
   public static LoadResult loadForConstraint(
       String constraint, Path[] ecoreFiles, Path[] xmiFiles) {
     MetamodelWrapper wrapper = new MetamodelWrapper();
     List<FileError> fileErrors = new ArrayList<>();
     List<Warning> warnings = new ArrayList<>();
 
-    // Validate and resolve all files
-    List<Path> resolvedEcores = new ArrayList<>();
-    for (Path ecore : ecoreFiles) {
-      Path resolved = resolveFilePath(ecore);
-      FileValidator.validateFile(resolved).ifPresent(fileErrors::add);
-      resolvedEcores.add(resolved);
-    }
-
-    List<Path> resolvedXmis = new ArrayList<>();
-    for (Path xmi : xmiFiles) {
-      Path resolved = resolveFilePath(xmi);
-      FileValidator.validateFile(resolved).ifPresent(fileErrors::add);
-      resolvedXmis.add(resolved);
-    }
-
+    List<Path> resolvedEcores = resolveAndValidate(ecoreFiles, fileErrors);
+    List<Path> resolvedXmis = resolveAndValidate(xmiFiles, fileErrors);
     if (!fileErrors.isEmpty()) {
       return new LoadResult(wrapper, fileErrors, warnings);
     }
@@ -128,41 +111,8 @@ public class SmartLoader {
     // fail to load model instances referencing inherited features (e.g. "id").
     wrapper.registerWorkspaceEcoresForPlatformResolution(resolvedEcores);
 
-    // Map files to package names
-    Map<String, Path> availableEcores = new HashMap<>();
-
-    for (Path ecore : resolvedEcores) {
-      try {
-        Set<String> packageNames = FileValidator.extractAllPackageNamesFromEcore(ecore);
-        for (String packageName : packageNames) {
-          if (!availableEcores.containsKey(packageName)) {
-            availableEcores.put(packageName, ecore);
-          }
-        }
-      } catch (IOException e) {
-        fileErrors.add(new FileError(ecore, FileError.FileErrorType.PARSE_ERROR, e.getMessage()));
-      }
-    }
-
-    // One entry per occurrence in xmiFiles (duplicated input paths are kept as separate entries
-    // so that callers intentionally passing the same file twice get it loaded twice), each
-    // carrying every package name referenced by that file (a single root element may declare
-    // xmlns:xxx for several packages used by deeply nested xsi:type elements).
-    List<Path> xmiOccurrences = new ArrayList<>();
-    List<Set<String>> xmiPackageNames = new ArrayList<>();
-    for (Path xmi : resolvedXmis) {
-      try {
-        Set<String> packageNames = FileValidator.extractAllPackageNamesFromXmi(xmi);
-        xmiOccurrences.add(xmi);
-        xmiPackageNames.add(packageNames);
-      } catch (IOException e) {
-        // Non-XML or unrecognised files (e.g. Vitruvius-internal metadata) are skipped silently.
-        warnings.add(
-            new Warning(
-                Warning.WarningType.UNUSED_MODEL,
-                "Skipping unrecognised instance file: " + xmi.getFileName()));
-      }
-    }
+    Map<String, Path> availableEcores = mapEcoresToPackageNames(resolvedEcores, fileErrors);
+    XmiIndex xmiIndex = indexXmiPackageNames(resolvedXmis, warnings);
 
     if (!fileErrors.isEmpty()) {
       return new LoadResult(wrapper, fileErrors, warnings);
@@ -173,58 +123,78 @@ public class SmartLoader {
     // and auto-registered, so no explicit .ecore file is required for it.
     requiredPackages.add(PKG_CORRESPONDENCE);
 
-    // Load only required metamodels and the instances that match them.
-    boolean[] loaded = new boolean[xmiOccurrences.size()];
-    for (String pkg : requiredPackages) {
-      if (!availableEcores.containsKey(pkg)) {
-        // PKG_CORRESPONDENCE ecore is embedded in the JAR and auto-registered — not an error.
-        if (!pkg.equals(PKG_CORRESPONDENCE)) {
-          fileErrors.add(
-              new FileError(
-                  null,
-                  FileError.FileErrorType.NOT_FOUND,
-                  "Required metamodel '" + pkg + "' not found"));
-        }
-      } else {
-        try {
-          wrapper.loadMetamodel(pkg, availableEcores.get(pkg));
-        } catch (IOException e) {
-          fileErrors.add(
-              new FileError(
-                  availableEcores.get(pkg),
-                  FileError.FileErrorType.PARSE_ERROR,
-                  "Failed to load metamodel: " + e.getMessage()));
-        }
-      }
+    loadRequiredPackages(
+        wrapper, requiredPackages, availableEcores, xmiIndex, fileErrors, warnings);
 
-      boolean foundInstance = false;
-      for (int i = 0; i < xmiOccurrences.size(); i++) {
-        if (!xmiPackageNames.get(i).contains(pkg)) {
-          continue;
+    return new LoadResult(wrapper, fileErrors, warnings);
+  }
+
+  /** Resolves and validates each path, collecting file-level errors as they are found. */
+  private static List<Path> resolveAndValidate(Path[] paths, List<FileError> fileErrors) {
+    List<Path> resolved = new ArrayList<>();
+    for (Path path : paths) {
+      Path resolvedPath = resolveFilePath(path);
+      FileValidator.validateFile(resolvedPath).ifPresent(fileErrors::add);
+      resolved.add(resolvedPath);
+    }
+    return resolved;
+  }
+
+  /** Maps each ecore file to every package name it declares (first file wins on conflicts). */
+  private static Map<String, Path> mapEcoresToPackageNames(
+      List<Path> resolvedEcores, List<FileError> fileErrors) {
+    Map<String, Path> availableEcores = new HashMap<>();
+    for (Path ecore : resolvedEcores) {
+      try {
+        Set<String> packageNames = FileValidator.extractAllPackageNamesFromEcore(ecore);
+        for (String packageName : packageNames) {
+          availableEcores.putIfAbsent(packageName, ecore);
         }
-        foundInstance = true;
-        if (!loaded[i]) {
-          // Already loaded for a different package name found in the same occurrence
-          // (e.g. a repository:Repository root with nested xsi:type="seff:..." elements).
-          loaded[i] = true;
-          Path xmi = xmiOccurrences.get(i);
-          try {
-            wrapper.loadModelInstance(xmi);
-          } catch (IOException e) {
-            fileErrors.add(
-                new FileError(
-                    xmi,
-                    FileError.FileErrorType.PARSE_ERROR,
-                    "Failed to load model: " + e.getMessage()));
-          } catch (Exception e) {
-            fileErrors.add(
-                new FileError(
-                    xmi,
-                    FileError.FileErrorType.PARSE_ERROR,
-                    "Failed to load model (runtime error): " + e.getMessage()));
-          }
-        }
+      } catch (IOException e) {
+        fileErrors.add(new FileError(ecore, FileError.FileErrorType.PARSE_ERROR, e.getMessage()));
       }
+    }
+    return availableEcores;
+  }
+
+  /**
+   * One entry per occurrence in the xmi file list, each carrying every package name referenced by
+   * that file. Duplicated input paths are kept as separate entries so that callers intentionally
+   * passing the same file twice get it loaded twice.
+   */
+  private record XmiIndex(List<Path> occurrences, List<Set<String>> packageNames) {}
+
+  /** Extracts package names referenced by each xmi file, skipping unrecognised files. */
+  private static XmiIndex indexXmiPackageNames(List<Path> resolvedXmis, List<Warning> warnings) {
+    List<Path> occurrences = new ArrayList<>();
+    List<Set<String>> packageNames = new ArrayList<>();
+    for (Path xmi : resolvedXmis) {
+      try {
+        packageNames.add(FileValidator.extractAllPackageNamesFromXmi(xmi));
+        occurrences.add(xmi);
+      } catch (IOException e) {
+        // Non-XML or unrecognised files (e.g. Vitruvius-internal metadata) are skipped silently.
+        warnings.add(
+            new Warning(
+                Warning.WarningType.UNUSED_MODEL,
+                "Skipping unrecognised instance file: " + xmi.getFileName()));
+      }
+    }
+    return new XmiIndex(occurrences, packageNames);
+  }
+
+  /** Loads only required metamodels and the instances that match them. */
+  private static void loadRequiredPackages(
+      MetamodelWrapper wrapper,
+      Set<String> requiredPackages,
+      Map<String, Path> availableEcores,
+      XmiIndex xmiIndex,
+      List<FileError> fileErrors,
+      List<Warning> warnings) {
+    boolean[] loaded = new boolean[xmiIndex.occurrences().size()];
+    for (String pkg : requiredPackages) {
+      loadMetamodelForPackage(wrapper, pkg, availableEcores, fileErrors);
+      boolean foundInstance = loadInstancesForPackage(wrapper, pkg, xmiIndex, loaded, fileErrors);
 
       // Don't warn for correspondence package if it has no instances
       if (!foundInstance && !pkg.equals(PKG_CORRESPONDENCE)) {
@@ -232,8 +202,74 @@ public class SmartLoader {
             new Warning(Warning.WarningType.UNUSED_MODEL, "No instances for '" + pkg + "'"));
       }
     }
+  }
 
-    return new LoadResult(wrapper, fileErrors, warnings);
+  private static void loadMetamodelForPackage(
+      MetamodelWrapper wrapper,
+      String pkg,
+      Map<String, Path> availableEcores,
+      List<FileError> fileErrors) {
+    if (!availableEcores.containsKey(pkg)) {
+      // PKG_CORRESPONDENCE ecore is embedded in the JAR and auto-registered — not an error.
+      if (!pkg.equals(PKG_CORRESPONDENCE)) {
+        fileErrors.add(
+            new FileError(
+                null,
+                FileError.FileErrorType.NOT_FOUND,
+                "Required metamodel '" + pkg + "' not found"));
+      }
+      return;
+    }
+    try {
+      wrapper.loadMetamodel(pkg, availableEcores.get(pkg));
+    } catch (IOException e) {
+      fileErrors.add(
+          new FileError(
+              availableEcores.get(pkg),
+              FileError.FileErrorType.PARSE_ERROR,
+              "Failed to load metamodel: " + e.getMessage()));
+    }
+  }
+
+  private static boolean loadInstancesForPackage(
+      MetamodelWrapper wrapper,
+      String pkg,
+      XmiIndex xmiIndex,
+      boolean[] loaded,
+      List<FileError> fileErrors) {
+    boolean foundInstance = false;
+    List<Path> occurrences = xmiIndex.occurrences();
+    List<Set<String>> packageNames = xmiIndex.packageNames();
+    for (int i = 0; i < occurrences.size(); i++) {
+      if (!packageNames.get(i).contains(pkg)) {
+        continue;
+      }
+      foundInstance = true;
+      if (!loaded[i]) {
+        // Already loaded for a different package name found in the same occurrence
+        // (e.g. a repository:Repository root with nested xsi:type="seff:..." elements).
+        loaded[i] = true;
+        loadModelInstance(wrapper, occurrences.get(i), fileErrors);
+      }
+    }
+    return foundInstance;
+  }
+
+  private static void loadModelInstance(
+      MetamodelWrapper wrapper, Path xmi, List<FileError> fileErrors) {
+    try {
+      wrapper.loadModelInstance(xmi);
+    } catch (IOException e) {
+      fileErrors.add(
+          new FileError(
+              xmi, FileError.FileErrorType.PARSE_ERROR, "Failed to load model: " + e.getMessage()));
+    } catch (Exception e) {
+      fileErrors.add(
+          new FileError(
+              xmi,
+              FileError.FileErrorType.PARSE_ERROR,
+              "Failed to load model (runtime error): " + e.getMessage()));
+    }
   }
 
   /**

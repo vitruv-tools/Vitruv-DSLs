@@ -66,8 +66,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   private static final String PHASE_TAG = "evaluator";
 
   private static OCLElement unwrapNestedCollection(OCLElement e) {
-    if (e instanceof OCLElement.NestedCollection nc && !nc.value().getElements().isEmpty()) {
-      return nc.value().getElements().get(0);
+    if (e instanceof OCLElement.NestedCollection(Value value) && !value.getElements().isEmpty()) {
+      return value.getElements().get(0);
     }
     return e;
   }
@@ -986,8 +986,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
     List<OCLElement> results = new ArrayList<>();
     for (OCLElement elem : receiver.getElements()) {
-      if (elem instanceof OCLElement.StringValue strVal) {
-        String str = strVal.value();
+      if (elem instanceof OCLElement.StringValue(String str)) {
         int javaStart = start - 1;
         int javaEnd = end;
 
@@ -1655,17 +1654,18 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     List<OCLElement> results = new ArrayList<>();
 
     for (OCLElement elem : receiver.getElements()) {
-      if (elem instanceof OCLElement.MetaclassValue mv) {
-        EClass elemEClass = mv.instance().eClass();
+      if (elem instanceof OCLElement.MetaclassValue(EObject instance)) {
+        EClass elemEClass = instance.eClass();
         if (targetEClass.isSuperTypeOf(elemEClass) || elemEClass.equals(targetEClass)) {
-          results.add(new OCLElement.CastedMetaclassValue(mv.instance(), targetEClass));
+          results.add(new OCLElement.CastedMetaclassValue(instance, targetEClass));
         }
         // else: element fails cast — filter it out
-      } else if (elem instanceof OCLElement.CastedMetaclassValue cmv) {
+      } else if (elem
+          instanceof OCLElement.CastedMetaclassValue(EObject instance, EClass castedTo)) {
         // Already casted — re-validate against new target
-        EClass elemEClass = cmv.instance().eClass();
+        EClass elemEClass = instance.eClass();
         if (targetEClass.isSuperTypeOf(elemEClass) || elemEClass.equals(targetEClass)) {
-          results.add(new OCLElement.CastedMetaclassValue(cmv.instance(), targetEClass));
+          results.add(new OCLElement.CastedMetaclassValue(instance, targetEClass));
         }
         // else: element fails cast — filter it out
       }

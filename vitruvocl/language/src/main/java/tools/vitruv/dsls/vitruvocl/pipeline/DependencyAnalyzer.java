@@ -68,7 +68,7 @@ public class DependencyAnalyzer {
 
     } catch (Exception e) {
       // Fallback to regex if parsing fails
-      java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\w+)::");
+      java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\w++)::");
       java.util.regex.Matcher matcher = pattern.matcher(constraint);
       while (matcher.find()) {
         requiredPackages.add(matcher.group(1));

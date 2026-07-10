@@ -216,56 +216,62 @@ public class DocumentAnalyzer {
    * Scans {@code text} for {@code @word} tokens that look like misspellings of {@code @severity} or
    * {@code @message} and appends a diagnostic with a quick-fix suggestion.
    */
-  @SuppressWarnings("java:S3776")
   private static void checkAnnotationKeywordTypos(String text, List<Diagnostic> diagnostics) {
     String[] lines = text.split("\n", -1);
     for (int lineIdx = 0; lineIdx < lines.length; lineIdx++) {
       Matcher m = AT_WORD.matcher(lines[lineIdx]);
       while (m.find()) {
         String word = m.group(1);
-        // Exact match — valid annotation keyword, skip.
-        if (ANNOTATION_KEYWORDS.contains(word)) {
-          continue;
+        // Exact match — valid annotation keyword, skip; otherwise report if it looks close.
+        if (!ANNOTATION_KEYWORDS.contains(word)) {
+          reportAnnotationTypoIfClose(word, m, lineIdx, diagnostics);
         }
-
-        // Find the closest known annotation keyword.
-        String bestKeyword = null;
-        int bestDist = Integer.MAX_VALUE;
-        for (String kw : ANNOTATION_KEYWORDS) {
-          int dist = EditDistance.damerauLevenshtein(word.toLowerCase(), kw);
-          if (dist < bestDist) {
-            bestDist = dist;
-            bestKeyword = kw;
-          }
-        }
-
-        // Only flag if within edit distance 3 (generous — covers @Severity, @severit, @sev, @msg).
-        int threshold = EditDistance.editThreshold(word.length());
-        if (bestKeyword == null || bestDist > threshold) {
-          continue;
-        }
-
-        int startCol = m.start(); // position of '@'
-        int endCol = m.end();
-        String suggestion = "@" + bestKeyword;
-        String badAnnotation = "@" + word;
-
-        Diagnostic d =
-            new Diagnostic(
-                new Range(new Position(lineIdx, startCol), new Position(lineIdx, endCol)),
-                "Unknown annotation '" + badAnnotation + "'. Did you mean '" + suggestion + "'?",
-                DiagnosticSeverity.Error,
-                LANGUAGE_ID);
-        d.setData(suggestion); // picked up by the code-action handler for the quick fix
-        diagnostics.add(d);
-        final int capturedLine = lineIdx;
-        LOG.fine(
-            () ->
-                String.format(
-                    "[OCL-LS] DIAG annotation-typo L%d:C%d  %s → %s",
-                    capturedLine, startCol, badAnnotation, suggestion));
       }
     }
+  }
+
+  /**
+   * Reports a diagnostic for {@code word} if it is close enough (by edit distance) to a known
+   * annotation keyword to be considered a likely typo.
+   */
+  private static void reportAnnotationTypoIfClose(
+      String word, Matcher m, int lineIdx, List<Diagnostic> diagnostics) {
+    // Find the closest known annotation keyword.
+    String bestKeyword = null;
+    int bestDist = Integer.MAX_VALUE;
+    for (String kw : ANNOTATION_KEYWORDS) {
+      int dist = EditDistance.damerauLevenshtein(word.toLowerCase(), kw);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestKeyword = kw;
+      }
+    }
+
+    // Only flag if within edit distance 3 (generous — covers @Severity, @severit, @sev, @msg).
+    int threshold = EditDistance.editThreshold(word.length());
+    if (bestKeyword == null || bestDist > threshold) {
+      return;
+    }
+
+    int startCol = m.start(); // position of '@'
+    int endCol = m.end();
+    String suggestion = "@" + bestKeyword;
+    String badAnnotation = "@" + word;
+
+    Diagnostic d =
+        new Diagnostic(
+            new Range(new Position(lineIdx, startCol), new Position(lineIdx, endCol)),
+            "Unknown annotation '" + badAnnotation + "'. Did you mean '" + suggestion + "'?",
+            DiagnosticSeverity.Error,
+            LANGUAGE_ID);
+    d.setData(suggestion); // picked up by the code-action handler for the quick fix
+    diagnostics.add(d);
+    final int capturedLine = lineIdx;
+    LOG.fine(
+        () ->
+            String.format(
+                "[OCL-LS] DIAG annotation-typo L%d:C%d  %s → %s",
+                capturedLine, startCol, badAnnotation, suggestion));
   }
 
   /**
@@ -276,7 +282,6 @@ public class DocumentAnalyzer {
    * {@code invCS} child whose start line is <em>after</em> that syntax error is considered orphaned
    * — it was absorbed by error recovery, not legitimately part of this context.
    */
-  @SuppressWarnings("java:S3776")
   private static List<int[]> findOrphanedInvRanges(
       VitruvOCLParser.ContextDeclCSContext tree, List<Diagnostic> syntaxDiags) {
 
@@ -286,54 +291,70 @@ public class DocumentAnalyzer {
     }
 
     for (VitruvOCLParser.ClassifierContextCSContext ctx : tree.classifierContextCS()) {
-      if (ctx.getStart() == null) {
-        continue;
-      }
-      int ctxStart = ctx.getStart().getLine() - 1; // 0-based
-      int ctxStop = ctx.getStop() != null ? ctx.getStop().getLine() - 1 : Integer.MAX_VALUE;
-
-      // First syntax-error line that falls strictly inside this context block.
-      int firstErrLine = Integer.MAX_VALUE;
-      for (Diagnostic d : syntaxDiags) {
-        int l = d.getRange().getStart().getLine(); // already 0-based
-        if (l > ctxStart && l <= ctxStop && l < firstErrLine) {
-          firstErrLine = l;
-        }
-      }
-
-      if (firstErrLine == Integer.MAX_VALUE) {
-        continue;
-      }
-
-      for (VitruvOCLParser.InvCSContext inv : ctx.invCS()) {
-        if (inv.getStart() == null) {
-          continue;
-        }
-        int invStart = inv.getStart().getLine() - 1; // 0-based
-        int invStop = inv.getStop() != null ? inv.getStop().getLine() - 1 : invStart;
-
-        // Case 1: invCS that starts after the first syntax error in this context.
-        if (invStart > firstErrLine) {
-          orphaned.add(new int[] {invStart, invStop});
-          continue;
-        }
-
-        // Case 2: invCS that directly contains a syntax error — type-checker errors inside
-        // would be unreliable cascade diagnostics, so suppress them too.
-        boolean invHasSyntaxError = false;
-        for (Diagnostic d : syntaxDiags) {
-          int l = d.getRange().getStart().getLine(); // already 0-based
-          if (l >= invStart && l <= invStop) {
-            invHasSyntaxError = true;
-            break;
-          }
-        }
-        if (invHasSyntaxError) {
-          orphaned.add(new int[] {invStart, invStop});
-        }
+      if (ctx.getStart() != null) {
+        collectOrphanedInvRanges(ctx, syntaxDiags, orphaned);
       }
     }
     return orphaned;
+  }
+
+  /** Finds orphaned {@code invCS} ranges within a single {@code classifierContextCS} block. */
+  private static void collectOrphanedInvRanges(
+      VitruvOCLParser.ClassifierContextCSContext ctx,
+      List<Diagnostic> syntaxDiags,
+      List<int[]> orphaned) {
+    int ctxStart = ctx.getStart().getLine() - 1; // 0-based
+    int ctxStop = ctx.getStop() != null ? ctx.getStop().getLine() - 1 : Integer.MAX_VALUE;
+
+    // First syntax-error line that falls strictly inside this context block.
+    int firstErrLine = Integer.MAX_VALUE;
+    for (Diagnostic d : syntaxDiags) {
+      int l = d.getRange().getStart().getLine(); // already 0-based
+      if (l > ctxStart && l <= ctxStop && l < firstErrLine) {
+        firstErrLine = l;
+      }
+    }
+
+    if (firstErrLine == Integer.MAX_VALUE) {
+      return;
+    }
+
+    for (VitruvOCLParser.InvCSContext inv : ctx.invCS()) {
+      if (inv.getStart() != null) {
+        addIfOrphaned(inv, firstErrLine, syntaxDiags, orphaned);
+      }
+    }
+  }
+
+  /**
+   * Adds {@code inv}'s line range to {@code orphaned} if it starts after {@code firstErrLine}
+   * (Case 1) or directly contains a syntax error (Case 2 — its type-checker diagnostics would be
+   * unreliable cascade errors, so they are suppressed too).
+   */
+  private static void addIfOrphaned(
+      VitruvOCLParser.InvCSContext inv,
+      int firstErrLine,
+      List<Diagnostic> syntaxDiags,
+      List<int[]> orphaned) {
+    int invStart = inv.getStart().getLine() - 1; // 0-based
+    int invStop = inv.getStop() != null ? inv.getStop().getLine() - 1 : invStart;
+
+    if (invStart > firstErrLine) {
+      orphaned.add(new int[] {invStart, invStop});
+      return;
+    }
+
+    boolean invHasSyntaxError = false;
+    for (Diagnostic d : syntaxDiags) {
+      int l = d.getRange().getStart().getLine(); // already 0-based
+      if (l >= invStart && l <= invStop) {
+        invHasSyntaxError = true;
+        break;
+      }
+    }
+    if (invHasSyntaxError) {
+      orphaned.add(new int[] {invStart, invStop});
+    }
   }
 
   private static Diagnostic toDiagnostic(CompileError error) {

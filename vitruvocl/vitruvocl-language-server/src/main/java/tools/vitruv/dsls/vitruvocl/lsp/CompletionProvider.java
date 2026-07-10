@@ -12,6 +12,7 @@ package tools.vitruv.dsls.vitruvocl.lsp;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -52,8 +53,8 @@ public class CompletionProvider {
   private static final String ANNOTATION_SEVERITY = "@severity";
 
   // Regex patterns for context detection (applied to the text before the cursor).
-  private static final Pattern MM_COLON_COLON = Pattern.compile("(\\w+)::$");
-  private static final Pattern MM_CLASS_DOT = Pattern.compile("(\\w+)::(\\w+)\\.$");
+  private static final Pattern MM_COLON_COLON = Pattern.compile("(\\w++)::$");
+  private static final Pattern MM_CLASS_DOT = Pattern.compile("(\\w++)::(\\w++)\\.$");
   private static final Pattern SELF_DOT = Pattern.compile("\\bself\\.$");
   private static final Pattern CONTEXT_DECL = Pattern.compile("\\bcontext\\s+(\\w+)::(\\w+)");
 
@@ -136,97 +137,140 @@ public class CompletionProvider {
    * @param cursor LSP cursor position (0-based line and character)
    * @param lastAnalysis most recent analysis snapshot, or {@code null} on first edit
    */
-  @SuppressWarnings("java:S3776")
   public List<CompletionItem> getCompletions(
       String documentText, Position cursor, DocumentAnalysis lastAnalysis) {
 
     String textBefore = textBefore(documentText, cursor);
     String currentLine = textBefore.substring(textBefore.lastIndexOf('\n') + 1);
 
-    // -----------------------------------------------------------------------
-    // 'context ' (no '::' yet) → suggest all metamodel package names
-    // -----------------------------------------------------------------------
-    if (CONTEXT_NEEDS_PKG.matcher(currentLine).find()) {
-      List<CompletionItem> items = new ArrayList<>();
-      for (String pkgName : wrapper.getAvailableMetamodels()) {
-        CompletionItem item = new CompletionItem(pkgName);
-        item.setKind(CompletionItemKind.Module);
-        item.setDetail("Metamodel package");
-        items.add(item);
+    List<Supplier<List<CompletionItem>>> candidates =
+        List.of(
+            () -> contextPackageCompletions(currentLine),
+            () -> contextInvCompletions(currentLine),
+            () -> invHeaderGuard(currentLine),
+            () -> annotationZoneCompletions(currentLine, textBefore),
+            () -> annotationKeywordCompletions(textBefore),
+            () -> severityCompletions(textBefore),
+            () -> typePositionCompletions(textBefore),
+            () -> packageClassNameCompletions(textBefore),
+            () -> classFeatureCompletions(textBefore),
+            () -> selfFeatureCompletions(textBefore, documentText, cursor),
+            () -> dotCompletions(textBefore, cursor, lastAnalysis));
+
+    for (Supplier<List<CompletionItem>> candidate : candidates) {
+      List<CompletionItem> result = candidate.get();
+      if (result != null) {
+        return result;
       }
-      return items;
     }
 
     // -----------------------------------------------------------------------
-    // 'context Pkg::Class ' without 'inv' yet → only 'inv'
+    // 5. Top-level: keywords + known package names
     // -----------------------------------------------------------------------
-    if (CONTEXT_NEEDS_INV.matcher(currentLine).find()) {
-      CompletionItem inv = new CompletionItem("inv");
-      inv.setKind(CompletionItemKind.Keyword);
-      inv.setDetail("Introduce a named invariant");
-      inv.setInsertText("inv $1:\n  $0");
-      inv.setInsertTextFormat(InsertTextFormat.Snippet);
-      return List.of(inv);
-    }
+    return topLevelItems();
+  }
 
-    // -----------------------------------------------------------------------
-    // Guard: never offer completions while the cursor is still on the
-    // 'context Pkg::Class inv name:' header line itself.
-    // -----------------------------------------------------------------------
+  /**
+   * 'context ' (no '::' yet) → suggest all metamodel package names, or {@code null} if no match.
+   */
+  private List<CompletionItem> contextPackageCompletions(String currentLine) {
+    if (!CONTEXT_NEEDS_PKG.matcher(currentLine).find()) {
+      return null;
+    }
+    List<CompletionItem> items = new ArrayList<>();
+    for (String pkgName : wrapper.getAvailableMetamodels()) {
+      CompletionItem item = new CompletionItem(pkgName);
+      item.setKind(CompletionItemKind.Module);
+      item.setDetail("Metamodel package");
+      items.add(item);
+    }
+    return items;
+  }
+
+  /** 'context Pkg::Class ' without 'inv' yet → only 'inv', or {@code null} if no match. */
+  private List<CompletionItem> contextInvCompletions(String currentLine) {
+    if (!CONTEXT_NEEDS_INV.matcher(currentLine).find()) {
+      return null;
+    }
+    CompletionItem inv = new CompletionItem("inv");
+    inv.setKind(CompletionItemKind.Keyword);
+    inv.setDetail("Introduce a named invariant");
+    inv.setInsertText("inv $1:\n  $0");
+    inv.setInsertTextFormat(InsertTextFormat.Snippet);
+    return List.of(inv);
+  }
+
+  /**
+   * Guard: never offer completions while the cursor is still on the {@code context Pkg::Class inv
+   * name:} header line itself. Returns {@code null} if the cursor is not on such a line.
+   */
+  private List<CompletionItem> invHeaderGuard(String currentLine) {
     if (currentLine.matches(".*\\binv\\s+\\w+\\s*:.*")) {
       return List.of();
     }
+    return null;
+  }
 
-    // -----------------------------------------------------------------------
-    // -2a. Blank line in the annotation zone (between 'inv …:' and the OCL body)
-    //      → offer @severity / @message. If both are already present, fall through
-    //        to body completions so the user can start writing the OCL expression.
-    // -----------------------------------------------------------------------
-    if (currentLine.isBlank() && isInAnnotationZone(textBefore)) {
-      List<CompletionItem> annItems = annotationKeywordItems(true, textBefore);
-      if (!annItems.isEmpty()) {
-        return annItems;
-      }
-      // Both annotations present — fall through to body completions below.
+  /**
+   * Blank line in the annotation zone (between {@code inv …:} and the OCL body) → offer
+   * {@code @severity} / {@code @message}. Returns {@code null} if both are already present, so
+   * the caller falls through to body completions.
+   */
+  private List<CompletionItem> annotationZoneCompletions(String currentLine, String textBefore) {
+    if (!currentLine.isBlank() || !isInAnnotationZone(textBefore)) {
+      return null;
     }
+    List<CompletionItem> annItems = annotationKeywordItems(true, textBefore);
+    return annItems.isEmpty() ? null : annItems;
+  }
 
-    // -----------------------------------------------------------------------
-    // -2. '@' or '@<partial>' after an 'inv … :' → annotation keyword suggestions
-    //     insertText without '@' because the user already typed it.
-    // -----------------------------------------------------------------------
+  /**
+   * {@code @} or {@code @<partial>} after an {@code inv … :} → annotation keyword suggestions,
+   * insertText without {@code @} because the user already typed it. Returns {@code null} if no
+   * match.
+   */
+  private List<CompletionItem> annotationKeywordCompletions(String textBefore) {
     if (AT_ANNOTATION_START.matcher(textBefore).find()
         && INV_BEFORE_CURSOR.matcher(textBefore).find()) {
       return annotationKeywordItems(false, textBefore);
     }
+    return null;
+  }
 
-    // -----------------------------------------------------------------------
-    // -1. '@severity ' (space just typed) or '@severity <partial>' → severity level completions
-    // -----------------------------------------------------------------------
+  /**
+   * {@code @severity } (space just typed) or {@code @severity <partial>} → severity level
+   * completions, or {@code null} if no match.
+   */
+  private List<CompletionItem> severityCompletions(String textBefore) {
     if (AT_SEVERITY_SPACE.matcher(textBefore).find()
         || AT_SEVERITY_PREFIX.matcher(textBefore).find()) {
       return severityItems();
     }
+    return null;
+  }
 
-    // -----------------------------------------------------------------------
-    // 0. Type-position: after "let x :" or inside oclIsKindOf/oclAsType/oclIsTypeOf(
-    //    → primitive type names + all metamodel packages + qualified EClass names
-    // -----------------------------------------------------------------------
+  /**
+   * Type-position: after "let x :" or inside oclIsKindOf/oclAsType/oclIsTypeOf( → primitive type
+   * names + all metamodel packages + qualified EClass names, or {@code null} if no match.
+   */
+  private List<CompletionItem> typePositionCompletions(String textBefore) {
     if (LET_TYPE_POS.matcher(textBefore).find() || TYPE_CAST_POS.matcher(textBefore).find()) {
       return typeItems();
     }
+    return null;
+  }
 
-    // -----------------------------------------------------------------------
-    // 1. PackageName:: → list EClass names
-    // -----------------------------------------------------------------------
+  /** {@code PackageName::} → list EClass names, or {@code null} if no match. */
+  private List<CompletionItem> packageClassNameCompletions(String textBefore) {
     Matcher mmMatcher = MM_COLON_COLON.matcher(textBefore);
     if (mmMatcher.find()) {
-      String pkgName = mmMatcher.group(1);
-      return classNamesFor(pkgName);
+      return classNamesFor(mmMatcher.group(1));
     }
+    return null;
+  }
 
-    // -----------------------------------------------------------------------
-    // 2. PackageName::ClassName. → list EClass features
-    // -----------------------------------------------------------------------
+  /** {@code PackageName::ClassName.} → list EClass features, or {@code null} if no match. */
+  private List<CompletionItem> classFeatureCompletions(String textBefore) {
     Matcher mmClassDotMatcher = MM_CLASS_DOT.matcher(textBefore);
     if (mmClassDotMatcher.find()) {
       EClass eClass = wrapper.resolveEClass(mmClassDotMatcher.group(1), mmClassDotMatcher.group(2));
@@ -234,46 +278,47 @@ public class CompletionProvider {
         return featuresFor(eClass);
       }
     }
+    return null;
+  }
 
-    // -----------------------------------------------------------------------
-    // 3. self. → features of the context class declared above
-    // -----------------------------------------------------------------------
-    if (SELF_DOT.matcher(textBefore).find()) {
-      Matcher ctxMatcher = CONTEXT_DECL.matcher(documentText);
-      // Find the last context declaration before the cursor offset.
-      int cursorOffset = offsetOf(documentText, cursor);
-      String matchedPkg = null;
-      String matchedClass = null;
-      while (ctxMatcher.find()) {
-        if (ctxMatcher.start() <= cursorOffset) {
-          matchedPkg = ctxMatcher.group(1);
-          matchedClass = ctxMatcher.group(2);
-        }
-      }
-      if (matchedPkg != null) {
-        EClass eClass = wrapper.resolveEClass(matchedPkg, matchedClass);
-        if (eClass != null) {
-          return featuresFor(eClass);
-        }
+  /** {@code self.} → features of the context class declared above, or {@code null} if no match. */
+  private List<CompletionItem> selfFeatureCompletions(
+      String textBefore, String documentText, Position cursor) {
+    if (!SELF_DOT.matcher(textBefore).find()) {
+      return null;
+    }
+    Matcher ctxMatcher = CONTEXT_DECL.matcher(documentText);
+    // Find the last context declaration before the cursor offset.
+    int cursorOffset = offsetOf(documentText, cursor);
+    String matchedPkg = null;
+    String matchedClass = null;
+    while (ctxMatcher.find()) {
+      if (ctxMatcher.start() <= cursorOffset) {
+        matchedPkg = ctxMatcher.group(1);
+        matchedClass = ctxMatcher.group(2);
       }
     }
-
-    // -----------------------------------------------------------------------
-    // 4. expr. → look up the type of the receiver from the last analysis
-    // -----------------------------------------------------------------------
-    if (textBefore.endsWith(".") && lastAnalysis != null && lastAnalysis.getNodeTypes() != null) {
-      List<CompletionItem> fromType = completionsFromType(cursor, lastAnalysis);
-      if (!fromType.isEmpty()) {
-        return fromType;
-      }
-      // Fall through to collection ops as default dot-completion.
-      return collectionOpItems();
+    if (matchedPkg == null) {
+      return null;
     }
+    EClass eClass = wrapper.resolveEClass(matchedPkg, matchedClass);
+    return eClass != null ? featuresFor(eClass) : null;
+  }
 
-    // -----------------------------------------------------------------------
-    // 5. Top-level: keywords + known package names
-    // -----------------------------------------------------------------------
-    return topLevelItems();
+  /**
+   * {@code expr.} → look up the type of the receiver from the last analysis. Returns {@code null}
+   * if there is no last analysis to consult (the caller then falls through to top-level items).
+   */
+  private List<CompletionItem> dotCompletions(
+      String textBefore, Position cursor, DocumentAnalysis lastAnalysis) {
+    boolean canLookUpType =
+        textBefore.endsWith(".") && lastAnalysis != null && lastAnalysis.getNodeTypes() != null;
+    if (!canLookUpType) {
+      return null;
+    }
+    List<CompletionItem> fromType = completionsFromType(cursor, lastAnalysis);
+    // Fall through to collection ops as default dot-completion.
+    return !fromType.isEmpty() ? fromType : collectionOpItems();
   }
 
   // ---------------------------------------------------------------------------
@@ -291,13 +336,10 @@ public class CompletionProvider {
     // Start from the line just before the current (blank) line.
     for (int i = lines.length - 2; i >= 0; i--) {
       String line = lines[i];
-      if (line.isBlank()) {
-        continue;
-      }
       if (INV_BEFORE_CURSOR.matcher(line).find()) {
         return true;
       }
-      if (ANNOTATION_LINE.matcher(line).find()) {
+      if (line.isBlank() || ANNOTATION_LINE.matcher(line).find()) {
         continue;
       }
       return false; // OCL body line — not in annotation zone

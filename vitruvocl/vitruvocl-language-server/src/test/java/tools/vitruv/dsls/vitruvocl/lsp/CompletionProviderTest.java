@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EPackage;
@@ -23,6 +24,9 @@ import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.Position;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapper;
 
 /**
@@ -133,28 +137,26 @@ class CompletionProviderTest {
     assertThat(items).isEmpty();
   }
 
-  // ── feature completions ────────────────────────────────────────────────────
+  // ── feature / annotation-keyword completions (label contains a substring) ──
 
-  @Test
-  void packageClassDot_suggestsFeatures() {
-    // Expression must be on a line without an inv header to avoid the header-line guard
-    // cursor must be AFTER the dot (offset 14 = 2 spaces + "TestMM::Foo.")
-    String text = "context TestMM::Foo inv x:\n  TestMM::Foo.";
-    Position cursor = new Position(1, 14);
-
+  @ParameterizedTest
+  @MethodSource("labelContainsCases")
+  void completionLabels_containExpectedSubstring(
+      String text, Position cursor, String expectedSubstring) {
     List<CompletionItem> items = provider.getCompletions(text, cursor, null);
 
-    assertThat(items).extracting(CompletionItem::getLabel).anyMatch(label -> label.contains("bar"));
+    assertThat(items)
+        .extracting(CompletionItem::getLabel)
+        .anyMatch(label -> label.contains(expectedSubstring));
   }
 
-  @Test
-  void selfDot_suggestsFeaturesOfContextClass() {
-    String text = "context TestMM::Foo inv x:\n  self.";
-    Position cursor = new Position(1, 7);
-
-    List<CompletionItem> items = provider.getCompletions(text, cursor, null);
-
-    assertThat(items).extracting(CompletionItem::getLabel).anyMatch(label -> label.contains("bar"));
+  static Stream<Arguments> labelContainsCases() {
+    return Stream.of(
+        // Expression must be on a line without an inv header to avoid the header-line guard;
+        // cursor must be AFTER the dot (offset 14 = 2 spaces + "TestMM::Foo.")
+        Arguments.of("context TestMM::Foo inv x:\n  TestMM::Foo.", new Position(1, 14), "bar"),
+        Arguments.of("context TestMM::Foo inv x:\n  self.", new Position(1, 7), "bar"),
+        Arguments.of("context TestMM::Foo inv x:\n  @", new Position(1, 3), "severity"));
   }
 
   // ── annotation completions ─────────────────────────────────────────────────
@@ -170,18 +172,6 @@ class CompletionProviderTest {
     assertThat(items)
         .extracting(CompletionItem::getLabel)
         .containsExactlyInAnyOrder("CRITICAL", "WARNING", "MAJOR", "MINOR", "INFO");
-  }
-
-  @Test
-  void atAnnotationStart_afterInv_suggestsAnnotationKeywords() {
-    String text = "context TestMM::Foo inv x:\n  @";
-    Position cursor = new Position(1, 3);
-
-    List<CompletionItem> items = provider.getCompletions(text, cursor, null);
-
-    assertThat(items)
-        .extracting(CompletionItem::getLabel)
-        .anyMatch(label -> label.contains("severity"));
   }
 
   // ── top-level completions ──────────────────────────────────────────────────
@@ -217,8 +207,7 @@ class CompletionProviderTest {
     List<CompletionItem> items = provider.getCompletions(text, cursor, null);
 
     List<String> labels = items.stream().map(CompletionItem::getLabel).toList();
-    assertThat(labels).contains("Integer", "String", "Boolean", "Real");
-    assertThat(labels).contains("TestMM");
+    assertThat(labels).contains("Integer", "String", "Boolean", "Real", "TestMM");
   }
 
   // ── utilities ─────────────────────────────────────────────────────────────

@@ -357,37 +357,37 @@ public sealed interface OCLElement
     }
 
     // ── Typed comparisons ────────────────────────────────────────────────────
-    if (a instanceof BoolValue ba && b instanceof BoolValue bb) {
-      return ba.value == bb.value;
+    if (a instanceof BoolValue(boolean ba) && b instanceof BoolValue(boolean bb)) {
+      return ba == bb;
     }
-    if (a instanceof StringValue sa && b instanceof StringValue sb) {
-      return sa.value.equals(sb.value);
+    if (a instanceof StringValue(String sa) && b instanceof StringValue(String sb)) {
+      return sa.equals(sb);
     }
-    if (a instanceof ObjectRef oa && b instanceof ObjectRef ob) {
-      return oa.oid.equals(ob.oid);
+    if (a instanceof ObjectRef(String oa) && b instanceof ObjectRef(String ob)) {
+      return oa.equals(ob);
     }
-    if (a instanceof NestedCollection na && b instanceof NestedCollection nb) {
-      return Value.semanticEquals(na.value, nb.value);
+    if (a instanceof NestedCollection(Value na) && b instanceof NestedCollection(Value nb)) {
+      return Value.semanticEquals(na, nb);
     }
-    if (a instanceof MetaclassValue ma && b instanceof MetaclassValue mb) {
-      return ma.instance.equals(mb.instance);
+    if (a instanceof MetaclassValue(EObject ma) && b instanceof MetaclassValue(EObject mb)) {
+      return ma.equals(mb);
     }
 
     // ── Enum equality ────────────────────────────────────────────────────────
-    if (a instanceof EnumValue ea && b instanceof EnumValue eb) {
+    if (a instanceof EnumValue(EEnumLiteral ea) && b instanceof EnumValue(EEnumLiteral eb)) {
       // Use literal name for equality, not object identity. EEnumLiteral.equals() is
       // reference equality, so two literals from different EPackages (e.g.
       // Labelgraph1::Label::ORANGE vs Labelgraph2::Label::ORANGE) would never be equal
       // even if they represent the same value. Name-based comparison is the correct
       // cross-metamodel semantics.
-      return ea.literal().getName().equals(eb.literal().getName());
+      return ea.getName().equals(eb.getName());
     }
     // EnumValue == StringValue: compare by literal name
-    if (a instanceof EnumValue ea && b instanceof StringValue sb) {
-      return ea.literal().getName().equals(sb.value());
+    if (a instanceof EnumValue(EEnumLiteral ea) && b instanceof StringValue(String sb)) {
+      return ea.getName().equals(sb);
     }
-    if (a instanceof StringValue sa && b instanceof EnumValue eb) {
-      return sa.value().equals(eb.literal().getName());
+    if (a instanceof StringValue(String sa) && b instanceof EnumValue(EEnumLiteral eb)) {
+      return sa.equals(eb.getName());
     }
 
     return false;
@@ -430,24 +430,23 @@ public sealed interface OCLElement
     if (isNumeric(a) && isNumeric(b)) {
       return Double.compare(a.toDoubleValue(), b.toDoubleValue());
     }
-    if (a instanceof BoolValue ba && b instanceof BoolValue bb) {
-      return Boolean.compare(ba.value, bb.value);
+    if (a instanceof BoolValue(boolean ba) && b instanceof BoolValue(boolean bb)) {
+      return Boolean.compare(ba, bb);
     }
-    if (a instanceof StringValue sa && b instanceof StringValue sb) {
-      return sa.value.compareTo(sb.value);
+    if (a instanceof StringValue(String sa) && b instanceof StringValue(String sb)) {
+      return sa.compareTo(sb);
     }
-    if (a instanceof EnumValue ea && b instanceof EnumValue eb) {
-      return Integer.compare(ea.literal().getValue(), eb.literal().getValue());
+    if (a instanceof EnumValue(EEnumLiteral ea) && b instanceof EnumValue(EEnumLiteral eb)) {
+      return Integer.compare(ea.getValue(), eb.getValue());
     }
-    if (a instanceof ObjectRef oa && b instanceof ObjectRef ob) {
-      return oa.oid.compareTo(ob.oid);
+    if (a instanceof ObjectRef(String oa) && b instanceof ObjectRef(String ob)) {
+      return oa.compareTo(ob);
     }
-    if (a instanceof NestedCollection na && b instanceof NestedCollection nb) {
-      return Value.compare(na.value, nb.value);
+    if (a instanceof NestedCollection(Value na) && b instanceof NestedCollection(Value nb)) {
+      return Value.compare(na, nb);
     }
-    if (a instanceof MetaclassValue ma && b instanceof MetaclassValue mb) {
-      return Integer.compare(
-          System.identityHashCode(ma.instance), System.identityHashCode(mb.instance));
+    if (a instanceof MetaclassValue(EObject ma) && b instanceof MetaclassValue(EObject mb)) {
+      return Integer.compare(System.identityHashCode(ma), System.identityHashCode(mb));
     }
 
     return 0;

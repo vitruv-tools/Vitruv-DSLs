@@ -286,38 +286,47 @@ public class OCLTextDocumentService implements TextDocumentService {
           String uri = params.getTextDocument().getUri();
 
           for (Diagnostic diag : params.getContext().getDiagnostics()) {
-            Object data = diag.getData();
-            if (data == null) {
-              continue;
+            Either<Command, CodeAction> action = buildQuickFixAction(diag, uri);
+            if (action != null) {
+              actions.add(action);
             }
-
-            // data is a String (the replacement text) serialised as a JSON string by lsp4j
-            String suggestion = data instanceof String s ? s : data.toString();
-            // lsp4j may wrap the value in quotes when deserialised via Gson
-            if (suggestion.startsWith("\"")
-                && suggestion.endsWith("\"")
-                && suggestion.length() >= 2) {
-              suggestion = suggestion.substring(1, suggestion.length() - 1);
-            }
-            if (suggestion.isBlank()) {
-              continue;
-            }
-
-            TextEdit edit = new TextEdit(diag.getRange(), suggestion);
-            WorkspaceEdit wsEdit = new WorkspaceEdit(Map.of(uri, List.of(edit)));
-
-            CodeAction action = new CodeAction("Replace with '" + suggestion + "'");
-            action.setKind(CodeActionKind.QuickFix);
-            action.setDiagnostics(List.of(diag));
-            action.setEdit(wsEdit);
-            // Mark as preferred so VS Code highlights it in blue
-            action.setIsPreferred(true);
-
-            actions.add(Either.forRight(action));
           }
 
           return actions;
         });
+  }
+
+  /**
+   * Builds a quick-fix {@link CodeAction} that replaces {@code diag}'s squiggled range with its
+   * suggestion, or {@code null} if {@code diag} carries no usable suggestion.
+   */
+  private static Either<Command, CodeAction> buildQuickFixAction(Diagnostic diag, String uri) {
+    Object data = diag.getData();
+    if (data == null) {
+      return null;
+    }
+
+    // data is a String (the replacement text) serialised as a JSON string by lsp4j
+    String suggestion = data instanceof String s ? s : data.toString();
+    // lsp4j may wrap the value in quotes when deserialised via Gson
+    if (suggestion.startsWith("\"") && suggestion.endsWith("\"") && suggestion.length() >= 2) {
+      suggestion = suggestion.substring(1, suggestion.length() - 1);
+    }
+    if (suggestion.isBlank()) {
+      return null;
+    }
+
+    TextEdit edit = new TextEdit(diag.getRange(), suggestion);
+    WorkspaceEdit wsEdit = new WorkspaceEdit(Map.of(uri, List.of(edit)));
+
+    CodeAction action = new CodeAction("Replace with '" + suggestion + "'");
+    action.setKind(CodeActionKind.QuickFix);
+    action.setDiagnostics(List.of(diag));
+    action.setEdit(wsEdit);
+    // Mark as preferred so VS Code highlights it in blue
+    action.setIsPreferred(true);
+
+    return Either.forRight(action);
   }
 
   /**

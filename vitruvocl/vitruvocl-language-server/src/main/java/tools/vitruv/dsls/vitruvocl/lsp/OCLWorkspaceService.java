@@ -65,36 +65,7 @@ public class OCLWorkspaceService implements WorkspaceService {
     boolean anyChange = false;
 
     for (FileEvent event : params.getChanges()) {
-      String uri = event.getUri();
-      if (!uri.endsWith(".ecore")) {
-        continue;
-      }
-
-      Path ecorePath = uriToPath(uri);
-      if (ecorePath == null) {
-        LOG.fine(() -> "[OCL-LS] Could not resolve path for URI: " + uri);
-        continue;
-      }
-
-      FileChangeType type = event.getType();
-
-      if (type == FileChangeType.Deleted) {
-        // Remove the metamodel; don't try to load a file that no longer exists.
-        wrapper.unloadMetamodel(ecorePath);
-        LOG.fine(() -> "[OCL-LS] Metamodel deleted, unloaded: " + ecorePath);
-        anyChange = true;
-
-      } else if (type == FileChangeType.Created || type == FileChangeType.Changed) {
-        // Reload: unload old version (no-op if not yet loaded) then load fresh copy.
-        try {
-          wrapper.reloadMetamodel(ecorePath);
-          LOG.fine(() -> "[OCL-LS] Metamodel reloaded: " + ecorePath);
-          anyChange = true;
-        } catch (IOException e) {
-          LOG.fine(
-              () -> "[OCL-LS] Failed to reload metamodel " + ecorePath + ": " + e.getMessage());
-        }
-      }
+      anyChange |= handleFileEvent(event);
     }
 
     // Kick off re-analysis of all open documents so diagnostics and type hints
@@ -102,6 +73,46 @@ public class OCLWorkspaceService implements WorkspaceService {
     if (anyChange) {
       textDocumentService.reanalyzeAll();
     }
+  }
+
+  /**
+   * Processes a single watched-file event, hot-reloading or unloading the affected metamodel.
+   *
+   * @return {@code true} if a metamodel was changed (loaded, reloaded, or unloaded)
+   */
+  private boolean handleFileEvent(FileEvent event) {
+    String uri = event.getUri();
+    if (!uri.endsWith(".ecore")) {
+      return false;
+    }
+
+    Path ecorePath = uriToPath(uri);
+    if (ecorePath == null) {
+      LOG.fine(() -> "[OCL-LS] Could not resolve path for URI: " + uri);
+      return false;
+    }
+
+    FileChangeType type = event.getType();
+
+    if (type == FileChangeType.Deleted) {
+      // Remove the metamodel; don't try to load a file that no longer exists.
+      wrapper.unloadMetamodel(ecorePath);
+      LOG.fine(() -> "[OCL-LS] Metamodel deleted, unloaded: " + ecorePath);
+      return true;
+    }
+
+    if (type == FileChangeType.Created || type == FileChangeType.Changed) {
+      // Reload: unload old version (no-op if not yet loaded) then load fresh copy.
+      try {
+        wrapper.reloadMetamodel(ecorePath);
+        LOG.fine(() -> "[OCL-LS] Metamodel reloaded: " + ecorePath);
+        return true;
+      } catch (IOException e) {
+        LOG.fine(() -> "[OCL-LS] Failed to reload metamodel " + ecorePath + ": " + e.getMessage());
+      }
+    }
+
+    return false;
   }
 
   // ---------------------------------------------------------------------------

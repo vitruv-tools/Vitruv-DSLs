@@ -6,7 +6,6 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Logger;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -105,8 +104,6 @@ import tools.vitruv.dsls.vitruvocl.symboltable.VariableSymbol;
  * @see EvaluationVisitor Phase 3 visitor that uses the type information
  */
 public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
-
-  private static final Logger LOG = Logger.getLogger(TypeCheckVisitor.class.getName());
 
   // ==================== Instance Fields ====================
 

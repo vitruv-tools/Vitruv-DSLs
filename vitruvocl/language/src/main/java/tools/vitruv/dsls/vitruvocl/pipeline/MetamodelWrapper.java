@@ -24,7 +24,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.XMLConstants;
@@ -68,7 +67,6 @@ import org.w3c.dom.NodeList;
  */
 public class MetamodelWrapper implements MetamodelWrapperInterface {
 
-  private static final Logger LOG = Logger.getLogger(MetamodelWrapper.class.getName());
   private static final String FEAT_LEFT_EOBJECTS = "leftEObjects";
   private static final String FEAT_RIGHT_EOBJECTS = "rightEObjects";
 

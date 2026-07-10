@@ -349,9 +349,10 @@ class AnnotationSyntaxAndSemanticsTest {
       // the type-checker cannot resolve → compilation must fail.
       ConstraintResult r =
           eval(
-              "context brakesystem::BrakeDisk inv:\n"
-                  + "    @Severity CRITICAL\n"
-                  + "    self.diameterInMM > 0");
+              """
+              context brakesystem::BrakeDisk inv:
+                  @Severity CRITICAL
+                  self.diameterInMM > 0""");
       assertFalse(r.isSuccess(), "@Severity (capital S) should not compile successfully");
     }
 
@@ -360,9 +361,10 @@ class AnnotationSyntaxAndSemanticsTest {
     void allCapsSeverity() {
       ConstraintResult r =
           eval(
-              "context brakesystem::BrakeDisk inv:\n"
-                  + "    @SEVERITY CRITICAL\n"
-                  + "    self.diameterInMM > 0");
+              """
+              context brakesystem::BrakeDisk inv:
+                  @SEVERITY CRITICAL
+                  self.diameterInMM > 0""");
       assertFalse(r.isSuccess(), "@SEVERITY (all caps) should not compile successfully");
     }
 
@@ -379,9 +381,10 @@ class AnnotationSyntaxAndSemanticsTest {
     void uppercaseMessage() {
       ConstraintResult r =
           eval(
-              "context brakesystem::BrakeDisk inv:\n"
-                  + "    @MESSAGE \"text\"\n"
-                  + "    self.diameterInMM > 0");
+              """
+              context brakesystem::BrakeDisk inv:
+                  @MESSAGE "text"
+                  self.diameterInMM > 0""");
       assertFalse(r.isSuccess(), "@MESSAGE (uppercase) should not compile successfully");
     }
 
