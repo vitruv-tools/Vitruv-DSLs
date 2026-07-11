@@ -127,8 +127,6 @@ class NodeFinderTest {
   void emptyDocument_positionAtOrigin_returnsNoTerminal() {
     VitruvOCLParser.ContextDeclCSContext tree = parse("");
 
-    // The ANTLR parser may return the root rule context for (0,0) on an empty document, but it
-    // must never return a terminal node since there are no real tokens.
     ParseTree node = NodeFinder.findAt(tree, 0, 0);
 
     if (node != null) {
