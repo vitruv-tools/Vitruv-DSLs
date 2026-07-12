@@ -64,8 +64,11 @@ public class SymbolProvider {
       name = "<context>";
     }
 
-    Range full = ruleRange(ctx);
     Range selection = nameSelectionRange(ctx);
+    // Union with the selection range: ANTLR error recovery on incomplete/invalid input can leave
+    // ctx.getStop() pointing earlier than an already-consumed name token, which would otherwise
+    // produce a fullRange that doesn't contain selectionRange (LSP clients reject that).
+    Range full = union(ruleRange(ctx), selection);
 
     DocumentSymbol symbol = new DocumentSymbol(name, SymbolKind.Class, full, selection);
 
@@ -128,5 +131,26 @@ public class SymbolProvider {
 
   private static Range zero() {
     return new Range(new Position(0, 0), new Position(0, 0));
+  }
+
+  /** Smallest range that contains both {@code a} and {@code b}. */
+  private static Range union(Range a, Range b) {
+    Position start = isBefore(a.getStart(), b.getStart()) ? a.getStart() : b.getStart();
+    Position end = isAfter(a.getEnd(), b.getEnd()) ? a.getEnd() : b.getEnd();
+    return new Range(start, end);
+  }
+
+  private static boolean isBefore(Position p1, Position p2) {
+    if (p1.getLine() != p2.getLine()) {
+      return p1.getLine() < p2.getLine();
+    }
+    return p1.getCharacter() < p2.getCharacter();
+  }
+
+  private static boolean isAfter(Position p1, Position p2) {
+    if (p1.getLine() != p2.getLine()) {
+      return p1.getLine() > p2.getLine();
+    }
+    return p1.getCharacter() > p2.getCharacter();
   }
 }

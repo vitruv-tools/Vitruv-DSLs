@@ -219,7 +219,6 @@
                                     <mainClass>tools.vitruv.dsls.vitruvocl.cli.VitruvOclCli</mainClass>
                                 </transformer>
                             </transformers>
-                            <finalName>vitruvocl</finalName>
                         </configuration>
                     </execution>
                 </executions>
