@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<genmodel:GenModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" xmlns:genmodel="http://www.eclipse.org/emf/2002/GenModel"
+    modelDirectory="/SpaceMission/src-gen" creationIcons="false" editDirectory="/SpaceMission.edit/src-gen"
+    editorDirectory="/SpaceMission.editor/src-gen" modelPluginID="SpaceMission" modelName="SpaceMission"
+    rootExtendsClass="org.eclipse.emf.ecore.impl.MinimalEObjectImpl$Container" codeFormatting="true"
+    importerID="org.eclipse.emf.importer.ecore" complianceLevel="21.0" copyrightFields="false"
+    operationReflection="true" importOrganizing="true">
+  <foreignModel>spaceMission.ecore</foreignModel>
+  <testsDirectory xsi:nil="true"/>
+  <genPackages prefix="SpaceMission" disposableProviderFactory="true" ecorePackage="spaceMission.ecore#/">
+    <genClasses ecoreClass="spaceMission.ecore#//Mission">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute spaceMission.ecore#//Mission/missionName"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute spaceMission.ecore#//Mission/launchDate"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute spaceMission.ecore#//Mission/budget"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute spaceMission.ecore#//Mission/status"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference spaceMission.ecore#//Mission/spacecraft"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference spaceMission.ecore#//Mission/crew"/>
+    </genClasses>
+    <genClasses ecoreClass="spaceMission.ecore#//Spacecraft">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute spaceMission.ecore#//Spacecraft/name"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute spaceMission.ecore#//Spacecraft/serialNumber"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute spaceMission.ecore#//Spacecraft/mass"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute spaceMission.ecore#//Spacecraft/operational"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference spaceMission.ecore#//Spacecraft/payloads"/>
+    </genClasses>
+    <genClasses ecoreClass="spaceMission.ecore#//Payload">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute spaceMission.ecore#//Payload/name"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute spaceMission.ecore#//Payload/type"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute spaceMission.ecore#//Payload/powerConsumption"/>
+    </genClasses>
+    <genClasses ecoreClass="spaceMission.ecore#//Astronaut">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute spaceMission.ecore#//Astronaut/name"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute spaceMission.ecore#//Astronaut/rank"/>
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference spaceMission.ecore#//Astronaut/assignedSpacecraft"/>
+    </genClasses>
+  </genPackages>
+</genmodel:GenModel>

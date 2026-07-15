@@ -24,5 +24,7 @@ public record ReactionExecutionState(
     ResourceAccess getResourceAccess,
     ChangePropagationObservable changePropagationObservable
 ) {
-
+  public ChangePropagationObservable getChangePropagationObservable() {
+    return changePropagationObservable;
+  }
 }
