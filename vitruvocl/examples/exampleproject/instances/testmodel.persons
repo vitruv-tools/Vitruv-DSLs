@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persons:PersonRegister
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:persons="http://vitruv.tools/test/persons"
+    xmi:id="_pregister">
+  <!--  Homer Simpson corresponds to father (Homer) -->
+  <persons xsi:type="persons:Male"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmi:id="_homer" fullName="Homer Simpson"/>
+  <!--  Marge Simpson corresponds to mother (Marge) -->
+  <persons xsi:type="persons:Female"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmi:id="_marge" fullName="Marge Simpson"/>
+  <!--  Bart Simpson corresponds to son (Bart) -->
+  <persons xsi:type="persons:Male"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmi:id="_bart" fullName="Bart Simpson"/>
+  <!--  Lisa Simpson has NO correspondence partner intentionally -->
+  <persons xsi:type="persons:Female"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmi:id="_lisa" fullName="Lisa Simpson"/>
+</persons:PersonRegister>

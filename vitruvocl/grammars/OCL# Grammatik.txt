@@ -1,0 +1,18 @@
+Spec ::= | Invariant Spec;
+Invariant ::= 'context' IDENT 'inv' ':' Expression;
+Type ::= 'bool' | 'int' | 'OclAny' | IDENT | CollectionType '(' Type ')';
+CollectionType ::= 'Set' | 'Bag' | 'Sequence' | 'OrderedSet';
+UnaryOperator ::= '-' | 'not';
+BinaryOperator ::= '=' | '+' | '-' | '*' | '/' | 'and' | 'or';
+TypeCast ::= 'asBag' | 'asSet' | 'asSequence' | 'asOrderedSet';
+Expression ::= self | true | false | INT_VALUE | IDENT | 
+               'no' '(' Type ')' |
+               IDENT '.' 'allInstances' '(' ')' |
+               Expression '.' IDENT |
+               Expression '->' 'including' '(' Expression ')' |
+               Expression '->' 'iterate' '(' IDENT ';' IDENT '=' Expression '|' Expression ')' |
+               Expression '->' TypeCast '(' ')' |
+               '(' Expression ')' |
+               UnaryOperator Expression |
+               Expression BinaryOperator Expresion |
+               'if' Expression 'then' Expression 'else' Expression 'endif';         
