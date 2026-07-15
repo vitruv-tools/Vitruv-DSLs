@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<family:FamilyRegister
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:family="http://vitruv.tools/test/family/1.0"
+    xmi:id="_register">
+  <families xmi:id="_family1" lastName="Simpson">
+    <father xmi:id="_father" firstName="Homer"/>
+    <mother xmi:id="_mother" firstName="Marge"/>
+    <sons xmi:id="_son" firstName="Bart"/>
+    <daughters xmi:id="_daughter" firstName="Lisa"/>
+  </families>
+</family:FamilyRegister>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="ASCII"?>
+<brakesystem:Brakesystem xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:brakesystem="http://vitruv.tools/brakesystem/model">
+  <BrakeComponents xsi:type="brakesystem:BrakeDisk" specificationType="-" OEM_number="1EA615301" fittingPosition="front" id="id3_front_brake_disc" diameterInMM="330" centeringDiameterInMM="166" rimHoleNumber="10" holeArrangementNumber="5" boltHoleCircleInMM="112" brakeDiskThicknessInMM="23" minimumThicknessInMM="21" ventilated="true"/>
+  <BrakeComponents xsi:type="brakesystem:BrakeCaliper" specificationType="-" OEM_number="1EA615123" fittingPosition="front_left" id="id3_front_left_caliper" pistonDiameterInMM="57" brakeDiskThickness="23"/>
+</brakesystem:Brakesystem>

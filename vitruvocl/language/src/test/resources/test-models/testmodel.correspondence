@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Correspondence model for the CorrespondenceFilterTest fixture.
+
+  Three correspondences are defined:
+    1. father (Homer)   <-> homer (Homer Simpson)   tag="Husband"
+    2. mother (Marge)   <-> marge (Marge Simpson)   tag="Wife"
+    3. son    (Bart)    <-> bart  (Bart Simpson)     tag="Son"
+
+  Lisa Simpson intentionally has no correspondence.
+
+  The leftEObjects references point into testmodel.family,
+  the rightEObjects references point into testmodel.persons.
+  Both paths are relative (same directory) as the VSUM would place them.
+-->
+<correspondence:Correspondences
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:correspondence="http://vitruv.tools/metamodels/change/correspondence/1.0">
+
+  <!-- Correspondence 1: Homer (family father) <-> Homer Simpson (persons Male) -->
+  <correspondences xsi:type="correspondence:ManualCorrespondence"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmi:id="_corr1"
+      tag="Husband"
+      leftEObjects="testmodel.family#_father"
+      rightEObjects="testmodel.persons#_homer"/>
+
+  <!-- Correspondence 2: Marge (family mother) <-> Marge Simpson (persons Female) -->
+  <correspondences xsi:type="correspondence:ManualCorrespondence"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmi:id="_corr2"
+      tag="Wife"
+      leftEObjects="testmodel.family#_mother"
+      rightEObjects="testmodel.persons#_marge"/>
+
+  <!-- Correspondence 3: Bart (family son) <-> Bart Simpson (persons Male) -->
+  <correspondences xsi:type="correspondence:ManualCorrespondence"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmi:id="_corr3"
+      tag="Son"
+      leftEObjects="testmodel.family#_son"
+      rightEObjects="testmodel.persons#_bart"/>
+
+</correspondence:Correspondences>
