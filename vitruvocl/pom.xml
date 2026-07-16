@@ -31,8 +31,8 @@
         <!-- Centralized dependency versions (not managed by tools.vitruv.dsls parent) -->
         <antlr4.version>4.13.2</antlr4.version>
         <!-- Must match the junit-platform-launcher/engine versions the parent pins for maven-surefire-plugin -->
-        <junit.jupiter.version>6.1.0</junit.jupiter.version>
-        <junit.platform.version>6.1.0</junit.platform.version>
+        <junit.jupiter.version>6.1.2</junit.jupiter.version>
+        <junit.platform.version>6.1.2</junit.platform.version>
         <assertj.version>3.24.2</assertj.version>
         <mockito.version>5.10.0</mockito.version>
         <lsp4j.version>0.21.2</lsp4j.version>
