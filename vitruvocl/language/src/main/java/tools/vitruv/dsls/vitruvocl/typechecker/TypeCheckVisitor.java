@@ -1612,8 +1612,12 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    *
    * <ul>
    *   <li><b>Singleton:</b> {@code person.name} → direct property access
-   *   <li><b>Collection:</b> {@code companies.name} → implicit collect, returns flattened
-   *       collection
+   *   <li><b>Collection:</b> {@code companies.name} → implicit collect, returns a flattened
+   *       collection whose Ctype combines the receiver's own unique/ordered flags with the
+   *       navigated feature's flags (OCL#, Sect. 4.4.4, "e.p"): ordered = receiver-ordered ∨
+   *       feature-ordered; unique = receiver-unique ∧ feature-unique. E.g. navigating {@code
+   *       .name} (a singleton feature) over a {@code Sequence(Company)} receiver yields {@code
+   *       Sequence(String)}, not a flat {@code Set(String)}.
    * </ul>
    *
    * @param receiverType The type of the receiver
@@ -1644,7 +1648,19 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       }
 
       Type featureType = mapFeatureToType(feature);
-      return Type.set(featureType.getElementType()); // Flatten
+
+      // Combine the receiver's Ctype with the navigated feature's own Ctype (OCL#, Sect. 4.4.4:
+      // "e.p" combines receiver and feature multiplicity via ω ∨ ω' for orderedness). A
+      // single-valued feature contributes no ordering/duplication of its own (neutral element:
+      // ordered=false, unique=true).
+      boolean featureOrdered = feature.isMany() && feature.isOrdered();
+      boolean featureUnique = !feature.isMany() || feature.isUnique();
+      boolean resultOrdered = receiverType.isOrdered() || featureOrdered;
+      // Uniqueness is combined conservatively (AND): duplicates across different receiver
+      // elements (or within a non-unique feature) can only be ruled out if neither side allows
+      // them.
+      boolean resultUnique = receiverType.isUnique() && featureUnique;
+      return collectionKindFor(resultUnique, resultOrdered, featureType.getElementType());
     }
 
     // Singleton property access
@@ -2186,14 +2202,30 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    * @return A collection of the same kind with the new element type
    */
   private Type preserveCollectionKind(Type collectionType, Type newElementType) {
-    if (collectionType.isUnique() && collectionType.isOrdered()) {
-      return Type.orderedSet(newElementType);
-    } else if (collectionType.isUnique()) {
-      return Type.set(newElementType);
-    } else if (collectionType.isOrdered()) {
-      return Type.sequence(newElementType);
+    return collectionKindFor(collectionType.isUnique(), collectionType.isOrdered(), newElementType);
+  }
+
+  /**
+   * Builds a collection type from explicit unique/ordered flags.
+   *
+   * <p>Maps the four Ctype combinations to their VitruvOCL collection kind: {@code
+   * (unique=true, ordered=true)} → OrderedSet, {@code (true, false)} → Set, {@code (false,
+   * true)} → Sequence, {@code (false, false)} → Bag.
+   *
+   * @param unique whether the resulting collection should be duplicate-free
+   * @param ordered whether the resulting collection should be ordered
+   * @param elementType the element type of the resulting collection
+   * @return the collection type for the given Ctype combination
+   */
+  private Type collectionKindFor(boolean unique, boolean ordered, Type elementType) {
+    if (unique && ordered) {
+      return Type.orderedSet(elementType);
+    } else if (unique) {
+      return Type.set(elementType);
+    } else if (ordered) {
+      return Type.sequence(elementType);
     } else {
-      return Type.bag(newElementType);
+      return Type.bag(elementType);
     }
   }
 

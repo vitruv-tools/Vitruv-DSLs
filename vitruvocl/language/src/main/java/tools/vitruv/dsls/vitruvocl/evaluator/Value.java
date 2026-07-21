@@ -15,8 +15,12 @@ package tools.vitruv.dsls.vitruvocl.evaluator;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.function.Function;
 import org.eclipse.emf.ecore.EObject;
+import tools.vitruv.dsls.vitruvocl.evaluator.lazy.LazyOperations;
+import tools.vitruv.dsls.vitruvocl.evaluator.lazy.OCLElementSource;
 import tools.vitruv.dsls.vitruvocl.typechecker.Type;
 
 /**
@@ -33,8 +37,21 @@ import tools.vitruv.dsls.vitruvocl.typechecker.Type;
  */
 public class Value implements Comparable<Value> {
 
-  /** The actual value - in OCL, this is ALWAYS List&lt;OCLElement&gt;. */
-  private final List<OCLElement> elements;
+  /**
+   * The actual value - in OCL, this is ALWAYS List&lt;OCLElement&gt;.
+   *
+   * <p>{@code null} until materialized for a lazily-backed Value (see {@link #lazySource}); every
+   * accessor other than {@link #elementIterator()} and {@link #asSource()} goes through {@link
+   * #getElements()}, which materializes (and caches) on first access.
+   */
+  private List<OCLElement> elements;
+
+  /**
+   * The lazy pull-based source backing this Value, or {@code null} if {@link #elements} was
+   * supplied eagerly. See the {@link tools.vitruv.dsls.vitruvocl.evaluator.lazy package
+   * documentation} for the classification of which operations produce a lazy Value.
+   */
+  private final OCLElementSource lazySource;
 
   /** The runtime type - includes Ctype information (unique, ordered). */
   private final Type runtimeType;
@@ -44,6 +61,7 @@ public class Value implements Comparable<Value> {
   /** Creates a Value from a list of elements. This is the main constructor for OCL values. */
   public Value(List<OCLElement> elements, Type runtimeType) {
     this.elements = Collections.unmodifiableList(new ArrayList<>(elements));
+    this.lazySource = null;
     this.runtimeType = runtimeType;
   }
 
@@ -52,6 +70,7 @@ public class Value implements Comparable<Value> {
    * directly. Otherwise, wrap it as a singleton OCLElement.
    */
   public Value(Object value, Type runtimeType) {
+    this.lazySource = null;
     if (value instanceof List) {
       @SuppressWarnings("unchecked")
       List<OCLElement> list = (List<OCLElement>) value;
@@ -64,6 +83,27 @@ public class Value implements Comparable<Value> {
       this.elements = List.of(wrapAsElement(value));
     }
     this.runtimeType = runtimeType;
+  }
+
+  /** Private constructor for a lazily-backed Value; use the {@link #lazy} factory. */
+  private Value(OCLElementSource lazySource, Type runtimeType) {
+    this.elements = null;
+    this.lazySource = lazySource;
+    this.runtimeType = runtimeType;
+  }
+
+  /**
+   * Creates a lazily-evaluated Value backed by {@code source}. No element is pulled from {@code
+   * source} until a consumer asks for one, via {@link #elementIterator()} (which may stop early)
+   * or {@link #getElements()} (which always drains the source fully, once, and caches the
+   * result).
+   *
+   * @param source the lazy pull-based element source
+   * @param runtimeType the runtime type of the resulting collection
+   * @return a Value that defers evaluation until consumed
+   */
+  public static Value lazy(OCLElementSource source, Type runtimeType) {
+    return new Value(source, runtimeType);
   }
 
   /** Wraps a Java object as an OCLElement (for legacy compatibility). */
@@ -111,9 +151,52 @@ public class Value implements Comparable<Value> {
 
   // ==================== Accessors ====================
 
-  /** Returns the elements as an immutable list. */
+  /**
+   * Returns the elements as an immutable list, materializing (and caching) a lazily-backed Value
+   * fully if necessary.
+   *
+   * <p>Structurally strict consumers (aggregations, {@code size()}, {@code sortedBy}, semantic
+   * equality, ...) use this. It always drains the whole source exactly once, so an upstream chain
+   * of lazy steps is still traversed only once, not copied at every intermediate step.
+   */
   public List<OCLElement> getElements() {
+    materialize();
     return elements;
+  }
+
+  /** Materializes {@link #elements} from {@link #lazySource} on first access; idempotent. */
+  private void materialize() {
+    if (elements == null) {
+      List<OCLElement> materialized = new ArrayList<>();
+      lazySource.newIterator().forEachRemaining(materialized::add);
+      elements = Collections.unmodifiableList(materialized);
+    }
+  }
+
+  /**
+   * Returns a fresh, pull-based iterator over this Value's elements without forcing full
+   * materialization.
+   *
+   * <p>For an already-eager or already-materialized Value this simply wraps {@link #elements}. For
+   * an unmaterialized lazily-backed Value, this starts a new traversal of {@link #lazySource};
+   * stopping early (e.g. from {@code exists}/{@code any}/{@code notEmpty()}) never triggers
+   * evaluation of the remaining elements, and never affects any other, independent traversal of
+   * the same Value (each call starts fresh).
+   *
+   * @return a fresh iterator over this collection's elements
+   */
+  public Iterator<OCLElement> elementIterator() {
+    return elements != null ? elements.iterator() : lazySource.newIterator();
+  }
+
+  /**
+   * Returns this Value's elements as a replayable {@link OCLElementSource}, for composing further
+   * lazy chains (e.g. {@code union}/{@code intersection}) without forcing materialization.
+   *
+   * @return a source that replays this Value's elements on every traversal
+   */
+  public OCLElementSource asSource() {
+    return elements != null ? OCLElementSource.of(elements) : lazySource;
   }
 
   /** Returns the runtime type. */
@@ -121,27 +204,30 @@ public class Value implements Comparable<Value> {
     return runtimeType;
   }
 
-  /** Returns the number of elements in this collection. */
+  /** Returns the number of elements in this collection. Structurally strict: materializes fully. */
   public int size() {
-    return elements.size();
+    return getElements().size();
   }
 
-  /** Checks if this collection is empty. */
+  /**
+   * Checks if this collection is empty. Lazy: stops after pulling at most one element from an
+   * unmaterialized source.
+   */
   public boolean isEmpty() {
-    return elements.isEmpty();
+    return elements != null ? elements.isEmpty() : !lazySource.newIterator().hasNext();
   }
 
-  /** Checks if this collection is not empty. */
+  /** Checks if this collection is not empty. Lazy; see {@link #isEmpty()}. */
   public boolean notEmpty() {
-    return !elements.isEmpty();
+    return !isEmpty();
   }
 
   /**
    * In OCL, null doesn't exist - only empty collections. This method returns true if the collection
-   * is empty.
+   * is empty. Lazy; see {@link #isEmpty()}.
    */
   public boolean isNull() {
-    return elements.isEmpty();
+    return isEmpty();
   }
 
   // ==================== Monoid Operations ====================
@@ -154,31 +240,22 @@ public class Value implements Comparable<Value> {
    * ordered): Concatenation preserving order - OrderedSet (unique, ordered): Union preserving order
    */
   public Value merge(Value other) {
-    List<OCLElement> result = new ArrayList<>(this.elements);
-
     boolean isUnique = runtimeType.isUnique();
-
-    if (isUnique) {
-      // Set/OrderedSet: Add only unique elements
-      for (OCLElement elem : other.elements) {
-        if (!containsElement(result, elem)) {
-          result.add(elem);
-        }
-      }
-    } else {
-      // Bag/Sequence: Add all elements
-      result.addAll(other.elements);
-    }
-
-    return new Value(result, this.runtimeType);
+    OCLElementSource concatenated = LazyOperations.concat(this.asSource(), other.asSource());
+    OCLElementSource result =
+        isUnique
+            ? LazyOperations.dedupe(concatenated, OCLElement::semanticEquals)
+            : concatenated;
+    return Value.lazy(result, this.runtimeType);
   }
 
   // ==================== Collection Operations ====================
 
-  /** Checks if this collection includes an element. */
+  /** Checks if this collection includes an element. Lazy: stops at the first match. */
   public boolean includes(OCLElement elem) {
-    for (OCLElement e : elements) {
-      if (OCLElement.semanticEquals(e, elem)) {
+    Iterator<OCLElement> it = elementIterator();
+    while (it.hasNext()) {
+      if (OCLElement.semanticEquals(it.next(), elem)) {
         return true;
       }
     }
@@ -200,21 +277,32 @@ public class Value implements Comparable<Value> {
    * Bag/Sequence: Removes first occurrence only
    */
   public Value excluding(OCLElement element) {
-    List<OCLElement> result = new ArrayList<>();
     boolean isUnique = runtimeType.isUnique();
-    boolean foundFirst = false;
-
-    for (OCLElement elem : elements) {
-      if (OCLElement.semanticEquals(elem, element) && (isUnique || !foundFirst)) {
-        if (!isUnique) {
-          foundFirst = true;
-        }
-      } else {
-        result.add(elem);
-      }
+    OCLElementSource source = asSource();
+    OCLElementSource filtered;
+    if (isUnique) {
+      // Set/OrderedSet: remove all occurrences - stateless predicate, safe to reuse across
+      // traversals.
+      filtered = LazyOperations.filter(source, elem -> !OCLElement.semanticEquals(elem, element));
+    } else {
+      // Bag/Sequence: remove only the first occurrence. The "already removed" flag is
+      // per-traversal state, so it must be created fresh inside the source factory - reusing a
+      // single flag across multiple newIterator() calls would corrupt replay.
+      filtered =
+          LazyOperations.filterStateful(
+              source,
+              () -> {
+                boolean[] removedFirst = {false};
+                return elem -> {
+                  if (!removedFirst[0] && OCLElement.semanticEquals(elem, element)) {
+                    removedFirst[0] = true;
+                    return false;
+                  }
+                  return true;
+                };
+              });
     }
-
-    return new Value(result, runtimeType);
+    return Value.lazy(filtered, runtimeType);
   }
 
   /** Union of two collections. */
@@ -222,65 +310,52 @@ public class Value implements Comparable<Value> {
     return this.merge(other);
   }
 
-  /** Intersection of two collections. */
+  /**
+   * Intersection of two collections. Lazy: pulls from both sides in alternation via {@link
+   * LazyOperations#intersect}, buffering only the elements consumed so far per side, instead of
+   * materializing either side up front.
+   */
   public Value intersection(Value other) {
-    List<OCLElement> result = new ArrayList<>();
-
-    for (OCLElement elem : this.elements) {
-      if (other.includes(elem) && !containsElement(result, elem)) {
-        result.add(elem);
-      }
-    }
-
-    return new Value(result, this.runtimeType);
+    OCLElementSource result =
+        LazyOperations.intersect(this.asSource(), other.asSource(), OCLElement::semanticEquals);
+    return Value.lazy(result, this.runtimeType);
   }
 
   /** Set difference (this - other). */
   public Value minus(Value other) {
-    List<OCLElement> result = new ArrayList<>();
-
-    for (OCLElement elem : this.elements) {
-      if (!other.includes(elem)) {
-        result.add(elem);
-      }
-    }
-
-    return new Value(result, this.runtimeType);
+    OCLElementSource result = LazyOperations.filter(this.asSource(), elem -> !other.includes(elem));
+    return Value.lazy(result, this.runtimeType);
   }
 
   /** Symmetric difference (elements in either but not both). */
   public Value symmetricDifference(Value other) {
-    List<OCLElement> result = new ArrayList<>();
-
-    for (OCLElement elem : this.elements) {
-      if (!other.includes(elem)) {
-        result.add(elem);
-      }
-    }
-
-    for (OCLElement elem : other.elements) {
-      if (!this.includes(elem)) {
-        result.add(elem);
-      }
-    }
-
-    return new Value(result, this.runtimeType);
+    OCLElementSource onlyInThis = LazyOperations.filter(this.asSource(), elem -> !other.includes(elem));
+    OCLElementSource onlyInOther = LazyOperations.filter(other.asSource(), elem -> !this.includes(elem));
+    return Value.lazy(LazyOperations.concat(onlyInThis, onlyInOther), this.runtimeType);
   }
 
-  /** Checks if this collection includes all elements of another. */
+  /**
+   * Checks if this collection includes all elements of another. Lazy: stops as soon as one element
+   * of {@code other} is missing.
+   */
   public boolean includesAll(Value other) {
-    for (OCLElement elem : other.elements) {
-      if (!this.includes(elem)) {
+    Iterator<OCLElement> it = other.elementIterator();
+    while (it.hasNext()) {
+      if (!this.includes(it.next())) {
         return false;
       }
     }
     return true;
   }
 
-  /** Checks if this collection excludes all elements of another. */
+  /**
+   * Checks if this collection excludes all elements of another. Lazy: stops as soon as one element
+   * of {@code other} is found in this collection.
+   */
   public boolean excludesAll(Value other) {
-    for (OCLElement elem : other.elements) {
-      if (this.includes(elem)) {
+    Iterator<OCLElement> it = other.elementIterator();
+    while (it.hasNext()) {
+      if (this.includes(it.next())) {
         return false;
       }
     }
@@ -291,50 +366,63 @@ public class Value implements Comparable<Value> {
 
   /** Returns the first element. Returns empty if this is empty (OCL semantics). */
   public Value first() {
-    if (isEmpty()) {
+    Iterator<OCLElement> it = elementIterator();
+    if (!it.hasNext()) {
       return empty(runtimeType);
     }
-    return singleton(elements.get(0), runtimeType.getElementType());
+    return singleton(it.next(), runtimeType.getElementType());
   }
 
   /** Returns the last element. Returns empty if this is empty (OCL semantics). */
   public Value last() {
-    if (isEmpty()) {
+    List<OCLElement> all = getElements();
+    if (all.isEmpty()) {
       return empty(runtimeType);
     }
-    return singleton(elements.get(size() - 1), runtimeType.getElementType());
+    return singleton(all.get(all.size() - 1), runtimeType.getElementType());
   }
 
-  /** Returns element at index (1-based OCL indexing). Only valid for ordered collections. */
+  /**
+   * Returns element at index (1-based OCL indexing). Only valid for ordered collections.
+   *
+   * <p>Follows OCL#'s "no object" propagation: an unordered receiver or an out-of-bounds index
+   * yields an empty value instead of throwing, so callers never need to catch an exception to
+   * evaluate an OCL expression.
+   */
   public Value at(int index) {
-    if (!runtimeType.isOrdered()) {
-      throw new UnsupportedOperationException("at() requires an ordered collection");
+    if (!runtimeType.isOrdered() || index < 1) {
+      return empty(runtimeType);
     }
-
-    if (index < 1 || index > size()) {
-      throw new IndexOutOfBoundsException("Index " + index + " out of bounds for size " + size());
+    List<OCLElement> all = getElements();
+    if (index > all.size()) {
+      return empty(runtimeType);
     }
-
-    return singleton(elements.get(index - 1), runtimeType.getElementType());
+    return singleton(all.get(index - 1), runtimeType.getElementType());
   }
 
   /** Returns the index of first occurrence (1-based). Returns 0 if not found. */
   public int indexOf(OCLElement element) {
-    for (int i = 0; i < elements.size(); i++) {
-      if (OCLElement.semanticEquals(elements.get(i), element)) {
+    List<OCLElement> all = getElements();
+    for (int i = 0; i < all.size(); i++) {
+      if (OCLElement.semanticEquals(all.get(i), element)) {
         return i + 1; // 1-based
       }
     }
     return 0; // Not found
   }
 
-  /** Reverses the order of elements. Only valid for ordered collections. */
+  /**
+   * Reverses the order of elements. Only valid for ordered collections.
+   *
+   * <p>Follows OCL#'s "no object" propagation: an unordered receiver yields an empty value instead
+   * of throwing, so callers never need to catch an exception to evaluate an OCL expression.
+   */
   public Value reverse() {
     if (!runtimeType.isOrdered()) {
-      throw new UnsupportedOperationException("reverse() requires an ordered collection");
+      return empty(runtimeType);
     }
 
-    List<OCLElement> reversed = new ArrayList<>(elements);
+    List<OCLElement> reversed = new ArrayList<>(getElements());
     Collections.reverse(reversed);
     return new Value(reversed, runtimeType);
   }
@@ -342,7 +430,7 @@ public class Value implements Comparable<Value> {
   /** Counts occurrences of an element (for Bags). */
   public int count(OCLElement element) {
     int count = 0;
-    for (OCLElement elem : elements) {
+    for (OCLElement elem : getElements()) {
       if (OCLElement.semanticEquals(elem, element)) {
         count++;
       }
@@ -354,19 +442,22 @@ public class Value implements Comparable<Value> {
 
   /**
    * Normalizes this Value according to its Ctype. Unordered collections (Set, Bag) are sorted for
-   * canonical form.
+   * canonical form. Structurally strict (category 4): sorting requires the full collection.
    */
   public Value normalize() {
     if (runtimeType.isOrdered()) {
       return this; // Already canonical
     }
 
-    List<OCLElement> sorted = new ArrayList<>(elements);
+    List<OCLElement> sorted = new ArrayList<>(getElements());
     sorted.sort(OCLElement::compare);
     return new Value(sorted, runtimeType);
   }
 
-  /** Semantic equality (≡χ₁,χ₂). Compares normalized forms. */
+  /**
+   * Semantic equality (≡χ₁,χ₂). Compares normalized forms. Structurally strict (category 4): both
+   * sides must be fully consumed to sort/compare them.
+   */
   public static boolean semanticEquals(Value v1, Value v2) {
     if (v1 == null && v2 == null) {
       return true;
@@ -378,12 +469,14 @@ public class Value implements Comparable<Value> {
     Value norm1 = v1.normalize();
     Value norm2 = v2.normalize();
 
-    if (norm1.size() != norm2.size()) {
+    List<OCLElement> elems1 = norm1.getElements();
+    List<OCLElement> elems2 = norm2.getElements();
+    if (elems1.size() != elems2.size()) {
       return false;
     }
 
-    for (int i = 0; i < norm1.size(); i++) {
-      if (!OCLElement.semanticEquals(norm1.elements.get(i), norm2.elements.get(i))) {
+    for (int i = 0; i < elems1.size(); i++) {
+      if (!OCLElement.semanticEquals(elems1.get(i), elems2.get(i))) {
         return false;
       }
     }
@@ -391,30 +484,16 @@ public class Value implements Comparable<Value> {
     return true;
   }
 
-  /** Removes duplicate elements (for Set/OrderedSet creation). */
+  /**
+   * Removes duplicate elements (for Set/OrderedSet creation). Lazy: backed by {@link
+   * LazyOperations#dedupe}, so callers that only need the first few results of a subsequent chain
+   * still avoid full materialization.
+   */
   public Value removeDuplicates() {
-    List<OCLElement> unique = new ArrayList<>();
-
-    for (OCLElement elem : elements) {
-      if (!containsElement(unique, elem)) {
-        unique.add(elem);
-      }
-    }
-
-    return new Value(unique, runtimeType);
+    return Value.lazy(LazyOperations.dedupe(asSource(), OCLElement::semanticEquals), runtimeType);
   }
 
   // ==================== Helper Methods ====================
-
-  /** Checks if a list contains an element using semantic equality. */
-  private static boolean containsElement(List<OCLElement> list, OCLElement elem) {
-    for (OCLElement e : list) {
-      if (OCLElement.semanticEquals(e, elem)) {
-        return true;
-      }
-    }
-    return false;
-  }
 
   /**
    * Compares two Values for ordering (used in nested collections). Required by OCLElement.compare()
@@ -438,8 +517,10 @@ public class Value implements Comparable<Value> {
     }
 
     // Same size - compare elements pairwise
-    for (int i = 0; i < v1.size(); i++) {
-      int elemCompare = OCLElement.compare(v1.elements.get(i), v2.elements.get(i));
+    List<OCLElement> elems1 = v1.getElements();
+    List<OCLElement> elems2 = v2.getElements();
+    for (int i = 0; i < elems1.size(); i++) {
+      int elemCompare = OCLElement.compare(elems1.get(i), elems2.get(i));
       if (elemCompare != 0) {
         return elemCompare;
       }
@@ -452,16 +533,17 @@ public class Value implements Comparable<Value> {
 
   @Override
   public String toString() {
-    if (isEmpty()) {
+    List<OCLElement> all = getElements();
+    if (all.isEmpty()) {
       return getCollectionKind() + "{}";
     }
 
     StringBuilder sb = new StringBuilder();
     sb.append(getCollectionKind()).append("{");
 
-    for (int i = 0; i < elements.size(); i++) {
-      sb.append(elements.get(i).toString());
-      if (i < elements.size() - 1) {
+    for (int i = 0; i < all.size(); i++) {
+      sb.append(all.get(i).toString());
+      if (i < all.size() - 1) {
         sb.append(", ");
       }
     }
@@ -492,31 +574,28 @@ public class Value implements Comparable<Value> {
    *
    * <p>Example: Set{Set{1,2}, Set{3,4}}.flatten() → Set{1,2,3,4}
    *
+   * <p>Lazy (category 1): the outer level is unpacked one element at a time via {@link
+   * LazyOperations#flatMap}. A nested {@link OCLElement.NestedCollection}'s own {@code Value}
+   * stays lazy — its {@link #elementIterator()} is used directly instead of forcing it through
+   * {@link #getElements()}, so an inner collection is only consumed as far as the outer consumer
+   * actually asks.
+   *
    * @return Flattened collection
    */
   public Value flatten() {
-    List<OCLElement> flattened = new ArrayList<>();
-
-    for (OCLElement elem : elements) {
-      // Check if element is a nested collection
-      if (elem instanceof OCLElement.NestedCollection(Value nestedValue)) {
-        // Extract all elements from the nested collection
-        flattened.addAll(nestedValue.getElements());
-      } else {
-        // Not a nested collection - add element as-is
-        flattened.add(elem);
-      }
-    }
-
-    // Create result with same type properties
-    Value result = new Value(flattened, runtimeType);
-
-    // Apply uniqueness if this is a Set/OrderedSet
-    if (runtimeType.isUnique()) {
-      result = result.removeDuplicates();
-    }
-
-    return result;
+    Function<OCLElement, Iterator<OCLElement>> expand =
+        elem -> {
+          if (elem instanceof OCLElement.NestedCollection(Value nestedValue)) {
+            return nestedValue.elementIterator();
+          }
+          return List.of(elem).iterator();
+        };
+    OCLElementSource expanded = LazyOperations.flatMap(asSource(), expand);
+    OCLElementSource result =
+        runtimeType.isUnique()
+            ? LazyOperations.dedupe(expanded, OCLElement::semanticEquals)
+            : expanded;
+    return Value.lazy(result, runtimeType);
   }
 
   /** Convenience: Creates a metaclass singleton wrapping an EObject instance. */
@@ -587,8 +666,9 @@ public class Value implements Comparable<Value> {
    */
   @Override
   public int hashCode() {
-    int result = size();
-    for (OCLElement elem : elements) {
+    List<OCLElement> all = getElements();
+    int result = all.size();
+    for (OCLElement elem : all) {
       int elemHash =
           OCLElement.isNumeric(elem) ? Double.hashCode(elem.toDoubleValue()) : elem.hashCode();
       result = 31 * result + elemHash;

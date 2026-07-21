@@ -17,8 +17,12 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
@@ -31,6 +35,8 @@ import tools.vitruv.dsls.vitruvocl.VitruvOCLBaseVisitor;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvocl.common.AbstractPhaseVisitor;
 import tools.vitruv.dsls.vitruvocl.common.ErrorCollector;
+import tools.vitruv.dsls.vitruvocl.evaluator.lazy.LazyOperations;
+import tools.vitruv.dsls.vitruvocl.evaluator.lazy.OCLElementSource;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapperInterface;
 import tools.vitruv.dsls.vitruvocl.symboltable.LocalScope;
 import tools.vitruv.dsls.vitruvocl.symboltable.Scope;
@@ -253,6 +259,10 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
       // Evaluate all invariants for this instance
       for (VitruvOCLParser.InvCSContext inv : ctx.invCS()) {
+        // Re-enter defensively before each invariant - see EvaluationVisitor#exitScope(Scope):
+        // 'self' is never lazy so nothing here currently drains an outer sibling value mid-loop,
+        // but this keeps the loop correct regardless of what a future invariant body might touch.
+        symbolTable.enterScope(instanceScope);
         Value invResult = visit(inv);
         if (invResult != null && !invResult.isEmpty()) {
           OCLElement elem = invResult.getElements().get(0);
@@ -268,7 +278,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         }
       }
 
-      symbolTable.exitScope();
+      exitScope(instanceScope);
     }
 
     return Value.of(allResults, Type.bag(Type.BOOLEAN));
@@ -1182,27 +1192,35 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return Value.boolValue(false);
     }
 
+    // Category 2 (early termination, worst case strict): pulls receiver.elementIterator()
+    // instead of getElements(), and - new - stops as soon as a *second* match is found, since
+    // "exactly one" is already disproven at that point. Previously this loop always ran to
+    // completion (no early return at all), so even after switching to elementIterator() the
+    // upstream chain would still have been fully drained; both the internal early return and the
+    // streaming receiver access are needed together for the abort to actually reduce upstream
+    // consumption.
     Type elemType = receiver.getRuntimeType().getElementType();
     Type iterVarType = Type.singleton(elemType);
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
-    symbolTable.enterScope(iterScope);
-    try {
-      int count = 0;
-      for (OCLElement elem : receiver.getElements()) {
-        VariableSymbol iterSymbol =
-            new VariableSymbol(iterVars.get(0), iterVarType, iterScope, true);
-        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
-        symbolTable.defineVariable(iterSymbol);
-        Value bodyResult = visit(ctx.body);
-        Boolean condition = bodyResult.getElements().get(0).tryGetBool();
-        if (condition != null && condition) {
-          count++;
+    VariableSymbol iterSymbol = defineIterVar(iterVars.get(0), iterVarType, iterScope);
+    int count = 0;
+    Iterator<OCLElement> it = receiver.elementIterator();
+    while (it.hasNext()) {
+      OCLElement elem = it.next();
+      // evalInScope enters/exits iterScope around exactly this element's body evaluation (not
+      // once around the whole loop): visit(ctx.body) may itself materialize an unrelated lazy
+      // Value bound elsewhere, whose own scope dance restores symbolTable.currentScope to *its*
+      // parent, not to iterScope - re-entering iterScope per element is what keeps that safe.
+      Value bodyResult = evalInScope(iterScope, iterSymbol, iterVarType, elem, () -> visit(ctx.body));
+      Boolean condition = bodyResult.getElements().get(0).tryGetBool();
+      if (condition != null && condition) {
+        count++;
+        if (count == 2) {
+          return Value.boolValue(false); // "exactly one" already disproven - stop early
         }
       }
-      return Value.boolValue(count == 1);
-    } finally {
-      symbolTable.exitScope();
     }
+    return Value.boolValue(count == 1);
   }
 
   /**
@@ -1232,26 +1250,23 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return Value.empty(Type.optional(Type.ANY));
     }
 
+    // Category 2 (early termination, worst case strict): pulls receiver.elementIterator()
+    // instead of getElements() so an upstream lazy chain also stops at the first match.
     Type elemType = receiver.getRuntimeType().getElementType();
     Type iterVarType = Type.singleton(elemType);
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
-    symbolTable.enterScope(iterScope);
-    try {
-      for (OCLElement elem : receiver.getElements()) {
-        VariableSymbol iterSymbol =
-            new VariableSymbol(iterVars.get(0), iterVarType, iterScope, true);
-        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
-        symbolTable.defineVariable(iterSymbol);
-        Value bodyResult = visit(ctx.body);
-        Boolean condition = bodyResult.getElements().get(0).tryGetBool();
-        if (condition != null && condition) {
-          return new Value(List.of(elem), Type.optional(elemType));
-        }
+    VariableSymbol iterSymbol = defineIterVar(iterVars.get(0), iterVarType, iterScope);
+    Iterator<OCLElement> it = receiver.elementIterator();
+    while (it.hasNext()) {
+      OCLElement elem = it.next();
+      Value bodyResult =
+          evalInScope(iterScope, iterSymbol, iterVarType, elem, () -> visit(ctx.body));
+      Boolean condition = bodyResult.getElements().get(0).tryGetBool();
+      if (condition != null && condition) {
+        return new Value(List.of(elem), Type.optional(elemType));
       }
-      return Value.empty(Type.singleton(elemType));
-    } finally {
-      symbolTable.exitScope();
     }
+    return Value.empty(Type.singleton(elemType));
   }
 
   /**
@@ -1282,39 +1297,39 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return Value.boolValue(true);
     }
 
+    // Category 2 (early termination, worst case strict): pulls receiver.elementIterator()
+    // instead of getElements() so an upstream lazy chain also stops as soon as the first
+    // duplicate is found - the internal early return below was already present, but was
+    // previously moot: getElements() forced the whole upstream chain to materialize before this
+    // loop (and its early return) ever ran.
     Type elemType = receiver.getRuntimeType().getElementType();
     Type iterVarType = Type.singleton(elemType);
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
-    symbolTable.enterScope(iterScope);
-    try {
-      List<Value> seen = new ArrayList<>();
-      for (OCLElement elem : receiver.getElements()) {
-        VariableSymbol iterSymbol =
-            new VariableSymbol(iterVars.get(0), iterVarType, iterScope, true);
-        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
-        symbolTable.defineVariable(iterSymbol);
-        Value bodyResult = visit(ctx.body);
-        for (Value s : seen) {
-          if (s.getElements().size() == bodyResult.getElements().size()) {
-            boolean allEqual = true;
-            for (int i = 0; i < s.getElements().size(); i++) {
-              if (!OCLElement.semanticEquals(
-                  s.getElements().get(i), bodyResult.getElements().get(i))) {
-                allEqual = false;
-                break;
-              }
-            }
-            if (allEqual) {
-              return Value.boolValue(false);
+    VariableSymbol iterSymbol = defineIterVar(iterVars.get(0), iterVarType, iterScope);
+    List<Value> seen = new ArrayList<>();
+    Iterator<OCLElement> it = receiver.elementIterator();
+    while (it.hasNext()) {
+      OCLElement elem = it.next();
+      Value bodyResult =
+          evalInScopeMaterialized(iterScope, iterSymbol, iterVarType, elem, () -> visit(ctx.body));
+      for (Value s : seen) {
+        if (s.getElements().size() == bodyResult.getElements().size()) {
+          boolean allEqual = true;
+          for (int i = 0; i < s.getElements().size(); i++) {
+            if (!OCLElement.semanticEquals(
+                s.getElements().get(i), bodyResult.getElements().get(i))) {
+              allEqual = false;
+              break;
             }
           }
+          if (allEqual) {
+            return Value.boolValue(false);
+          }
         }
-        seen.add(bodyResult);
       }
-      return Value.boolValue(true);
-    } finally {
-      symbolTable.exitScope();
+      seen.add(bodyResult);
     }
+    return Value.boolValue(true);
   }
 
   /**
@@ -1346,21 +1361,35 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Type elemType = receiver.getRuntimeType().getElementType();
     Type iterVarType = Type.singleton(elemType);
 
-    List<OCLElement> elements = new ArrayList<>(receiver.getElements());
+    // iterScope MUST be constructed before touching the receiver at all - not just before this
+    // operation's own loop body runs. Draining a lazy receiver (e.g. a preceding select()) walks
+    // *its own* predicate scope(s), parented off wherever that select() was originally evaluated -
+    // an entirely different (sibling) scope from the one active right here. Each such predicate
+    // call correctly restores symbolTable's current scope to *its own* parent when it finishes,
+    // not back to whatever was active before the drain started here. So if `new
+    // LocalScope(symbolTable.getCurrentScope())` ran *after* draining, it would silently capture
+    // that unrelated sibling scope as iterScope's parent instead of the correct enclosing one -
+    // this was a real, reproducible bug (empirically confirmed by reverting this exact ordering
+    // and re-running LazyChainRegressionTest's shadowing test for sortedBy(), which then failed
+    // with the exact same wrong result as originally discovered), not just a theoretical concern.
+    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    VariableSymbol iterSymbol = defineIterVar(iterVars.get(0), iterVarType, iterScope);
+
+    // Streams the (possibly lazy) receiver via elementIterator() into exactly one local list,
+    // instead of receiver.getElements() (which would materialize-and-cache its own internal copy
+    // via Value.materialize()) followed by a *second*, separate new ArrayList<>(...) copy of that
+    // same data. sortedBy() needs its own mutable, randomly-addressable list either way (for the
+    // key-based index sort below) - draining straight from elementIterator() into that one list
+    // avoids allocating the receiver's own internal cache array for data nobody else will ever
+    // read back through `receiver` again.
+    List<OCLElement> elements = new ArrayList<>();
+    receiver.elementIterator().forEachRemaining(elements::add);
     List<Value> keys = new ArrayList<>();
 
-    LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
-    symbolTable.enterScope(iterScope);
-    try {
-      for (OCLElement elem : elements) {
-        VariableSymbol iterSymbol =
-            new VariableSymbol(iterVars.get(0), iterVarType, iterScope, true);
-        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
-        symbolTable.defineVariable(iterSymbol);
-        keys.add(visit(ctx.body));
-      }
-    } finally {
-      symbolTable.exitScope();
+    for (OCLElement elem : elements) {
+      // Keys are compared later, outside this loop, after iterSymbol has been rebound many more
+      // times - must materialize now, not defer.
+      keys.add(evalInScopeMaterialized(iterScope, iterSymbol, iterVarType, elem, () -> visit(ctx.body)));
     }
 
     List<Integer> indices = new ArrayList<>();
@@ -1410,22 +1439,29 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
     Type elemType = receiver.getRuntimeType().getElementType();
     Type iterVarType = Type.singleton(elemType);
+    // iterScope MUST be constructed before touching the receiver at all - see visitSortedByOp's
+    // identical comment for why (draining a lazy receiver walks its own, unrelated sibling
+    // scope(s), which would otherwise get silently captured as iterScope's parent instead of the
+    // correct enclosing one). Empirically confirmed as a real bug here too (reverting this
+    // ordering makes LazyChainRegressionTest's shadowing test for collectNested() return
+    // [-3, -2, -1] instead of [1, 2, 3]).
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
-    symbolTable.enterScope(iterScope);
-    try {
-      List<OCLElement> results = new ArrayList<>();
-      for (OCLElement elem : receiver.getElements()) {
-        VariableSymbol iterSymbol =
-            new VariableSymbol(iterVars.get(0), iterVarType, iterScope, true);
-        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
-        symbolTable.defineVariable(iterSymbol);
-        Value bodyResult = visit(ctx.body);
-        results.add(new OCLElement.NestedCollection(bodyResult));
-      }
-      return Value.of(results, Type.bag(elemType));
-    } finally {
-      symbolTable.exitScope();
+    VariableSymbol iterSymbol = defineIterVar(iterVars.get(0), iterVarType, iterScope);
+    // Streams the (possibly lazy) receiver via elementIterator() instead of getElements(), so a
+    // preceding select()/collect() chain is pulled one element at a time instead of forced into
+    // its own fully materialized ArrayList before this loop even starts.
+    Iterator<OCLElement> it = receiver.elementIterator();
+    List<OCLElement> results = new ArrayList<>();
+    while (it.hasNext()) {
+      OCLElement elem = it.next();
+      // The NestedCollection wraps bodyResult for indefinite later consumption (e.g. by a
+      // subsequent flatten()), well after iterSymbol has been rebound to later elements - must
+      // materialize now, not defer.
+      Value bodyResult =
+          evalInScopeMaterialized(iterScope, iterSymbol, iterVarType, elem, () -> visit(ctx.body));
+      results.add(new OCLElement.NestedCollection(bodyResult));
     }
+    return Value.of(results, Type.bag(elemType));
   }
 
   /**
@@ -1455,26 +1491,38 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value accValue = visit(varSpec.accInit);
 
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
-    symbolTable.enterScope(iterScope);
-    try {
-      VariableSymbol accSymbol =
-          new VariableSymbol(varSpec.accVar.getText(), accValue.getRuntimeType(), iterScope, false);
-      accSymbol.setValue(accValue);
-      symbolTable.defineVariable(accSymbol);
+    VariableSymbol accSymbol =
+        new VariableSymbol(varSpec.accVar.getText(), accValue.getRuntimeType(), iterScope, false);
+    iterScope.defineVariable(accSymbol);
+    accSymbol.setValue(accValue);
+    VariableSymbol iterSymbol = defineIterVar(varSpec.iterVar.getText(), iterVarType, iterScope);
 
-      for (OCLElement elem : receiver.getElements()) {
-        VariableSymbol iterSymbol =
-            new VariableSymbol(varSpec.iterVar.getText(), iterVarType, iterScope, true);
-        iterSymbol.setValue(new Value(List.of(elem), iterVarType));
-        symbolTable.defineVariable(iterSymbol);
-
-        Value bodyResult = visit(ctx.body);
-        accSymbol.setValue(bodyResult);
-      }
-      return accSymbol.getValue();
-    } finally {
-      symbolTable.exitScope();
+    // Streams the (possibly lazy) receiver via elementIterator() instead of forcing it into one
+    // fully materialized List up front: a preceding select()->collect() chain is pulled one
+    // element at a time instead of copied into its own intermediate ArrayList before iterate()
+    // even starts. This is safe because evalInScope unconditionally re-enters iterScope as its
+    // very first action - regardless of what currentScope drifted to while pulling the next
+    // element from an upstream chain with its own, unrelated scope (e.g. a preceding select()'s
+    // predicate scope, parented off wherever the receiver was originally evaluated, not off
+    // iterScope) - so nothing here ever depends on currentScope already being correct going into
+    // an iteration step. The accumulator itself is still forced to materialize each step (see
+    // evalInScopeMaterialized) - iterate() remains structurally strict, only its source streams.
+    //
+    // Verified empirically in both directions (see LazyChainRegressionTest's
+    // iterateBodyResolvesAShadowedOuterVariableCorrectlyOnEveryStepWhilePullingFromALazySelectReceiver):
+    // streaming via elementIterator() and the previous getElements()-based materialization produce
+    // identical results for a targeted shadowing/gap construction - this change fixes no
+    // correctness bug (there wasn't one), it is a pure memory/streaming optimization.
+    Iterator<OCLElement> it = receiver.elementIterator();
+    while (it.hasNext()) {
+      OCLElement elem = it.next();
+      // The accumulator carries into the *next* iteration's body evaluation (e.g. `acc + n`),
+      // which rebinds iterSymbol before resolving it - must materialize now, not defer.
+      Value bodyResult =
+          evalInScopeMaterialized(iterScope, iterSymbol, iterVarType, elem, () -> visit(ctx.body));
+      accSymbol.setValue(bodyResult);
     }
+    return accSymbol.getValue();
   }
 
   /**
@@ -1716,23 +1764,49 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return value;
   }
 
-  /** Binds both iterator variables of a two-var (Cartesian product) iteration as singletons. */
-  private void bindTwoVars(
-      String var1,
-      String var2,
-      Type iterVarType,
-      LocalScope scope,
-      OCLElement elem1,
-      OCLElement elem2) {
-    bindIterVar(var1, iterVarType, scope, elem1);
-    bindIterVar(var2, iterVarType, scope, elem2);
+  /**
+   * Creates and registers a fresh iterator-variable symbol directly in {@code scope}'s own symbol
+   * map (bypassing {@code symbolTable.defineVariable}, which would require {@code scope} to
+   * already be the active current scope). Call this exactly once per iteration expression, then
+   * use {@link #rebindIterVar} to update the same symbol's value for each subsequent element —
+   * allocating a fresh {@link VariableSymbol} (and re-inserting it into the scope's map) per
+   * element is pure waste, since the identical name/scope/type is being re-registered every time.
+   *
+   * @param name the iterator variable's name
+   * @param iterVarType the singleton type the variable is bound at
+   * @param scope the scope to register the symbol in
+   * @return the newly registered, as-yet-unbound symbol
+   */
+  private VariableSymbol defineIterVar(String name, Type iterVarType, LocalScope scope) {
+    VariableSymbol symbol = new VariableSymbol(name, iterVarType, scope, true);
+    scope.defineVariable(symbol);
+    return symbol;
   }
 
-  /** Binds {@code name} to {@code elem} as a singleton value in the given scope. */
-  private void bindIterVar(String name, Type iterVarType, LocalScope scope, OCLElement elem) {
-    VariableSymbol symbol = new VariableSymbol(name, iterVarType, scope, true);
+  /**
+   * Rebinds an already-registered iterator-variable symbol (from {@link #defineIterVar}) to
+   * {@code elem}, without reallocating the symbol or touching its scope's variable map again.
+   */
+  private static void rebindIterVar(VariableSymbol symbol, Type iterVarType, OCLElement elem) {
     symbol.setValue(new Value(List.of(elem), iterVarType));
-    symbolTable.defineVariable(symbol);
+  }
+
+  /**
+   * Creates and registers both iterator-variable symbols of a two-var (Cartesian product)
+   * iteration once; use {@link #rebindTwoVars} to update their values for each subsequent pair.
+   */
+  private VariableSymbol[] defineTwoVars(
+      String var1, String var2, Type iterVarType, LocalScope scope) {
+    return new VariableSymbol[] {
+      defineIterVar(var1, iterVarType, scope), defineIterVar(var2, iterVarType, scope)
+    };
+  }
+
+  /** Rebinds both iterator-variable symbols of a two-var iteration (from {@link #defineTwoVars}). */
+  private static void rebindTwoVars(
+      VariableSymbol[] symbols, Type iterVarType, OCLElement elem1, OCLElement elem2) {
+    rebindIterVar(symbols[0], iterVarType, elem1);
+    rebindIterVar(symbols[1], iterVarType, elem2);
   }
 
   /** Evaluates {@code body} and extracts its result as a boolean predicate (default false). */
@@ -1757,20 +1831,21 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private Value evaluateForAllSingleVar(
       VitruvOCLParser.ForAllOpContext ctx, Value receiver, String iterVar) {
+    // Category 2 (early termination, worst case strict): pulls from receiver.elementIterator()
+    // instead of getElements(), so an upstream lazy chain (e.g. a preceding select()) is also
+    // only consumed as far as the first `false` result requires. In the success case every
+    // element must still be checked - structurally strict, matching the classification.
     Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
-    symbolTable.enterScope(iterScope);
-    try {
-      for (OCLElement elem : receiver.getElements()) {
-        bindIterVar(iterVar, iterVarType, iterScope, elem);
-        if (!evalBooleanBody(ctx.body)) {
-          return Value.boolValue(false); // short-circuit on first false result
-        }
+    VariableSymbol iterSymbol = defineIterVar(iterVar, iterVarType, iterScope);
+    Iterator<OCLElement> it = receiver.elementIterator();
+    while (it.hasNext()) {
+      OCLElement elem = it.next();
+      if (!evalInScope(iterScope, iterSymbol, iterVarType, elem, () -> evalBooleanBody(ctx.body))) {
+        return Value.boolValue(false); // short-circuit on first false result
       }
-      return Value.boolValue(true);
-    } finally {
-      symbolTable.exitScope();
     }
+    return Value.boolValue(true);
   }
 
   /**
@@ -1787,13 +1862,25 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   private Value evaluateForAllTwoVars(
       VitruvOCLParser.ForAllOpContext ctx, Value receiver, String var1, String var2) {
     Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
+    // iterScope MUST be constructed before touching the receiver at all, not just before this
+    // operation's own scope is entered: draining a lazy receiver (e.g. a preceding select())
+    // walks its own predicate scope(s), parented off wherever that select() was originally
+    // evaluated - an unrelated sibling scope. Each such predicate call correctly restores
+    // symbolTable's current scope to *its own* parent when done, not back to whatever was active
+    // before the drain started here - so constructing iterScope only *after* draining would
+    // silently capture that unrelated sibling scope as its parent instead of the correct
+    // enclosing one. (Empirically confirmed as a real, reproducible bug for sortedBy()/
+    // collectNested() when this ordering was wrong; fixed the same way here.)
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    List<OCLElement> elements = receiver.getElements();
     symbolTable.enterScope(iterScope);
     try {
-      List<OCLElement> elements = receiver.getElements();
+      VariableSymbol[] symbols = defineTwoVars(var1, var2, iterVarType, iterScope);
       for (OCLElement elem1 : elements) {
         for (OCLElement elem2 : elements) {
-          bindTwoVars(var1, var2, iterVarType, iterScope, elem1, elem2);
+          // Re-enter defensively before each pair - see EvaluationVisitor#exitScope(Scope).
+          symbolTable.enterScope(iterScope);
+          rebindTwoVars(symbols, iterVarType, elem1, elem2);
           if (!evalBooleanBody(ctx.body)) {
             return Value.boolValue(false); // short-circuit on first false result
           }
@@ -1801,7 +1888,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       }
       return Value.boolValue(true);
     } finally {
-      symbolTable.exitScope();
+      exitScope(iterScope);
     }
   }
 
@@ -1819,19 +1906,84 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       VitruvOCLParser.SelectOpContext ctx, Value receiver, String iterVar) {
     Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
-    symbolTable.enterScope(iterScope);
+    VariableSymbol iterSymbol = defineIterVar(iterVar, iterVarType, iterScope);
+    Predicate<OCLElement> predicate =
+        elem ->
+            evalInScope(iterScope, iterSymbol, iterVarType, elem, () -> evalBooleanBody(ctx.body));
+    OCLElementSource filtered = LazyOperations.filter(receiver.asSource(), predicate);
+    return Value.lazy(filtered, receiver.getRuntimeType());
+  }
+
+  /**
+   * Evaluates {@code body} with {@code iterSymbol} rebound to {@code elem} in {@code scope}.
+   *
+   * <p>Scope entry/exit is bracketed around exactly this one element's evaluation (not around a
+   * whole enclosing loop), so that a lazy consumer which stops pulling early (e.g. {@code exists})
+   * never leaves a dangling entered scope: each call is self-contained regardless of how many
+   * elements, if any, are pulled afterwards. {@code enterScope}/{@code exitScope} are a single
+   * field assignment each in this codebase's {@code SymbolTableImpl}, so bracketing them per
+   * element is cheap; {@code iterSymbol} itself is allocated once by the caller (via {@link
+   * #defineIterVar}) and only rebound here, avoiding a {@link VariableSymbol} allocation per
+   * element.
+   *
+   * @param scope the iterator variable's scope; may be reused across multiple elements/traversals
+   *     — see {@link tools.vitruv.dsls.vitruvocl.evaluator.lazy.LazyOperations} for why this is
+   *     safe with lazy chains (each element's full evaluation, including any nested lazy
+   *     sub-chains, completes before the next element is pulled)
+   * @param iterSymbol the already-registered symbol to rebind (from {@link #defineIterVar})
+   */
+  private <T> T evalInScope(
+      LocalScope scope, VariableSymbol iterSymbol, Type iterVarType, OCLElement elem, Supplier<T> body) {
+    symbolTable.enterScope(scope);
     try {
-      List<OCLElement> results = new ArrayList<>();
-      for (OCLElement elem : receiver.getElements()) {
-        bindIterVar(iterVar, iterVarType, iterScope, elem);
-        if (evalBooleanBody(ctx.body)) {
-          results.add(elem);
-        }
-      }
-      return Value.of(results, receiver.getRuntimeType());
+      rebindIterVar(iterSymbol, iterVarType, elem);
+      return body.get();
     } finally {
-      symbolTable.exitScope();
+      exitScope(scope);
     }
+  }
+
+  /**
+   * Restores {@code symbolTable}'s current scope to {@code enteredScope}'s enclosing scope,
+   * explicitly — <b>not</b> via the symbol table's own {@code exitScope()}, which ascends from
+   * whatever scope happens to be current rather than from {@code enteredScope} specifically.
+   *
+   * <p>That distinction is load-bearing once lazy {@link Value}s are involved: evaluating a body
+   * expression while {@code enteredScope} is current can itself force materialization of an
+   * <em>outer</em>, already-existing lazy {@code Value} (e.g. a {@code let}-bound variable, or an
+   * enclosing iterator variable's collection) whose own scope has nothing to do with {@code
+   * enteredScope}. Draining that outer value enters/exits <em>its</em> scope internally, leaving
+   * {@code symbolTable}'s current scope pointing at some ancestor of {@code enteredScope} by the
+   * time control returns here — the plain, argument-less {@code exitScope()} would then ascend
+   * from that wrong place instead of from {@code enteredScope}. Since a {@link LocalScope}'s
+   * parent is fixed at construction (see {@link LocalScope#getEnclosingScope()}), going there
+   * directly is always correct regardless of any such drift.
+   *
+   * @param enteredScope the exact scope object that was entered and is now being left
+   */
+  private void exitScope(Scope enteredScope) {
+    symbolTable.enterScope(enteredScope.getEnclosingScope());
+  }
+
+  /**
+   * Like {@link #evalInScope}, but additionally forces the resulting {@link Value} to materialize
+   * (and cache) before returning, while {@code scope} is still correctly bound to {@code elem}.
+   *
+   * <p>Use this whenever the result will be <em>stored</em> and consumed later — after the loop,
+   * or during a later iteration that has since rebound the same iterator-variable symbol — rather
+   * than drained immediately within the same element's evaluation. A stored, still-lazy {@link
+   * Value} would otherwise resolve its iterator variable against whatever {@code iterSymbol}
+   * happens to be bound to at the time it is eventually consumed, not the element it was actually
+   * computed for. (This is safe to skip when the result is consumed synchronously and fully within
+   * the current element's evaluation — e.g. {@code select}/{@code reject}'s predicates reduce to a
+   * plain {@code boolean} immediately, and {@code collect}'s flatMap fully drains one element's
+   * expansion before the next upstream pull rebinds the symbol.)
+   */
+  private Value evalInScopeMaterialized(
+      LocalScope scope, VariableSymbol iterSymbol, Type iterVarType, OCLElement elem, Supplier<Value> body) {
+    Value result = evalInScope(scope, iterSymbol, iterVarType, elem, body);
+    result.getElements(); // force + cache materialization now, before the symbol is rebound again
+    return result;
   }
 
   /**
@@ -1848,14 +2000,19 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   private Value evaluateSelectTwoVars(
       VitruvOCLParser.SelectOpContext ctx, Value receiver, String var1, String var2) {
     Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
+    // iterScope MUST be constructed before touching the receiver - see evaluateForAllTwoVars's
+    // comment for why (empirically confirmed as a real bug when this ordering was wrong).
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    List<OCLElement> elements = receiver.getElements();
     symbolTable.enterScope(iterScope);
     try {
+      VariableSymbol[] symbols = defineTwoVars(var1, var2, iterVarType, iterScope);
       List<OCLElement> results = new ArrayList<>();
-      List<OCLElement> elements = receiver.getElements();
       for (OCLElement elem1 : elements) {
         for (OCLElement elem2 : elements) {
-          bindTwoVars(var1, var2, iterVarType, iterScope, elem1, elem2);
+          // Re-enter defensively before each pair - see EvaluationVisitor#exitScope(Scope).
+          symbolTable.enterScope(iterScope);
+          rebindTwoVars(symbols, iterVarType, elem1, elem2);
           if (evalBooleanBody(ctx.body)) {
             results.add(elem1);
             results.add(elem2);
@@ -1864,7 +2021,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       }
       return Value.of(results, receiver.getRuntimeType());
     } finally {
-      symbolTable.exitScope();
+      exitScope(iterScope);
     }
   }
 
@@ -1882,19 +2039,12 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       VitruvOCLParser.RejectOpContext ctx, Value receiver, String iterVar) {
     Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
-    symbolTable.enterScope(iterScope);
-    try {
-      List<OCLElement> results = new ArrayList<>();
-      for (OCLElement elem : receiver.getElements()) {
-        bindIterVar(iterVar, iterVarType, iterScope, elem);
-        if (!evalBooleanBody(ctx.body)) {
-          results.add(elem);
-        }
-      }
-      return Value.of(results, receiver.getRuntimeType());
-    } finally {
-      symbolTable.exitScope();
-    }
+    VariableSymbol iterSymbol = defineIterVar(iterVar, iterVarType, iterScope);
+    Predicate<OCLElement> predicate =
+        elem ->
+            !evalInScope(iterScope, iterSymbol, iterVarType, elem, () -> evalBooleanBody(ctx.body));
+    OCLElementSource filtered = LazyOperations.filter(receiver.asSource(), predicate);
+    return Value.lazy(filtered, receiver.getRuntimeType());
   }
 
   /**
@@ -1912,15 +2062,20 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       VitruvOCLParser.RejectOpContext ctx, Value receiver, String var1, String var2) {
     Type elemType = receiver.getRuntimeType().getElementType();
     Type iterVarType = Type.singleton(elemType);
+    // iterScope MUST be constructed before touching the receiver - see evaluateForAllTwoVars's
+    // comment for why (empirically confirmed as a real bug when this ordering was wrong).
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    List<OCLElement> elements = receiver.getElements();
     symbolTable.enterScope(iterScope);
 
     try {
+      VariableSymbol[] symbols = defineTwoVars(var1, var2, iterVarType, iterScope);
       List<OCLElement> results = new ArrayList<>();
-      List<OCLElement> elements = receiver.getElements();
       for (OCLElement elem1 : elements) {
         for (OCLElement elem2 : elements) {
-          bindTwoVars(var1, var2, iterVarType, iterScope, elem1, elem2);
+          // Re-enter defensively before each pair - see EvaluationVisitor#exitScope(Scope).
+          symbolTable.enterScope(iterScope);
+          rebindTwoVars(symbols, iterVarType, elem1, elem2);
           if (!evalBooleanBody(ctx.body)) {
             results.add(elem1);
             results.add(elem2);
@@ -1929,7 +2084,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       }
       return Value.of(results, receiver.getRuntimeType());
     } finally {
-      symbolTable.exitScope();
+      exitScope(iterScope);
     }
   }
 
@@ -1947,18 +2102,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       VitruvOCLParser.CollectOpContext ctx, Value receiver, String iterVar) {
     Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
-    symbolTable.enterScope(iterScope);
-    try {
-      List<OCLElement> results = new ArrayList<>();
-      for (OCLElement elem : receiver.getElements()) {
-        bindIterVar(iterVar, iterVarType, iterScope, elem);
-        results.addAll(visit(ctx.body).getElements());
-      }
-      Type resultType = nodeTypes.get(ctx);
-      return Value.of(results, resultType != null ? resultType : Type.set(Type.ANY));
-    } finally {
-      symbolTable.exitScope();
-    }
+    VariableSymbol iterSymbol = defineIterVar(iterVar, iterVarType, iterScope);
+    Function<OCLElement, Iterator<OCLElement>> expand =
+        elem ->
+            evalInScope(iterScope, iterSymbol, iterVarType, elem, () -> visit(ctx.body))
+                .elementIterator();
+    OCLElementSource mapped = LazyOperations.flatMap(receiver.asSource(), expand);
+    Type resultType = nodeTypes.get(ctx);
+    return Value.lazy(mapped, resultType != null ? resultType : Type.set(Type.ANY));
   }
 
   /**
@@ -1975,21 +2126,26 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   private Value evaluateCollectTwoVars(
       VitruvOCLParser.CollectOpContext ctx, Value receiver, String var1, String var2) {
     Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
+    // iterScope MUST be constructed before touching the receiver - see evaluateForAllTwoVars's
+    // comment for why (empirically confirmed as a real bug when this ordering was wrong).
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    List<OCLElement> elements = receiver.getElements();
     symbolTable.enterScope(iterScope);
     try {
+      VariableSymbol[] symbols = defineTwoVars(var1, var2, iterVarType, iterScope);
       List<OCLElement> results = new ArrayList<>();
-      List<OCLElement> elements = receiver.getElements();
       for (OCLElement elem1 : elements) {
         for (OCLElement elem2 : elements) {
-          bindTwoVars(var1, var2, iterVarType, iterScope, elem1, elem2);
+          // Re-enter defensively before each pair - see EvaluationVisitor#exitScope(Scope).
+          symbolTable.enterScope(iterScope);
+          rebindTwoVars(symbols, iterVarType, elem1, elem2);
           results.addAll(visit(ctx.body).getElements());
         }
       }
       Type resultType = nodeTypes.get(ctx);
       return Value.of(results, resultType != null ? resultType : Type.set(Type.ANY));
     } finally {
-      symbolTable.exitScope();
+      exitScope(iterScope);
     }
   }
 
@@ -2005,20 +2161,18 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private Value evaluateExistsSingleVar(
       VitruvOCLParser.ExistsOpContext ctx, Value receiver, String iterVar) {
+    // Category 2 (early termination, worst case strict): see evaluateForAllSingleVar.
     Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
-    symbolTable.enterScope(iterScope);
-    try {
-      for (OCLElement elem : receiver.getElements()) {
-        bindIterVar(iterVar, iterVarType, iterScope, elem);
-        if (evalBooleanBody(ctx.body)) {
-          return Value.boolValue(true); // short-circuit on first true result
-        }
+    VariableSymbol iterSymbol = defineIterVar(iterVar, iterVarType, iterScope);
+    Iterator<OCLElement> it = receiver.elementIterator();
+    while (it.hasNext()) {
+      OCLElement elem = it.next();
+      if (evalInScope(iterScope, iterSymbol, iterVarType, elem, () -> evalBooleanBody(ctx.body))) {
+        return Value.boolValue(true); // short-circuit on first true result
       }
-      return Value.boolValue(false);
-    } finally {
-      symbolTable.exitScope();
     }
+    return Value.boolValue(false);
   }
 
   /**
@@ -2035,13 +2189,18 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   private Value evaluateExistsTwoVars(
       VitruvOCLParser.ExistsOpContext ctx, Value receiver, String var1, String var2) {
     Type iterVarType = Type.singleton(receiver.getRuntimeType().getElementType());
+    // iterScope MUST be constructed before touching the receiver - see evaluateForAllTwoVars's
+    // comment for why (empirically confirmed as a real bug when this ordering was wrong).
     LocalScope iterScope = new LocalScope(symbolTable.getCurrentScope());
+    List<OCLElement> elements = receiver.getElements();
     symbolTable.enterScope(iterScope);
     try {
-      List<OCLElement> elements = receiver.getElements();
+      VariableSymbol[] symbols = defineTwoVars(var1, var2, iterVarType, iterScope);
       for (OCLElement elem1 : elements) {
         for (OCLElement elem2 : elements) {
-          bindTwoVars(var1, var2, iterVarType, iterScope, elem1, elem2);
+          // Re-enter defensively before each pair - see EvaluationVisitor#exitScope(Scope).
+          symbolTable.enterScope(iterScope);
+          rebindTwoVars(symbols, iterVarType, elem1, elem2);
           if (evalBooleanBody(ctx.body)) {
             return Value.boolValue(true); // short-circuit on first true result
           }
@@ -2049,7 +2208,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       }
       return Value.boolValue(false);
     } finally {
-      symbolTable.exitScope();
+      exitScope(iterScope);
     }
   }
 
@@ -2072,12 +2231,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitIncludesAllOp(VitruvOCLParser.IncludesAllOpContext ctx) {
     Value receiver = receiverStack.peek();
     Value arg = visit(ctx.arg);
-    for (OCLElement elem : arg.getElements()) {
-      if (!receiver.includes(elem)) {
-        return Value.boolValue(false);
-      }
-    }
-    return Value.boolValue(true);
+    return Value.boolValue(receiver.includesAll(arg));
   }
 
   /**
@@ -2098,12 +2252,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   public Value visitExcludesAllOp(VitruvOCLParser.ExcludesAllOpContext ctx) {
     Value receiver = receiverStack.peek();
     Value arg = visit(ctx.arg);
-    for (OCLElement elem : arg.getElements()) {
-      if (receiver.includes(elem)) {
-        return Value.boolValue(false);
-      }
-    }
-    return Value.boolValue(true);
+    return Value.boolValue(receiver.excludesAll(arg));
   }
 
   /**
@@ -2263,25 +2412,30 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    *
    * <p>Example: {@code 7->div(2)} yields {@code 3}
    *
+   * <p>Follows OCL#'s "no object" propagation: an empty receiver/argument, a non-integer operand,
+   * or a zero divisor all yield an empty result rather than a numeric placeholder, so that the
+   * absence is never mistaken for a genuine computed value downstream.
+   *
    * @param ctx the parse tree node for the {@code div()} operation, including the argument
    *     expression
-   * @return a singleton {@code INTEGER} value representing the truncated quotient; or an error
-   *     value if either operand is not a singleton {@code Integer}, or the divisor is zero
+   * @return a singleton {@code INTEGER} value representing the truncated quotient; or an empty
+   *     {@code INTEGER} value ("no object") if either operand is not a singleton {@code Integer},
+   *     or the divisor is zero
    */
   @Override
   public Value visitDivOp(VitruvOCLParser.DivOpContext ctx) {
     Value receiver = receiverStack.peek();
     Value arg = visit(ctx.arg);
     if (receiver.isEmpty() || arg.isEmpty()) {
-      return Value.intValue(0);
+      return Value.empty(Type.INTEGER);
     }
     Integer left = receiver.getElements().get(0).tryGetInt();
     Integer right = arg.getElements().get(0).tryGetInt();
     if (left == null || right == null) {
-      return Value.intValue(0);
+      return Value.empty(Type.INTEGER);
     }
     if (right == 0) {
-      return Value.intValue(0);
+      return Value.empty(Type.INTEGER);
     }
     return Value.intValue(left / right);
   }
@@ -2290,30 +2444,34 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    * Evaluates the {@code mod()} integer remainder operation.
    *
    * <p>Computes the remainder of dividing the receiver by the argument using Java's {@code %}
-   * operator. Both operands must be singleton {@code INTEGER} values. Division by zero yields
-   * {@code 0} rather than an error, consistent with a null-free evaluation strategy.
+   * operator. Both operands must be singleton {@code INTEGER} values.
    *
    * <p>Example: {@code 7->mod(3)} yields {@code 1}
    *
+   * <p>Follows OCL#'s "no object" propagation: an empty receiver/argument, a non-integer operand,
+   * or a zero divisor all yield an empty result rather than a numeric placeholder, so that the
+   * absence is never mistaken for a genuine computed value downstream.
+   *
    * @param ctx the parse tree node for the {@code mod()} operation, including the argument
    *     expression
-   * @return a singleton {@code INTEGER} value representing the remainder; {@code 0} if the divisor
-   *     is zero; or an error value if either operand is not a singleton {@code Integer}
+   * @return a singleton {@code INTEGER} value representing the remainder; or an empty {@code
+   *     INTEGER} value ("no object") if either operand is not a singleton {@code Integer}, or the
+   *     divisor is zero
    */
   @Override
   public Value visitModOp(VitruvOCLParser.ModOpContext ctx) {
     Value receiver = receiverStack.peek();
     Value arg = visit(ctx.arg);
     if (receiver.isEmpty() || arg.isEmpty()) {
-      return Value.intValue(0);
+      return Value.empty(Type.INTEGER);
     }
     Integer left = receiver.getElements().get(0).tryGetInt();
     Integer right = arg.getElements().get(0).tryGetInt();
     if (left == null || right == null) {
-      return Value.intValue(0);
+      return Value.empty(Type.INTEGER);
     }
     if (right == 0) {
-      return Value.intValue(0);
+      return Value.empty(Type.INTEGER);
     }
     return Value.intValue(left % right);
   }
@@ -2924,50 +3082,59 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   private Value visitPropertyAccessWithReceiver(
       VitruvOCLParser.PropertyAccessContext ctx, Value receiver) {
     String propertyName = ctx.propertyName.getText();
+    Type resultType = nodeTypes.get(ctx);
+    Type finalType = resultType != null ? resultType : Type.set(Type.ANY);
+    Type emptyType = resultType != null ? resultType : Type.optional(Type.ANY);
 
-    if (receiver.isEmpty()) {
-      Type resultType = nodeTypes.get(ctx);
-      return Value.empty(resultType != null ? resultType : Type.optional(Type.ANY));
+    // Peek (without materializing the rest) to validate that the receiver contains metaclass
+    // instances at all; a throwaway single-pull iterator keeps this check lazy.
+    Iterator<OCLElement> probe = receiver.elementIterator();
+    if (!probe.hasNext()) {
+      return Value.empty(emptyType);
+    }
+    if (probe.next().tryGetInstance() == null) {
+      return Value.empty(emptyType);
     }
 
-    // Validate that receiver contains metaclass instances
-    EObject firstInstance = receiver.getElements().get(0).tryGetInstance();
-    if (firstInstance == null) {
-      Type resultType = nodeTypes.get(ctx);
-      return Value.empty(resultType != null ? resultType : Type.optional(Type.ANY));
+    // Category 1 (fully lazy): each receiver element expands to zero or more navigated values;
+    // navigation never needs to consume more of the receiver than the outer consumer asks for.
+    Function<OCLElement, Iterator<OCLElement>> expand = elem -> navigateOne(elem, propertyName);
+    OCLElementSource mapped = LazyOperations.flatMap(receiver.asSource(), expand);
+    // A unique result type (Set/OrderedSet) is only guaranteed duplicate-free once explicitly
+    // deduplicated — collecting across multiple receiver elements can otherwise yield the same
+    // feature value more than once even though the combined Ctype (see
+    // TypeCheckVisitor#typeCheckPropertyAccess) says "unique". Deduplicated incrementally (Kern-
+    // anforderung 2) instead of via a post-hoc removeDuplicates() pass over a fully built list.
+    OCLElementSource result =
+        finalType.isUnique() ? LazyOperations.dedupe(mapped, OCLElement::semanticEquals) : mapped;
+    return Value.lazy(result, finalType);
+  }
+
+  /** Navigates {@code propertyName} on a single receiver element; used by {@link #visitPropertyAccessWithReceiver}. */
+  private Iterator<OCLElement> navigateOne(OCLElement elem, String propertyName) {
+    EObject instance = elem.tryGetInstance();
+    if (instance == null) {
+      return Collections.emptyIterator();
     }
-
-    // Collect property values from all instances in receiver
-    List<OCLElement> results = new ArrayList<>();
-    for (OCLElement elem : receiver.getElements()) {
-      EObject instance = elem.tryGetInstance();
-
-      if (instance != null) {
-        EStructuralFeature feature = instance.eClass().getEStructuralFeature(propertyName);
-
-        if (feature != null) {
-          Object value = instance.eGet(feature);
-
-          // Handle multi-valued features (collections)
-          if (feature.isMany()) {
-            List<?> list = (List<?>) value;
-            for (Object item : list) {
-              if (item != null) {
-                results.add(wrapValue(item));
-              }
-            }
-          } else {
-            if (value == null) {
-              continue; // unset optional attribute → ?T? = []
-            }
-            results.add(wrapValue(value));
-          }
+    EStructuralFeature feature = instance.eClass().getEStructuralFeature(propertyName);
+    if (feature == null) {
+      return Collections.emptyIterator();
+    }
+    Object value = instance.eGet(feature);
+    if (feature.isMany()) {
+      List<?> list = (List<?>) value;
+      List<OCLElement> wrapped = new ArrayList<>();
+      for (Object item : list) {
+        if (item != null) {
+          wrapped.add(wrapValue(item));
         }
       }
+      return wrapped.iterator();
     }
-
-    Type resultType = nodeTypes.get(ctx);
-    return Value.of(results, resultType != null ? resultType : Type.set(Type.ANY));
+    if (value == null) {
+      return Collections.emptyIterator(); // unset optional attribute → ?T? = []
+    }
+    return List.of(wrapValue(value)).iterator();
   }
 
   /**
@@ -3475,6 +3642,16 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   @Override
   public Value visitVariableDeclaration(VitruvOCLParser.VariableDeclarationContext ctx) {
+    // Captured *before* evaluating varInit, and used directly (bypassing
+    // symbolTable.defineVariable()'s dependence on "whatever the current scope now is"): if
+    // varInit itself forces materialization of an outer, already-existing lazy Value (e.g. an
+    // enclosing let-bound or iterator-bound collection), symbolTable's current scope can drift
+    // away from this declaration's actual scope by the time visit(ctx.varInit) returns - see
+    // EvaluationVisitor#exitScope(Scope) for the general explanation of why laziness makes this
+    // distinction load-bearing. Empirically confirmed: reverting this and the corresponding fix
+    // in visitLetExpCS makes LazyChainRegressionTest's shadowing test resolve a variable from the
+    // wrong enclosing scope (111 instead of 222).
+    Scope declaringScope = symbolTable.getCurrentScope();
     String varName = ctx.varName.getText();
     Value initValue = visit(ctx.varInit);
 
@@ -3490,10 +3667,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       }
     }
 
-    Scope currentScope = symbolTable.getCurrentScope();
-    VariableSymbol varSymbol = new VariableSymbol(varName, varType, currentScope, false);
+    VariableSymbol varSymbol = new VariableSymbol(varName, varType, declaringScope, false);
     varSymbol.setValue(initValue);
-    symbolTable.defineVariable(varSymbol);
+    declaringScope.defineVariable(varSymbol);
 
     return initValue;
   }
@@ -3586,12 +3762,25 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     LocalScope letScope = new LocalScope(symbolTable.getCurrentScope());
     symbolTable.enterScope(letScope);
     try {
-      // Evaluate and bind each variable declaration
-      visit(ctx.variableDeclarations());
+      // Re-enter letScope explicitly before every declaration and before every body expression,
+      // rather than relying on it having "stayed" current since the top of this method: any one
+      // of them may itself force materialization of an outer, already-existing lazy Value (e.g. an
+      // enclosing let-bound or iterator-bound collection), which leaves symbolTable's current
+      // scope pointing away from letScope by the time visit() returns - see
+      // EvaluationVisitor#exitScope(Scope) for why. Each step must start from a known-correct
+      // scope regardless of what the previous one did to the current-scope pointer. Empirically
+      // confirmed: reverting this (and the corresponding fix in visitVariableDeclaration) makes
+      // LazyChainRegressionTest's shadowing test resolve a variable from the wrong enclosing scope
+      // (111 instead of 222).
+      for (VitruvOCLParser.VariableDeclarationContext varDecl :
+          ctx.variableDeclarations().variableDeclaration()) {
+        symbolTable.enterScope(letScope);
+        visit(varDecl);
+      }
 
-      // Evaluate body, return last expression
       Value result = null;
       for (VitruvOCLParser.ExpCSContext exp : ctx.expCS()) {
+        symbolTable.enterScope(letScope);
         result = visit(exp);
       }
 
@@ -3600,7 +3789,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       }
       return result;
     } finally {
-      symbolTable.exitScope();
+      exitScope(letScope);
     }
   }
 
@@ -4100,13 +4289,24 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   /**
    * Evaluates the {@code intersection()} operation on a collection receiver.
    *
-   * <p>Returns a collection containing only those elements of the receiver that are also present in
-   * the argument collection, tested via {@link Value#includes}. The result type is taken from the
-   * type-checker annotation on the node if available, falling back to the receiver's runtime type.
-   * If the result type enforces uniqueness (e.g. {@code Set}), duplicates are removed after
-   * construction.
+   * <p>Category 3 (lazy, incremental buffer reconciliation): delegates to {@link
+   * Value#intersection}, which pulls from both sides in alternation via {@link
+   * tools.vitruv.dsls.vitruvocl.evaluator.lazy.LazyOperations#intersect} instead of fully
+   * materializing either side first. The result type is taken from the type-checker annotation on
+   * the node if available, falling back to the receiver's runtime type. If the result type
+   * enforces uniqueness (e.g. {@code Set}), duplicates are removed afterward (also lazily, see
+   * {@link Value#removeDuplicates}).
    *
    * <p>Example: {@code Set{1, 2, 3}->intersection(Set{2, 3, 4})} yields {@code Set{2, 3}}
+   *
+   * <p><b>Note:</b> the alternating dual-buffer algorithm matches elements pairwise (multiset
+   * intersection), which is equivalent to the receiver-membership-filter semantics used here
+   * previously whenever at least one side has no internal duplicates — true for every {@code
+   * Set}/{@code OrderedSet} receiver or argument, i.e. the standard case. It can differ from that
+   * prior behavior for a {@code Bag}/{@code Sequence} receiver <em>and</em> argument that both
+   * contain duplicates of the same value; a non-unique result type is then no longer guaranteed to
+   * reproduce every receiver occurrence that has some match, only up to the argument's matching
+   * multiplicity. A unique ({@code Set}/{@code OrderedSet}) result type is unaffected either way.
    *
    * @param ctx the parse tree node for the {@code intersection()} operation, including the argument
    *     expression
@@ -4118,17 +4318,12 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     Value receiver = receiverStack.peek();
     Value arg = visit(ctx.arg);
 
-    List<OCLElement> results = new ArrayList<>();
-    for (OCLElement elem : receiver.getElements()) {
-      if (arg.includes(elem)) {
-        results.add(elem);
-      }
-    }
-
     Type resultType = nodeTypes.get(ctx);
-    Value result = Value.of(results, resultType != null ? resultType : receiver.getRuntimeType());
+    Value result =
+        Value.lazy(
+            receiver.intersection(arg).asSource(),
+            resultType != null ? resultType : receiver.getRuntimeType());
 
-    // Remove duplicates if result is unique
     if (result.getRuntimeType().isUnique()) {
       result = result.removeDuplicates();
     }
