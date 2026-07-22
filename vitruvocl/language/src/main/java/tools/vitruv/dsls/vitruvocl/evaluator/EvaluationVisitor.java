@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -2964,7 +2965,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         new VitruvOCLBaseVisitor<Value>() {
           @Override
           public Value visitPropertyNav(VitruvOCLParser.PropertyNavContext ctx) {
-            return visitPropertyAccessWithReceiver(ctx.propertyAccess(), receiver);
+            return visitPropertyAccessWithReceiver(ctx, receiver);
           }
 
           @Override
@@ -3074,15 +3075,23 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    *   <li>{@code company.employees} → collection of all employees
    * </ul>
    *
-   * @param ctx The property access node
+   * @param navCtx The property navigation node - the type is looked up under this node because
+   *     {@link tools.vitruv.dsls.vitruvocl.typechecker.TypeCheckVisitor#visitPropertyNav} stores
+   *     the combined Ctype keyed by the navigation node, not by the inner {@code propertyAccess()}
+   *     node (looking it up under the inner node always misses and silently falls back to {@code
+   *     Type.set(Type.ANY)}, which is always {@code unique=true} - this used to make {@code
+   *     LazyOperations#dedupe} run unconditionally on every {@code e.p} navigation regardless of
+   *     the feature's real {@code unique} flag, silently dropping genuine duplicates from any
+   *     many-valued, non-unique feature's result).
    * @param receiver The receiver value (must contain metaclass instances)
    * @return Collection of property values from all receiver instances
    */
   @SuppressWarnings("java:S3776")
   private Value visitPropertyAccessWithReceiver(
-      VitruvOCLParser.PropertyAccessContext ctx, Value receiver) {
+      VitruvOCLParser.PropertyNavContext navCtx, Value receiver) {
+    VitruvOCLParser.PropertyAccessContext ctx = navCtx.propertyAccess();
     String propertyName = ctx.propertyName.getText();
-    Type resultType = nodeTypes.get(ctx);
+    Type resultType = nodeTypes.get(navCtx);
     Type finalType = resultType != null ? resultType : Type.set(Type.ANY);
     Type emptyType = resultType != null ? resultType : Type.optional(Type.ANY);
 
@@ -3122,19 +3131,68 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
     Object value = instance.eGet(feature);
     if (feature.isMany()) {
+      // Category 1 (fully lazy): wraps each raw element on demand as the outer consumer (select,
+      // exists, notEmpty, ...) actually pulls, instead of eagerly copying the entire feature
+      // value into a new ArrayList up front (which used to defeat early termination for any
+      // consumer chained onto a single receiver element's many-valued feature - see
+      // NavigationSelectNotEmptyStreamingTest). `list.iterator()` is whatever EList
+      // implementation EMF backs the feature with, which already transparently resolves proxies
+      // on iteration for EReference features exactly as it did before - this only changes *when*
+      // elements are pulled from it, not *how* each one is obtained or wrapped.
       List<?> list = (List<?>) value;
-      List<OCLElement> wrapped = new ArrayList<>();
-      for (Object item : list) {
-        if (item != null) {
-          wrapped.add(wrapValue(item));
-        }
-      }
-      return wrapped.iterator();
+      return new SkipNullMappingIterator(list.iterator());
     }
     if (value == null) {
       return Collections.emptyIterator(); // unset optional attribute → ?T? = []
     }
     return List.of(wrapValue(value)).iterator();
+  }
+
+  /**
+   * Lazily maps a raw {@code Iterator<?>} (a many-valued EMF feature's backing list iterator) to
+   * {@link OCLElement}s via {@link #wrapValue}, skipping {@code null} entries one at a time
+   * instead of pre-filtering the whole source. Mirrors {@code
+   * tools.vitruv.dsls.vitruvocl.evaluator.lazy.LazyOperations}'s {@code FilterIterator} lookahead
+   * pattern: {@code hasNext()} is answered from an already-computed pending element, so
+   * constructing/advancing this iterator pulls at most one raw element ahead of what has actually
+   * been yielded downstream.
+   */
+  private final class SkipNullMappingIterator implements Iterator<OCLElement> {
+    private final Iterator<?> upstream;
+    private OCLElement pending;
+    private boolean hasPending;
+
+    SkipNullMappingIterator(Iterator<?> upstream) {
+      this.upstream = upstream;
+      advance();
+    }
+
+    private void advance() {
+      hasPending = false;
+      while (upstream.hasNext()) {
+        Object item = upstream.next();
+        if (item != null) {
+          pending = wrapValue(item);
+          hasPending = true;
+          return;
+        }
+      }
+    }
+
+    @Override
+    public boolean hasNext() {
+      return hasPending;
+    }
+
+    @Override
+    public OCLElement next() {
+      if (!hasPending) {
+        throw new NoSuchElementException();
+      }
+      OCLElement result = pending;
+      advance();
+      return result;
+    }
   }
 
   /**
