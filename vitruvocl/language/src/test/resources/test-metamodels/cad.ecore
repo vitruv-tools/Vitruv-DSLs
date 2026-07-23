@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="cad"
+  nsURI="http://vitruv.tools/cad/model" nsPrefix="cad">
+  <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+    <details key="documentation" value="" />
+  </eAnnotations>
+  <eClassifiers xsi:type="ecore:EClass" name="CAD_Model">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="id"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" />
+    <eStructuralFeatures xsi:type="ecore:EReference" name="namespaces" upperBound="-1"
+      eType="#//Namespace" containment="true" />
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Namespace">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="id"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="description"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" />
+    <eStructuralFeatures xsi:type="ecore:EReference" name="parameters" upperBound="-1"
+      eType="#//Parameter" containment="true" />
+    <eStructuralFeatures xsi:type="ecore:EReference" name="shapes" upperBound="-1"
+      eType="#//Shape" containment="true" />
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Parameter">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="id"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="description"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" />
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="NumericParameter" eSuperTypes="#//Parameter">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EFloat" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="unit" eType="#//Unit" />
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="StringParameter" eSuperTypes="#//Parameter">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="unit" eType="#//Unit" />
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="BooleanParameter" eSuperTypes="#//Parameter">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean" />
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="Unit">
+    <eLiterals name="MM" literal="mm" />
+    <eLiterals name="CM" value="1" literal="cm" />
+    <eLiterals name="NM" value="2" literal="nm" />
+    <eLiterals name="UM" value="3" literal="um" />
+    <eLiterals name="M" value="4" literal="m" />
+    <eLiterals name="INCH" value="10" literal="in" />
+    <eLiterals name="FT" value="11" literal="ft" />
+    <eLiterals name="COUNT" value="20" />
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Coordinate" eSuperTypes="#//Parameter">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+      <details key="documentation"
+        value="Represents an absolute position in three-dimensional space.&#xD;&#xA;&#xD;&#xA;A Coordinate is used for points such as:&#xD;&#xA;- center points&#xD;&#xA;- corner points&#xD;&#xA;- apex points&#xD;&#xA;- axis endpoints&#xD;&#xA;- reference positions&#xD;&#xA;&#xD;&#xA;Assumptions:&#xD;&#xA;Coordinates used together in one shape definition must use compatible units." />
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="x"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EFloat">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="x-value of a coordinate." />
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="y"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EFloat">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="y-value of a coordinate." />
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="z"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EFloat">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="z-value of a coordinate." />
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="unit" eType="#//Unit" />
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Shape" abstract="true">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+      <details key="documentation"
+        value="A Shape is the most general metamodel element for a concrete geometric object.&#xD;&#xA;It serves as the common abstraction for all shape types.&#xD;&#xA;&#xD;&#xA;Assumptions:&#xD;&#xA;- each Shape represents exactly one geometric object&#xD;&#xA;- id should be unique at least within the surrounding Namespace&#xD;&#xA;- name is human-readable and not required for uniqueness&#xD;&#xA;- description documents semantics, engineering intent, or modeling conventions" />
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="id"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="description"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="unit" eType="#//Unit">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Optional parameter if different units should be used." />
+      </eAnnotations>
+    </eStructuralFeatures>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="PrimitiveShape" eSuperTypes="#//Shape">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+      <details key="documentation"
+        value="A PrimitiveShape is a standard geometric solid whose geometry can be determined directly from a small number of parameters, without requiring explicit face or topology definitions." />
+    </eAnnotations>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Sphere" eSuperTypes="#//PrimitiveShape">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+      <details key="documentation"
+        value="A sphere is defined by its center point and its radius.&#xD;&#xA;&#xD;&#xA;Assumptions:&#xD;&#xA;- radius > 0&#xD;&#xA;- center is the unique midpoint of the sphere&#xD;&#xA;- all surface points have the same distance radius from center&#xD;&#xA;- radius and center coordinates use compatible units" />
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="center" lowerBound="1"
+      eType="#//Coordinate" containment="true" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="radius"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EFloat" />
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Cylinder" eSuperTypes="#//PrimitiveShape">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+      <details key="documentation"
+        value="A cylinder is defined by the centers of its two circular end faces and its radius.&#xD;&#xA;&#xD;&#xA;Assumptions:&#xD;&#xA;&#xD;&#xA;- bottomCenter != topCenter&#xD;&#xA;- radius > 0&#xD;&#xA;- the cylinder axis is the line through bottomCenter and topCenter&#xD;&#xA;- the two end faces are circles perpendicular to the axis&#xD;&#xA;- both end faces have the same radius&#xD;&#xA;- the solid is the straight circular cylinder between these end faces" />
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="radius"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EFloat" />
+    <eStructuralFeatures xsi:type="ecore:EReference" name="bottomCenter" lowerBound="1"
+      eType="#//Coordinate" containment="true" />
+    <eStructuralFeatures xsi:type="ecore:EReference" name="topCenter" lowerBound="1"
+      eType="#//Coordinate" containment="true" />
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Cone" eSuperTypes="#//PrimitiveShape">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+      <details key="documentation"
+        value="A cone is defined by the center of its circular base, its apex, and the base radius.&#xD;&#xA;&#xD;&#xA;Assumptions:&#xD;&#xA;- baseCenter != apex&#xD;&#xA;- baseRadius > 0&#xD;&#xA;- the base is a circle centered at baseCenter&#xD;&#xA;- the base plane is perpendicular to the line from baseCenter to apex&#xD;&#xA;- the cone surface is the straight ruled surface between the base circle and the apex" />
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="baseCenter" lowerBound="1"
+      eType="#//Coordinate" containment="true" />
+    <eStructuralFeatures xsi:type="ecore:EReference" name="apex" lowerBound="1"
+      eType="#//Coordinate"
+      containment="true" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="baseRadius"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EFloat" />
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Tube" eSuperTypes="#//PrimitiveShape">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+      <details key="documentation"
+        value="A tube is a hollow cylinder defined by two axis points, an outer radius, and an inner radius.&#xD;&#xA;&#xD;&#xA;Assumptions:&#xD;&#xA;- bottomCenter != topCenter&#xD;&#xA;- outerRadius > innerRadius >= 0&#xD;&#xA;- inner and outer cylindrical surfaces are concentric&#xD;&#xA;- both share the same axis defined by the two center points&#xD;&#xA;- end faces are annular rings perpendicular to the axis" />
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="bottomCenter" lowerBound="1"
+      eType="#//Coordinate" containment="true" />
+    <eStructuralFeatures xsi:type="ecore:EReference" name="topCenter" lowerBound="1"
+      eType="#//Coordinate" containment="true" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="outerRadius"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EFloat" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="innerRadius"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EFloat" />
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Box" eSuperTypes="#//PrimitiveShape">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+      <details key="documentation"
+        value="A box-like solid is defined by one corner point and three edge vectors spanning the solid.&#xD;&#xA;&#xD;&#xA;Assumptions:&#xD;&#xA;- all three edge vectors must be defined and not zero (0,0,0)&#xD;&#xA;- the three vectors must be linearly independent&#xD;&#xA;- the solid consists of all points reachable from origin by linear combination origin + a*A + b*B + c*C with 0 &lt;= a,b,c &lt;= 1" />
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="edgeVectorA" lowerBound="1"
+      eType="#//Vector3D" containment="true" />
+    <eStructuralFeatures xsi:type="ecore:EReference" name="edgeVectorB" lowerBound="1"
+      eType="#//Vector3D" containment="true" />
+    <eStructuralFeatures xsi:type="ecore:EReference" name="edgeVectorC" lowerBound="1"
+      eType="#//Vector3D" containment="true" />
+    <eStructuralFeatures xsi:type="ecore:EReference" name="origin" lowerBound="1"
+      eType="#//Coordinate" containment="true" />
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Prism" eSuperTypes="#//PrimitiveShape">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+      <details key="documentation"
+        value="A prism is defined by a planar polygonal base profile and an extrusion vector.&#xD;&#xA;&#xD;&#xA;Assumptions:&#xD;&#xA;- baseProfile contains at least 3 vertices&#xD;&#xA;- all vertices of the base profile are coplanar&#xD;&#xA;- the polygon is simple, i.e. non-self-intersecting&#xD;&#xA;- extrusion must be non-zero&#xD;&#xA;- the top face is obtained by translating every base vertex by extrusion&#xD;&#xA;- side faces connect corresponding base and top edges" />
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="baseProfile" lowerBound="1"
+      eType="#//PolygonProfile" containment="true" />
+    <eStructuralFeatures xsi:type="ecore:EReference" name="extrusion" lowerBound="1"
+      eType="#//Vector3D" containment="true" />
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Pyramid" eSuperTypes="#//PrimitiveShape">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+      <details key="documentation"
+        value="A pyramid is defined by a planar polygonal base profile and an apex point.&#xD;&#xA;&#xD;&#xA;Assumptions:&#xD;&#xA;&#xD;&#xA;- baseProfile contains at least 3 vertices&#xD;&#xA;- all vertices of the base profile are coplanar&#xD;&#xA;- the polygon is simple, i.e. non-self-intersecting&#xD;&#xA;- apex must not lie in the base plane&#xD;&#xA;- each side face is formed by one edge of the base polygon and the apex" />
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="baseProfile" lowerBound="1"
+      eType="#//Vector3D" containment="true" />
+    <eStructuralFeatures xsi:type="ecore:EReference" name="apex" lowerBound="1"
+      eType="#//Coordinate"
+      containment="true" />
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Vector3D">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+      <details key="documentation"
+        value="Represents a directed displacement in three-dimensional space.&#xD;&#xA;&#xD;&#xA;A Vector3D can be used for:&#xD;&#xA;- extrusion directions&#xD;&#xA;- edge directions&#xD;&#xA;- translation offsets&#xD;&#xA;- spanning directions of a box-like solid" />
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="x"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EFloat" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="y"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EFloat" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="z"
+      eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EFloat" />
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="unit" eType="#//Unit" />
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="PolygonProfile">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+      <details key="documentation"
+        value="Represents an ordered planar polygon used as a base profile for primitive solids.&#xD;&#xA;&#xD;&#xA;Assumptions:&#xD;&#xA;&#xD;&#xA;- must contain at least 3 vertices&#xD;&#xA;- all vertices must lie in one plane&#xD;&#xA;- the order of vertices is significant&#xD;&#xA;- edges are formed between consecutive vertices and from the last vertex back to the first&#xD;&#xA;- the polygon boundary must not self-intersect&#xD;&#xA;- orientation convention: counterclockwise" />
+    </eAnnotations>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="vertices" lowerBound="3"
+      upperBound="-1" eType="#//Coordinate" containment="true" />
+  </eClassifiers>
+</ecore:EPackage>
