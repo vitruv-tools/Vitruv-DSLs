@@ -16,6 +16,7 @@ package tools.vitruv.dsls.vitruvocl.pipeline;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +28,8 @@ import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.resource.Resource;
 import tools.vitruv.change.correspondence.Correspondence;
 import tools.vitruv.change.correspondence.view.CorrespondenceModelView;
+import tools.vitruv.dsls.vitruvocl.allinstances.AllInstancesEngine;
+import tools.vitruv.dsls.vitruvocl.allinstances.cache.AllInstancesCallSite;
 import tools.vitruv.framework.views.ViewSource;
 import tools.vitruv.framework.vsum.VirtualModel;
 import tools.vitruv.framework.vsum.internal.InternalVirtualModel;
@@ -64,6 +67,31 @@ public class VsumWrapper implements MetamodelWrapperInterface {
    * registers all metamodels during {@code buildAndInitialize()}, before any instances exist.
    */
   private final Map<String, EPackage> metamodelRegistry = new HashMap<>();
+
+  /**
+   * Every {@link EClass} ever passed to {@link #getAllInstances}, in first-seen order.
+   *
+   * <p>Same runtime call-site registration as {@link MetamodelWrapper#getAllInstances}: {@link
+   * tools.vitruv.dsls.vitruvocl.evaluator.EvaluationVisitor} is the sole caller of this method
+   * anywhere in the codebase, so the set of types ever queried through it is exactly the set of
+   * types constraints need — no separate AST pre-scan required. Every call site is treated as
+   * {@code ALL_OF_KIND} (subtype-inclusive), matching this class's previous {@code
+   * isSuperTypeOf}-based filtering exactly.
+   */
+  private final Set<EClass> queriedAllInstancesTypes = new LinkedHashSet<>();
+
+  /**
+   * Lazily (re)built {@link AllInstancesEngine}; {@code null} means stale/not-yet-built.
+   *
+   * <p>Invalidated only when {@link #queriedAllInstancesTypes} gains a new entry. Unlike {@link
+   * MetamodelWrapper}, {@link #metamodelRegistry} never grows after construction here — the VSUM
+   * registers all of its metamodels before any {@link VsumWrapper} is created (see {@link
+   * #loadMetamodelsFromRegistry}) — so no metamodel-change invalidation trigger is needed. {@code
+   * compute()} is always invoked against a freshly-read root list (see {@link #getAllInstances}),
+   * so live changes to the VSUM's instance model are always reflected regardless of how long this
+   * cached engine has been reused.
+   */
+  private AllInstancesEngine allInstancesEngine;
 
   /**
    * Creates a new VSUM wrapper and initializes the metamodel registry and correspondence model.
@@ -124,17 +152,38 @@ public class VsumWrapper implements MetamodelWrapperInterface {
    * instances added after construction. Follows EMF subtyping semantics — instances of subclasses
    * are included.
    *
+   * <p><b>Implementation:</b> delegates to an {@link AllInstancesEngine} (Wei &amp; Kolovos,
+   * "An Efficient Computation Strategy for allInstances()", BigMDE 2015) instead of an unconditional
+   * {@code eAllContents()} walk over every view source model on every call. The traversal root list
+   * is {@link #getAllRootObjects()} — exactly the same source the previous implementation walked
+   * (all view source model roots; the correspondence model is a separate structure never touched by
+   * either implementation) — so results are read live just as before; only the engine's query
+   * analysis and containment-reachability pruning are cached (see {@link
+   * #queriedAllInstancesTypes} and {@link #allInstancesEngine}).
+   *
    * @param eClass the metaclass whose instances should be retrieved
    * @return list of all matching model elements; empty if none found
    */
   @Override
   public List<EObject> getAllInstances(EClass eClass) {
-    return ((ViewSource) vsum)
-        .getViewSourceModels().stream()
-            .flatMap(r -> r.getContents().stream())
-            .flatMap(root -> getAllContentsRecursive(root).stream())
-            .filter(obj -> eClass.isSuperTypeOf(obj.eClass()))
-            .toList();
+    if (queriedAllInstancesTypes.add(eClass)) {
+      allInstancesEngine = null; // newly-seen call site -> cache configuration is stale
+    }
+    if (allInstancesEngine == null) {
+      allInstancesEngine = buildAllInstancesEngine();
+    }
+
+    Map<EClass, List<EObject>> instancesByType = allInstancesEngine.compute(getAllRootObjects());
+    return instancesByType.getOrDefault(eClass, Collections.emptyList());
+  }
+
+  /** Builds a fresh {@link AllInstancesEngine} from the currently known metamodels and call sites. */
+  private AllInstancesEngine buildAllInstancesEngine() {
+    List<AllInstancesCallSite> callSites = new ArrayList<>(queriedAllInstancesTypes.size());
+    for (EClass type : queriedAllInstancesTypes) {
+      callSites.add(new AllInstancesCallSite(type, AllInstancesCallSite.Kind.ALL_OF_KIND));
+    }
+    return new AllInstancesEngine(new LinkedHashSet<>(metamodelRegistry.values()), callSites);
   }
 
   /**
@@ -215,13 +264,6 @@ public class VsumWrapper implements MetamodelWrapperInterface {
   // ---------------------------------------------------------------------------
   // Internal helpers
   // ---------------------------------------------------------------------------
-
-  private List<EObject> getAllContentsRecursive(EObject root) {
-    List<EObject> result = new ArrayList<>();
-    result.add(root);
-    root.eAllContents().forEachRemaining(result::add);
-    return result;
-  }
 
   @Override
   public String getSourceFileForInstance(EObject instance) {

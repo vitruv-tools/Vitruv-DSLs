@@ -49,6 +49,8 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import tools.vitruv.dsls.vitruvocl.allinstances.AllInstancesEngine;
+import tools.vitruv.dsls.vitruvocl.allinstances.cache.AllInstancesCallSite;
 
 /**
  * Manages metamodel and model instance loading for OCL constraint evaluation.
@@ -57,9 +59,11 @@ import org.w3c.dom.NodeList;
  *
  * <ul>
  *   <li>Loading Ecore metamodels with package name registration
- *   <li>Loading XMI model instances and organizing by EClass
+ *   <li>Loading XMI model instances
  *   <li>Resolving qualified names like {@code spacecraft::Spacecraft} to EClass
- *   <li>Querying all instances of a given EClass (including subtypes)
+ *   <li>Querying all instances of a given EClass (including subtypes), via an {@link
+ *       tools.vitruv.dsls.vitruvocl.allinstances.AllInstancesEngine} — see {@link
+ *       #getAllInstances} for details
  * </ul>
  *
  * <p>Implements {@link MetamodelWrapperInterface} for use across compilation phases, particularly
@@ -89,8 +93,35 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   /** Maps package names to loaded EPackages. */
   private final Map<String, EPackage> metamodelRegistry = new HashMap<>();
 
-  /** Maps EClasses to all instances (including subtype instances). */
-  private final Map<EClass, List<EObject>> instances = new HashMap<>();
+  /**
+   * Every {@link EClass} ever passed to {@link #getAllInstances}, in first-seen order.
+   *
+   * <p>This is the runtime-discovered "call site" registration mentioned in the allInstances()
+   * computation strategy of Wei &amp; Kolovos (BigMDE 2015): rather than statically pre-scanning
+   * every constraint's AST for {@code allInstances()} calls, each type is registered the moment a
+   * constraint actually asks for it (from {@link
+   * tools.vitruv.dsls.vitruvocl.evaluator.EvaluationVisitor}, the sole caller of {@link
+   * #getAllInstances}). This is exact, not an approximation: the set of types ever queried against
+   * this wrapper equals the set of types constraints actually need, since there is no other way to
+   * ask for instances than through this method.
+   *
+   * <p><b>Semantics note:</b> every prior call site is treated as {@code ALL_OF_KIND}
+   * (subtype-inclusive), matching the old greedy implementation's behavior exactly — see {@link
+   * #getAllInstances} for the detailed semantic-equivalence analysis.
+   */
+  private final Set<EClass> queriedAllInstancesTypes = new LinkedHashSet<>();
+
+  /**
+   * Lazily (re)built {@link AllInstancesEngine}; {@code null} means stale/not-yet-built.
+   *
+   * <p>Invalidated whenever {@link #queriedAllInstancesTypes} gains a new entry or a new metamodel
+   * package is (un)registered — both change the metamodel-level pruning decision the engine's
+   * cache configuration is based on. Per {@link AllInstancesEngine}'s own contract, this cached
+   * engine may be reused across many {@link #getAllInstances} calls even as the instance model
+   * changes, since {@code compute()} always performs a fresh traversal; only the pruning analysis
+   * itself (query analysis + containment reachability) is cached here.
+   */
+  private AllInstancesEngine allInstancesEngine;
 
   /**
    * Maps each registered EObject to its source filename. Uses identity (not equals) so different.
@@ -376,9 +407,11 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
     if (pkg.getNsURI() != null) {
       EPackage.Registry.INSTANCE.put(pkg.getNsURI(), pkg);
     }
-    // Also register by name so resolveEClass("tires", "Tire") works
-    if (pkg.getName() != null) {
-      metamodelRegistry.putIfAbsent(pkg.getName(), pkg);
+    // Also register by name so resolveEClass("tires", "Tire") works.
+    // A genuinely new package changes what computeTraversableReferences() can see, so it
+    // invalidates the cached engine (putIfAbsent returns null exactly when newly inserted).
+    if (pkg.getName() != null && metamodelRegistry.putIfAbsent(pkg.getName(), pkg) == null) {
+      allInstancesEngine = null;
     }
     for (EPackage subPkg : pkg.getESubpackages()) {
       registerPackageRecursively(subPkg);
@@ -431,6 +464,8 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
       if (pkg.getNsURI() != null) {
         EPackage.Registry.INSTANCE.remove(pkg.getNsURI());
       }
+      // The known metamodel package set shrank, invalidating any cached engine built from it.
+      allInstancesEngine = null;
     }
 
     toRemove.unload();
@@ -470,7 +505,7 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
     String filename = xmiPath.getFileName().toString();
 
     for (EObject root : resource.getContents()) {
-      addInstanceRecursiveInternal(root, filename);
+      registerSourceFileRecursively(root, filename);
       // Register root as context candidate (one entry per root EObject per file)
       contextObjects.add(root);
       instanceFilenames.add(filename);
@@ -502,15 +537,14 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   }
 
   /**
-   * Internal recursive helper. All levels add to instances map and instanceSourceFile. Only
-   * top-level roots are registered in contextObjects/instanceFilenames.
+   * Internal recursive helper. All levels add to {@link #instanceSourceFile}. Only top-level roots
+   * are registered in contextObjects/instanceFilenames.
    */
-  private void addInstanceRecursiveInternal(EObject instance, String sourceFile) {
-    instances.computeIfAbsent(instance.eClass(), k -> new ArrayList<>()).add(instance);
+  private void registerSourceFileRecursively(EObject instance, String sourceFile) {
     instanceSourceFile.put(instance, sourceFile);
 
     for (EObject child : instance.eContents()) {
-      addInstanceRecursiveInternal(child, sourceFile);
+      registerSourceFileRecursively(child, sourceFile);
     }
   }
 
@@ -530,22 +564,58 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   /**
    * Returns all instances of given EClass, including subtype instances.
    *
+   * <p><b>Implementation:</b> delegates to an {@link AllInstancesEngine} (Wei &amp; Kolovos,
+   * "An Efficient Computation Strategy for allInstances()", BigMDE 2015) instead of indexing every
+   * loaded object by its exact type up front. The engine's query analysis is built lazily from
+   * {@link #queriedAllInstancesTypes} — the set of EClasses ever passed to this method — since this
+   * method is the only place in the codebase constraints ever ask for instances through (see {@link
+   * tools.vitruv.dsls.vitruvocl.evaluator.EvaluationVisitor}, its sole caller); the set of types
+   * this method has ever been called with is therefore exactly the set of types constraints need,
+   * with no separate AST pre-scan required.
+   *
+   * <p><b>Semantic equivalence with the previous greedy implementation:</b> the old code indexed
+   * every loaded object by its exact {@link EClass} (via an unconditional {@code eContents()}
+   * walk at load time) and, on every call, returned {@code index[eClass]} unioned with
+   * {@code index[T]} for every recorded type {@code T} with {@code eClass.isSuperTypeOf(T)} — i.e.
+   * subtype-inclusive ("allInstances()"/allOfKind semantics), never exact-type-only. This method
+   * reproduces that exactly: every call site is registered as {@code ALL_OF_KIND}, and {@link
+   * tools.vitruv.dsls.vitruvocl.allinstances.collect.SinglePassInstanceCollector} matches instances
+   * via the same {@code kindType.isSuperTypeOf(actualType)} relation. The traversal root set is
+   * {@link #contextObjects} — precisely the roots the old {@code instances} index was ever
+   * populated from (via {@link #loadModelInstance}) — not {@link #getAllRootObjects()}, which would
+   * also include metamodel (.ecore) and correspondence resources the old index never touched.
+   *
+   * <p><b>Engine lifecycle:</b> the engine's cache configuration and pruned containment-reference
+   * set depend only on the metamodel and the accumulated query call sites, so they are cached and
+   * reused across calls; only a newly-seen type or a newly-(un)registered metamodel package
+   * invalidates and rebuilds them (see {@link #queriedAllInstancesTypes} and {@link
+   * #allInstancesEngine}). The instance collection itself ({@code engine.compute(...)}) is always
+   * performed fresh on every call, so changes to the loaded instance model between calls are always
+   * reflected.
+   *
    * @param eClass EClass to query
    * @return List of all direct and indirect instances
    */
   @Override
   public List<EObject> getAllInstances(EClass eClass) {
-    List<EObject> result = new ArrayList<>();
-
-    result.addAll(instances.getOrDefault(eClass, Collections.emptyList()));
-
-    for (Map.Entry<EClass, List<EObject>> entry : instances.entrySet()) {
-      if (eClass.isSuperTypeOf(entry.getKey()) && !eClass.equals(entry.getKey())) {
-        result.addAll(entry.getValue());
-      }
+    if (queriedAllInstancesTypes.add(eClass)) {
+      allInstancesEngine = null; // newly-seen call site -> cache configuration is stale
+    }
+    if (allInstancesEngine == null) {
+      allInstancesEngine = buildAllInstancesEngine();
     }
 
-    return result;
+    Map<EClass, List<EObject>> instancesByType = allInstancesEngine.compute(contextObjects);
+    return instancesByType.getOrDefault(eClass, Collections.emptyList());
+  }
+
+  /** Builds a fresh {@link AllInstancesEngine} from the currently known metamodels and call sites. */
+  private AllInstancesEngine buildAllInstancesEngine() {
+    List<AllInstancesCallSite> callSites = new ArrayList<>(queriedAllInstancesTypes.size());
+    for (EClass type : queriedAllInstancesTypes) {
+      callSites.add(new AllInstancesCallSite(type, AllInstancesCallSite.Kind.ALL_OF_KIND));
+    }
+    return new AllInstancesEngine(new LinkedHashSet<>(metamodelRegistry.values()), callSites);
   }
 
   /**
@@ -584,16 +654,6 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
   /** Returns all registered context (root) objects in load order. */
   public List<EObject> getContextObjects() {
     return Collections.unmodifiableList(contextObjects);
-  }
-
-  /**
-   * Manually adds instance to index.
-   *
-   * @param instance EObject to register
-   */
-  public void addInstance(EObject instance) {
-    instances.computeIfAbsent(instance.eClass(), k -> new ArrayList<>()).add(instance);
-    instanceFilenames.add("manually-added");
   }
 
   /**
