@@ -15,6 +15,12 @@
     <packaging>jar</packaging>
 
     <properties>
+        <!-- Note: maven.compiler.source/target below are actually overridden by the inherited
+             maven.compiler.release=21 from the grandparent pom (tools.vitruv:parent:4.0.0), which
+             the compiler plugin prefers whenever both are configured. This module genuinely compiles
+             to Java 21 bytecode (record deconstruction patterns, switch pattern matching are used in
+             EvaluationVisitor/OCLElement/Value), so it cannot be downgraded to 17 without rewriting
+             that code. Consumers must run on JDK 21+. -->
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
     </properties>
@@ -204,6 +210,21 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <!-- Attach the shaded CLI jar under a classifier instead of replacing the
+                                 main artifact. The main artifact (plain, unshaded jar) is what other
+                                 Maven modules resolve as a library dependency; if it were replaced by
+                                 the uber-jar, consumers would get bundled copies of transitive
+                                 dependencies (e.g. tools.vitruv.framework.vsum) that collide on the
+                                 classpath with their own, correctly-versioned dependencies. -->
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>cli</shadedClassifierName>
+                            <!-- Without this, the shade plugin still replaces the installed POM with a
+                                 dependency-reduced one (stripping deps merged into the CLI jar) even
+                                 though the shaded jar itself now uses a classifier. That silently broke
+                                 consumers: e.g. antlr4-runtime disappeared from vitruvocl-language's
+                                 installed POM, so downstream builds failed at runtime with
+                                 NoClassDefFoundError instead of at dependency-resolution time. -->
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
