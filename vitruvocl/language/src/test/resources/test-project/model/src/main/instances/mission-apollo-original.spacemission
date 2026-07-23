@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<spaceMission:Mission xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:spaceMission="http://www.example.org/spaceMission" missionName="Apollo Program" launchDate="1969-07-16" budget="25000000" status="completed">
+  <spacecraft name="Apollo" serialNumber="SC-004" mass="2970"/>
+</spaceMission:Mission>
