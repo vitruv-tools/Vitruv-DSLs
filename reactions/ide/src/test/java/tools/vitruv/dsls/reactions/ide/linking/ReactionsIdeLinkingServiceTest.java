@@ -23,28 +23,33 @@ import tools.vitruv.dsls.reactions.ide.ReactionsLanguageIdeSetup;
  */
 class ReactionsIdeLinkingServiceTest {
 
-  private static final String ECORE_CONTENT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-      + "<ecore:EPackage xmi:version=\"2.0\"\n"
-      + "    xmlns:xmi=\"http://www.omg.org/XMI\"\n"
-      + "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
-      + "    xmlns:ecore=\"http://www.eclipse.org/emf/2002/Ecore\"\n"
-      + "    name=\"simple\" nsURI=\"http://example.org/test/simple\" nsPrefix=\"simple\">\n"
-      + "  <eClassifiers xsi:type=\"ecore:EClass\" name=\"Root\">\n"
-      + "    <eStructuralFeatures xsi:type=\"ecore:EAttribute\" name=\"id\"\n"
-      + "        eType=\"ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString\"/>\n"
-      + "  </eClassifiers>\n"
-      + "</ecore:EPackage>\n";
+  private static final String ECORE_CONTENT = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <ecore:EPackage xmi:version="2.0"
+          xmlns:xmi="http://www.omg.org/XMI"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
+          name="simple" nsURI="http://example.org/test/simple" nsPrefix="simple">
+        <eClassifiers xsi:type="ecore:EClass" name="Root">
+          <eStructuralFeatures xsi:type="ecore:EAttribute" name="id"
+              eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+        </eClassifiers>
+      </ecore:EPackage>
+      """;
 
-  private static final String REACTIONS_CONTENT = "import \"http://example.org/test/simple\" "
-      + "as simple\n\n"
-      + "reactions: test\n"
-      + "in reaction to changes in simple\n"
-      + "execute actions in simple\n\n"
-      + "reaction InsertRootTest {\n"
-      + "\tafter element simple::Root created\n"
-      + "\tcall {\n"
-      + "\t}\n"
-      + "}\n";
+  private static final String REACTIONS_CONTENT = """
+      import "http://example.org/test/simple" as simple
+
+      reactions: test
+      in reaction to changes in simple
+      execute actions in simple
+
+      reaction InsertRootTest {
+      \tafter element simple::Root created
+      \tcall {
+      \t}
+      }
+      """;
 
   @Test
   void metamodelImportResolvesAgainstSiblingEcoreFile(@TempDir Path projectRoot)

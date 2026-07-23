@@ -24,7 +24,7 @@ public class MutableUrlClassLoader extends URLClassLoader {
    *
    * @param url - the {@link URL} to add
    */
-  public void addUrl(URL url) {
+  public void addClasspathUrl(URL url) {
     addURL(url);
   }
 

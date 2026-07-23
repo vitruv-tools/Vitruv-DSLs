@@ -98,7 +98,7 @@ class ReactionsClasspathRegistrar {
 		val path = classesDir.absolutePath
 		if (addedClassesDirs.add(path)) {
 			log.info('''Adding «path» to the classpath used for JVM type resolution''')
-			MutableUrlClassLoaderHolder.INSTANCE.addUrl(classesDir.toURI.toURL)
+			MutableUrlClassLoaderHolder.INSTANCE.addClasspathUrl(classesDir.toURI.toURL)
 		}
 	}
 
