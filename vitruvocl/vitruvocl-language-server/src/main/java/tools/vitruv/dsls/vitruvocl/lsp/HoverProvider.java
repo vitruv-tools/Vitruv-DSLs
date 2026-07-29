@@ -330,7 +330,7 @@ public class HoverProvider {
         case Warning -> "$(warning)";
         default -> "$(info)";
       };
-      sb.append(icon).append(" **").append(d.getMessage()).append("**\n\n");
+      sb.append(icon).append(" **").append(d.getMessage().getLeft()).append("**\n\n");
     }
     return hover(sb.toString().stripTrailing());
   }
