@@ -93,7 +93,7 @@ class DocumentAnalyzerTest {
 
     List<Diagnostic> typos =
         result.getDiagnostics().stream()
-            .filter(d -> d.getMessage().contains("Did you mean"))
+            .filter(d -> d.getMessage().getLeft().contains("Did you mean"))
             .toList();
     assertThat(typos).isNotEmpty();
     assertThat(typos.get(0).getData()).isEqualTo("@severity");

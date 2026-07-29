@@ -184,7 +184,7 @@ public class DocumentAnalyzer {
                     d.getRange().getStart().getCharacter(),
                     d.getRange().getEnd().getLine(),
                     d.getRange().getEnd().getCharacter(),
-                    d.getMessage()));
+                    d.getMessage().getLeft()));
       }
 
     } catch (Exception e) {

@@ -53,9 +53,9 @@
 		"package": "npm run check-types && node esbuild.cjs --production"
 	},
 	"devDependencies": {
-		"@eslint/js": "^9.39.3",
+		"@eslint/js": "^9.39.5",
 		"@stylistic/eslint-plugin": "^5.10.0",
-		"@types/node": "^22",
+		"@types/node": "^26",
 		"@types/vscode": "^1.125.0",
 		"esbuild": "^0.28.1",
 		"eslint": "^10.6.0",
@@ -64,6 +64,6 @@
 		"typescript-eslint": "^8.63.0"
 	},
 	"dependencies": {
-		"vscode-languageclient": "^9.0.1"
+		"vscode-languageclient": "^10.1.0"
 	}
 }
