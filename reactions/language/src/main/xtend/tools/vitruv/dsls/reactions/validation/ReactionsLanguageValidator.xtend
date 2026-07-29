@@ -5,6 +5,8 @@ package tools.vitruv.dsls.reactions.validation
 
 import com.google.inject.Inject
 import org.eclipse.xtext.validation.Check
+import org.eclipse.xtext.validation.CheckType
+import tools.vitruv.dsls.reactions.util.RoutineCallerFinder
 import tools.vitruv.dsls.reactions.language.toplevelelements.TopLevelElementsPackage
 import java.util.HashMap
 import tools.vitruv.dsls.reactions.language.toplevelelements.Routine
@@ -36,6 +38,7 @@ import tools.vitruv.dsls.reactions.language.ElementRemovalFromListChangeType
  */
 class ReactionsLanguageValidator extends AbstractReactionsLanguageValidator {
 	@Inject ReactionsImportScopeHelper reactionsImportScopeHelper;
+	@Inject RoutineCallerFinder routineCallerFinder;
 
 	@Check
 	def checkReactionsFile(ReactionsFile reactionsFile) {
@@ -371,6 +374,19 @@ class ReactionsLanguageValidator extends AbstractReactionsLanguageValidator {
 					}
 				}
 			}
+		}
+	}
+
+	// an override never has direct call sites of its own: callers always call through the
+	// overridden routine's facade entry point, which dispatches to the override at runtime.
+	@Check(CheckType.EXPENSIVE)
+	def checkRoutineHasCallers(Routine routine) {
+		if (routine.isOverride) {
+			return;
+		}
+		if (!routineCallerFinder.hasCallers(routine)) {
+			warning("Routine '" + routine.formattedName + "' is never called.",
+				TopLevelElementsPackage.Literals.ROUTINE__NAME);
 		}
 	}
 
