@@ -166,15 +166,30 @@ public class VsumWrapper implements MetamodelWrapperInterface {
    */
   @Override
   public List<EObject> getAllInstances(EClass eClass) {
+    // See MetamodelWrapper#getAllInstances for why only the cache bookkeeping is synchronized
+    // while the compute() traversal itself runs lock-free.
+    AllInstancesEngine engine = obtainEngine(eClass);
+    Map<EClass, List<EObject>> instancesByType = engine.compute(getAllRootObjects());
+    return instancesByType.getOrDefault(eClass, Collections.emptyList());
+  }
+
+  /**
+   * Registers {@code eClass} as a call site (if not already known) and returns an {@link
+   * AllInstancesEngine} whose cache configuration covers it, rebuilding the cached engine first if
+   * necessary.
+   *
+   * <p>Synchronized because {@link #queriedAllInstancesTypes} and {@link #allInstancesEngine} are
+   * shared, mutable state read and written by every {@link #getAllInstances} call — including
+   * concurrently from multiple threads when constraints are evaluated in parallel.
+   */
+  private synchronized AllInstancesEngine obtainEngine(EClass eClass) {
     if (queriedAllInstancesTypes.add(eClass)) {
       allInstancesEngine = null; // newly-seen call site -> cache configuration is stale
     }
     if (allInstancesEngine == null) {
       allInstancesEngine = buildAllInstancesEngine();
     }
-
-    Map<EClass, List<EObject>> instancesByType = allInstancesEngine.compute(getAllRootObjects());
-    return instancesByType.getOrDefault(eClass, Collections.emptyList());
+    return allInstancesEngine;
   }
 
   /** Builds a fresh {@link AllInstancesEngine} from the currently known metamodels and call sites. */

@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -94,6 +95,35 @@ public class SmartLoader {
    */
   public static LoadResult loadForConstraint(
       String constraint, Path[] ecoreFiles, Path[] xmiFiles) {
+    return loadForConstraints(List.of(constraint), ecoreFiles, xmiFiles);
+  }
+
+  /**
+   * Loads metamodels and instances based on the combined dependencies of a whole constraint list.
+   *
+   * <p>Runs {@link DependencyAnalyzer#analyzeConstraint} over every constraint in {@code
+   * constraints} and loads the <b>union</b> of all referenced metamodel packages (and their
+   * matching instances) into a single wrapper — rather than only the first constraint's
+   * dependencies. This is what {@code VitruvOCL#evaluateConstraints} uses so that a batch whose
+   * constraints reference different metamodel packages resolves correctly for every constraint, not
+   * just the first one; see {@code ConstraintListEvaluator} for how the resulting wrapper is then
+   * shared (read-mostly) across the parallel per-constraint evaluation tasks.
+   *
+   * <p>Dependency analysis itself (pure lexing per constraint, no I/O) runs entirely within this
+   * method, before any parallel task is started — the loaded wrapper this method returns is only
+   * handed to the executor afterwards.
+   *
+   * <p>{@link #loadForConstraint(String, Path[], Path[])} delegates here with a singleton list, so
+   * single-constraint evaluation is unaffected — the union of one constraint's packages is just that
+   * constraint's own packages.
+   *
+   * @param constraints OCL constraint expressions to analyze, in any order
+   * @param ecoreFiles Metamodel files (absolute or relative paths)
+   * @param xmiFiles Model instance files (absolute or relative paths)
+   * @return Load result with configured wrapper, errors, and warnings
+   */
+  public static LoadResult loadForConstraints(
+      List<String> constraints, Path[] ecoreFiles, Path[] xmiFiles) {
     MetamodelWrapper wrapper = new MetamodelWrapper();
     List<FileError> fileErrors = new ArrayList<>();
     List<Warning> warnings = new ArrayList<>();
@@ -118,7 +148,7 @@ public class SmartLoader {
       return new LoadResult(wrapper, fileErrors, warnings);
     }
 
-    Set<String> requiredPackages = DependencyAnalyzer.analyzeConstraint(constraint);
+    Set<String> requiredPackages = analyzeRequiredPackages(constraints);
     // Always load correspondence instances when present — the ecore is embedded in the JAR
     // and auto-registered, so no explicit .ecore file is required for it.
     requiredPackages.add(PKG_CORRESPONDENCE);
@@ -127,6 +157,21 @@ public class SmartLoader {
         wrapper, requiredPackages, availableEcores, xmiIndex, fileErrors, warnings);
 
     return new LoadResult(wrapper, fileErrors, warnings);
+  }
+
+  /**
+   * Unions the metamodel packages referenced by every constraint in {@code constraints}.
+   *
+   * <p>{@link LinkedHashSet} keeps first-seen order deterministic (matches the analysis-order
+   * pattern already used for {@code queriedAllInstancesTypes} in {@link MetamodelWrapper}); dedup
+   * beyond that has no observable effect since the result only ever drives set membership checks.
+   */
+  private static Set<String> analyzeRequiredPackages(List<String> constraints) {
+    Set<String> requiredPackages = new LinkedHashSet<>();
+    for (String constraint : constraints) {
+      requiredPackages.addAll(DependencyAnalyzer.analyzeConstraint(constraint));
+    }
+    return requiredPackages;
   }
 
   /** Resolves and validates each path, collecting file-level errors as they are found. */

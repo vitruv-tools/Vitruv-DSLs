@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -36,6 +37,15 @@ public class VitruvOCL {
 
   private static VsumWrapper vsumWrapper = null;
   private static MetamodelWrapperInterface directWrapper = null;
+
+  /**
+   * Default worker-thread count for {@link ConstraintListEvaluator}-backed batch evaluation, used
+   * whenever a caller does not pass an explicit thread pool size.
+   *
+   * <p>Every batch-evaluation entry point also accepts an explicit {@code threadPoolSize}
+   * parameter so callers can sweep thread counts for scaling benchmarks.
+   */
+  private static final int DEFAULT_THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
 
   // ---------------------------------------------------------------------------
   // Registration
@@ -127,6 +137,19 @@ public class VitruvOCL {
    * @return the validation result; never {@code null}
    */
   public static BatchValidationResult evaluateConstraints(Path constraintsFile) {
+    return evaluateConstraints(constraintsFile, DEFAULT_THREAD_POOL_SIZE);
+  }
+
+  /**
+   * Evaluates all constraints in the given file against the registered VSUM, distributing the
+   * evaluation across {@code threadPoolSize} worker threads.
+   *
+   * @param constraintsFile path to the {@code .ocl} constraints file
+   * @param threadPoolSize number of worker threads used to evaluate the constraint list; must be
+   *     at least 1
+   * @return the validation result; never {@code null}
+   */
+  public static BatchValidationResult evaluateConstraints(Path constraintsFile, int threadPoolSize) {
     List<String> constraints;
     try {
       constraints = parseConstraintsFile(constraintsFile);
@@ -150,7 +173,7 @@ public class VitruvOCL {
                   List.of(),
                   List.of())));
     }
-    return evaluateConstraints(constraints, getVsumWrapper());
+    return evaluateConstraints(constraints, getVsumWrapper(), threadPoolSize);
   }
 
   /**
@@ -163,11 +186,30 @@ public class VitruvOCL {
    */
   public static BatchValidationResult evaluateConstraints(
       List<String> constraints, Path[] ecoreFiles, Path[] xmiFiles) {
+    return evaluateConstraints(constraints, ecoreFiles, xmiFiles, DEFAULT_THREAD_POOL_SIZE);
+  }
+
+  /**
+   * Evaluates multiple constraints against metamodels and instances loaded from files,
+   * distributing the evaluation across {@code threadPoolSize} worker threads.
+   *
+   * @param constraints the OCL constraint expressions
+   * @param ecoreFiles metamodel files to load
+   * @param xmiFiles model instance files to load
+   * @param threadPoolSize number of worker threads used to evaluate the constraint list; must be
+   *     at least 1
+   * @return the batch evaluation result
+   */
+  public static BatchValidationResult evaluateConstraints(
+      List<String> constraints, Path[] ecoreFiles, Path[] xmiFiles, int threadPoolSize) {
     if (constraints.isEmpty()) {
       return new BatchValidationResult(List.of());
     }
+    // Union of every constraint's dependencies (not just the first), so constraints referencing
+    // different metamodel packages within the same batch all resolve correctly — see
+    // SmartLoader#loadForConstraints. This runs entirely before any parallel task is submitted.
     SmartLoader.LoadResult loadResult =
-        SmartLoader.loadForConstraint(constraints.get(0), ecoreFiles, xmiFiles);
+        SmartLoader.loadForConstraints(constraints, ecoreFiles, xmiFiles);
     if (loadResult.hasErrors()) {
       return new BatchValidationResult(
           constraints.stream()
@@ -177,7 +219,7 @@ public class VitruvOCL {
                           c, false, List.of(), loadResult.fileErrors, loadResult.warnings))
               .toList());
     }
-    return evaluateConstraints(constraints, loadResult.wrapper);
+    return evaluateConstraints(constraints, loadResult.wrapper, threadPoolSize);
   }
 
   /**
@@ -191,22 +233,74 @@ public class VitruvOCL {
    */
   public static BatchValidationResult evaluateConstraints(
       Path constraintsFile, Path[] ecoreFiles, Path[] xmiFiles) throws IOException {
-    List<String> constraints = parseConstraintsFile(constraintsFile);
-    return evaluateConstraints(constraints, ecoreFiles, xmiFiles);
+    return evaluateConstraints(constraintsFile, ecoreFiles, xmiFiles, DEFAULT_THREAD_POOL_SIZE);
   }
 
+  /**
+   * Evaluates constraints read from a file against metamodels and instances loaded from files,
+   * distributing the evaluation across {@code threadPoolSize} worker threads.
+   *
+   * @param constraintsFile path to the {@code .ocl} constraints file
+   * @param ecoreFiles metamodel files to load
+   * @param xmiFiles model instance files to load
+   * @param threadPoolSize number of worker threads used to evaluate the constraint list; must be
+   *     at least 1
+   * @return the batch evaluation result
+   * @throws IOException if the constraints file cannot be read
+   */
+  public static BatchValidationResult evaluateConstraints(
+      Path constraintsFile, Path[] ecoreFiles, Path[] xmiFiles, int threadPoolSize)
+      throws IOException {
+    List<String> constraints = parseConstraintsFile(constraintsFile);
+    return evaluateConstraints(constraints, ecoreFiles, xmiFiles, threadPoolSize);
+  }
+
+  /**
+   * Evaluates {@code constraints} against {@code wrapper}, distributing the work across {@code
+   * threadPoolSize} worker threads via {@link ConstraintListEvaluator}.
+   *
+   * <p>Duplicate detection runs as a cheap, sequential pre-pass over the constraint strings
+   * themselves (no compilation involved) so that only the first occurrence of a given constraint
+   * text is ever submitted for (possibly parallel) compilation and evaluation; later duplicates are
+   * resolved directly to a {@link #duplicateResult}. This keeps duplicate-detection order-stable
+   * regardless of thread pool size, and avoids redundant work. Each submitted constraint is
+   * compiled and evaluated by {@link #compileAndEvaluate}, which creates its own {@link
+   * VitruvOCLCompiler} (and thus its own {@link tools.vitruv.dsls.vitruvocl.common.ErrorCollector})
+   * per call — so no compiler-level state is shared between concurrently-running tasks. Results are
+   * returned in the same order as {@code constraints}, independent of completion order.
+   *
+   * @param constraints the OCL constraint expressions, in the order results should be returned
+   * @param wrapper shared metamodel/instance access, reused (read-mostly) across all tasks
+   * @param threadPoolSize number of worker threads used to evaluate the constraint list; must be
+   *     at least 1
+   * @return the batch evaluation result, in input order
+   */
   private static BatchValidationResult evaluateConstraints(
-      List<String> constraints, MetamodelWrapperInterface wrapper) {
-    List<ConstraintResult> results = new ArrayList<>();
+      List<String> constraints, MetamodelWrapperInterface wrapper, int threadPoolSize) {
+    int size = constraints.size();
+    List<ConstraintResult> results = new ArrayList<>(Collections.nCopies(size, null));
     Set<String> seenConstraints = new HashSet<>();
-    for (String constraint : constraints) {
-      if (seenConstraints.contains(constraint)) {
-        results.add(duplicateResult(constraint));
-        continue;
+    List<String> toEvaluate = new ArrayList<>();
+    List<Integer> toEvaluateIndices = new ArrayList<>();
+
+    for (int i = 0; i < size; i++) {
+      String constraint = constraints.get(i);
+      if (!seenConstraints.add(constraint)) {
+        results.set(i, duplicateResult(constraint));
+      } else {
+        toEvaluate.add(constraint);
+        toEvaluateIndices.add(i);
       }
-      seenConstraints.add(constraint);
-      results.add(compileAndEvaluate(constraint, wrapper, List.of()));
     }
+
+    List<ConstraintResult> evaluated =
+        ConstraintListEvaluator.evaluate(
+            toEvaluate, c -> compileAndEvaluate(c, wrapper, List.of()), threadPoolSize);
+
+    for (int i = 0; i < evaluated.size(); i++) {
+      results.set(toEvaluateIndices.get(i), evaluated.get(i));
+    }
+
     return new BatchValidationResult(results);
   }
 
@@ -219,13 +313,29 @@ public class VitruvOCL {
    * @throws IOException if the constraints file cannot be read
    */
   public static BatchValidationResult evaluateProject(Path projectDir) throws IOException {
+    return evaluateProject(projectDir, DEFAULT_THREAD_POOL_SIZE);
+  }
+
+  /**
+   * Evaluates a project's constraints against its default metamodel and instance directories,
+   * distributing the evaluation across {@code threadPoolSize} worker threads.
+   *
+   * @param projectDir project root; expects {@code model/src/main/{constraints.ocl,ecore,
+   *     instances}}
+   * @param threadPoolSize number of worker threads used to evaluate the constraint list; must be
+   *     at least 1
+   * @return the batch evaluation result
+   * @throws IOException if the constraints file cannot be read
+   */
+  public static BatchValidationResult evaluateProject(Path projectDir, int threadPoolSize)
+      throws IOException {
     Path mainDir = projectDir.resolve("model/src/main");
     Path constraintsFile = mainDir.resolve("constraints.ocl");
     Path ecoreDir = mainDir.resolve("ecore");
     Path instancesDir = mainDir.resolve("instances");
     Path[] ecoreFiles = collectFiles(ecoreDir, ".ecore");
     Path[] xmiFiles = collectAllFiles(instancesDir);
-    return evaluateConstraints(constraintsFile, ecoreFiles, xmiFiles);
+    return evaluateConstraints(constraintsFile, ecoreFiles, xmiFiles, threadPoolSize);
   }
 
   /**
@@ -239,12 +349,28 @@ public class VitruvOCL {
    */
   public static BatchValidationResult evaluateProject(Path constraintsFile, Path resourcesDir)
       throws IOException {
+    return evaluateProject(constraintsFile, resourcesDir, DEFAULT_THREAD_POOL_SIZE);
+  }
+
+  /**
+   * Evaluates constraints from an explicit file against a project's default metamodel and instance
+   * directories, distributing the evaluation across {@code threadPoolSize} worker threads.
+   *
+   * @param constraintsFile path to the {@code .ocl} constraints file
+   * @param resourcesDir project root; expects {@code model/src/main/{ecore,instances}}
+   * @param threadPoolSize number of worker threads used to evaluate the constraint list; must be
+   *     at least 1
+   * @return the batch evaluation result
+   * @throws IOException if the constraints file cannot be read
+   */
+  public static BatchValidationResult evaluateProject(
+      Path constraintsFile, Path resourcesDir, int threadPoolSize) throws IOException {
     Path mainDir = resourcesDir.resolve("model/src/main");
     Path ecoreDir = mainDir.resolve("ecore");
     Path instancesDir = mainDir.resolve("instances");
     Path[] ecoreFiles = collectFiles(ecoreDir, ".ecore");
     Path[] xmiFiles = collectAllFiles(instancesDir);
-    return evaluateConstraints(constraintsFile, ecoreFiles, xmiFiles);
+    return evaluateConstraints(constraintsFile, ecoreFiles, xmiFiles, threadPoolSize);
   }
 
   // ---------------------------------------------------------------------------

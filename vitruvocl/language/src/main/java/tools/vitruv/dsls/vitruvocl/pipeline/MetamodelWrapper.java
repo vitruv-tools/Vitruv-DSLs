@@ -598,15 +598,34 @@ public class MetamodelWrapper implements MetamodelWrapperInterface {
    */
   @Override
   public List<EObject> getAllInstances(EClass eClass) {
+    // Only the cheap call-site bookkeeping + lazy engine (re)build is synchronized; the
+    // potentially expensive compute() traversal below runs lock-free so parallel constraint
+    // evaluation (see ConstraintListEvaluator) isn't serialized on this call. This is safe because
+    // AllInstancesEngine is immutable after construction (see its class doc) and obtainEngine()
+    // guarantees the returned engine's call-site set already includes eClass — even if another
+    // thread concurrently swaps in a newer engine for a different, newly-seen type.
+    AllInstancesEngine engine = obtainEngine(eClass);
+    Map<EClass, List<EObject>> instancesByType = engine.compute(contextObjects);
+    return instancesByType.getOrDefault(eClass, Collections.emptyList());
+  }
+
+  /**
+   * Registers {@code eClass} as a call site (if not already known) and returns an {@link
+   * AllInstancesEngine} whose cache configuration covers it, rebuilding the cached engine first if
+   * necessary.
+   *
+   * <p>Synchronized because {@link #queriedAllInstancesTypes} and {@link #allInstancesEngine} are
+   * shared, mutable state read and written by every {@link #getAllInstances} call — including
+   * concurrently from multiple threads when constraints are evaluated in parallel.
+   */
+  private synchronized AllInstancesEngine obtainEngine(EClass eClass) {
     if (queriedAllInstancesTypes.add(eClass)) {
       allInstancesEngine = null; // newly-seen call site -> cache configuration is stale
     }
     if (allInstancesEngine == null) {
       allInstancesEngine = buildAllInstancesEngine();
     }
-
-    Map<EClass, List<EObject>> instancesByType = allInstancesEngine.compute(contextObjects);
-    return instancesByType.getOrDefault(eClass, Collections.emptyList());
+    return allInstancesEngine;
   }
 
   /** Builds a fresh {@link AllInstancesEngine} from the currently known metamodels and call sites. */

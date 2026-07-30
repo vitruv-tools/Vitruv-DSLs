@@ -14,6 +14,7 @@
 package tools.vitruv.dsls.vitruvocl.cli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -396,6 +397,123 @@ class VitruvOclCliTest {
     assertTrue(out.contains("\"name\""), "Output should contain name field");
     assertTrue(out.contains("\"success\""), "Output should contain success field");
     assertTrue(out.contains("\"satisfied\""), "Output should contain satisfied field");
+  }
+
+  /**
+   * Tests that eval-batch accepts the optional {@code --threads <N>} flag (passed through to
+   * {@code VitruvOCL.evaluateConstraints(..., threadPoolSize)}) without changing output shape or
+   * content compared to the default (no {@code --threads}) invocation.
+   */
+  @Test
+  void testEvalBatchWithThreadsFlag(@TempDir Path tempDir) throws java.io.IOException {
+    Path oclFile = tempDir.resolve("batch.ocl");
+    Files.writeString(
+        oclFile,
+        """
+        context spaceMission::Spacecraft inv massPositive:
+          self.mass > 0
+
+        context spaceMission::Spacecraft inv massNotNegative:
+          self.mass >= 0
+        """);
+
+    VitruvOclCli.main(
+        new String[] {
+          "eval-batch", oclFile.toString(),
+          "--ecore", SPACEMISSION_ECORE.toString(),
+          "--xmi", SPACECRAFT_VOYAGER.toString(),
+          "--threads", "4"
+        });
+
+    String out = output();
+    assertTrue(out.contains("\"success\":true"), "Batch eval with --threads should succeed");
+    assertTrue(out.contains("massPositive"), "Output should contain first constraint name");
+    assertTrue(out.contains("massNotNegative"), "Output should contain second constraint name");
+  }
+
+  /**
+   * Documents the (accepted) behavior change from switching {@code evalBatch} to the {@code
+   * evaluateConstraints(...)} batch path: byte-identical duplicate constraints within one batch file
+   * are now detected — the second (and any later) occurrence is reported as {@code satisfied:false}
+   * with a duplicate-constraint warning rather than being independently evaluated again, matching
+   * {@code evaluateConstraints}'s existing duplicate-detection pre-pass (see {@code
+   * VitruvOclCliTest#testEvalBatchMultipleConstraints} and {@code ParallelBatchEvaluationTest
+   * #duplicateConstraintDetectionStillWorksWithParallelEvaluation} for the underlying, unmodified
+   * batch-path behavior this now surfaces through the CLI too).
+   */
+  @Test
+  void testEvalBatchDetectsDuplicateConstraints(@TempDir Path tempDir) throws java.io.IOException {
+    Path oclFile = tempDir.resolve("duplicates.ocl");
+    Files.writeString(
+        oclFile,
+        """
+        context spaceMission::Spacecraft inv dup:
+          true
+
+        context spaceMission::Spacecraft inv dup:
+          true
+        """);
+
+    VitruvOclCli.main(
+        new String[] {
+          "eval-batch", oclFile.toString(),
+          "--ecore", SPACEMISSION_ECORE.toString(),
+          "--xmi", SPACECRAFT_VOYAGER.toString()
+        });
+
+    String out = output();
+    assertTrue(
+        out.contains("Constraint specified multiple times"),
+        "Second occurrence of a duplicate constraint should carry a duplicate-constraint warning"
+            + " (Warning#getMessage(), as serialized into the JSON \"warnings\" array), got: "
+            + out);
+  }
+
+  /**
+   * Tests that eval-batch correctly evaluates constraints which reference <em>different</em>
+   * metamodel packages within the same batch (e.g. one constraint using only {@code spaceMission},
+   * another additionally using {@code satelliteSystem}).
+   *
+   * <p>History: {@code evalBatch} originally evaluated each constraint via a loop calling {@code
+   * VitruvOCL.evaluateConstraint(...)}, re-running {@code SmartLoader}'s dependency analysis and
+   * reloading the model context on every iteration. It could not simply be switched to the {@code
+   * ConstraintListEvaluator}-backed batch path ({@code VitruvOCL.evaluateConstraints(...)}) at the
+   * time, because that method's loading step analyzed only the <em>first</em> constraint's
+   * dependencies for the whole list — a later constraint referencing a package the first one didn't
+   * need would fail to resolve it (confirmed empirically). {@code SmartLoader#loadForConstraints}
+   * was then changed to union every constraint's dependencies before loading, which removed that
+   * limitation; {@code evalBatch} now loads the context once via {@code evaluateConstraints(...)}
+   * and this test guards that the cross-metamodel case keeps working end-to-end.
+   */
+  @Test
+  void testEvalBatchHandlesConstraintsWithDifferentMetamodelDependencies(@TempDir Path tempDir)
+      throws java.io.IOException {
+    Path oclFile = tempDir.resolve("crossMetamodel.ocl");
+    Files.writeString(
+        oclFile,
+        """
+        context spaceMission::Spacecraft inv spaceMissionOnly:
+          true
+
+        context spaceMission::Spacecraft inv usesSatelliteSystemToo:
+          satelliteSystem::Satellite.allInstances().size() >= 0
+        """);
+
+    VitruvOclCli.main(
+        new String[] {
+          "eval-batch", oclFile.toString(),
+          "--ecore", SPACEMISSION_ECORE + "," + SATELLITE_ECORE,
+          "--xmi", SPACECRAFT_VOYAGER + "," + SATELLITE_VOYAGER
+        });
+
+    String out = output();
+    assertTrue(out.contains("spaceMissionOnly"), "First constraint name should appear");
+    assertTrue(out.contains("usesSatelliteSystemToo"), "Second constraint name should appear");
+    assertFalse(
+        out.contains("\"success\":false"),
+        "Both constraints must succeed even though only the second one references"
+            + " satelliteSystem — each constraint gets its own dependency-scoped model load, got: "
+            + out);
   }
 
   /** Tests that eval-batch with single constraint returns single result in array. */

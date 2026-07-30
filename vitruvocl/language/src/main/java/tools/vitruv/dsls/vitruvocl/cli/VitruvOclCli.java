@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import tools.vitruv.dsls.vitruvocl.pipeline.BatchValidationResult;
 import tools.vitruv.dsls.vitruvocl.pipeline.ConstraintResult;
 import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCL;
 
@@ -86,9 +87,27 @@ public class VitruvOclCli {
     System.out.println(buildEvalJson(result));
   }
 
-  /** Evaluates all constraints in a file and returns individual results for each. */
+  /**
+   * Evaluates all constraints in a file and returns individual results for each.
+   *
+   * <p>Loads the metamodel/instance context once for the whole batch — via {@link
+   * VitruvOCL#evaluateConstraints(List, Path[], Path[], int)}, whose {@code SmartLoader} loading
+   * step unions every constraint's dependencies (not just the first one's) before any evaluation
+   * starts — and then evaluates the full constraint list through the existing parallel batch path
+   * ({@code ConstraintListEvaluator}), instead of the old per-constraint loop that re-loaded the
+   * context on every iteration. Per-constraint JSON shape and field content are unchanged; only how
+   * the underlying results are produced differs.
+   */
   private static void evalBatch(String[] args) throws IOException {
     CLIArgs parsed = parseArgs(args);
+    Integer threadPoolSize = parseThreadPoolSize(args);
+
+    List<String> constraints = parseConstraintsFile(parsed.constraintFile);
+    BatchValidationResult batch =
+        threadPoolSize != null
+            ? VitruvOCL.evaluateConstraints(
+                constraints, parsed.ecoreFiles, parsed.xmiFiles, threadPoolSize)
+            : VitruvOCL.evaluateConstraints(constraints, parsed.ecoreFiles, parsed.xmiFiles);
 
     // Build batch result JSON
     StringBuilder json = new StringBuilder();
@@ -97,64 +116,78 @@ public class VitruvOclCli {
     json.append("\"constraints\":[");
 
     List<String> constraintResults = new ArrayList<>();
+    for (ConstraintResult result : batch.getResults()) {
+      // Extract constraint name from "context X inv NAME:"
+      String name = extractConstraintName(result.getConstraint());
 
-    // Read and parse constraints file
-    List<String> constraints = parseConstraintsFile(parsed.constraintFile);
-    for (String constraint : constraints) {
-      try {
-        ConstraintResult result =
-            VitruvOCL.evaluateConstraint(constraint, parsed.ecoreFiles, parsed.xmiFiles);
+      StringBuilder constraintJson = new StringBuilder();
+      constraintJson.append("{");
+      constraintJson.append("\"name\":").append(jsonString(name)).append(",");
+      constraintJson.append(JSON_KEY_SUCCESS).append(result.isSuccess()).append(",");
+      constraintJson.append("\"satisfied\":").append(result.isSatisfied());
 
-        // Extract constraint name from "context X inv NAME:"
-        String name = extractConstraintName(constraint);
-
-        StringBuilder constraintJson = new StringBuilder();
-        constraintJson.append("{");
-        constraintJson.append("\"name\":").append(jsonString(name)).append(",");
-        constraintJson.append(JSON_KEY_SUCCESS).append(result.isSuccess()).append(",");
-        constraintJson.append("\"satisfied\":").append(result.isSatisfied());
-
-        if (!result.getCompilerErrors().isEmpty()) {
-          constraintJson.append(",\"errors\":[");
-          String errors =
-              result.getCompilerErrors().stream()
-                  .map(
-                      e ->
-                          String.format(
-                              "{\"line\":%d,\"column\":%d,\"message\":%s}",
-                              e.getLine(), e.getColumn(), jsonString(e.getMessage())))
-                  .collect(Collectors.joining(","));
-          constraintJson.append(errors);
-          constraintJson.append("]");
-        }
-
-        if (!result.getWarnings().isEmpty()) {
-          constraintJson.append(",\"warnings\":[");
-          String warnings =
-              result.getWarnings().stream()
-                  .map(w -> jsonString(w.getMessage()))
-                  .collect(Collectors.joining(","));
-          constraintJson.append(warnings);
-          constraintJson.append("]");
-        }
-
-        constraintJson.append("}");
-        constraintResults.add(constraintJson.toString());
-
-      } catch (Exception e) {
-        // If evaluation fails for this constraint, add error result
-        String name = extractConstraintName(constraint);
-        constraintResults.add(
-            String.format(
-                "{\"name\":%s,\"success\":false,\"error\":%s}",
-                jsonString(name), jsonString(e.getMessage())));
+      if (!result.getCompilerErrors().isEmpty()) {
+        constraintJson.append(",\"errors\":[");
+        String errors =
+            result.getCompilerErrors().stream()
+                .map(
+                    e ->
+                        String.format(
+                            "{\"line\":%d,\"column\":%d,\"message\":%s}",
+                            e.getLine(), e.getColumn(), jsonString(e.getMessage())))
+                .collect(Collectors.joining(","));
+        constraintJson.append(errors);
+        constraintJson.append("]");
       }
+
+      if (!result.getWarnings().isEmpty()) {
+        constraintJson.append(",\"warnings\":[");
+        String warnings =
+            result.getWarnings().stream()
+                .map(w -> jsonString(w.getMessage()))
+                .collect(Collectors.joining(","));
+        constraintJson.append(warnings);
+        constraintJson.append("]");
+      }
+
+      constraintJson.append("}");
+      constraintResults.add(constraintJson.toString());
     }
 
     json.append(String.join(",", constraintResults));
     json.append("]}");
 
     System.out.println(json.toString());
+  }
+
+  /**
+   * Parses an optional {@code --threads <N>} argument for {@code eval-batch}, controlling how many
+   * worker threads {@link VitruvOCL#evaluateConstraints(List, Path[], Path[], int)} distributes
+   * constraint evaluation across.
+   *
+   * @param args full CLI argument array
+   * @return the requested thread pool size, or {@code null} if {@code --threads} was not given (in
+   *     which case the caller uses {@code evaluateConstraints}'s own default)
+   */
+  @SuppressWarnings("java:S127")
+  private static Integer parseThreadPoolSize(String[] args) {
+    for (int i = 2; i < args.length; i++) {
+      if ("--threads".equals(args[i]) && i + 1 < args.length) {
+        String value = args[++i].trim();
+        try {
+          int threadPoolSize = Integer.parseInt(value);
+          if (threadPoolSize < 1) {
+            System.err.println("--threads must be at least 1, got: " + value);
+            System.exit(1);
+          }
+          return threadPoolSize;
+        } catch (NumberFormatException e) {
+          System.err.println("Invalid --threads value: " + value + " (must be an integer)");
+          System.exit(1);
+        }
+      }
+    }
+    return null;
   }
 
   private static List<String> parseConstraintsFile(Path file) throws IOException {
@@ -318,8 +351,8 @@ public class VitruvOclCli {
           vitruvocl eval <constraint-file> --ecore <files> --xmi <files>
               Evaluate single constraint against model instances
 
-          vitruvocl eval-batch <constraints-file> --ecore <files> --xmi <files>
-              Evaluate all constraints and return individual results
+          vitruvocl eval-batch <constraints-file> --ecore <files> --xmi <files> [--threads <N>]
+              Evaluate all constraints (in parallel) and return individual results
 
           vitruvocl version
               Print version information
@@ -329,11 +362,14 @@ public class VitruvOclCli {
           <constraints-file>    Path to .ocl file with multiple constraints
           --ecore <files>       Comma-separated .ecore metamodel files
           --xmi <files>         Comma-separated model instance files
+          --threads <N>         eval-batch only: worker threads for constraint evaluation
+                                 (default: number of available processors)
 
         Examples:
           vitruvocl check constraints.ocl --ecore spacemission.ecore
           vitruvocl eval constraints.ocl --ecore model.ecore --xmi instance.xmi
           vitruvocl eval-batch constraints.ocl --ecore model.ecore --xmi instance.xmi
+          vitruvocl eval-batch constraints.ocl --ecore model.ecore --xmi instance.xmi --threads 4
         """);
   }
 
