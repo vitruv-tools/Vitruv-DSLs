@@ -19,6 +19,7 @@ import org.eclipse.xtext.xbase.lib.Exceptions;
 import org.eclipse.xtext.xbase.lib.Extension;
 import tools.vitruv.change.composite.description.AnnotationSource;
 import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView;
+import tools.vitruv.change.interaction.UserInteractor;
 import tools.vitruv.dsls.reactions.runtime.correspondence.ReactionsCorrespondence;
 import tools.vitruv.dsls.reactions.runtime.helper.PersistenceHelper;
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState;
@@ -285,6 +286,17 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
      */
     protected AnnotationSource changeAnnotations() {
       return executionState.changeAnnotations();
+    }
+
+    /**
+     * Returns the interactor for showing dialogs/notifications to the user.
+     *
+     * <p>Declared here for the same reason as {@link #changeAnnotations()}: Xbase resolves
+     * extension methods only from fields declared on the compiled class, not from inherited
+     * ones. A concrete method is always in scope.
+     */
+    protected UserInteractor userInteractor() {
+      return executionState.userInteractor();
     }
 
     /**
