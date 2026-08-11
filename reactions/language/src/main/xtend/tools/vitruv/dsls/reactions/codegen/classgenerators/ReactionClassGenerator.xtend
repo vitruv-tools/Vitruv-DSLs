@@ -35,9 +35,11 @@ class ReactionClassGenerator extends ClassGenerator {
 	final String reactionClassQualifiedName
 	final StepExecutionClassGenerator routineCallClassGenerator
 	var JvmGenericType generatedClass
+	final StepExecutionClassGenerator logBlockGenerator;
 
 	new(Reaction reaction, TypesBuilderExtensionProvider typesBuilderExtensionProvider) {
 		super(typesBuilderExtensionProvider)
+		
 		checkArgument(reaction !== null, "reaction must not be null")
 		checkArgument(!reaction.name.nullOrEmpty, "reaction must have a name")
 		checkArgument(reaction.trigger !== null, "reaction must have a defined trigger")
@@ -51,10 +53,23 @@ class ReactionClassGenerator extends ClassGenerator {
 		} else {
 			new EmptyStepExecutionClassGenerator(typesBuilderExtensionProvider)
 		}
+		this.logBlockGenerator = if (reaction.logBlock !== null) {
+		    val routinesFacadeClassName = reaction.reactionsSegment.routinesFacadeClassNameGenerator.qualifiedName
+		    new LogBlockGenerator(
+		        typesBuilderExtensionProvider,
+		        reactionClassQualifiedName + ".Log",
+		        reaction.logBlock,
+		        typeRef(routinesFacadeClassName),
+		        changeType.generatePropertiesParameterList
+		    )
+		} else {
+		    new EmptyStepExecutionClassGenerator(typesBuilderExtensionProvider)
+		}
 	}
 
 	override JvmGenericType generateEmptyClass() {
 		routineCallClassGenerator.generateEmptyClass()
+		logBlockGenerator.generateEmptyClass()
 		generatedClass = reaction.toClass(reactionClassQualifiedName) [
 			visibility = JvmVisibility.PUBLIC
 		]
@@ -69,6 +84,7 @@ class ReactionClassGenerator extends ClassGenerator {
 			members += reaction.generateConstructor()
 			members += routineCallClassGenerator.generateBody()
 			members += generateMethodExecuteReactionAndDependentMethods()
+		    members += logBlockGenerator.generateBody()
 		]
 	}
 
@@ -108,13 +124,24 @@ class ReactionClassGenerator extends ClassGenerator {
 					getLogger().trace("Passed complete precondition check of Reaction " + this.getClass().getName());
 				}
 				
+				«generateCallLogBlockCode»
 				«generateCallRoutineCode»
 				«specificationLocal.name».notifyChangePropagationStopped(«specificationLocal.name», «changeParameter.name»);
 			'''
 		]
 		return #[matchChangeMethod, userDefinedPreconditionMethod, executeReactionMethod].filterNull
 	}
-
+	
+	private def generateCallLogBlockCode() {
+		return logBlockGenerator.generateStepExecutionCode(
+			'''''',
+			EXECUTION_STATE_VARIABLE,
+			ROUTINES_FACADE_VARIABLE,
+			changeType.generatePropertiesParameterList.map[name],
+			''''''
+		)
+    }
+	
 	private def generateCallRoutineCode() {
 		return routineCallClassGenerator.generateStepExecutionCode(
 			'''''',
