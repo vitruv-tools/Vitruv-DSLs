@@ -91,23 +91,28 @@ public class VitruvOclCli {
    * Evaluates all constraints in a file and returns individual results for each.
    *
    * <p>Loads the metamodel/instance context once for the whole batch — via {@link
-   * VitruvOCL#evaluateConstraints(List, Path[], Path[], int)}, whose {@code SmartLoader} loading
+   * VitruvOCL#evaluateConstraints(Path, Path[], Path[], int)}, whose {@code SmartLoader} loading
    * step unions every constraint's dependencies (not just the first one's) before any evaluation
    * starts — and then evaluates the full constraint list through the existing parallel batch path
    * ({@code ConstraintListEvaluator}), instead of the old per-constraint loop that re-loaded the
    * context on every iteration. Per-constraint JSON shape and field content are unchanged; only how
    * the underlying results are produced differs.
+   *
+   * <p>Delegates constraints-file parsing to {@link VitruvOCL} itself rather than keeping a second,
+   * divergent copy of the same splitting logic here — the CLI's own copy was missing {@code import}
+   * line filtering, which silently corrupted every constraint's compiled text whenever the file
+   * being evaluated declared an {@code import} (breaking compilation of the whole batch).
    */
   private static void evalBatch(String[] args) throws IOException {
     CLIArgs parsed = parseArgs(args);
     Integer threadPoolSize = parseThreadPoolSize(args);
 
-    List<String> constraints = parseConstraintsFile(parsed.constraintFile);
     BatchValidationResult batch =
         threadPoolSize != null
             ? VitruvOCL.evaluateConstraints(
-                constraints, parsed.ecoreFiles, parsed.xmiFiles, threadPoolSize)
-            : VitruvOCL.evaluateConstraints(constraints, parsed.ecoreFiles, parsed.xmiFiles);
+                parsed.constraintFile, parsed.ecoreFiles, parsed.xmiFiles, threadPoolSize)
+            : VitruvOCL.evaluateConstraints(
+                parsed.constraintFile, parsed.ecoreFiles, parsed.xmiFiles);
 
     // Build batch result JSON
     StringBuilder json = new StringBuilder();
@@ -126,17 +131,9 @@ public class VitruvOclCli {
       constraintJson.append(JSON_KEY_SUCCESS).append(result.isSuccess()).append(",");
       constraintJson.append("\"satisfied\":").append(result.isSatisfied());
 
-      if (!result.getCompilerErrors().isEmpty()) {
+      if (!result.getCompilerErrors().isEmpty() || !result.getFileErrors().isEmpty()) {
         constraintJson.append(",\"errors\":[");
-        String errors =
-            result.getCompilerErrors().stream()
-                .map(
-                    e ->
-                        String.format(
-                            "{\"line\":%d,\"column\":%d,\"message\":%s}",
-                            e.getLine(), e.getColumn(), jsonString(e.getMessage())))
-                .collect(Collectors.joining(","));
-        constraintJson.append(errors);
+        constraintJson.append(formatErrorsJson(result, false));
         constraintJson.append("]");
       }
 
@@ -190,51 +187,76 @@ public class VitruvOclCli {
     return null;
   }
 
-  private static List<String> parseConstraintsFile(Path file) throws IOException {
-    String content = Files.readString(file);
-    List<String> constraints = new ArrayList<>();
-
-    // Remove comments
-    String[] lines = content.split("\n");
-    StringBuilder cleaned = new StringBuilder();
-    for (String line : lines) {
-      String trimmed = line.trim();
-      if (!trimmed.startsWith("--") && !trimmed.isEmpty()) {
-        cleaned.append(line).append("\n");
-      }
-    }
-
-    // Split by "context" keyword
-    String[] parts = cleaned.toString().split("(?=context\\s)");
-    for (String part : parts) {
-      String trimmed = part.trim();
-      if (!trimmed.isEmpty() && trimmed.startsWith("context")) {
-        constraints.add(trimmed);
-      }
-    }
-
-    return constraints;
-  }
-
   /**
-   * Extracts the constraint name from an {@code inv NAME:} declaration.
+   * Extracts the constraint name from an {@code inv}/{@code pre}/{@code post} {@code NAME:}
+   * declaration.
    *
    * @param constraint the OCL constraint source
    * @return the extracted name, or a fallback value if none is found
    */
   public static String extractConstraintName(String constraint) {
-    // Extract name from "context ... inv NAME:"
-    String[] lines = constraint.split("\n");
-    for (String line : lines) {
-      if (line.contains(" inv ")) {
-        int invIndex = line.indexOf(" inv ");
-        int colonIndex = line.indexOf(":", invIndex);
-        if (colonIndex > invIndex) {
-          return line.substring(invIndex + 5, colonIndex).trim();
-        }
-      }
+    java.util.regex.Matcher matcher =
+        java.util.regex.Pattern.compile("(?<!@)\\b(?:inv|pre|post)\\s+(\\w+)\\s*:")
+            .matcher(constraint);
+    if (matcher.find()) {
+      return matcher.group(1);
     }
     return "unknown";
+  }
+
+  /**
+   * Renders both error categories a {@link ConstraintResult} can carry — {@link
+   * ConstraintResult#getCompilerErrors()} (source-position parse/type errors) and {@link
+   * ConstraintResult#getFileErrors()} (missing/unreadable metamodel or model files, reported once
+   * per batch rather than per constraint) — into one JSON array of {@code {line,column,message[,
+   * severity]}} objects.
+   *
+   * <p>Before this method existed, every call site here rendered only {@code
+   * getCompilerErrors()}. Whenever a batch failed to load (e.g. a bad {@code --ecore}/{@code
+   * --xmi} path), every constraint in it got a {@link ConstraintResult} with populated {@code
+   * fileErrors} but empty {@code compilerErrors} — {@link ConstraintResult#isSuccess()} correctly
+   * reported {@code false}, but the JSON's {@code errors}/{@code diagnostics} array stayed empty,
+   * so a genuine load failure looked identical to "every constraint is broken for no visible
+   * reason." File errors have no source position, so {@code line}/{@code column} are {@code 0}.
+   *
+   * @param includeSeverity whether to add a {@code "severity"} field (file errors are always
+   *     reported as {@code ERROR}) — {@code eval-batch}'s per-constraint JSON omits it for
+   *     backward compatibility with its existing {@code {line,column,message}} shape, while {@code
+   *     check}/{@code eval} already included it for compiler errors.
+   */
+  private static String formatErrorsJson(ConstraintResult result, boolean includeSeverity) {
+    String compilerErrors =
+        result.getCompilerErrors().stream()
+            .map(
+                e ->
+                    includeSeverity
+                        ? String.format(
+                            "{\"line\":%d,\"column\":%d,\"message\":%s,\"severity\":\"%s\"}",
+                            e.getLine(), e.getColumn(), jsonString(e.getMessage()), e.getSeverity())
+                        : String.format(
+                            "{\"line\":%d,\"column\":%d,\"message\":%s}",
+                            e.getLine(), e.getColumn(), jsonString(e.getMessage())))
+            .collect(Collectors.joining(","));
+
+    String fileErrors =
+        result.getFileErrors().stream()
+            .map(
+                e ->
+                    includeSeverity
+                        ? String.format(
+                            "{\"line\":0,\"column\":0,\"message\":%s,\"severity\":\"ERROR\"}",
+                            jsonString(e.toString()))
+                        : String.format(
+                            "{\"line\":0,\"column\":0,\"message\":%s}", jsonString(e.toString())))
+            .collect(Collectors.joining(","));
+
+    if (compilerErrors.isEmpty()) {
+      return fileErrors;
+    }
+    if (fileErrors.isEmpty()) {
+      return compilerErrors;
+    }
+    return compilerErrors + "," + fileErrors;
   }
 
   private static String buildCheckJson(ConstraintResult result) {
@@ -242,20 +264,7 @@ public class VitruvOclCli {
     json.append("{");
     json.append(JSON_KEY_SUCCESS).append(result.isSuccess());
     json.append(",\"diagnostics\":[");
-
-    String diagnostics =
-        result.getCompilerErrors().stream()
-            .map(
-                e ->
-                    String.format(
-                        "{\"line\":%d,\"column\":%d,\"message\":%s,\"severity\":\"%s\"}",
-                        e.getLine(),
-                        e.getColumn(),
-                        jsonString(e.getMessage()),
-                        e.getSeverity().toString()))
-            .collect(Collectors.joining(","));
-
-    json.append(diagnostics);
+    json.append(formatErrorsJson(result, true));
     json.append("]}");
 
     return json.toString();
@@ -268,18 +277,7 @@ public class VitruvOclCli {
     json.append(",\"satisfied\":").append(result.isSatisfied());
 
     json.append(",\"errors\":[");
-    String errors =
-        result.getCompilerErrors().stream()
-            .map(
-                e ->
-                    String.format(
-                        "{\"line\":%d,\"column\":%d,\"message\":%s,\"severity\":\"%s\"}",
-                        e.getLine(),
-                        e.getColumn(),
-                        jsonString(e.getMessage()),
-                        e.getSeverity().toString()))
-            .collect(Collectors.joining(","));
-    json.append(errors);
+    json.append(formatErrorsJson(result, true));
 
     json.append("],\"warnings\":[");
     String warnings =

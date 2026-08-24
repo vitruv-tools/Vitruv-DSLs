@@ -78,6 +78,13 @@
                     "captures": {
                         "1": { "name": "storage.type.annotation.vitruvocl" }
                     }
+                },
+                {
+                    "comment": "self.attr@pre — pre-state postfix operator, matched before the generic operators/punctuation patterns so it isn't split into '@' + 'pre'",
+                    "match": "(@pre)\\b",
+                    "captures": {
+                        "1": { "name": "storage.type.annotation.vitruvocl" }
+                    }
                 }
             ]
         },
@@ -239,6 +246,11 @@
                     "match": "\\b(allInstances|oclIsKindOf|oclIsTypeOf|oclAsType|oclIsNew|oclIsUndefined|oclIsInvalid)\\b"
                 },
                 {
+                    "comment": "Object-lifecycle predicates — post-block only (see @pre above)",
+                    "name": "support.function.ocl.vitruvocl",
+                    "match": "\\b(OCLisNew|OCLisModified|OCLisDeleted)\\b"
+                },
+                {
                     "name": "support.function.numeric.vitruvocl",
                     "match": "\\b(abs|floor|ceiling|round|sqrt|log|exp|mod|div)\\b"
                 }
@@ -316,6 +328,11 @@
         },
         "operators": {
             "patterns": [
+                {
+                    "comment": "OCLisNew(attr => val, ...) aggregate arrow — matched before '=' so it isn't split into '=' + '>'",
+                    "name": "keyword.operator.arrow.vitruvocl",
+                    "match": "=>"
+                },
                 {
                     "name": "keyword.operator.comparison.vitruvocl",
                     "match": "(=|<>|!=|<=|>=|<|>)"

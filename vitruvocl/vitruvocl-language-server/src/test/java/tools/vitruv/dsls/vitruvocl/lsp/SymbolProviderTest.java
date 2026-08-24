@@ -126,6 +126,22 @@ class SymbolProviderTest {
   }
 
   @Test
+  void preAndPostBlocks_appearAsChildrenAlongsideInvariants() {
+    String ocl =
+        "context MM::MyClass inv invA: 1 = 1 pre preA: 1 = 1 post postA: 1 = 1";
+    DocumentAnalysis analysis = parse(ocl);
+
+    List<Either<SymbolInformation, DocumentSymbol>> symbols = provider.getSymbols(analysis);
+
+    assertThat(symbols).hasSize(1);
+    List<DocumentSymbol> children = symbols.get(0).getRight().getChildren();
+    assertThat(children)
+        .extracting(DocumentSymbol::getName)
+        .containsExactlyInAnyOrder("invA", "preA", "postA");
+    assertThat(children).extracting(DocumentSymbol::getKind).containsOnly(SymbolKind.Property);
+  }
+
+  @Test
   void symbolRanges_areNonNegative() {
     String ocl = "context MM::MyClass inv check: self = self";
     DocumentAnalysis analysis = parse(ocl);

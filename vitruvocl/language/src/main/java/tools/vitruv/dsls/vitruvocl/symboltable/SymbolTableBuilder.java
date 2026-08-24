@@ -282,13 +282,31 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
     symbolTable.enterScope(contextScope);
     symbolTable.defineVariable(new VariableSymbol("self", contextType, contextScope, false));
 
+    // Operation-context params (context Type::operation(name: Type, ...)) are type-checked as
+    // ordinary variables in pre/post bodies. There is no method-invocation mechanism in this
+    // codebase's evaluator, so at evaluation time these are bound to an empty value rather than a
+    // real argument — see EvaluationVisitor.
+    if (ctx.operationParamListCS() != null) {
+      for (VitruvOCLParser.OperationParamCSContext param : ctx.operationParamListCS().operationParamCS()) {
+        Type paramType = resolveTypeExpression(param.paramType);
+        symbolTable.defineVariable(
+            new VariableSymbol(param.paramName.getText(), paramType, contextScope, false));
+      }
+    }
+
     // Annotate parse tree node with scope for Pass 2 variable lookup
     scopeAnnotator.annotate(ctx, contextScope);
 
     try {
-      // Visit all invariants to collect nested let/iterator variables
+      // Visit all invariants/preconditions/postconditions to collect nested let/iterator variables
       for (VitruvOCLParser.InvCSContext inv : ctx.invCS()) {
         visit(inv);
+      }
+      for (VitruvOCLParser.PreCSContext pre : ctx.preCS()) {
+        visit(pre);
+      }
+      for (VitruvOCLParser.PostCSContext post : ctx.postCS()) {
+        visit(post);
       }
       return null;
     } finally {
@@ -306,6 +324,34 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
    */
   @Override
   public Void visitInvCS(VitruvOCLParser.InvCSContext ctx) {
+    for (VitruvOCLParser.SpecificationCSContext spec : ctx.specificationCS()) {
+      visit(spec);
+    }
+    return null;
+  }
+
+  /**
+   * Visits a precondition declaration node. Mirrors {@link #visitInvCS}.
+   *
+   * @param ctx The precondition parse tree node
+   * @return null (void visitor)
+   */
+  @Override
+  public Void visitPreCS(VitruvOCLParser.PreCSContext ctx) {
+    for (VitruvOCLParser.SpecificationCSContext spec : ctx.specificationCS()) {
+      visit(spec);
+    }
+    return null;
+  }
+
+  /**
+   * Visits a postcondition declaration node. Mirrors {@link #visitInvCS}.
+   *
+   * @param ctx The postcondition parse tree node
+   * @return null (void visitor)
+   */
+  @Override
+  public Void visitPostCS(VitruvOCLParser.PostCSContext ctx) {
     for (VitruvOCLParser.SpecificationCSContext spec : ctx.specificationCS()) {
       visit(spec);
     }
@@ -892,6 +938,9 @@ public class SymbolTableBuilder extends AbstractPhaseVisitor<Void> {
    */
   @Override
   public Void visitNavigationChainCS(VitruvOCLParser.NavigationChainCSContext ctx) {
+    if (ctx.navigationTargetCS() == null) {
+      return null; // '@pre' postfix — no nested navigation target, nothing to traverse
+    }
     return visit(ctx.navigationTargetCS());
   }
 

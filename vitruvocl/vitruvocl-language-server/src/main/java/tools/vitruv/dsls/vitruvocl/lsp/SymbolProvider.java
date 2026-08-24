@@ -72,10 +72,16 @@ public class SymbolProvider {
 
     DocumentSymbol symbol = new DocumentSymbol(name, SymbolKind.Class, full, selection);
 
-    // Use typed accessor for invCS children
+    // Use typed accessors for invCS/preCS/postCS children
     List<DocumentSymbol> children = new ArrayList<>();
     for (VitruvOCLParser.InvCSContext inv : ctx.invCS()) {
-      children.add(buildInvSymbol(inv));
+      children.add(buildNamedConstraintSymbol(inv, inv.ID()));
+    }
+    for (VitruvOCLParser.PreCSContext pre : ctx.preCS()) {
+      children.add(buildNamedConstraintSymbol(pre, pre.ID()));
+    }
+    for (VitruvOCLParser.PostCSContext post : ctx.postCS()) {
+      children.add(buildNamedConstraintSymbol(post, post.ID()));
     }
     if (!children.isEmpty()) {
       symbol.setChildren(children);
@@ -84,8 +90,10 @@ public class SymbolProvider {
     return symbol;
   }
 
-  private static DocumentSymbol buildInvSymbol(VitruvOCLParser.InvCSContext ctx) {
-    String name = ctx.ID() != null ? ctx.ID().getText() : "<anonymous>";
+  /** Builds a {@link SymbolKind#Property} child for an inv/pre/post block. */
+  private static DocumentSymbol buildNamedConstraintSymbol(
+      ParserRuleContext ctx, org.antlr.v4.runtime.tree.TerminalNode nameToken) {
+    String name = nameToken != null ? nameToken.getText() : "<anonymous>";
     Range range = ruleRange(ctx);
     return new DocumentSymbol(name, SymbolKind.Property, range, range);
   }

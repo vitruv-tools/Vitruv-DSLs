@@ -32,12 +32,14 @@ import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EEnumLiteral;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
+import tools.vitruv.change.atomic.EChange;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLBaseVisitor;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvocl.common.AbstractPhaseVisitor;
 import tools.vitruv.dsls.vitruvocl.common.ErrorCollector;
 import tools.vitruv.dsls.vitruvocl.evaluator.lazy.LazyOperations;
 import tools.vitruv.dsls.vitruvocl.evaluator.lazy.OCLElementSource;
+import tools.vitruv.dsls.vitruvocl.evaluator.transaction.TransactionModel;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapperInterface;
 import tools.vitruv.dsls.vitruvocl.symboltable.LocalScope;
 import tools.vitruv.dsls.vitruvocl.symboltable.Scope;
@@ -109,6 +111,20 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
   private final List<ViolationRecord> violationRecords = new ArrayList<>();
 
+  /**
+   * One {@code pre}/{@code post} block that was not evaluated because this {@link
+   * EvaluationVisitor} was constructed without transaction support (see {@link
+   * #transactionSupported}).
+   *
+   * @param kind {@code "pre"} or {@code "post"}
+   * @param blockName the block's own optional name (e.g. {@code p1} in {@code pre p1: ...}), or
+   *     {@code null} if unnamed
+   * @param contextName the enclosing context's display name (e.g. {@code spaceMission::Spacecraft})
+   */
+  public record SkippedConstraint(String kind, String blockName, String contextName) {}
+
+  private final List<SkippedConstraint> skippedConstraints = new ArrayList<>();
+
   /* Cache for allInstances() results to avoid redundant metamodel queries during evaluation. */
   private final java.util.Map<EClass, Value> allInstancesCache = new java.util.HashMap<>();
 
@@ -128,10 +144,31 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private Deque<Value> receiverStack = new ArrayDeque<>();
 
+  /**
+   * The transaction (ordered list of atomic changes between pre-state and the current post-state)
+   * that {@code @pre} and the {@code OCLisNew}/{@code OCLisModified}/{@code OCLisDeleted} lifecycle
+   * predicates are evaluated against. Empty by default — every pre-existing caller that doesn't
+   * supply a transaction gets the safe no-op behavior documented on {@link TransactionModel}.
+   */
+  private final TransactionModel transaction;
+
+  /**
+   * Whether this evaluation run has a real transaction context at all — {@code true} only when
+   * constructed via the explicit-transaction constructor (even with an empty change list, which
+   * legitimately means "a transaction happened but touched nothing"). {@code false} for the
+   * no-transaction constructor, used by every caller that has no notion of a transaction at all
+   * (CLI, VS Code plugin): there, {@code pre}/{@code post} blocks are not evaluated with vacuous
+   * empty-transaction semantics (which could silently misreport, e.g. {@code OCLisModified} always
+   * {@code false}) — they are skipped outright and reported via {@link #getSkippedConstraints()}.
+   */
+  private final boolean transactionSupported;
+
   // ==================== Constructor ====================
 
   /**
-   * Constructs an EvaluationVisitor for Phase 3 of the compilation pipeline.
+   * Constructs an EvaluationVisitor for Phase 3 of the compilation pipeline, with no transaction
+   * support — {@code pre}/{@code post} blocks are skipped (see {@link #transactionSupported}) and
+   * only {@code inv} is evaluated.
    *
    * @param st The symbol table containing variable and type definitions
    * @param specification The metamodel wrapper providing access to model instances
@@ -143,8 +180,49 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       MetamodelWrapperInterface specification,
       ErrorCollector errors,
       ParseTreeProperty<Type> nodeTypes) {
+    this(st, specification, errors, nodeTypes, List.of(), false);
+  }
+
+  /**
+   * Constructs an EvaluationVisitor for Phase 3 of the compilation pipeline, with transaction
+   * support enabled — {@code pre}/{@code post} blocks are evaluated against {@code
+   * transactionChanges} (which may itself be empty, meaning "a transaction happened but touched
+   * nothing").
+   *
+   * @param st The symbol table containing variable and type definitions
+   * @param specification The metamodel wrapper providing access to model instances
+   * @param errors The error collector for reporting runtime errors
+   * @param nodeTypes Pre-computed type information from the type checking phase
+   * @param transactionChanges the ordered list of atomic changes for this transaction (may be
+   *     empty — see {@link TransactionModel})
+   */
+  public EvaluationVisitor(
+      SymbolTable st,
+      MetamodelWrapperInterface specification,
+      ErrorCollector errors,
+      ParseTreeProperty<Type> nodeTypes,
+      List<EChange<EObject>> transactionChanges) {
+    this(st, specification, errors, nodeTypes, transactionChanges, true);
+  }
+
+  /**
+   * Full constructor used by {@link tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCLCompiler}, which
+   * itself distinguishes "no transaction constructor used" from "explicit, possibly-empty
+   * transaction" the same way (see {@code VitruvOCLCompiler}'s own two constructors).
+   *
+   * @param transactionSupported see {@link #transactionSupported}
+   */
+  public EvaluationVisitor(
+      SymbolTable st,
+      MetamodelWrapperInterface specification,
+      ErrorCollector errors,
+      ParseTreeProperty<Type> nodeTypes,
+      List<EChange<EObject>> transactionChanges,
+      boolean transactionSupported) {
     super(st, specification, errors);
     this.nodeTypes = nodeTypes;
+    this.transaction = new TransactionModel(transactionChanges);
+    this.transactionSupported = transactionSupported;
   }
 
   // ==================== Error Reporting ====================
@@ -258,31 +336,116 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
         symbolTable.defineVariable(newSelf);
       }
 
-      // Evaluate all invariants for this instance
+      // Operation-context params (context Type::operation(name: Type, ...)): there is no
+      // method-invocation mechanism in this evaluator, so — unlike 'self' — these are always
+      // bound to an empty value rather than a real argument (see class-level docs on
+      // pre/post support). Binding them at all (instead of leaving them unresolved) matters:
+      // an unresolved variable is a hard evaluation error via handleUndefinedSymbol, whereas an
+      // empty-valued binding lets the constraint evaluate (typically to a vacuous/empty result)
+      // until a future Reactions/YAML layer supplies real argument values.
+      if (ctx.operationParamListCS() != null) {
+        for (VitruvOCLParser.OperationParamCSContext param :
+            ctx.operationParamListCS().operationParamCS()) {
+          String paramName = param.paramName.getText();
+          Value emptyValue = Value.empty(Type.ANY);
+          VariableSymbol paramSymbol = symbolTable.resolveVariable(paramName);
+          if (paramSymbol != null) {
+            paramSymbol.setValue(emptyValue);
+          } else {
+            VariableSymbol newParam =
+                new VariableSymbol(paramName, Type.ANY, symbolTable.getCurrentScope(), false);
+            newParam.setValue(emptyValue);
+            symbolTable.defineVariable(newParam);
+          }
+        }
+      }
+
+      // Evaluate all invariants/preconditions/postconditions for this instance
       for (VitruvOCLParser.InvCSContext inv : ctx.invCS()) {
         // Re-enter defensively before each invariant - see EvaluationVisitor#exitScope(Scope):
         // 'self' is never lazy so nothing here currently drains an outer sibling value mid-loop,
         // but this keeps the loop correct regardless of what a future invariant body might touch.
         symbolTable.enterScope(instanceScope);
         Value invResult = visit(inv);
-        if (invResult != null && !invResult.isEmpty()) {
-          OCLElement elem = invResult.getElements().get(0);
-          allResults.add(elem);
-          // Track violating instance for precise error reporting
-          Boolean boolResult = elem.tryGetBool();
-          if (boolResult == null || !boolResult) {
-            violatingInstances.add(instance);
-            String severity = extractSeverity(inv);
-            String customMessage = extractCustomMessage(inv, instance);
-            violationRecords.add(new ViolationRecord(severity, customMessage, instance));
-          }
+        recordConstraintResult(invResult, allResults, instance, inv.annotationCS());
+      }
+      if (transactionSupported) {
+        for (VitruvOCLParser.PreCSContext pre : ctx.preCS()) {
+          symbolTable.enterScope(instanceScope);
+          Value preResult = visit(pre);
+          recordConstraintResult(preResult, allResults, instance, pre.annotationCS());
+        }
+        for (VitruvOCLParser.PostCSContext post : ctx.postCS()) {
+          symbolTable.enterScope(instanceScope);
+          Value postResult = visit(post);
+          recordConstraintResult(postResult, allResults, instance, post.annotationCS());
         }
       }
 
       exitScope(instanceScope);
     }
 
+    // pre/post require a transaction this evaluation run doesn't have — record once per context
+    // (not per instance: which blocks are skipped is a static, instance-independent fact).
+    if (!transactionSupported && (!ctx.preCS().isEmpty() || !ctx.postCS().isEmpty())) {
+      String contextName = describeContextForSkipNotice(ctx);
+      for (VitruvOCLParser.PreCSContext pre : ctx.preCS()) {
+        skippedConstraints.add(new SkippedConstraint("pre", nameOf(pre.ID()), contextName));
+      }
+      for (VitruvOCLParser.PostCSContext post : ctx.postCS()) {
+        skippedConstraints.add(new SkippedConstraint("post", nameOf(post.ID()), contextName));
+      }
+    }
+
     return Value.of(allResults, Type.bag(Type.BOOLEAN));
+  }
+
+  private static String nameOf(org.antlr.v4.runtime.tree.TerminalNode idToken) {
+    return idToken != null ? idToken.getText() : null;
+  }
+
+  /** Best-effort display name for a context header, used only in skip notices. */
+  private static String describeContextForSkipNotice(VitruvOCLParser.ClassifierContextCSContext ctx) {
+    if (ctx.metamodel != null && ctx.className != null) {
+      return ctx.metamodel.getText() + "::" + ctx.className.getText();
+    }
+    if (ctx.contextName != null) {
+      return ctx.contextName.getText();
+    }
+    return "<context>";
+  }
+
+  /**
+   * Returns the {@code pre}/{@code post} blocks that were not evaluated because this evaluation run
+   * has no transaction context (see {@link #transactionSupported}). Empty whenever transaction
+   * support is enabled, or whenever the evaluated document has no {@code pre}/{@code post} blocks.
+   */
+  public List<SkippedConstraint> getSkippedConstraints() {
+    return Collections.unmodifiableList(skippedConstraints);
+  }
+
+  /**
+   * Shared bookkeeping for one inv/pre/post evaluation result against one instance: appends the
+   * boolean element to {@code allResults} and, if the result is false (or unreadable as a
+   * boolean), records the instance as violating with its severity/message annotations.
+   */
+  private void recordConstraintResult(
+      Value result,
+      List<OCLElement> allResults,
+      EObject instance,
+      List<VitruvOCLParser.AnnotationCSContext> annotations) {
+    if (result == null || result.isEmpty()) {
+      return;
+    }
+    OCLElement elem = result.getElements().get(0);
+    allResults.add(elem);
+    Boolean boolResult = elem.tryGetBool();
+    if (boolResult == null || !boolResult) {
+      violatingInstances.add(instance);
+      String severity = extractSeverity(annotations);
+      String customMessage = extractCustomMessage(annotations, instance);
+      violationRecords.add(new ViolationRecord(severity, customMessage, instance));
+    }
   }
 
   /**
@@ -305,8 +468,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return Collections.unmodifiableList(violationRecords);
   }
 
-  private String extractSeverity(VitruvOCLParser.InvCSContext inv) {
-    for (VitruvOCLParser.AnnotationCSContext ann : inv.annotationCS()) {
+  private String extractSeverity(List<VitruvOCLParser.AnnotationCSContext> annotations) {
+    for (VitruvOCLParser.AnnotationCSContext ann : annotations) {
       if (ann instanceof VitruvOCLParser.SeverityAnnotationContext sev) {
         return sev.severityValue.getText();
       }
@@ -315,11 +478,12 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   }
 
   /**
-   * Returns the interpolated {@code @message} template for the invariant, or {@code null} when no
+   * Returns the interpolated {@code @message} template for the constraint, or {@code null} when no
    * {@code @message} annotation is present.
    */
-  private String extractCustomMessage(VitruvOCLParser.InvCSContext inv, EObject instance) {
-    for (VitruvOCLParser.AnnotationCSContext ann : inv.annotationCS()) {
+  private String extractCustomMessage(
+      List<VitruvOCLParser.AnnotationCSContext> annotations, EObject instance) {
+    for (VitruvOCLParser.AnnotationCSContext ann : annotations) {
       if (ann instanceof VitruvOCLParser.MessageAnnotationContext msg) {
         String raw = msg.message.getText();
         String template = raw.length() >= 2 ? raw.substring(1, raw.length() - 1) : raw;
@@ -414,13 +578,36 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   @Override
   public Value visitInvCS(VitruvOCLParser.InvCSContext ctx) {
-    List<VitruvOCLParser.SpecificationCSContext> specs = ctx.specificationCS();
-    Value result = Value.boolValue(true);
+    return evaluateSpecs(ctx.specificationCS());
+  }
 
+  /**
+   * Evaluates a precondition constraint. Mirrors {@link #visitInvCS}.
+   *
+   * @param ctx The precondition node
+   * @return The boolean result of the constraint evaluation
+   */
+  @Override
+  public Value visitPreCS(VitruvOCLParser.PreCSContext ctx) {
+    return evaluateSpecs(ctx.specificationCS());
+  }
+
+  /**
+   * Evaluates a postcondition constraint. Mirrors {@link #visitInvCS}.
+   *
+   * @param ctx The postcondition node
+   * @return The boolean result of the constraint evaluation
+   */
+  @Override
+  public Value visitPostCS(VitruvOCLParser.PostCSContext ctx) {
+    return evaluateSpecs(ctx.specificationCS());
+  }
+
+  private Value evaluateSpecs(List<VitruvOCLParser.SpecificationCSContext> specs) {
+    Value result = Value.boolValue(true);
     for (VitruvOCLParser.SpecificationCSContext spec : specs) {
       result = visit(spec);
     }
-
     return result;
   }
 
@@ -2868,10 +3055,22 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return Value.empty(Type.ANY);
     }
 
-    // Process navigation chain
+    // Process navigation chain. A property-nav step immediately followed by '@pre' is evaluated
+    // specially (reading the transaction's pre-state instead of the live value); the '@pre' step
+    // itself is then skipped since it was consumed by the property access before it.
     List<VitruvOCLParser.NavigationChainCSContext> navChain = ctx.navigationChainCS();
-    for (VitruvOCLParser.NavigationChainCSContext nav : navChain) {
-      currentValue = visitNavigationWithReceiver(nav, currentValue);
+    for (int i = 0; i < navChain.size(); i++) {
+      VitruvOCLParser.NavigationChainCSContext nav = navChain.get(i);
+      if (nav.AT_PRE() != null) {
+        continue;
+      }
+      boolean nextIsAtPre = i + 1 < navChain.size() && navChain.get(i + 1).AT_PRE() != null;
+      if (nextIsAtPre
+          && nav.navigationTargetCS() instanceof VitruvOCLParser.PropertyNavContext propNav) {
+        currentValue = visitPropertyAccessWithReceiverPreState(propNav, currentValue);
+      } else {
+        currentValue = visitNavigationWithReceiver(nav, currentValue);
+      }
     }
 
     return currentValue;
@@ -2975,10 +3174,30 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
           }
 
           @Override
+          public Value visitLifecycleNav(VitruvOCLParser.LifecycleNavContext ctx) {
+            return visitLifecyclePredicateWithReceiver(ctx.lifecyclePredicateCS(), receiver);
+          }
+
+          @Override
           protected Value defaultResult() {
             return Value.empty(Type.ANY);
           }
         });
+  }
+
+  /**
+   * Pushes {@code receiver} onto {@code receiverStack} before evaluating an {@code
+   * OCLisNew}/{@code OCLisModified}/{@code OCLisDeleted} predicate, mirroring {@link
+   * #visitOperationCallWithReceiver}.
+   */
+  private Value visitLifecyclePredicateWithReceiver(
+      VitruvOCLParser.LifecyclePredicateCSContext ctx, Value receiver) {
+    receiverStack.push(receiver);
+    try {
+      return visit(ctx);
+    } finally {
+      receiverStack.pop();
+    }
   }
 
   /**
@@ -3117,6 +3336,57 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     OCLElementSource result =
         finalType.isUnique() ? LazyOperations.dedupe(mapped, OCLElement::semanticEquals) : mapped;
     return Value.lazy(result, finalType);
+  }
+
+  /**
+   * Pre-state counterpart of {@link #visitPropertyAccessWithReceiver}: reads each receiver
+   * element's feature value as it existed at transaction start (via {@link TransactionModel}),
+   * instead of the current live value. Used for the {@code self.attr@pre} navigation form.
+   *
+   * <p>Unlike the live path, this eagerly materializes the receiver ({@code receiver.getElements()})
+   * rather than staying lazy — {@code @pre} is a comparatively rare, non-hot-path construct, so the
+   * added simplicity outweighs the lazy-pipeline benefits that matter for large collection chains.
+   *
+   * @param navCtx the property navigation node the {@code @pre} step is attached to
+   * @param receiver the receiver value (must contain metaclass instances)
+   * @return collection of pre-state property values from all receiver instances
+   */
+  private Value visitPropertyAccessWithReceiverPreState(
+      VitruvOCLParser.PropertyNavContext navCtx, Value receiver) {
+    VitruvOCLParser.PropertyAccessContext ctx = navCtx.propertyAccess();
+    String propertyName = ctx.propertyName.getText();
+    Type resultType = nodeTypes.get(navCtx);
+    Type finalType = resultType != null ? resultType : Type.set(Type.ANY);
+
+    List<OCLElement> results = new ArrayList<>();
+    for (OCLElement elem : receiver.getElements()) {
+      EObject instance = elem.tryGetInstance();
+      if (instance == null) {
+        continue;
+      }
+      EStructuralFeature feature = instance.eClass().getEStructuralFeature(propertyName);
+      if (feature == null) {
+        continue;
+      }
+      if (feature.isMany()) {
+        List<?> currentList = (List<?>) instance.eGet(feature);
+        List<Object> currentValues = new ArrayList<>(currentList);
+        List<Object> preValues =
+            transaction.getPreStateMultiValue(instance, feature, currentValues);
+        for (Object v : preValues) {
+          if (v != null) {
+            results.add(wrapValue(v));
+          }
+        }
+      } else {
+        Object currentVal = instance.eGet(feature);
+        Object preVal = transaction.getPreStateSingleValue(instance, feature, currentVal);
+        if (preVal != null) {
+          results.add(wrapValue(preVal));
+        }
+      }
+    }
+    return Value.of(results, finalType);
   }
 
   /** Navigates {@code propertyName} on a single receiver element; used by {@link #visitPropertyAccessWithReceiver}. */
@@ -4030,6 +4300,9 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   @Override
   public Value visitNavigationChainCS(VitruvOCLParser.NavigationChainCSContext ctx) {
+    if (ctx.navigationTargetCS() == null) {
+      return Value.empty(Type.ANY); // '@pre' reached without receiver context — see visitPrimaryWithNav
+    }
     return visit(ctx.navigationTargetCS());
   }
 
@@ -4061,6 +4334,123 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitPropertyAccess(VitruvOCLParser.PropertyAccessContext ctx) {
     return Value.empty(Type.ANY);
+  }
+
+  /**
+   * Error: lifecycle predicate visited without receiver context.
+   *
+   * <p>Should be visited via {@link #visitLifecyclePredicateWithReceiver}.
+   */
+  @Override
+  public Value visitLifecycleNav(VitruvOCLParser.LifecycleNavContext ctx) {
+    return Value.empty(Type.ANY);
+  }
+
+  // ==================== Object-Lifecycle Predicates ====================
+
+  /**
+   * Evaluates {@code OCLisNew} (bare or with a {@code (attr => val, ...)} aggregate) for each
+   * receiver element: {@code true} iff the underlying instance was created in this evaluation's
+   * transaction and, for the aggregate form, its current (post-state) attribute values match.
+   *
+   * @param ctx The OCLisNew predicate node
+   * @return one Boolean per receiver element
+   */
+  @Override
+  public Value visitOclIsNewPred(VitruvOCLParser.OclIsNewPredContext ctx) {
+    Value receiver = receiverStack.peek();
+    List<OCLElement> results = new ArrayList<>();
+    for (OCLElement elem : receiver.getElements()) {
+      EObject instance = elem.tryGetInstance();
+      boolean matches =
+          instance != null
+              && transaction.wasCreated(instance)
+              && matchesAggregate(instance, ctx.lifecycleAggregateArgs());
+      results.add(new OCLElement.BoolValue(matches));
+    }
+    Type resultType = nodeTypes.get(ctx);
+    return Value.of(results, resultType != null ? resultType : Type.singleton(Type.BOOLEAN));
+  }
+
+  /**
+   * Evaluates {@code OCLisModified} (bare or with a {@code (attr => val, ...)} aggregate) for each
+   * receiver element: {@code true} iff the underlying instance had any feature changed in this
+   * evaluation's transaction and, for the aggregate form, its current (post-state, i.e.
+   * target-value, not delta) attribute values match.
+   *
+   * @param ctx The OCLisModified predicate node
+   * @return one Boolean per receiver element
+   */
+  @Override
+  public Value visitOclIsModifiedPred(VitruvOCLParser.OclIsModifiedPredContext ctx) {
+    Value receiver = receiverStack.peek();
+    List<OCLElement> results = new ArrayList<>();
+    for (OCLElement elem : receiver.getElements()) {
+      EObject instance = elem.tryGetInstance();
+      boolean matches =
+          instance != null
+              && transaction.wasModified(instance)
+              && matchesAggregate(instance, ctx.lifecycleAggregateArgs());
+      results.add(new OCLElement.BoolValue(matches));
+    }
+    Type resultType = nodeTypes.get(ctx);
+    return Value.of(results, resultType != null ? resultType : Type.singleton(Type.BOOLEAN));
+  }
+
+  /**
+   * Evaluates {@code OCLisDeleted} for each receiver element: {@code true} iff the underlying
+   * instance was deleted in this evaluation's transaction. No aggregate form exists.
+   *
+   * <p>Structurally, {@code self.OCLisDeleted} is always {@code false}: {@code
+   * visitClassifierContextCS} only ever iterates currently-live instances, so a deleted object can
+   * never be bound to {@code self}. This only becomes meaningful when navigating to a still-
+   * reachable (e.g. {@code @pre}-recovered) reference to a since-deleted object.
+   *
+   * @param ctx The OCLisDeleted predicate node
+   * @return one Boolean per receiver element
+   */
+  @Override
+  public Value visitOclIsDeletedPred(VitruvOCLParser.OclIsDeletedPredContext ctx) {
+    Value receiver = receiverStack.peek();
+    List<OCLElement> results = new ArrayList<>();
+    for (OCLElement elem : receiver.getElements()) {
+      EObject instance = elem.tryGetInstance();
+      results.add(new OCLElement.BoolValue(instance != null && transaction.wasDeleted(instance)));
+    }
+    Type resultType = nodeTypes.get(ctx);
+    return Value.of(results, resultType != null ? resultType : Type.singleton(Type.BOOLEAN));
+  }
+
+  /**
+   * Checks a {@code (attr => val, ...)} aggregate's attribute values against {@code instance}'s
+   * <em>current</em> (post-state) values — target-value semantics, not deltas, and not {@code
+   * @pre}-relative (see {@code visitOclIsNewPred}/{@code visitOclIsModifiedPred} docs). Returns
+   * {@code true} (vacuously) for the bare, no-aggregate form.
+   */
+  private boolean matchesAggregate(
+      EObject instance, VitruvOCLParser.LifecycleAggregateArgsContext argsCtx) {
+    if (argsCtx == null) {
+      return true;
+    }
+    for (VitruvOCLParser.LifecycleAggregateArgContext arg : argsCtx.lifecycleAggregateArg()) {
+      String attrName = arg.attr.getText();
+      EStructuralFeature feature = instance.eClass().getEStructuralFeature(attrName);
+      if (feature == null) {
+        return false; // type-checker already rejects unknown attributes; defensive fallback
+      }
+      Value expectedValue = visit(arg.value);
+      if (expectedValue == null || expectedValue.isEmpty()) {
+        return false;
+      }
+      Object actualRaw = instance.eGet(feature);
+      if (actualRaw == null) {
+        return false;
+      }
+      if (!OCLElement.semanticEquals(wrapValue(actualRaw), expectedValue.getElements().get(0))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   // ==================== Miscellaneous ====================

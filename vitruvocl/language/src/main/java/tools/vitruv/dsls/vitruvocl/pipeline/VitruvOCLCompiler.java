@@ -15,9 +15,12 @@ package tools.vitruv.dsls.vitruvocl.pipeline;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.eclipse.emf.ecore.EObject;
+import tools.vitruv.change.atomic.EChange;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLLexer;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
 import tools.vitruv.dsls.vitruvocl.common.ErrorCollector;
@@ -54,6 +57,22 @@ public class VitruvOCLCompiler {
   private final ErrorCollector errors = new ErrorCollector();
 
   /**
+   * The transaction (ordered atomic changes between pre-state and current post-state) that {@code
+   * @pre}/{@code OCLisNew}/{@code OCLisModified}/{@code OCLisDeleted} are evaluated against. Empty
+   * by default — see {@link tools.vitruv.dsls.vitruvocl.evaluator.transaction.TransactionModel}.
+   */
+  private final List<EChange<EObject>> transaction;
+
+  /**
+   * Whether {@link #transaction} reflects a real transaction context — {@code true} only when the
+   * explicit-transaction constructor was used (even with an empty list). {@code false} for the
+   * no-argument constructor, used by every caller with no notion of a transaction at all (CLI, VS
+   * Code plugin): there, {@code pre}/{@code post} blocks are skipped rather than evaluated with
+   * vacuous empty-transaction semantics — see {@code EvaluationVisitor#transactionSupported}.
+   */
+  private final boolean transactionSupported;
+
+  /**
    * Last evaluator instance — available after any {@code compile} call for violation introspection.
    *
    * <p>Callers can use {@code getLastEvaluator().getViolatingInstances()} to retrieve the concrete
@@ -62,7 +81,8 @@ public class VitruvOCLCompiler {
   private EvaluationVisitor lastEvaluator = null;
 
   /**
-   * Creates compiler with metamodel access.
+   * Creates compiler with metamodel access and no transaction support — {@code pre}/{@code post}
+   * blocks are skipped during evaluation, only {@code inv} is evaluated.
    *
    * @param wrapper Interface to metamodels and instances
    * @param oclFile Optional file path for file-based compilation
@@ -70,6 +90,26 @@ public class VitruvOCLCompiler {
   public VitruvOCLCompiler(MetamodelWrapperInterface wrapper, Path oclFile) {
     this.wrapper = wrapper;
     this.oclFile = oclFile;
+    this.transaction = List.of();
+    this.transactionSupported = false;
+  }
+
+  /**
+   * Creates compiler with metamodel access and an explicit transaction — {@code pre}/{@code post}
+   * blocks are evaluated against {@code transaction} (which may itself be empty).
+   *
+   * @param wrapper Interface to metamodels and instances
+   * @param oclFile Optional file path for file-based compilation
+   * @param transaction the ordered list of atomic changes between pre-state and the current
+   *     post-state, evaluated by {@code @pre}/{@code OCLisNew}/{@code OCLisModified}/{@code
+   *     OCLisDeleted} (may be empty)
+   */
+  public VitruvOCLCompiler(
+      MetamodelWrapperInterface wrapper, Path oclFile, List<EChange<EObject>> transaction) {
+    this.wrapper = wrapper;
+    this.oclFile = oclFile;
+    this.transaction = transaction == null ? List.of() : transaction;
+    this.transactionSupported = true;
   }
 
   /**
@@ -155,7 +195,13 @@ public class VitruvOCLCompiler {
 
     // PASS 3: Evaluation
     EvaluationVisitor evaluator =
-        new EvaluationVisitor(symbolTable, wrapper, errors, typeChecker.getNodeTypes());
+        new EvaluationVisitor(
+            symbolTable,
+            wrapper,
+            errors,
+            typeChecker.getNodeTypes(),
+            transaction,
+            transactionSupported);
     lastEvaluator = evaluator;
     return evaluator.visit(tree);
   }

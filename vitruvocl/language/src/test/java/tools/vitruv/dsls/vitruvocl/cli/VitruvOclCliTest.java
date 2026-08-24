@@ -281,9 +281,122 @@ class VitruvOclCliTest {
     assertTrue(output().contains("\"success\":true"), "Named constraint eval should succeed");
   }
 
+  /**
+   * Tests that eval skips a {@code post} block (this CLI path has no transaction context) and
+   * reports it as a PRE/POST SKIPPED warning rather than evaluating it — and, critically, does not
+   * report the constraint as violated just because the skipped block would otherwise have been
+   * vacuously false (see {@code EvaluationVisitor#transactionSupported}).
+   */
+  @Test
+  void testEvalSkipsPostBlockAndReportsIt(@TempDir Path tempDir) throws java.io.IOException {
+    Path oclFile = tempDir.resolve("test.ocl");
+    Files.writeString(
+        oclFile, "context spaceMission::Spacecraft post:\n  self.OCLisModified");
+
+    VitruvOclCli.main(
+        new String[] {
+          "eval", oclFile.toString(),
+          "--ecore", SPACEMISSION_ECORE.toString(),
+          "--xmi", SPACECRAFT_VOYAGER.toString()
+        });
+
+    String out = output();
+    assertTrue(out.contains("\"success\":true"), "Eval should compile successfully");
+    assertTrue(
+        out.contains("\"satisfied\":true"),
+        "A skipped post block must not be reported as violated: " + out);
+    assertTrue(
+        out.contains("PRE/POST SKIPPED:"), "Output should contain a PRE/POST SKIPPED warning: " + out);
+    assertTrue(
+        out.contains("spaceMission::Spacecraft"), "Skip notice should name the context: " + out);
+  }
+
   // ══════════════════════════════════════════════════════════════
   // eval-batch command
   // ══════════════════════════════════════════════════════════════
+
+  /**
+   * Tests that a shared {@code context} header followed by several {@code inv} blocks (a
+   * perfectly valid, idiomatic OCL style — one header, many invariants below it — distinct from
+   * this repo's own example-file convention of repeating the header per invariant) is split into
+   * independently evaluated units by eval-batch, exactly like separate header-per-inv blocks
+   * already are. Before this fix, a single broken invariant under a shared header silently
+   * discarded every sibling invariant under that same header — none of them appeared in the batch
+   * result at all, not even as a generic failure.
+   */
+  @Test
+  void testEvalBatchSharedContextHeaderIsolatesBrokenInvariant(@TempDir Path tempDir)
+      throws java.io.IOException {
+    Path oclFile = tempDir.resolve("shared.ocl");
+    Files.writeString(
+        oclFile,
+        """
+        context spaceMission::Spacecraft
+        inv good1:
+          self.mass > 0
+        inv broken:
+          self.thisPropertyDoesNotExist > 0
+        inv good2:
+          self.mass >= 0
+        """);
+
+    VitruvOclCli.main(
+        new String[] {
+          "eval-batch", oclFile.toString(),
+          "--ecore", SPACEMISSION_ECORE.toString(),
+          "--xmi", SPACECRAFT_VOYAGER.toString()
+        });
+
+    String out = output();
+    assertTrue(out.contains("\"success\":true"), "Batch itself should succeed: " + out);
+    assertTrue(
+        out.contains("\"name\":\"good1\",\"success\":true,\"satisfied\":true"),
+        "good1 should be evaluated and satisfied independently of 'broken': " + out);
+    assertTrue(
+        out.contains("\"name\":\"good2\",\"success\":true,\"satisfied\":true"),
+        "good2 should be evaluated and satisfied independently of 'broken': " + out);
+    assertTrue(
+        out.contains("\"name\":\"broken\",\"success\":false"),
+        "broken should be reported as its own failed entry, not swallow its siblings: " + out);
+    assertTrue(
+        out.contains("thisPropertyDoesNotExist"), "broken's own compiler error should appear: " + out);
+  }
+
+  /**
+   * Same as {@link #testEvalBatchSharedContextHeaderIsolatesBrokenInvariant} but for {@code pre}/
+   * {@code post} sharing an operation-context header, since the fix generalizes the same
+   * header-splitting logic to all three constraint keywords.
+   */
+  @Test
+  void testEvalBatchSharedContextHeaderIsolatesBrokenPrePost(@TempDir Path tempDir)
+      throws java.io.IOException {
+    Path oclFile = tempDir.resolve("shared_pp.ocl");
+    Files.writeString(
+        oclFile,
+        """
+        context spaceMission::Spacecraft::launch(dest: String)
+        pre good:
+          self.mass > 0
+        post broken:
+          self.thisPropertyDoesNotExist > 0
+        """);
+
+    VitruvOclCli.main(
+        new String[] {
+          "eval-batch", oclFile.toString(),
+          "--ecore", SPACEMISSION_ECORE.toString(),
+          "--xmi", SPACECRAFT_VOYAGER.toString()
+        });
+
+    String out = output();
+    assertTrue(out.contains("\"success\":true"), "Batch itself should succeed: " + out);
+    assertTrue(
+        out.contains("\"name\":\"good\",\"success\":true"),
+        "The pre block should be evaluated independently of the broken post block: " + out);
+    assertTrue(
+        out.contains("\"name\":\"broken\",\"success\":false"),
+        "The post block should fail on its own, not swallow its sibling pre block: " + out);
+  }
 
   /** Tests that eval-batch returns array of results for multiple constraints. */
   @Test
@@ -397,6 +510,37 @@ class VitruvOclCliTest {
     assertTrue(out.contains("\"name\""), "Output should contain name field");
     assertTrue(out.contains("\"success\""), "Output should contain success field");
     assertTrue(out.contains("\"satisfied\""), "Output should contain satisfied field");
+  }
+
+  /**
+   * Tests that eval-batch also skips {@code post} blocks (same no-transaction-context reasoning as
+   * {@link #testEvalSkipsPostBlockAndReportsIt}), while still evaluating the {@code inv} in the same
+   * context normally.
+   */
+  @Test
+  void testEvalBatchSkipsPostBlockAndReportsIt(@TempDir Path tempDir) throws java.io.IOException {
+    Path oclFile = tempDir.resolve("batch.ocl");
+    Files.writeString(
+        oclFile,
+        "context spaceMission::Spacecraft inv massPositive:\n"
+            + "  self.mass > 0\n"
+            + "post:\n"
+            + "  self.OCLisModified\n");
+
+    VitruvOclCli.main(
+        new String[] {
+          "eval-batch", oclFile.toString(),
+          "--ecore", SPACEMISSION_ECORE.toString(),
+          "--xmi", SPACECRAFT_VOYAGER.toString()
+        });
+
+    String out = output();
+    assertTrue(out.contains("\"success\":true"), "Batch eval should succeed: " + out);
+    assertTrue(out.contains("massPositive"), "Output should contain the inv's name: " + out);
+    assertTrue(
+        out.contains("\"satisfied\":true"),
+        "inv is satisfied and the post block must not count as a violation: " + out);
+    assertTrue(out.contains("PRE/POST SKIPPED:"), "Output should contain a skip warning: " + out);
   }
 
   /**
@@ -532,6 +676,64 @@ class VitruvOclCliTest {
     String out = output();
     assertTrue(out.contains("onlyOne"), "Single constraint name should appear in output");
     assertTrue(out.contains("\"satisfied\":true"), "Single constraint should be satisfied");
+  }
+
+  /**
+   * Tests that a file-load failure (here: a nonexistent {@code --ecore} path) is surfaced in
+   * eval-batch's JSON as an actual error message on every constraint, not just a bare {@code
+   * "success":false} with no explanation.
+   *
+   * <p>Before this fix, {@code evalBatch()}'s JSON builder only rendered {@link
+   * ConstraintResult#getCompilerErrors()}. When {@code SmartLoader} fails to load the batch's
+   * metamodel/instance files, every {@link ConstraintResult} in the batch gets the load failure in
+   * {@link ConstraintResult#getFileErrors()} instead — {@code compilerErrors} stays empty, so the
+   * old JSON had no {@code "errors"} field at all, making a genuine (and identical, batch-wide) file
+   * error indistinguishable from "every constraint happens to be individually broken."
+   */
+  @Test
+  void testEvalBatchSurfacesFileErrorsNotJustCompilerErrors(@TempDir Path tempDir)
+      throws java.io.IOException {
+    Path oclFile = tempDir.resolve("test.ocl");
+    Files.writeString(
+        oclFile, "context spaceMission::Spacecraft inv massIsPositive:\n  self.mass > 0\n");
+
+    VitruvOclCli.main(
+        new String[] {
+          "eval-batch", oclFile.toString(),
+          "--ecore", tempDir.resolve("does-not-exist.ecore").toString(),
+          "--xmi", SPACECRAFT_VOYAGER.toString()
+        });
+
+    String out = output();
+    assertTrue(
+        out.contains("\"success\":false"), "The failed load should be reported as unsuccessful: " + out);
+    assertTrue(
+        out.contains("\"errors\":["),
+        "The file-load failure must appear as an actual error, not silently: " + out);
+    assertTrue(
+        out.contains("does-not-exist.ecore"),
+        "The error message should name the missing file: " + out);
+  }
+
+  /** Same proof as above, but for the single-constraint {@code eval} command. */
+  @Test
+  void testEvalSurfacesFileErrorsNotJustCompilerErrors(@TempDir Path tempDir)
+      throws java.io.IOException {
+    Path oclFile = tempDir.resolve("test.ocl");
+    Files.writeString(oclFile, "context spaceMission::Spacecraft inv massIsPositive:\n  self.mass > 0");
+
+    VitruvOclCli.main(
+        new String[] {
+          "eval", oclFile.toString(),
+          "--ecore", tempDir.resolve("does-not-exist.ecore").toString(),
+          "--xmi", SPACECRAFT_VOYAGER.toString()
+        });
+
+    String out = output();
+    assertTrue(out.contains("\"success\":false"), "The failed load should be unsuccessful: " + out);
+    assertTrue(
+        out.contains("does-not-exist.ecore"),
+        "The error message should name the missing file, not leave \"errors\" empty: " + out);
   }
 
   // ══════════════════════════════════════════════════════════════

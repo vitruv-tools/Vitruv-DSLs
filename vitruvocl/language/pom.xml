@@ -109,6 +109,17 @@
             <groupId>tools.vitruv</groupId>
             <artifactId>tools.vitruv.framework.views</artifactId>
         </dependency>
+        <!-- EChange vocabulary (CreateEObject/DeleteEObject, Replace.../Insert.../Remove...EChange)
+             and ChangeRecorder, used by the pre/post transaction model (@pre, OCLisNew/Modified/
+             Deleted) to reconstruct pre-state values from a recorded transaction. -->
+        <dependency>
+            <groupId>tools.vitruv</groupId>
+            <artifactId>tools.vitruv.change.atomic</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>tools.vitruv</groupId>
+            <artifactId>tools.vitruv.change.composite</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

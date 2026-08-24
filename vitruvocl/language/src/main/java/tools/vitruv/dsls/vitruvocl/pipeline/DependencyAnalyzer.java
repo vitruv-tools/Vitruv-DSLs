@@ -61,7 +61,8 @@ public class DependencyAnalyzer {
 
         // Pattern: ID followed by ::
         if (next.getType() == VitruvOCLLexer.COLONCOLON
-            && !isPrecededByComparisonOrLogicalOp(tokenList, i)) {
+            && !isPrecededByComparisonOrLogicalOp(tokenList, i)
+            && !isClassNameSegmentOfOperationHeader(tokenList, i)) {
           requiredPackages.add(current.getText());
         }
       }
@@ -121,5 +122,24 @@ public class DependencyAnalyzer {
       return txt.equals("==") || txt.equals("!=");
     }
     return false;
+  }
+
+  /**
+   * Returns {@code true} if the {@code ID} at {@code index} is the class-name segment of a {@code
+   * context metamodel::className::operationName(...)} header — i.e. it is itself immediately
+   * preceded by {@code ID ::}.
+   *
+   * <p>The pre/post operation-context header is the only place this grammar allows two consecutive
+   * {@code ::} in a row ({@code metamodel::className::operationName}); everywhere else (type names,
+   * enum literals) at most one {@code ::} appears. Without this check, the class-name segment would
+   * be mistaken for a second, unrelated metamodel package reference.
+   */
+  private static boolean isClassNameSegmentOfOperationHeader(List<Token> tokenList, int index) {
+    if (index < 2) {
+      return false;
+    }
+    Token prevColon = tokenList.get(index - 1);
+    Token prevId = tokenList.get(index - 2);
+    return prevColon.getType() == VitruvOCLLexer.COLONCOLON && prevId.getType() == VitruvOCLLexer.ID;
   }
 }

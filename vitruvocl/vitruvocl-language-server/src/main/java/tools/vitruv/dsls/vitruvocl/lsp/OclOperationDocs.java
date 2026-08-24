@@ -647,6 +647,82 @@ public final class OclOperationDocs {
             "A `Set` containing every instance of `MetaClass` in the loaded models"));
 
     // ------------------------------------------------------------------
+    // pre/post constraint blocks and the @pre postfix operator
+    // ------------------------------------------------------------------
+
+    m.put(
+        "pre",
+        op(
+            "context Type[::operation(params)] pre [name]: expr",
+            "Introduces a precondition — a Boolean expression checked before the transaction"
+                + " (typically an operation call) that follows. At most one `pre` block per"
+                + " context.",
+            "Not applicable — `pre` is a block keyword, not an expression"));
+
+    m.put(
+        "post",
+        op(
+            "context Type[::operation(params)] post [name]: expr",
+            "Introduces a postcondition — a Boolean expression checked after the transaction"
+                + " completes. At most one `post` block per context. The only place `@pre` and"
+                + " `OCLisNew`/`OCLisModified`/`OCLisDeleted` are valid.",
+            "Not applicable — `post` is a block keyword, not an expression"));
+
+    m.put(
+        "@pre",
+        op(
+            "expr.attr@pre → same type as expr.attr",
+            "Only valid inside a `post` block, and only directly after a property access."
+                + " Reads the attribute's value at transaction start instead of its current"
+                + " (post-state) value — anchored to the transaction boundary, not to a"
+                + " method-call concept as in standard OCL.",
+            "The pre-transaction value of the attribute it follows"));
+
+    // ------------------------------------------------------------------
+    // Object-lifecycle predicates (pre/post extension, post-blocks only)
+    // ------------------------------------------------------------------
+
+    m.put(
+        "OCLisNew",
+        op(
+            "OclAny.OCLisNew" + " | " + "OclAny.OCLisNew(attr => val, ...) → " + T_BOOLEAN,
+            "Only valid inside a `post` block. `true` if the receiver was created during the "
+                + "transaction being evaluated. The named-argument aggregate form additionally"
+                + " requires the receiver's *current* (post-state) attribute values to match —"
+                + " not every attribute needs to be listed.",
+            "`true` if the receiver is new in this transaction (and, for the aggregate form, its"
+                + " current attribute values match)",
+            param("attr", "ID", "Attribute name, e.g. `age`"),
+            param("val", "OclAny", "Expected current (post-state) value for that attribute")));
+
+    m.put(
+        "OCLisModified",
+        op(
+            "OclAny.OCLisModified"
+                + " | "
+                + "OclAny.OCLisModified(attr => val, ...) → "
+                + T_BOOLEAN,
+            "Only valid inside a `post` block. `true` if any feature of the receiver changed"
+                + " during the transaction being evaluated. The named-argument aggregate form"
+                + " additionally requires the receiver's *current* (post-state, i.e. target"
+                + " value — not a delta) attribute values to match.",
+            "`true` if the receiver was modified in this transaction (and, for the aggregate"
+                + " form, its current attribute values match)",
+            param("attr", "ID", "Attribute name, e.g. `age`"),
+            param("val", "OclAny", "Expected current (post-state) target value for that attribute")));
+
+    m.put(
+        "OCLisDeleted",
+        op(
+            "OclAny.OCLisDeleted → " + T_BOOLEAN,
+            "Only valid inside a `post` block. `true` if the receiver was deleted during the"
+                + " transaction being evaluated. No aggregate form exists (there is no post-state"
+                + " to assert values against). Note: `self.OCLisDeleted` is structurally always"
+                + " `false`, since evaluation only ever iterates currently-live instances — this"
+                + " only becomes meaningful on a navigated-to, still-reachable reference.",
+            "`true` if the receiver was deleted in this transaction"));
+
+    // ------------------------------------------------------------------
     // Cross-metamodel correspondence (OCL# extension)
     // ------------------------------------------------------------------
 

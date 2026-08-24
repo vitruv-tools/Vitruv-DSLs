@@ -29,12 +29,39 @@ classifierContextCS
     CONTEXT
     (ID ':')?
     (metamodel=ID '::' className=ID | contextName=ID)
-    invCS*
+    ('::' operationName=ID '(' operationParamListCS? ')' (':' returnType=typeExpCS)?)?
+    invCS* preCS* postCS*
+;
+
+// Operation parameters (context Type::operation(name: Type, ...)). There is no method-invocation
+// mechanism in this codebase's evaluator, so these are type-checked but bound to an empty value at
+// evaluation time until a future (out-of-scope) Reactions/YAML layer supplies real arguments.
+operationParamListCS
+:
+    operationParamCS (',' operationParamCS)*
+;
+
+operationParamCS
+:
+    paramName=ID ':' paramType=typeExpCS
 ;
 
 invCS
 :
     'inv' (ID ('(' specificationCS ')')?)? ':' annotationCS* specificationCS
+;
+
+// Precondition / postcondition blocks. Cardinality (at most one of each per context) is NOT
+// enforced here, mirroring how @severity/@message duplicate-checking is a TypeCheckVisitor
+// concern rather than a grammar one.
+preCS
+:
+    'pre' (ID ('(' specificationCS ')')?)? ':' annotationCS* specificationCS
+;
+
+postCS
+:
+    'post' (ID ('(' specificationCS ')')?)? ':' annotationCS* specificationCS
 ;
 
 // Constraint annotations (@severity / @message) placed between ':' and the body expression.
@@ -47,6 +74,7 @@ annotationCS
 CONTEXT: 'context';
 AT_SEVERITY: '@severity';
 AT_MESSAGE: '@message';
+AT_PRE: '@pre';
 
 // ============================================================================
 // TYPE SYSTEM
@@ -137,12 +165,36 @@ prefixedExpCS
 navigationChainCS
 :
     '.' navigationTargetCS
+    | AT_PRE
 ;
 
 navigationTargetCS
 :
     propertyAccess             # propertyNav
     | operationCall            # operationNav
+    | lifecyclePredicateCS     # lifecycleNav
+;
+
+// Object-lifecycle predicates (post-block only, enforced by TypeCheckVisitor, not here).
+// OCLisDeleted deliberately has no aggregate-call alternative: there is no post-state value to
+// assert on a deleted object, so the grammar itself rules that shape out.
+lifecyclePredicateCS
+:
+    'OCLisNew' ('(' lifecycleAggregateArgs ')')?          # oclIsNewPred
+    | 'OCLisModified' ('(' lifecycleAggregateArgs ')')?   # oclIsModifiedPred
+    | 'OCLisDeleted'                                       # oclIsDeletedPred
+;
+
+lifecycleAggregateArgs
+:
+    lifecycleAggregateArg (',' lifecycleAggregateArg)*
+;
+
+// Named-argument only (no positional form) — attr => value. Completeness (whether every attribute
+// must be listed) is deliberately not enforced here; that is a TypeCheckVisitor decision.
+lifecycleAggregateArg
+:
+    attr=ID '=>' value=expCS
 ;
 
 // ============================================================================

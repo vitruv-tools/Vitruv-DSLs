@@ -103,15 +103,15 @@ class CompletionProviderTest {
   }
 
   @Test
-  void contextWithPackageAndClass_suggestsInvKeyword() {
+  void contextWithPackageAndClass_suggestsInvPreAndPostKeywords() {
     String text = "context TestMM::Foo ";
     Position cursor = cursorAtEnd(text);
 
     List<CompletionItem> items = provider.getCompletions(text, cursor, null);
 
-    assertThat(items).hasSize(1);
-    assertThat(items.get(0).getLabel()).isEqualTo("inv");
-    assertThat(items.get(0).getKind()).isEqualTo(CompletionItemKind.Keyword);
+    assertThat(items).extracting(CompletionItem::getLabel).containsExactlyInAnyOrder(
+        "inv", "pre", "post");
+    assertThat(items).extracting(CompletionItem::getKind).containsOnly(CompletionItemKind.Keyword);
   }
 
   // ── package:: completions ──────────────────────────────────────────────────

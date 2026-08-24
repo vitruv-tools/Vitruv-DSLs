@@ -62,7 +62,7 @@ public class CompletionProvider {
 
   // 'context ' with no '::' yet → suggest metamodel package names.
   private static final Pattern CONTEXT_NEEDS_PKG = Pattern.compile("^\\s*context\\s+\\w*$");
-  // 'context Pkg::Class ' without 'inv' yet → only 'inv' makes sense.
+  // 'context Pkg::Class ' without a constraint keyword yet → 'inv'/'pre'/'post' make sense.
   private static final Pattern CONTEXT_NEEDS_INV =
       Pattern.compile("^\\s*context\\s+\\w+::\\w+\\s+\\w*$");
 
@@ -78,7 +78,7 @@ public class CompletionProvider {
   // Matches a bare '@' or '@<partial>' that could be the start of an annotation keyword.
   // Only fires when there is an 'inv … :' somewhere before the cursor on a prior line.
   private static final Pattern AT_ANNOTATION_START = Pattern.compile("@\\w*$");
-  private static final Pattern INV_BEFORE_CURSOR = Pattern.compile("\\binv\\b[^:]*:");
+  private static final Pattern INV_BEFORE_CURSOR = Pattern.compile("\\b(inv|pre|post)\\b[^:]*:");
   // Detect already-present annotations in the constraint block before the cursor.
   private static final Pattern HAS_SEVERITY = Pattern.compile("@severity\\s+\\w+");
   private static final Pattern HAS_MESSAGE = Pattern.compile("@message\\s+\"");
@@ -189,7 +189,10 @@ public class CompletionProvider {
     return Optional.of(items);
   }
 
-  /** 'context Pkg::Class ' without 'inv' yet → only 'inv', or empty if no match. */
+  /**
+   * 'context Pkg::Class ' without a constraint keyword yet → 'inv'/'pre'/'post', or empty if no
+   * match.
+   */
   private Optional<List<CompletionItem>> contextInvCompletions(String currentLine) {
     if (!CONTEXT_NEEDS_INV.matcher(currentLine).find()) {
       return Optional.empty();
@@ -199,7 +202,20 @@ public class CompletionProvider {
     inv.setDetail("Introduce a named invariant");
     inv.setInsertText("inv $1:\n  $0");
     inv.setInsertTextFormat(InsertTextFormat.Snippet);
-    return Optional.of(List.of(inv));
+
+    CompletionItem pre = new CompletionItem("pre");
+    pre.setKind(CompletionItemKind.Keyword);
+    pre.setDetail("Introduce a named precondition");
+    pre.setInsertText("pre $1:\n  $0");
+    pre.setInsertTextFormat(InsertTextFormat.Snippet);
+
+    CompletionItem post = new CompletionItem("post");
+    post.setKind(CompletionItemKind.Keyword);
+    post.setDetail("Introduce a named postcondition");
+    post.setInsertText("post $1:\n  $0");
+    post.setInsertTextFormat(InsertTextFormat.Snippet);
+
+    return Optional.of(List.of(inv, pre, post));
   }
 
   /**
@@ -207,7 +223,7 @@ public class CompletionProvider {
    * name:} header line itself. Returns empty if the cursor is not on such a line.
    */
   private Optional<List<CompletionItem>> invHeaderGuard(String currentLine) {
-    if (currentLine.matches(".*\\binv\\s+\\w+\\s*:.*")) {
+    if (currentLine.matches(".*\\b(inv|pre|post)\\s+\\w+\\s*:.*")) {
       return Optional.of(List.of());
     }
     return Optional.empty();

@@ -44,7 +44,14 @@ public class Warning {
     UNUSED_MODEL("Unused model instance"),
 
     /** Constraint evaluated but was not satisfied. */
-    CONSTRAINT_VIOLATION("Constraint violation");
+    CONSTRAINT_VIOLATION("Constraint violation"),
+
+    /**
+     * A {@code pre}/{@code post} block was not evaluated because this evaluation mode has no
+     * transaction context (e.g. the CLI or the VS Code plugin, which have no notion of a
+     * transaction at all). Only {@code inv} was evaluated for the affected context.
+     */
+    PRE_POST_SKIPPED("Pre/post constraint skipped");
 
     private final String description;
 

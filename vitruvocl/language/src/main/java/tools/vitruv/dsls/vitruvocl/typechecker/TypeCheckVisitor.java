@@ -124,6 +124,21 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   private final Deque<Type> receiverStack = new ArrayDeque<>();
 
   /**
+   * Which kind of constraint block ({@code inv}/{@code pre}/{@code post}) is currently being
+   * type-checked. Used to restrict {@code @pre} and the {@code OCLisNew}/{@code OCLisModified}/
+   * {@code OCLisDeleted} lifecycle predicates to {@code post} blocks only. Set at the start of
+   * {@link #visitInvCS}/{@link #visitPreCS}/{@link #visitPostCS}; these blocks never nest, so a
+   * single field (rather than a stack) is sufficient.
+   */
+  private enum ConstraintSectionKind {
+    INV,
+    PRE,
+    POST
+  }
+
+  private ConstraintSectionKind currentSection = ConstraintSectionKind.INV;
+
+  /**
    * Maps parse tree nodes to their computed types.
    *
    * <p>This property is populated during type checking and retrieved by {@link #getNodeTypes()} for
@@ -333,6 +348,21 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       for (VitruvOCLParser.InvCSContext inv : ctx.invCS()) {
         visit(inv);
       }
+
+      // Cardinality: at most one pre/post per context (not enforced by the grammar — mirrors the
+      // @severity/@message duplicate check below).
+      if (ctx.preCS().size() > 1) {
+        reportError(ctx, "'pre' may only appear once per context");
+      }
+      if (ctx.postCS().size() > 1) {
+        reportError(ctx, "'post' may only appear once per context");
+      }
+      for (VitruvOCLParser.PreCSContext pre : ctx.preCS()) {
+        visit(pre);
+      }
+      for (VitruvOCLParser.PostCSContext post : ctx.postCS()) {
+        visit(post);
+      }
       return contextType;
     } finally {
       symbolTable.exitScope();
@@ -356,15 +386,63 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    * @return Type.BOOLEAN if valid, Type.ERROR otherwise
    */
   @Override
-  @SuppressWarnings("java:S3776")
   public Type visitInvCS(VitruvOCLParser.InvCSContext ctx) {
+    currentSection = ConstraintSectionKind.INV;
+    return checkConstraintBody(ctx, ctx.annotationCS(), ctx.specificationCS(), "Invariant");
+  }
+
+  /**
+   * Type checks a precondition constraint. Preconditions must evaluate to Boolean, exactly like
+   * {@link #visitInvCS}.
+   *
+   * @param ctx The precondition node
+   * @return Type.BOOLEAN if valid, Type.ERROR otherwise
+   */
+  @Override
+  public Type visitPreCS(VitruvOCLParser.PreCSContext ctx) {
+    currentSection = ConstraintSectionKind.PRE;
+    return checkConstraintBody(ctx, ctx.annotationCS(), ctx.specificationCS(), "Precondition");
+  }
+
+  /**
+   * Type checks a postcondition constraint. Postconditions must evaluate to Boolean, exactly like
+   * {@link #visitInvCS}. {@code @pre} and the {@code OCLisNew}/{@code OCLisModified}/{@code
+   * OCLisDeleted} lifecycle predicates are only valid here (see {@link #currentSection}).
+   *
+   * @param ctx The postcondition node
+   * @return Type.BOOLEAN if valid, Type.ERROR otherwise
+   */
+  @Override
+  public Type visitPostCS(VitruvOCLParser.PostCSContext ctx) {
+    currentSection = ConstraintSectionKind.POST;
+    return checkConstraintBody(ctx, ctx.annotationCS(), ctx.specificationCS(), "Postcondition");
+  }
+
+  /**
+   * Shared body of {@link #visitInvCS}/{@link #visitPreCS}/{@link #visitPostCS}: validates
+   * {@code @severity}/{@code @message} annotation cardinality, then checks that every
+   * specification expression is Boolean-conformant.
+   *
+   * @param ctx the constraint node (inv/pre/post), used for error positions and the nodeTypes key
+   * @param annotationCtxs the constraint's {@code @severity}/{@code @message} annotations
+   * @param specs the constraint's specification expressions
+   * @param kindLabel human-readable label for error messages ("Invariant"/"Precondition"/
+   *     "Postcondition")
+   * @return Type.BOOLEAN if valid, Type.ERROR otherwise
+   */
+  @SuppressWarnings("java:S3776")
+  private Type checkConstraintBody(
+      ParserRuleContext ctx,
+      List<VitruvOCLParser.AnnotationCSContext> annotationCtxs,
+      List<VitruvOCLParser.SpecificationCSContext> specs,
+      String kindLabel) {
     // Check for duplicate @severity / @message annotations
     long severityCount =
-        ctx.annotationCS().stream()
+        annotationCtxs.stream()
             .filter(a -> a instanceof VitruvOCLParser.SeverityAnnotationContext)
             .count();
     long messageCount =
-        ctx.annotationCS().stream()
+        annotationCtxs.stream()
             .filter(a -> a instanceof VitruvOCLParser.MessageAnnotationContext)
             .count();
     if (severityCount > 1) {
@@ -374,11 +452,10 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       reportError(ctx, "@message may only appear once per constraint");
     }
     // Validate annotations before type-checking the body
-    for (VitruvOCLParser.AnnotationCSContext ann : ctx.annotationCS()) {
+    for (VitruvOCLParser.AnnotationCSContext ann : annotationCtxs) {
       visit(ann);
     }
 
-    List<VitruvOCLParser.SpecificationCSContext> specs = ctx.specificationCS();
     Type resultType = Type.BOOLEAN;
 
     for (VitruvOCLParser.SpecificationCSContext spec : specs) {
@@ -402,7 +479,7 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
                 ? specType.getElementType()
                 : specType;
         if (!checkType.isConformantTo(Type.BOOLEAN)) {
-          reportError(ctx, "Invariant must be Boolean, got " + specType);
+          reportError(ctx, kindLabel + " must be Boolean, got " + specType);
           resultType = Type.ERROR;
         }
       }
@@ -1550,7 +1627,71 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
    */
   @Override
   public Type visitNavigationChainCS(VitruvOCLParser.NavigationChainCSContext ctx) {
+    if (ctx.AT_PRE() != null) {
+      return visitAtPre(ctx);
+    }
     return visit(ctx.navigationTargetCS());
+  }
+
+  /**
+   * Type checks the {@code @pre} postfix operator ({@code self.attr@pre}).
+   *
+   * <p>{@code @pre} is type-neutral: it doesn't change the type of the navigation step it follows,
+   * only the point in time the value is read from (transaction start vs. current). Restrictions
+   * (both deliberate, not grammar-enforced — see {@link ConstraintSectionKind}):
+   *
+   * <ul>
+   *   <li>Only valid inside {@code post} blocks.
+   *   <li>Must directly follow a property access — {@code self.attr@pre} is valid, bare {@code
+   *       self@pre} is not, since there is no "old state" for a receiver that wasn't itself a
+   *       navigated feature.
+   * </ul>
+   *
+   * @param ctx the navigation chain node whose {@code AT_PRE()} terminal is non-null
+   * @return the unchanged receiver type, or Type.ERROR if misplaced
+   */
+  private Type visitAtPre(VitruvOCLParser.NavigationChainCSContext ctx) {
+    if (currentSection != ConstraintSectionKind.POST) {
+      reportError(ctx.AT_PRE().getSymbol(), "'@pre' is only valid inside 'post' blocks");
+      nodeTypes.put(ctx, Type.ERROR);
+      return Type.ERROR;
+    }
+    if (!previousNavWasPropertyAccess(ctx)) {
+      reportError(
+          ctx.AT_PRE().getSymbol(), "'@pre' must directly follow a property access, e.g. 'self.attr@pre'");
+      nodeTypes.put(ctx, Type.ERROR);
+      return Type.ERROR;
+    }
+    Type receiverType = receiverStack.peek();
+    nodeTypes.put(ctx, receiverType);
+    return receiverType;
+  }
+
+  /**
+   * Returns the enclosing {@code navigationChainCS} list that {@code navChainCtx} is an element
+   * of — either a {@code primaryWithNav}'s or a {@code prefixedQualified}'s navigation chain.
+   */
+  private List<VitruvOCLParser.NavigationChainCSContext> enclosingNavigationChain(
+      ParserRuleContext navChainCtx) {
+    ParseTree parent = navChainCtx.getParent();
+    if (parent instanceof VitruvOCLParser.PrimaryWithNavContext p) {
+      return p.navigationChainCS();
+    }
+    if (parent instanceof VitruvOCLParser.PrefixedQualifiedContext p) {
+      return p.navigationChainCS();
+    }
+    return List.of();
+  }
+
+  /** Returns {@code true} if the navigation-chain step immediately before {@code ctx} is a plain property access. */
+  private boolean previousNavWasPropertyAccess(VitruvOCLParser.NavigationChainCSContext ctx) {
+    List<VitruvOCLParser.NavigationChainCSContext> chain = enclosingNavigationChain(ctx);
+    int idx = chain.indexOf(ctx);
+    if (idx <= 0) {
+      return false; // first step in the chain — no preceding property access
+    }
+    VitruvOCLParser.NavigationChainCSContext prev = chain.get(idx - 1);
+    return prev.navigationTargetCS() instanceof VitruvOCLParser.PropertyNavContext;
   }
 
   /**
@@ -1603,6 +1744,155 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   @Override
   public Type visitOperationNav(VitruvOCLParser.OperationNavContext ctx) {
     return visit(ctx.operationCall());
+  }
+
+  /**
+   * Delegates lifecycle-predicate navigation ({@code .OCLisNew}/{@code .OCLisModified}/{@code
+   * .OCLisDeleted}) to the specific predicate visitor.
+   *
+   * @param ctx The lifecycle-predicate navigation node
+   * @return The predicate's result type
+   */
+  @Override
+  public Type visitLifecycleNav(VitruvOCLParser.LifecycleNavContext ctx) {
+    return visit(ctx.lifecyclePredicateCS());
+  }
+
+  // ==================== Object-Lifecycle Predicates ====================
+
+  /**
+   * Validates a lifecycle predicate's ({@code OCLisNew}/{@code OCLisModified}/{@code OCLisDeleted})
+   * placement (post-only, see {@link ConstraintSectionKind}) and receiver type (must be an object
+   * type, singular or collection).
+   *
+   * @param ctx the predicate node, used for error positions
+   * @param predName the predicate's display name, for error messages
+   * @return {@code !Boolean!} for a singleton/bare receiver, a same-kind Boolean collection for a
+   *     multi-valued receiver, or Type.ERROR if misplaced/mistyped
+   */
+  private Type checkLifecyclePredicateReceiver(ParserRuleContext ctx, String predName) {
+    if (currentSection != ConstraintSectionKind.POST) {
+      reportError(ctx, "'" + predName + "' is only valid inside 'post' blocks");
+      return Type.ERROR;
+    }
+    Type receiverType = receiverStack.peek();
+    if (receiverType == Type.ERROR) {
+      return Type.ERROR; // already reported upstream
+    }
+    Type elementType =
+        (receiverType.isSingleton() || receiverType.isOptional() || receiverType.isCollection())
+            ? receiverType.getElementType()
+            : receiverType;
+    if (!elementType.isMetaclassType()) {
+      reportError(ctx, "'" + predName + "' requires an object receiver, got " + receiverType);
+      return Type.ERROR;
+    }
+    if (receiverType.isCollection() && !receiverType.isSingleton()) {
+      return preserveCollectionKind(receiverType, Type.BOOLEAN);
+    }
+    return Type.singleton(Type.BOOLEAN);
+  }
+
+  /**
+   * Type checks the named-argument aggregate call form ({@code OCLisNew(attr => val, ...)}).
+   * Resolves each attribute against the receiver's EClass and checks the value expression's type
+   * conformance. Deliberately does NOT require every attribute to be listed (no completeness
+   * check — partial aggregates are valid per spec).
+   *
+   * @param argsCtx the aggregate argument list, or {@code null} if the bare (no-parens) form was used
+   * @param receiverType the (already-validated) object receiver type
+   */
+  private void checkLifecycleAggregateArgs(
+      VitruvOCLParser.LifecycleAggregateArgsContext argsCtx, Type receiverType) {
+    if (argsCtx == null) {
+      return;
+    }
+    Type elementType =
+        (receiverType.isSingleton() || receiverType.isOptional() || receiverType.isCollection())
+            ? receiverType.getElementType()
+            : receiverType;
+    if (!elementType.isMetaclassType()) {
+      return; // receiver error already reported by checkLifecyclePredicateReceiver
+    }
+    EClass eClass = elementType.getEClass();
+    for (VitruvOCLParser.LifecycleAggregateArgContext arg : argsCtx.lifecycleAggregateArg()) {
+      String attrName = arg.attr.getText();
+      EStructuralFeature feature = eClass.getEStructuralFeature(attrName);
+      if (feature == null) {
+        feature = findFeatureInSubtypes(eClass, attrName);
+      }
+      Type valueType = visit(arg.value);
+      if (feature == null) {
+        reportError(arg.attr, unknownPropertyMessage(attrName, eClass));
+        continue;
+      }
+      if (valueType == Type.ERROR) {
+        continue; // already reported
+      }
+      Type featureType = mapFeatureToType(feature);
+      Type expectedElem =
+          (featureType.isSingleton() || featureType.isOptional())
+              ? featureType.getElementType()
+              : featureType;
+      Type actualElem =
+          (valueType.isSingleton() || valueType.isOptional()) ? valueType.getElementType() : valueType;
+      if (!actualElem.isConformantTo(expectedElem)) {
+        reportError(
+            arg.value,
+            "Type mismatch: attribute '"
+                + attrName
+                + "' expects "
+                + featureType
+                + ", got "
+                + valueType);
+      }
+    }
+  }
+
+  /**
+   * Type checks {@code OCLisNew} (bare or with a {@code (attr => val, ...)} aggregate).
+   *
+   * @param ctx The OCLisNew predicate node
+   * @return see {@link #checkLifecyclePredicateReceiver}
+   */
+  @Override
+  public Type visitOclIsNewPred(VitruvOCLParser.OclIsNewPredContext ctx) {
+    Type resultType = checkLifecyclePredicateReceiver(ctx, "OCLisNew");
+    if (resultType != Type.ERROR) {
+      checkLifecycleAggregateArgs(ctx.lifecycleAggregateArgs(), receiverStack.peek());
+    }
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks {@code OCLisModified} (bare or with a {@code (attr => val, ...)} aggregate). The
+   * aggregate values are target/post-state values, not deltas — see grammar documentation.
+   *
+   * @param ctx The OCLisModified predicate node
+   * @return see {@link #checkLifecyclePredicateReceiver}
+   */
+  @Override
+  public Type visitOclIsModifiedPred(VitruvOCLParser.OclIsModifiedPredContext ctx) {
+    Type resultType = checkLifecyclePredicateReceiver(ctx, "OCLisModified");
+    if (resultType != Type.ERROR) {
+      checkLifecycleAggregateArgs(ctx.lifecycleAggregateArgs(), receiverStack.peek());
+    }
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /**
+   * Type checks {@code OCLisDeleted}. No aggregate form exists — the grammar itself rules it out.
+   *
+   * @param ctx The OCLisDeleted predicate node
+   * @return see {@link #checkLifecyclePredicateReceiver}
+   */
+  @Override
+  public Type visitOclIsDeletedPred(VitruvOCLParser.OclIsDeletedPredContext ctx) {
+    Type resultType = checkLifecyclePredicateReceiver(ctx, "OCLisDeleted");
+    nodeTypes.put(ctx, resultType);
+    return resultType;
   }
 
   /**

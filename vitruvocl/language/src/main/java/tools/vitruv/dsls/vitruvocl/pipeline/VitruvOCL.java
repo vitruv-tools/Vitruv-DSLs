@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
+import tools.vitruv.change.atomic.EChange;
 import tools.vitruv.dsls.vitruvocl.common.CompileError;
 import tools.vitruv.dsls.vitruvocl.common.ErrorSeverity;
 import tools.vitruv.dsls.vitruvocl.evaluator.EvaluationVisitor;
@@ -104,7 +105,21 @@ public class VitruvOCL {
    * @return the evaluation result
    */
   public static ConstraintResult evaluateConstraint(String constraint) {
-    return compileAndEvaluate(constraint, getVsumWrapper(), List.of());
+    return compileAndEvaluate(constraint, getVsumWrapper(), List.of(), List.of(), false);
+  }
+
+  /**
+   * Evaluates a single constraint against the registered VSUM, with an explicit transaction.
+   *
+   * @param constraint the OCL constraint expression
+   * @param transaction the ordered list of atomic changes between pre-state and the current
+   *     post-state, evaluated by {@code @pre}/{@code OCLisNew}/{@code OCLisModified}/{@code
+   *     OCLisDeleted} (may be empty)
+   * @return the evaluation result
+   */
+  public static ConstraintResult evaluateConstraint(
+      String constraint, List<EChange<EObject>> transaction) {
+    return compileAndEvaluate(constraint, getVsumWrapper(), List.of(), transaction, true);
   }
 
   /**
@@ -117,13 +132,40 @@ public class VitruvOCL {
    */
   public static ConstraintResult evaluateConstraint(
       String constraint, Path[] ecoreFiles, Path[] xmiFiles) {
+    return evaluateConstraintFromFiles(constraint, ecoreFiles, xmiFiles, List.of(), false);
+  }
+
+  /**
+   * Evaluates a single constraint against metamodels and instances loaded from files, with an
+   * explicit transaction.
+   *
+   * @param constraint the OCL constraint expression
+   * @param ecoreFiles metamodel files to load
+   * @param xmiFiles model instance files to load
+   * @param transaction the ordered list of atomic changes between pre-state and the current
+   *     post-state, evaluated by {@code @pre}/{@code OCLisNew}/{@code OCLisModified}/{@code
+   *     OCLisDeleted} (may be empty)
+   * @return the evaluation result
+   */
+  public static ConstraintResult evaluateConstraint(
+      String constraint, Path[] ecoreFiles, Path[] xmiFiles, List<EChange<EObject>> transaction) {
+    return evaluateConstraintFromFiles(constraint, ecoreFiles, xmiFiles, transaction, true);
+  }
+
+  private static ConstraintResult evaluateConstraintFromFiles(
+      String constraint,
+      Path[] ecoreFiles,
+      Path[] xmiFiles,
+      List<EChange<EObject>> transaction,
+      boolean transactionSupported) {
     SmartLoader.LoadResult loadResult =
         SmartLoader.loadForConstraint(constraint, ecoreFiles, xmiFiles);
     if (loadResult.hasErrors()) {
       return new ConstraintResult(
           constraint, false, List.of(), loadResult.fileErrors, loadResult.warnings);
     }
-    return compileAndEvaluate(constraint, loadResult.wrapper, loadResult.warnings);
+    return compileAndEvaluate(
+        constraint, loadResult.wrapper, loadResult.warnings, transaction, transactionSupported);
   }
 
   /**
@@ -150,6 +192,37 @@ public class VitruvOCL {
    * @return the validation result; never {@code null}
    */
   public static BatchValidationResult evaluateConstraints(Path constraintsFile, int threadPoolSize) {
+    return evaluateConstraintsFromPath(constraintsFile, threadPoolSize, List.of(), false);
+  }
+
+  /**
+   * Evaluates all constraints in the given file against the registered VSUM, with an explicit
+   * transaction shared by every constraint in the file.
+   *
+   * <p>Unlike {@link #evaluateConstraints(Path)}, {@code pre}/{@code post} blocks are genuinely
+   * evaluated here (not skipped) — this is the entry point for callers that have a real
+   * transaction available, such as a Reaction-execution hook checking the constraints relevant to
+   * whichever Reactions just fired. See {@link #evaluateConstraint(String, List)} for the
+   * single-constraint equivalent and the meaning of {@code transaction}.
+   *
+   * @param constraintsFile path to the {@code .ocl} constraints file
+   * @param transaction the ordered list of atomic changes between pre-state and the current
+   *     post-state, evaluated by {@code @pre}/{@code OCLisNew}/{@code OCLisModified}/{@code
+   *     OCLisDeleted} (may be empty, but must not be {@code null} — pass {@link
+   *     #evaluateConstraints(Path)} instead if there genuinely is no transaction context)
+   * @return the validation result; never {@code null}
+   */
+  public static BatchValidationResult evaluateConstraints(
+      Path constraintsFile, List<EChange<EObject>> transaction) {
+    return evaluateConstraintsFromPath(
+        constraintsFile, DEFAULT_THREAD_POOL_SIZE, transaction, true);
+  }
+
+  private static BatchValidationResult evaluateConstraintsFromPath(
+      Path constraintsFile,
+      int threadPoolSize,
+      List<EChange<EObject>> transaction,
+      boolean transactionSupported) {
     List<String> constraints;
     try {
       constraints = parseConstraintsFile(constraintsFile);
@@ -173,7 +246,8 @@ public class VitruvOCL {
                   List.of(),
                   List.of())));
     }
-    return evaluateConstraints(constraints, getVsumWrapper(), threadPoolSize);
+    return evaluateConstraints(
+        constraints, getVsumWrapper(), threadPoolSize, transaction, transactionSupported);
   }
 
   /**
@@ -277,6 +351,29 @@ public class VitruvOCL {
    */
   private static BatchValidationResult evaluateConstraints(
       List<String> constraints, MetamodelWrapperInterface wrapper, int threadPoolSize) {
+    return evaluateConstraints(constraints, wrapper, threadPoolSize, List.of(), false);
+  }
+
+  /**
+   * Same as {@link #evaluateConstraints(List, MetamodelWrapperInterface, int)}, but with an
+   * explicit transaction shared by every constraint in {@code constraints} — the transaction is
+   * immutable and read-only, so sharing it read-only across the (possibly parallel) evaluation
+   * tasks below is as safe as sharing {@code wrapper} already is.
+   *
+   * @param transaction the ordered list of atomic changes between pre-state and the current
+   *     post-state, evaluated by {@code @pre}/{@code OCLisNew}/{@code OCLisModified}/{@code
+   *     OCLisDeleted} (may be empty)
+   * @param transactionSupported whether {@code pre}/{@code post} blocks should be genuinely
+   *     evaluated against {@code transaction} ({@code true}) or skipped outright because this call
+   *     site has no transaction context at all ({@code false}) — see {@link
+   *     tools.vitruv.dsls.vitruvocl.evaluator.EvaluationVisitor}'s field of the same name
+   */
+  private static BatchValidationResult evaluateConstraints(
+      List<String> constraints,
+      MetamodelWrapperInterface wrapper,
+      int threadPoolSize,
+      List<EChange<EObject>> transaction,
+      boolean transactionSupported) {
     int size = constraints.size();
     List<ConstraintResult> results = new ArrayList<>(Collections.nCopies(size, null));
     Set<String> seenConstraints = new HashSet<>();
@@ -295,7 +392,9 @@ public class VitruvOCL {
 
     List<ConstraintResult> evaluated =
         ConstraintListEvaluator.evaluate(
-            toEvaluate, c -> compileAndEvaluate(c, wrapper, List.of()), threadPoolSize);
+            toEvaluate,
+            c -> compileAndEvaluate(c, wrapper, List.of(), transaction, transactionSupported),
+            threadPoolSize);
 
     for (int i = 0; i < evaluated.size(); i++) {
       results.set(toEvaluateIndices.get(i), evaluated.get(i));
@@ -378,8 +477,19 @@ public class VitruvOCL {
   // ---------------------------------------------------------------------------
 
   private static ConstraintResult compileAndEvaluate(
-      String constraint, MetamodelWrapperInterface wrapper, List<Warning> loaderWarnings) {
-    VitruvOCLCompiler compiler = new VitruvOCLCompiler(wrapper, null);
+      String constraint,
+      MetamodelWrapperInterface wrapper,
+      List<Warning> loaderWarnings,
+      List<EChange<EObject>> transaction,
+      boolean transactionSupported) {
+    // The transaction-less VitruvOCLCompiler constructor (not the 3-arg one with an empty list)
+    // must be used when the caller has no notion of a transaction at all — otherwise pre/post
+    // blocks would be evaluated with vacuous empty-transaction semantics instead of being skipped.
+    // See EvaluationVisitor#transactionSupported.
+    VitruvOCLCompiler compiler =
+        transactionSupported
+            ? new VitruvOCLCompiler(wrapper, null, transaction)
+            : new VitruvOCLCompiler(wrapper, null);
     Value result = compiler.compile(constraint);
 
     if (result == null) {
@@ -404,6 +514,12 @@ public class VitruvOCL {
     EvaluationVisitor evaluator = compiler.getLastEvaluator();
     List<EvaluationVisitor.ViolationRecord> records =
         evaluator != null ? evaluator.getViolationRecords() : List.of();
+
+    if (evaluator != null) {
+      for (EvaluationVisitor.SkippedConstraint skipped : evaluator.getSkippedConstraints()) {
+        warnings.add(new Warning(Warning.WarningType.PRE_POST_SKIPPED, formatSkipNotice(skipped)));
+      }
+    }
 
     boolean satisfied = records.isEmpty();
     String constraintName = extractConstraintName(constraint);
@@ -491,9 +607,31 @@ public class VitruvOCL {
         + VIOLATION_SEP;
   }
 
+  /**
+   * Stable, greppable prefix identifying a pre/post-skip notice among a {@code ConstraintResult}'s
+   * plain-string warnings (the {@code WarningType} itself is not serialized to CLI/JSON output —
+   * see {@code VitruvOclCli}). Consumers (e.g. the VS Code extension) match on this prefix to
+   * display skip notices distinctly from constraint violations, and to surface them even when the
+   * constraint's invariants all passed (a skipped pre/post is not a violation).
+   */
+  public static final String PRE_POST_SKIPPED_PREFIX = "PRE/POST SKIPPED:";
+
+  private static String formatSkipNotice(EvaluationVisitor.SkippedConstraint skipped) {
+    String label =
+        skipped.blockName() != null ? skipped.kind() + " " + skipped.blockName() : skipped.kind();
+    return PRE_POST_SKIPPED_PREFIX
+        + " '"
+        + label
+        + "' block in context "
+        + skipped.contextName()
+        + " was not evaluated — pre/post constraints require a transaction, which this"
+        + " evaluation mode does not provide. Only invariants (inv) were checked.";
+  }
+
   private static String extractConstraintName(String constraint) {
     java.util.regex.Matcher m =
-        java.util.regex.Pattern.compile("inv\\s+(\\w+)\\s*:").matcher(constraint);
+        java.util.regex.Pattern.compile("(?<!@)\\b(?:inv|pre|post)\\s+(\\w+)\\s*:")
+            .matcher(constraint);
     return m.find() ? m.group(1) : "unnamed";
   }
 
@@ -513,10 +651,41 @@ public class VitruvOCL {
     for (String part : parts) {
       String trimmed = part.trim();
       if (!trimmed.isEmpty() && trimmed.startsWith("context")) {
-        constraints.add(trimmed);
+        constraints.addAll(splitContextBlockByConstraintKeyword(trimmed));
       }
     }
     return constraints;
+  }
+
+  /**
+   * Splits a single {@code context ...} block further on {@code inv}/{@code pre}/{@code post}
+   * boundaries, so that a shared context header followed by several constraint blocks is
+   * evaluated as independent units rather than as one indivisible block. Each resulting segment
+   * is re-prefixed with the original context header.
+   *
+   * <p>The negative lookbehind {@code (?<!@)} keeps this from matching {@code pre} inside the
+   * {@code @pre} postfix operator (e.g. {@code self.mass@pre}) — without it, a body using
+   * {@code @pre} gets split mid-token, splintering {@code self.mass@} and {@code pre == 999} into
+   * two broken fragments.
+   */
+  private static List<String> splitContextBlockByConstraintKeyword(String contextBlock) {
+    java.util.regex.Matcher headerMatcher =
+        java.util.regex.Pattern.compile("(?<!@)\\b(?:inv|pre|post)\\b").matcher(contextBlock);
+    if (!headerMatcher.find()) {
+      return List.of(contextBlock);
+    }
+    String header = contextBlock.substring(0, headerMatcher.start()).trim();
+
+    String[] segments = contextBlock.split("(?<!@)(?=\\b(?:inv|pre|post)\\b)");
+    List<String> result = new ArrayList<>();
+    for (String segment : segments) {
+      String trimmed = segment.trim();
+      if (trimmed.isEmpty() || trimmed.startsWith("context")) {
+        continue;
+      }
+      result.add(header + "\n" + trimmed);
+    }
+    return result.isEmpty() ? List.of(contextBlock) : result;
   }
 
   private static Path[] collectFiles(Path directory, String... extensions) throws IOException {
