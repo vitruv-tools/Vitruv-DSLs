@@ -27,5 +27,7 @@ public record ReactionExecutionState(
     ChangePropagationObservable changePropagationObservable,
     AnnotationSource changeAnnotations
 ) {
-
+  public ChangePropagationObservable getChangePropagationObservable() {
+    return changePropagationObservable;
+  }
 }

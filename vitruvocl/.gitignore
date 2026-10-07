@@ -1,0 +1,47 @@
+# Maven
+target/
+bin/
+
+# Compiled classes outside target/
+*.class
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# ANTLR Generated
+**/generated-sources/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+bin/
+
+# Logs
+*.log
+
+# Development artifacts
+grammars/
+
+# VSCode Extension
+vitruvocl-vscode-extension/node_modules/
+vitruvocl-vscode-extension/.vscode-test/
+vitruvocl-vscode-extension/npm-debug.log*
+vitruvocl-vscode-extension/yarn-debug.log*
+vitruvocl-vscode-extension/yarn-error.log*
+vitruvocl-vscode-extension/.DS_Store
+vitruvocl-vscode-extension/Thumbs.db
+
+# Keep deployable artifacts tracked (VSIX + bundled JARs + compiled extension)
+!vitruvocl-vscode-extension/vitruvocl-0.0.1.vsix
+!vitruvocl-vscode-extension/lib/
+!vitruvocl-vscode-extension/out/

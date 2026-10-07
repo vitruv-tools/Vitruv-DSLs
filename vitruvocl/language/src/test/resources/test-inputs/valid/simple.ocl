@@ -1,0 +1,2 @@
+context Person inv validAge: 
+    self.age >= 0 and self.age <= 150

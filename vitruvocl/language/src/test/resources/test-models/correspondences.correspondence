@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<correspondence:Correspondences 
+    xmi:version="2.0" 
+    xmlns:xmi="http://www.omg.org/XMI" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:correspondence="http://vitruv.tools/metamodels/change/correspondence/1.0">
+  
+  <!-- Voyager Spacecraft ↔ Voyager Satellite -->
+  <correspondences xsi:type="correspondence:ManualCorrespondence" tag="voyager-match">
+    <leftEObjects href="spacecraft-voyager.spacemission#/"/>
+    <rightEObjects href="satellite-voyager.satellitesystem#/"/>
+  </correspondences>
+
+</correspondence:Correspondences>

@@ -101,12 +101,17 @@ public class CommonLanguageElementsScopeProvider {
   private List<MetamodelImport> getMetamodelImports(Resource res) {
     List<EObject> contents =
         getAllContentsOfEClass(res, ElementsPackage.eINSTANCE.getMetamodelImport(), true);
-    return contents.stream()
-        .filter(MetamodelImport.class::isInstance)
-        .map(MetamodelImport.class::cast)
-        .filter(mi -> mi.getPackage() != null)
-        .peek(mi -> mi.setName(mi.getName() != null ? mi.getName() : mi.getPackage().getName()))
-        .collect(Collectors.toList());
+    List<MetamodelImport> metamodelImports =
+        contents.stream()
+            .filter(MetamodelImport.class::isInstance)
+            .map(MetamodelImport.class::cast)
+            .filter(mi -> mi.getPackage() != null)
+            .collect(Collectors.toList());
+    // Applied after collecting rather than in Stream.peek: peek is specified for debugging and
+    // its execution is not guaranteed, so it must not carry a side effect the result depends on.
+    metamodelImports.forEach(
+        mi -> mi.setName(mi.getName() != null ? mi.getName() : mi.getPackage().getName()));
+    return metamodelImports;
   }
 
   private IScope createEStructuralFeatureScope(EClass eClass) {

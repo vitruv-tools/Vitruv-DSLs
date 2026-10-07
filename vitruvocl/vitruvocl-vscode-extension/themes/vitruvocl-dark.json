@@ -1,0 +1,446 @@
+{
+    "name": "VitruvOCL Dark",
+    "$schema": "vscode://schemas/color-theme",
+    "type": "dark",
+    "colors": {
+        "editor.background": "#0f1117",
+        "editor.foreground": "#cdd6f4",
+        "editor.lineHighlightBackground": "#1e2030",
+        "editor.selectionBackground": "#2d3f5e",
+        "editor.selectionHighlightBackground": "#1e3050",
+        "editor.wordHighlightBackground": "#1a2e45",
+        "editor.wordHighlightStrongBackground": "#1e3a55",
+        "editorCursor.foreground": "#89b4fa",
+        "editorLineNumber.foreground": "#3d4461",
+        "editorLineNumber.activeForeground": "#6c7eb5",
+        "editorBracketMatch.background": "#2d3f5e",
+        "editorBracketMatch.border": "#89b4fa",
+        "editorBracketHighlight.foreground1": "#89b4fa",
+        "editorBracketHighlight.foreground2": "#cba6f7",
+        "editorBracketHighlight.foreground3": "#94e2d5",
+        "editorBracketHighlight.foreground4": "#f38ba8",
+        "editorIndentGuide.background": "#1e2030",
+        "editorIndentGuide.activeBackground": "#313552",
+        "editorRuler.foreground": "#1e2030",
+        "editorWhitespace.foreground": "#2a2d3e",
+        "editorGutter.background": "#0f1117",
+        "scrollbarSlider.background": "#1e2030",
+        "scrollbarSlider.hoverBackground": "#2d3f5e",
+        "scrollbarSlider.activeBackground": "#3d4f6e",
+        "activityBar.background": "#0a0d13",
+        "activityBar.foreground": "#89b4fa",
+        "activityBarBadge.background": "#89b4fa",
+        "activityBarBadge.foreground": "#0f1117",
+        "sideBar.background": "#0d1018",
+        "sideBar.foreground": "#a0aabf",
+        "sideBarTitle.foreground": "#cdd6f4",
+        "sideBarSectionHeader.background": "#0a0d13",
+        "sideBarSectionHeader.foreground": "#89b4fa",
+        "titleBar.activeBackground": "#0a0d13",
+        "titleBar.activeForeground": "#cdd6f4",
+        "statusBar.background": "#181c2e",
+        "statusBar.foreground": "#89b4fa",
+        "statusBar.noFolderBackground": "#0f1117",
+        "statusBarItem.remoteBackground": "#89b4fa",
+        "statusBarItem.remoteForeground": "#0f1117",
+        "tab.activeBackground": "#0f1117",
+        "tab.activeForeground": "#cdd6f4",
+        "tab.inactiveBackground": "#0a0d13",
+        "tab.inactiveForeground": "#4a5270",
+        "tab.activeBorderTop": "#89b4fa",
+        "tab.border": "#0a0d13",
+        "panel.background": "#0a0d13",
+        "panel.border": "#1e2030",
+        "panelTitle.activeForeground": "#89b4fa",
+        "panelTitle.activeBorder": "#89b4fa",
+        "terminal.background": "#0a0d13",
+        "terminal.foreground": "#cdd6f4",
+        "terminal.ansiBlue": "#89b4fa",
+        "terminal.ansiMagenta": "#cba6f7",
+        "terminal.ansiCyan": "#94e2d5",
+        "terminal.ansiGreen": "#a6e3a1",
+        "terminal.ansiYellow": "#f9e2af",
+        "terminal.ansiRed": "#f38ba8",
+        "list.activeSelectionBackground": "#1e2e4a",
+        "list.activeSelectionForeground": "#cdd6f4",
+        "list.hoverBackground": "#141824",
+        "list.highlightForeground": "#89b4fa",
+        "focusBorder": "#89b4fa60",
+        "input.background": "#141824",
+        "input.border": "#313552",
+        "input.foreground": "#cdd6f4",
+        "inputOption.activeBackground": "#1e2e4a",
+        "dropdown.background": "#0d1018",
+        "dropdown.border": "#313552",
+        "button.background": "#89b4fa",
+        "button.foreground": "#0f1117",
+        "button.hoverBackground": "#b4d0fc",
+        "badge.background": "#89b4fa",
+        "badge.foreground": "#0f1117",
+        "notifications.background": "#0d1018",
+        "notifications.border": "#313552",
+        "notificationCenterHeader.background": "#0a0d13"
+    },
+    "tokenColors": [
+        {
+            "name": "Comments",
+            "scope": [
+                "comment",
+                "comment.line",
+                "comment.block"
+            ],
+            "settings": {
+                "foreground": "#45475a",
+                "fontStyle": "italic"
+            }
+        },
+        {
+            "name": "@severity / @message annotation keyword",
+            "scope": "storage.type.annotation.vitruvocl",
+            "settings": {
+                "foreground": "#E8C46A",
+                "fontStyle": "bold"
+            }
+        },
+        {
+            "name": "@severity value (CRITICAL, WARNING, …)",
+            "scope": "storage.type.annotation.value.vitruvocl",
+            "settings": {
+                "foreground": "#F5D88A",
+                "fontStyle": ""
+            }
+        },
+        {
+            "name": "Context keyword — the structural anchor",
+            "scope": "keyword.control.context.vitruvocl",
+            "settings": {
+                "foreground": "#89b4fa",
+                "fontStyle": "bold"
+            }
+        },
+        {
+            "name": "Constraint type keywords (inv/pre/post/body/def)",
+            "scope": "keyword.other.constraint.vitruvocl",
+            "settings": {
+                "foreground": "#74c7ec",
+                "fontStyle": "bold"
+            }
+        },
+        {
+            "name": "Package keywords",
+            "scope": "keyword.other.package.vitruvocl",
+            "settings": {
+                "foreground": "#6c7eb5",
+                "fontStyle": "italic"
+            }
+        },
+        {
+            "name": "Control flow (if/then/else/let/in)",
+            "scope": [
+                "keyword.control.vitruvocl",
+                "keyword.control.let.vitruvocl",
+                "keyword.control.in.vitruvocl"
+            ],
+            "settings": {
+                "foreground": "#cba6f7",
+                "fontStyle": "bold"
+            }
+        },
+        {
+            "name": "Class/type name in context",
+            "scope": "entity.name.type.class.vitruvocl",
+            "settings": {
+                "foreground": "#89dceb",
+                "fontStyle": "bold"
+            }
+        },
+        {
+            "name": "Constraint / operation name label",
+            "scope": "entity.name.label.vitruvocl",
+            "settings": {
+                "foreground": "#f9e2af",
+                "fontStyle": "italic"
+            }
+        },
+        {
+            "name": "Method name in context (operation name)",
+            "scope": "entity.name.function.vitruvocl",
+            "settings": {
+                "foreground": "#f9e2af"
+            }
+        },
+        {
+            "name": "Metamodel::Metaklasse — ganzer Ausdruck Orange",
+            "scope": "entity.name.type.metamodel-reference.vitruvocl",
+            "settings": {
+                "foreground": "#e5a040",
+                "fontStyle": "bold"
+            }
+        },
+        {
+            "name": "Primitive types (INTEGER, DOUBLE, etc.)",
+            "scope": "entity.name.type.primitive.vitruvocl",
+            "settings": {
+                "foreground": "#94e2d5"
+            }
+        },
+        {
+            "name": "Collection types (Set, Sequence, etc.)",
+            "scope": "entity.name.type.collection.vitruvocl",
+            "settings": {
+                "foreground": "#89dceb",
+                "fontStyle": "italic"
+            }
+        },
+        {
+            "name": "Enum type name (Status in Status::ACTIVE)",
+            "scope": "entity.name.type.enum.vitruvocl",
+            "settings": {
+                "foreground": "#cba6f7"
+            }
+        },
+        {
+            "name": "Enum member (ACTIVE in Status::ACTIVE)",
+            "scope": "variable.other.enum-member.vitruvocl",
+            "settings": {
+                "foreground": "#f38ba8",
+                "fontStyle": "bold"
+            }
+        },
+        {
+            "name": "Let variable binding",
+            "scope": "variable.other.let.vitruvocl",
+            "settings": {
+                "foreground": "#fab387"
+            }
+        },
+        {
+            "name": "Iterator operations (select, forAll, exists …)",
+            "scope": "support.function.iterator.vitruvocl",
+            "settings": {
+                "foreground": "#a6e3a1",
+                "fontStyle": "bold"
+            }
+        },
+        {
+            "name": "String operations",
+            "scope": "support.function.string.vitruvocl",
+            "settings": {
+                "foreground": "#94e2d5"
+            }
+        },
+        {
+            "name": "Collection operations",
+            "scope": "support.function.collection.vitruvocl",
+            "settings": {
+                "foreground": "#89dceb"
+            }
+        },
+        {
+            "name": "OCL introspection operations (oclIsKindOf …)",
+            "scope": "support.function.ocl.vitruvocl",
+            "settings": {
+                "foreground": "#b4befe"
+            }
+        },
+        {
+            "name": "Numeric operations (abs, floor, ceil …)",
+            "scope": "support.function.numeric.vitruvocl",
+            "settings": {
+                "foreground": "#94e2d5"
+            }
+        },
+        {
+            "name": "Logical operators (and/or/not/implies/xor)",
+            "scope": "keyword.operator.logical.vitruvocl",
+            "settings": {
+                "foreground": "#cba6f7",
+                "fontStyle": "italic"
+            }
+        },
+        {
+            "name": "Comparison operators",
+            "scope": "keyword.operator.comparison.vitruvocl",
+            "settings": {
+                "foreground": "#f38ba8"
+            }
+        },
+        {
+            "name": "Arithmetic operators",
+            "scope": "keyword.operator.arithmetic.vitruvocl",
+            "settings": {
+                "foreground": "#f5c2e7"
+            }
+        },
+        {
+            "name": "Navigation dot",
+            "scope": "keyword.operator.navigation.vitruvocl",
+            "settings": {
+                "foreground": "#585b70"
+            }
+        },
+        {
+            "name": "Range operator (..)",
+            "scope": "keyword.operator.range.vitruvocl",
+            "settings": {
+                "foreground": "#89b4fa"
+            }
+        },
+        {
+            "name": "Type cast / scope resolution (::)",
+            "scope": "keyword.operator.type-cast.vitruvocl",
+            "settings": {
+                "foreground": "#6c7eb5"
+            }
+        },
+        {
+            "name": "Colon",
+            "scope": "keyword.operator.colon.vitruvocl",
+            "settings": {
+                "foreground": "#585b70"
+            }
+        },
+        {
+            "name": "Iterator pipe (|)",
+            "scope": "keyword.operator.pipe.vitruvocl",
+            "settings": {
+                "foreground": "#f9e2af",
+                "fontStyle": "bold"
+            }
+        },
+        {
+            "name": "Correspondence operator (~)",
+            "scope": "keyword.operator.correspondence.vitruvocl",
+            "settings": {
+                "foreground": "#f38ba8",
+                "fontStyle": "bold"
+            }
+        },
+        {
+            "name": "Assignment (=) in let",
+            "scope": "keyword.operator.assignment.vitruvocl",
+            "settings": {
+                "foreground": "#89b4fa"
+            }
+        },
+        {
+            "name": "self — always visually distinct",
+            "scope": "constant.language.self.vitruvocl",
+            "settings": {
+                "foreground": "#f38ba8",
+                "fontStyle": "bold italic"
+            }
+        },
+        {
+            "name": "result",
+            "scope": "constant.language.result.vitruvocl",
+            "settings": {
+                "foreground": "#fab387",
+                "fontStyle": "italic"
+            }
+        },
+        {
+            "name": "Boolean literals (true / false)",
+            "scope": "constant.language.boolean.vitruvocl",
+            "settings": {
+                "foreground": "#f38ba8"
+            }
+        },
+        {
+            "name": "Null / invalid / OclUndefined",
+            "scope": "constant.language.null.vitruvocl",
+            "settings": {
+                "foreground": "#7f849c",
+                "fontStyle": "italic"
+            }
+        },
+        {
+            "name": "String literals",
+            "scope": [
+                "string.quoted.single.vitruvocl",
+                "string.quoted.double.vitruvocl"
+            ],
+            "settings": {
+                "foreground": "#6abf69",
+                "fontStyle": "italic"
+            }
+        },
+        {
+            "name": "Escape sequences in strings",
+            "scope": "constant.character.escape.vitruvocl",
+            "settings": {
+                "foreground": "#94e2d5"
+            }
+        },
+        {
+            "name": "Float literals",
+            "scope": "constant.numeric.float.vitruvocl",
+            "settings": {
+                "foreground": "#fab387"
+            }
+        },
+        {
+            "name": "Integer literals",
+            "scope": "constant.numeric.integer.vitruvocl",
+            "settings": {
+                "foreground": "#fab387"
+            }
+        },
+        {
+            "name": "Singleton brackets  ¡ !",
+            "scope": "punctuation.definition.type.singleton.vitruvocl",
+            "settings": {
+                "foreground": "#89b4fa",
+                "fontStyle": "bold"
+            }
+        },
+        {
+            "name": "Optional brackets  ¿ ?",
+            "scope": "punctuation.definition.type.optional.vitruvocl",
+            "settings": {
+                "foreground": "#74c7ec",
+                "fontStyle": "bold"
+            }
+        },
+        {
+            "name": "Collection literal braces  { }",
+            "scope": [
+                "punctuation.definition.collection.begin.vitruvocl",
+                "punctuation.definition.collection.end.vitruvocl"
+            ],
+            "settings": {
+                "foreground": "#cba6f7"
+            }
+        },
+        {
+            "name": "Parentheses",
+            "scope": [
+                "punctuation.section.parens.begin.vitruvocl",
+                "punctuation.section.parens.end.vitruvocl"
+            ],
+            "settings": {
+                "foreground": "#9399b2"
+            }
+        },
+        {
+            "name": "Braces",
+            "scope": [
+                "punctuation.section.braces.begin.vitruvocl",
+                "punctuation.section.braces.end.vitruvocl"
+            ],
+            "settings": {
+                "foreground": "#9399b2"
+            }
+        },
+        {
+            "name": "Brackets",
+            "scope": [
+                "punctuation.section.bracket.begin.vitruvocl",
+                "punctuation.section.bracket.end.vitruvocl"
+            ],
+            "settings": {
+                "foreground": "#9399b2"
+            }
+        }
+    ]
+}
