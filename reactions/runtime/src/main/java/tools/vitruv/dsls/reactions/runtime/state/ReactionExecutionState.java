@@ -17,7 +17,8 @@ import tools.vitruv.dsls.reactions.runtime.reactions.Reaction;
  *  <li>an {@link EditableCorrespondenceModelView} to retrieve and update correspondences,</li>
  *  <li>a {@link ResourceAccess} object to load and save underlying models,</li>
  *  <li>a {@link ChangePropagationObservable} to notify observers, and</li>
- *  <li>an {@link AnnotationSource} exposing the annotations of the triggering transactional change.</li>
+ *  <li>an {@link AnnotationSource} exposing the annotations of the triggering transactional
+ *      change.</li>
  * </ul>
  */
 public record ReactionExecutionState(
