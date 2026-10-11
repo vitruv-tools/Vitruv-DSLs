@@ -65,7 +65,7 @@ class IncrementalOracleTest {
 
   /** The levels implemented so far; every oracle test runs for each. */
   static List<IncrementalLevel> levels() {
-    return List.of(IncrementalLevel.FULL, IncrementalLevel.READ_SET);
+    return List.of(IncrementalLevel.FULL, IncrementalLevel.READ_SET, IncrementalLevel.POLARITY);
   }
 
   /** The implemented levels except level 0 (which re-evaluates everything by definition). */

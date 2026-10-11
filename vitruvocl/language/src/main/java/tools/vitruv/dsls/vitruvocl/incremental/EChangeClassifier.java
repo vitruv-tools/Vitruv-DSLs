@@ -67,35 +67,46 @@ public final class EChangeClassifier {
     }
 
     Map<String, Set<EClass>> touched = new HashMap<>();
-    Map<EObject, Boolean> structuralObjects = new IdentityHashMap<>();
+    Map<EObject, Boolean> inserted = new IdentityHashMap<>();
+    Map<EObject, Boolean> removed = new IdentityHashMap<>();
     for (ModelEvent event : events) {
       if (event.feature() != null && event.object() != null) {
         touched
             .computeIfAbsent(event.feature().getName(), k -> new LinkedHashSet<>())
             .add(event.object().eClass());
       }
+      if (event.kind() == ModelEvent.Kind.OTHER_FEATURE_CHANGE && event.containment()) {
+        unknown = true; // a containment change whose moved objects are not known
+      }
       if (event.isStructural()) {
-        collectStructuralObjects(event, structuralObjects);
+        collectStructuralObjects(event, inserted, removed);
       }
     }
-
-    Set<EClass> structuralClasses = new LinkedHashSet<>();
-    for (EObject root : structuralObjects.keySet()) {
-      structuralClasses.add(root.eClass());
-      Iterator<EObject> contents = root.eAllContents();
-      while (contents.hasNext()) {
-        structuralClasses.add(contents.next().eClass());
-      }
-    }
-    return new TransactionDelta(changes, events, touched, structuralClasses, unknown);
+    return new TransactionDelta(
+        changes, events, touched, classesOf(inserted), classesOf(removed), unknown);
   }
 
-  private static void collectStructuralObjects(ModelEvent event, Map<EObject, Boolean> sink) {
+  /** Classes of the given objects and of all their (post-state) transitive contents. */
+  private static Set<EClass> classesOf(Map<EObject, Boolean> objects) {
+    Set<EClass> classes = new LinkedHashSet<>();
+    for (EObject root : objects.keySet()) {
+      classes.add(root.eClass());
+      Iterator<EObject> contents = root.eAllContents();
+      while (contents.hasNext()) {
+        classes.add(contents.next().eClass());
+      }
+    }
+    return classes;
+  }
+
+  private static void collectStructuralObjects(
+      ModelEvent event, Map<EObject, Boolean> inserted, Map<EObject, Boolean> removed) {
     switch (event.kind()) {
-      case CREATE, DELETE, INSERT_ROOT, REMOVE_ROOT -> addIfObject(event.object(), sink);
+      case CREATE, INSERT_ROOT -> addIfObject(event.object(), inserted);
+      case DELETE, REMOVE_ROOT -> addIfObject(event.object(), removed);
       default -> {
-        addIfObject(event.oldValue(), sink);
-        addIfObject(event.newValue(), sink);
+        addIfObject(event.oldValue(), removed);
+        addIfObject(event.newValue(), inserted);
       }
     }
   }

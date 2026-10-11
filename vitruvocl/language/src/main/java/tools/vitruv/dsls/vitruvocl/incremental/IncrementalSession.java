@@ -144,7 +144,7 @@ public final class IncrementalSession implements AutoCloseable {
           recovering ? ConstraintAnalysis.Decision.EVALUATE_ALWAYS : decide(constraint, delta);
       if (decision.evaluate()) {
         selected.add(constraint);
-        forced.add(decision != ConstraintAnalysis.Decision.EVALUATE_READ_SET_HIT);
+        forced.add(decision.forced());
       } else {
         stats.skipped();
       }
@@ -169,7 +169,11 @@ public final class IncrementalSession implements AutoCloseable {
     if (config.level() == IncrementalLevel.FULL) {
       return ConstraintAnalysis.Decision.EVALUATE_ALWAYS;
     }
-    return compiled.get(constraint).analysis().decideByReadSet(delta);
+    ConstraintAnalysis analysis = compiled.get(constraint).analysis();
+    if (config.level().atLeast(IncrementalLevel.POLARITY)) {
+      return analysis.decideByPolarity(delta, violations.hasViolationsOrFailure(constraint));
+    }
+    return analysis.decideByReadSet(delta);
   }
 
   /**

@@ -39,24 +39,64 @@ public final class ConstraintAnalysis {
     EVALUATE_UNKNOWN_CHANGE,
     /** Re-evaluate: the transaction touches the read set. */
     EVALUATE_READ_SET_HIT,
+    /** Re-evaluate: the transaction contains a potentially satisfaction-violating event (level 2). */
+    EVALUATE_PSE_HIT,
+    /**
+     * Skip (level 2): the read set is touched, but only by events that cannot turn a satisfied
+     * constraint into a violated one, and the constraint currently has no violation.
+     */
+    SKIP_NO_PSE,
     /** Skip: nothing the constraint reads was touched by this transaction. */
     SKIP;
 
     /** Whether the constraint has to be evaluated. */
     public boolean evaluate() {
-      return this != SKIP;
+      return this != SKIP && this != SKIP_NO_PSE;
+    }
+
+    /** Whether the evaluation was forced independently of the transaction's content. */
+    public boolean forced() {
+      return this == EVALUATE_ALWAYS
+          || this == EVALUATE_CORRESPONDENCE
+          || this == EVALUATE_UNKNOWN_CHANGE;
     }
   }
 
   private final ReadSet readSet;
+  private final PseSet pseSet;
 
   /** Analysis of a constraint that failed to compile: always re-evaluated. */
   public static ConstraintAnalysis forUncompilable() {
-    return new ConstraintAnalysis(null);
+    return new ConstraintAnalysis(null, null);
   }
 
-  public ConstraintAnalysis(ReadSet readSet) {
+  public ConstraintAnalysis(ReadSet readSet, PseSet pseSet) {
     this.readSet = readSet;
+    this.pseSet = pseSet;
+  }
+
+  /** The PSE set (level 2), or {@code null} for a constraint that failed to compile. */
+  public PseSet pseSet() {
+    return pseSet;
+  }
+
+  /**
+   * Level-2 decision. Starts from the level-1 decision; a read-set hit is narrowed to the
+   * potentially satisfaction-violating events (PSEs) only if the constraint currently has neither
+   * violations nor a failed evaluation. Polarity only excludes "satisfied → violated"
+   * transitions; with a current violation, an event in the "safe" direction may still repair it,
+   * so the level-1 decision is kept. (Own adaptation; Cabot &amp; Teniente assume a consistent
+   * state before every operation.)
+   *
+   * @param hasViolationsOrFailure whether the constraint currently has a violation or its last
+   *     evaluation failed
+   */
+  public Decision decideByPolarity(TransactionDelta delta, boolean hasViolationsOrFailure) {
+    Decision levelOne = decideByReadSet(delta);
+    if (levelOne != Decision.EVALUATE_READ_SET_HIT || pseSet == null || hasViolationsOrFailure) {
+      return levelOne;
+    }
+    return pseSet.matches(delta) ? Decision.EVALUATE_PSE_HIT : Decision.SKIP_NO_PSE;
   }
 
   /** The read set, or {@code null} for a constraint that failed to compile. */

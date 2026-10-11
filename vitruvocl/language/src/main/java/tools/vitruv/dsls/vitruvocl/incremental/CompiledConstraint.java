@@ -26,6 +26,8 @@ import tools.vitruv.dsls.vitruvocl.common.ErrorCollector;
 import tools.vitruv.dsls.vitruvocl.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvocl.incremental.analysis.ConstraintAnalysis;
 import tools.vitruv.dsls.vitruvocl.incremental.analysis.FeatureIndex;
+import tools.vitruv.dsls.vitruvocl.incremental.analysis.PolarityAnalyzer;
+import tools.vitruv.dsls.vitruvocl.incremental.analysis.ReadSet;
 import tools.vitruv.dsls.vitruvocl.incremental.analysis.ReadSetAnalyzer;
 import tools.vitruv.dsls.vitruvocl.pipeline.EvaluationOutcome;
 import tools.vitruv.dsls.vitruvocl.pipeline.MetamodelWrapperInterface;
@@ -101,7 +103,15 @@ final class CompiledConstraint {
     ParseTreeProperty<tools.vitruv.dsls.vitruvocl.typechecker.Type> nodeTypes =
         typeChecker.getNodeTypes();
     return new CompiledConstraint(
-        text, wrapper, tree, nodeTypes, new ConstraintAnalysis(ReadSetAnalyzer.analyze(tree, nodeTypes, features)));
+        text, wrapper, tree, nodeTypes, analyse(tree, nodeTypes, features));
+  }
+
+  private static ConstraintAnalysis analyse(
+      VitruvOCLParser.ContextDeclCSContext tree,
+      ParseTreeProperty<tools.vitruv.dsls.vitruvocl.typechecker.Type> nodeTypes,
+      FeatureIndex features) {
+    ReadSet readSet = ReadSetAnalyzer.analyze(tree, nodeTypes, features);
+    return new ConstraintAnalysis(readSet, PolarityAnalyzer.analyze(tree, nodeTypes, readSet));
   }
 
   private static CompiledConstraint uncompilable(String text, MetamodelWrapperInterface wrapper) {

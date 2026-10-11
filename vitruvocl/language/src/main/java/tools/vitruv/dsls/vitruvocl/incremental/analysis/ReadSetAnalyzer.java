@@ -97,7 +97,7 @@ public final class ReadSetAnalyzer {
         analyzer.readsUnrecordedFeature);
   }
 
-  private static boolean containsUntrustedTypeProducer(ParseTree node) {
+  static boolean containsUntrustedTypeProducer(ParseTree node) {
     if (node instanceof VitruvOCLParser.AppendOpContext
         || node instanceof VitruvOCLParser.IterateOpContext) {
       return true;
@@ -239,7 +239,7 @@ public final class ReadSetAnalyzer {
     }
   }
 
-  private static boolean isAllInstances(VitruvOCLParser.OperationCallContext call) {
+  static boolean isAllInstances(VitruvOCLParser.OperationCallContext call) {
     if (call instanceof VitruvOCLParser.CollectionOperationContext coll) {
       return coll.collectionOpCS() instanceof VitruvOCLParser.AllInstancesOpContext;
     }
@@ -268,7 +268,7 @@ public final class ReadSetAnalyzer {
     }
   }
 
-  private static boolean isCorrespondenceNode(ParseTree node) {
+  static boolean isCorrespondenceNode(ParseTree node) {
     return node instanceof VitruvOCLParser.CorrespondenceContext
         || node instanceof VitruvOCLParser.SelectCorrespondenceContext
         || node instanceof VitruvOCLParser.RejectCorrespondenceContext
@@ -277,7 +277,7 @@ public final class ReadSetAnalyzer {
         || node instanceof VitruvOCLParser.CorrespondenceFilterCSContext;
   }
 
-  private static boolean isErrorNode(ParseTree node) {
+  static boolean isErrorNode(ParseTree node) {
     return node instanceof VitruvOCLParser.InvalidBinaryOpContext
         || node instanceof VitruvOCLParser.MultiEqualsOpContext
         || node instanceof VitruvOCLParser.SingleEqualsOpContext
@@ -299,13 +299,18 @@ public final class ReadSetAnalyzer {
    * argument or body expressions, whose types differ from the node's own.
    */
   private Type spineType(ParserRuleContext node, int depth) {
+    return spineType(nodeTypes, node, depth);
+  }
+
+  /** Static form of {@link #spineType(ParserRuleContext, int)}, shared with the polarity analysis. */
+  static Type spineType(ParseTreeProperty<Type> nodeTypes, ParserRuleContext node, int depth) {
     Type type = nodeTypes.get(node);
     if (type != null || depth == 0) {
       return type;
     }
     for (int i = 0; i < node.getChildCount(); i++) {
       if (node.getChild(i) instanceof ParserRuleContext child && isSpine(child)) {
-        Type childType = spineType(child, depth - 1);
+        Type childType = spineType(nodeTypes, child, depth - 1);
         if (childType != null) {
           return childType;
         }

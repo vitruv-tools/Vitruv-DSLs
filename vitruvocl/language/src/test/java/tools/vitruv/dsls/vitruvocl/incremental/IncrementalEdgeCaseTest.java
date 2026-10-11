@@ -314,6 +314,22 @@ class IncrementalEdgeCaseTest {
 
   @ParameterizedTest
   @MethodSource("levels")
+  void possiblyEmptyComparisonOperandBecomesDefined(IncrementalLevel level) {
+    // b2.next is unset ('self.next.value >= 0' is vacuously true); setting it to an item with a
+    // negative value violates the constraint although 'next' only grows
+    EdgeFixture fx = EdgeFixture.create();
+    EObject negative = EdgeFixture.item("SubA", "neg", -5);
+    IncrementalResult r =
+        run(
+            fx,
+            level,
+            () -> EdgeFixture.list(fx.root(2), "items").add(negative),
+            () -> set(fx.find("b2"), "next", negative));
+    assertTrue(violated(r, "nextNonNegative"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("levels")
   void randomMutationsOnEdgeModel(IncrementalLevel level) {
     for (long seed = 1; seed <= 4; seed++) {
       EdgeFixture fx = EdgeFixture.create();

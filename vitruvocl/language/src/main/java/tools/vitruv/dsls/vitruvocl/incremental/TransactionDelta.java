@@ -37,21 +37,29 @@ public final class TransactionDelta {
   private final List<ModelEvent> events;
   private final Map<String, Set<EClass>> touchedFeatures;
   private final Set<EClass> structurallyAffectedClasses;
+  private final Set<EClass> structurallyInsertedClasses;
+  private final Set<EClass> structurallyRemovedClasses;
   private final boolean hasUnknownChanges;
 
   TransactionDelta(
       List<EChange<EObject>> changes,
       List<ModelEvent> events,
       Map<String, Set<EClass>> touchedFeatures,
-      Set<EClass> structurallyAffectedClasses,
+      Set<EClass> structurallyInsertedClasses,
+      Set<EClass> structurallyRemovedClasses,
       boolean hasUnknownChanges) {
     this.changes = List.copyOf(changes);
     this.events = List.copyOf(events);
     Map<String, Set<EClass>> copy = new HashMap<>();
     touchedFeatures.forEach((k, v) -> copy.put(k, Collections.unmodifiableSet(new LinkedHashSet<>(v))));
     this.touchedFeatures = Collections.unmodifiableMap(copy);
-    this.structurallyAffectedClasses =
-        Collections.unmodifiableSet(new LinkedHashSet<>(structurallyAffectedClasses));
+    this.structurallyInsertedClasses =
+        Collections.unmodifiableSet(new LinkedHashSet<>(structurallyInsertedClasses));
+    this.structurallyRemovedClasses =
+        Collections.unmodifiableSet(new LinkedHashSet<>(structurallyRemovedClasses));
+    Set<EClass> all = new LinkedHashSet<>(structurallyInsertedClasses);
+    all.addAll(structurallyRemovedClasses);
+    this.structurallyAffectedClasses = Collections.unmodifiableSet(all);
     this.hasUnknownChanges = hasUnknownChanges;
   }
 
@@ -87,6 +95,33 @@ public final class TransactionDelta {
     return structurallyAffectedClasses;
   }
 
+  /**
+   * Runtime classes of the objects (and their post-state contents) that were created, inserted as
+   * root or inserted into a containment reference — InsertET in the sense of Cabot &amp; Teniente.
+   */
+  public Set<EClass> structurallyInsertedClasses() {
+    return structurallyInsertedClasses;
+  }
+
+  /**
+   * Runtime classes of the objects (and their post-state contents) that were deleted, removed as
+   * root or removed from a containment reference — DeleteET. A move is both an insertion and a
+   * removal.
+   */
+  public Set<EClass> structurallyRemovedClasses() {
+    return structurallyRemovedClasses;
+  }
+
+  /** Whether an object of a class conforming to {@code type} was structurally inserted. */
+  public boolean insertsInstanceOf(EClass type) {
+    return structurallyInsertedClasses.stream().anyMatch(c -> conforms(c, type));
+  }
+
+  /** Whether an object of a class conforming to {@code type} was structurally removed. */
+  public boolean removesInstanceOf(EClass type) {
+    return structurallyRemovedClasses.stream().anyMatch(c -> conforms(c, type));
+  }
+
   /** Whether some change could not be classified; such a transaction re-evaluates everything. */
   public boolean hasUnknownChanges() {
     return hasUnknownChanges;
@@ -119,7 +154,7 @@ public final class TransactionDelta {
   }
 
   /** {@code runtime} conforms to {@code type}: equal, a subclass, or {@code type} is EObject. */
-  static boolean conforms(EClass runtime, EClass type) {
+  public static boolean conforms(EClass runtime, EClass type) {
     return type == runtime
         || type.isSuperTypeOf(runtime)
         || "EObject".equals(type.getName())
