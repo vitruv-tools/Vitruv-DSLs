@@ -83,6 +83,11 @@ public record PseSet(
     return false;
   }
 
+  /** Whether the feature event {@code event} is a PSE of this constraint (level-3 event filter). */
+  public boolean isPse(ModelEvent event) {
+    return event.feature() != null && event.object() != null && isFeaturePse(event);
+  }
+
   private boolean isFeaturePse(ModelEvent event) {
     EStructuralFeature feature = event.feature();
     Polarity polarity = polarityOf(feature.getName(), event.object().eClass());

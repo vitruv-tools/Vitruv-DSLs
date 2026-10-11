@@ -83,20 +83,26 @@ public final class EChangeClassifier {
       }
     }
     return new TransactionDelta(
-        changes, events, touched, classesOf(inserted), classesOf(removed), unknown);
+        changes, events, touched, withContents(inserted), withContents(removed), unknown);
   }
 
-  /** Classes of the given objects and of all their (post-state) transitive contents. */
-  private static Set<EClass> classesOf(Map<EObject, Boolean> objects) {
-    Set<EClass> classes = new LinkedHashSet<>();
+  /** The given objects and all their (post-state) transitive contents, each once (identity). */
+  private static List<EObject> withContents(Map<EObject, Boolean> objects) {
+    Map<EObject, Boolean> result = new IdentityHashMap<>();
+    List<EObject> ordered = new ArrayList<>();
     for (EObject root : objects.keySet()) {
-      classes.add(root.eClass());
+      if (result.put(root, Boolean.TRUE) == null) {
+        ordered.add(root);
+      }
       Iterator<EObject> contents = root.eAllContents();
       while (contents.hasNext()) {
-        classes.add(contents.next().eClass());
+        EObject content = contents.next();
+        if (result.put(content, Boolean.TRUE) == null) {
+          ordered.add(content);
+        }
       }
     }
-    return classes;
+    return ordered;
   }
 
   private static void collectStructuralObjects(

@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 /**
  * The constraint corpus for the oracle tests: every {@code context …} constraint string found in
  * the existing test sources ({@code src/test/resources/incremental/corpus/
- * constraints-from-existing-tests.txt}, extracted mechanically, entries separated by {@code ###}
+ * constraints-from-existing-tests.corpus}, extracted mechanically, entries separated by {@code ###}
  * lines) plus the hand-written edge-case constraints next to it.
  */
 public final class ConstraintCorpus {
@@ -50,14 +50,14 @@ public final class ConstraintCorpus {
   /** Every constraint of every corpus file. */
   public static List<String> all() {
     List<String> result = new ArrayList<>();
-    result.addAll(read(DIR.resolve("constraints-from-existing-tests.txt")));
-    result.addAll(read(DIR.resolve("edge-cases.txt")));
+    result.addAll(read(DIR.resolve("constraints-from-existing-tests.corpus")));
+    result.addAll(read(DIR.resolve("edge-cases.corpus")));
     return result;
   }
 
   private static List<String> read(Path file) {
     if (!Files.exists(file)) {
-      return List.of();
+      throw new IllegalStateException("missing constraint corpus file: " + file.toAbsolutePath());
     }
     List<String> lines;
     try {

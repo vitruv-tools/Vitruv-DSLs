@@ -1,0 +1,99 @@
+### Hand-written edge-case constraints over the dynamic test metamodel "edge" (see EdgeFixture).
+### Entries are separated by lines consisting of exactly "###".
+###
+context edge::Item inv polyExtra:
+  self.oclIsKindOf(edge::SubA) implies self.oclAsType(edge::SubA).extra >= 0
+###
+context edge::SubB inv sharedLabelSub:
+  self.label != "forbidden"
+###
+context edge::Other inv sharedLabelOther:
+  self.label != "z"
+###
+context edge::Root inv atMostThreeItems:
+  self.items.size() <= 3
+###
+context edge::Root inv firstPositive:
+  self.items.first().value > 4
+###
+context edge::Root inv atSecond:
+  self.items.at(2).value < 9
+###
+context edge::Item inv nextPositive:
+  self.next.isEmpty() or self.next.value > 0
+###
+context edge::Item inv impliesEmptyAntecedent:
+  self.next.value > 5 implies self.value > 0
+###
+context edge::Item inv notExists:
+  not self.refs.exists(r | r.value > 8)
+###
+context edge::Root inv selectCount:
+  self.items.select(i | i.value > 4).size() >= 1
+###
+context edge::Root inv rejectAll:
+  self.items.reject(i | i.value < 0).size() == self.items.size()
+###
+context edge::Root inv forAllRefs:
+  self.items.forAll(i | i.refs.size() <= 2)
+###
+context edge::Item inv letIterate:
+  let s = self.refs.iterate(r; acc = 0 | acc + r.value) in s <= 20
+###
+context edge::Item inv nonUniqueRefs:
+  self.refs.select(r | r.name == "a1").size() <= 1
+###
+context edge::Item inv allInstancesBounded:
+  edge::Item.allInstances().select(i | i.value > 100).isEmpty()
+###
+context edge::Root inv tagsBounded:
+  self.tags.size() <= 2
+###
+context edge::Item inv messageTemplate:
+  @message "Item {self.name} has a negative value"
+  self.value >= 0
+###
+context edge::Item inv corrTagged:
+  edge::Other.allInstances().select(~, Tag = "t").size() <= 1
+###
+context edge::Item inv corrInfix:
+  edge::Other.allInstances().forAll(o | not (self ~ o) or o.amount > 0)
+###
+context edge::Item post valueNotDecreasing:
+  self.value >= self.value@pre
+###
+context edge::Item post newItemsPositive:
+  self.OCLisNew implies self.value > 0
+###
+context edge::Item inv twoSpecs(self.name == ""):
+  self.value >= 0
+###
+context edge::Root inv uniqueNames:
+  self.items.isUnique(i | i.name)
+###
+context edge::Root inv oneBig:
+  self.items.one(i | i.value > 8) or self.items.size() < 4
+###
+context edge::Item inv ifThenElse:
+  if self.value > 4 then self.name != "" else true endif
+###
+context edge::Root inv collectSum:
+  self.items.collect(i | i.value).sum() < 40
+###
+context edge::Root inv sortedFirst:
+  self.items.sortedBy(i | i.value).first().value >= 0
+###
+context edge::Item inv ownerTags:
+  self.owner.tags.size() <= 2
+###
+context edge::Item inv transientCache:
+  self.cache >= 0
+###
+context edge::Root inv appendForeignElement:
+  self.items.select(i | i.oclIsKindOf(edge::SubB)).collect(i | i.oclAsType(edge::SubB)).append(self.others.first()).forAll(x | x.label != "zz")
+###
+context edge::SubB inv refsOwnerTags:
+  self.refs.forAll(r | r.owner.tags.size() <= 2)
+###
+context edge::Item inv nextNonNegative:
+  self.next.value >= 0

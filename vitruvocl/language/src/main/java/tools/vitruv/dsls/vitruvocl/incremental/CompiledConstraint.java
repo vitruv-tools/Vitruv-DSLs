@@ -26,6 +26,7 @@ import tools.vitruv.dsls.vitruvocl.common.ErrorCollector;
 import tools.vitruv.dsls.vitruvocl.evaluator.EvaluationVisitor;
 import tools.vitruv.dsls.vitruvocl.incremental.analysis.ConstraintAnalysis;
 import tools.vitruv.dsls.vitruvocl.incremental.analysis.FeatureIndex;
+import tools.vitruv.dsls.vitruvocl.incremental.analysis.PathAnalyzer;
 import tools.vitruv.dsls.vitruvocl.incremental.analysis.PolarityAnalyzer;
 import tools.vitruv.dsls.vitruvocl.incremental.analysis.ReadSet;
 import tools.vitruv.dsls.vitruvocl.incremental.analysis.ReadSetAnalyzer;
@@ -111,7 +112,10 @@ final class CompiledConstraint {
       ParseTreeProperty<tools.vitruv.dsls.vitruvocl.typechecker.Type> nodeTypes,
       FeatureIndex features) {
     ReadSet readSet = ReadSetAnalyzer.analyze(tree, nodeTypes, features);
-    return new ConstraintAnalysis(readSet, PolarityAnalyzer.analyze(tree, nodeTypes, readSet));
+    return new ConstraintAnalysis(
+        readSet,
+        PolarityAnalyzer.analyze(tree, nodeTypes, readSet),
+        PathAnalyzer.analyze(tree, nodeTypes, readSet));
   }
 
   private static CompiledConstraint uncompilable(String text, MetamodelWrapperInterface wrapper) {
@@ -124,6 +128,12 @@ final class CompiledConstraint {
 
   ConstraintAnalysis analysis() {
     return analysis;
+  }
+
+  /** The static context class of a classifier context of this constraint, or {@code null}. */
+  org.eclipse.emf.ecore.EClass contextClass(VitruvOCLParser.ClassifierContextCSContext ctx) {
+    tools.vitruv.dsls.vitruvocl.typechecker.Type type = nodeTypes == null ? null : nodeTypes.get(ctx);
+    return type == null ? null : type.getEClass();
   }
 
   boolean isCompiled() {

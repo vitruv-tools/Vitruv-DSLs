@@ -59,6 +59,8 @@ public final class IncrementalSession implements AutoCloseable {
   private final Map<String, CompiledConstraint> compiled = new LinkedHashMap<>();
   private final ViolationSet violations = new ViolationSet();
   private final ExecutorService executor;
+  private final ReverseIndex reverseIndex;
+  private final RelevantInstanceResolver resolver;
   private IncrementalResult latest;
   private TransactionCollector attachedCollector;
 
@@ -86,6 +88,8 @@ public final class IncrementalSession implements AutoCloseable {
     this.wrapper = wrapper;
     this.config = config;
     this.executor = config.threads() > 1 ? Executors.newFixedThreadPool(config.threads()) : null;
+    this.reverseIndex = new ReverseIndex(wrapper::getAllRootObjects);
+    this.resolver = new RelevantInstanceResolver(wrapper, reverseIndex);
   }
 
   /** The configuration this session runs with. */
@@ -137,24 +141,46 @@ public final class IncrementalSession implements AutoCloseable {
     TransactionDelta delta = EChangeClassifier.classify(transaction);
     IncrementalStats.Builder stats = new IncrementalStats.Builder().constraints(distinctConstraints.size());
 
+    if (config.level().atLeast(IncrementalLevel.RELEVANT_INSTANCES)) {
+      reverseIndex.apply(delta);
+    }
+
     List<String> selected = new ArrayList<>();
     List<Boolean> forced = new ArrayList<>();
+    Map<String, RelevantInstanceResolver.Relevance> relevance = new LinkedHashMap<>();
     for (String constraint : distinctConstraints) {
       ConstraintAnalysis.Decision decision =
           recovering ? ConstraintAnalysis.Decision.EVALUATE_ALWAYS : decide(constraint, delta);
       if (decision.evaluate()) {
         selected.add(constraint);
         forced.add(decision.forced());
+        relevance.put(constraint, relevance(constraint, decision, delta));
       } else {
         stats.skipped();
       }
     }
 
     List<EvaluationOutcome> outcomes =
-        evaluateAll(selected, c -> compiled.get(c).evaluate(transaction, true, null));
+        evaluateAll(selected, c -> evaluateSelected(c, relevance.get(c), transaction));
     for (int i = 0; i < selected.size(); i++) {
-      violations.replaceAll(selected.get(i), outcomes.get(i));
-      stats.evaluated(forced.get(i), outcomes.get(i).evaluatedInstances());
+      String constraint = selected.get(i);
+      RelevantInstanceResolver.Relevance r = relevance.get(constraint);
+      EvaluationOutcome outcome = outcomes.get(i);
+      if (r.classEvent()) {
+        violations.replaceAll(constraint, outcome);
+        if (config.level().atLeast(IncrementalLevel.RELEVANT_INSTANCES) && !forced.get(i)) {
+          stats.classEventFallback();
+        }
+      } else if (outcome.failed()) {
+        // a partial evaluation failed: fall back to a full evaluation of the constraint
+        EvaluationOutcome full = compiled.get(constraint).evaluate(transaction, true, null);
+        violations.replaceAll(constraint, full);
+        outcome = full;
+      } else {
+        violations.replaceInstances(constraint, r.relevant(), r.removed(), outcome);
+        stats.partial();
+      }
+      stats.evaluated(forced.get(i), outcome.evaluatedInstances());
     }
 
     if (config.verify()) {
@@ -170,10 +196,53 @@ public final class IncrementalSession implements AutoCloseable {
       return ConstraintAnalysis.Decision.EVALUATE_ALWAYS;
     }
     ConstraintAnalysis analysis = compiled.get(constraint).analysis();
+    boolean idiom = useCorrespondenceIdiom();
     if (config.level().atLeast(IncrementalLevel.POLARITY)) {
-      return analysis.decideByPolarity(delta, violations.hasViolationsOrFailure(constraint));
+      return analysis.decideByPolarity(delta, violations.hasViolationsOrFailure(constraint), idiom);
     }
-    return analysis.decideByReadSet(delta);
+    return analysis.decideByReadSet(delta, idiom);
+  }
+
+  private boolean useCorrespondenceIdiom() {
+    return config.correspondenceIdiom() && config.level().atLeast(IncrementalLevel.RELEVANT_INSTANCES);
+  }
+
+  /**
+   * Level 3: which instances of an evaluated constraint to re-evaluate. Forced decisions, failed
+   * previous evaluations, unclassifiable changes and lower levels re-evaluate the whole extension.
+   */
+  private RelevantInstanceResolver.Relevance relevance(
+      String constraint, ConstraintAnalysis.Decision decision, TransactionDelta delta) {
+    ConstraintAnalysis analysis = compiled.get(constraint).analysis();
+    if (!config.level().atLeast(IncrementalLevel.RELEVANT_INSTANCES)
+        || decision.forced()
+        || analysis.relevancePlan() == null
+        || violations.lastEvaluationFailed(constraint)) {
+      return RelevantInstanceResolver.Relevance.fullExtension();
+    }
+    // Polarity may only filter events while the constraint has no violation (level 2 rule).
+    boolean usePolarity = !violations.hasViolationsOrFailure(constraint);
+    return resolver.resolve(
+        analysis.relevancePlan(), delta, usePolarity ? analysis.pseSet() : null, useCorrespondenceIdiom());
+  }
+
+  private EvaluationOutcome evaluateSelected(
+      String constraint, RelevantInstanceResolver.Relevance relevance, List<EChange<EObject>> tx) {
+    if (relevance.classEvent()) {
+      return compiled.get(constraint).evaluate(tx, true, null);
+    }
+    List<EObject> instances = List.copyOf(relevance.relevant());
+    return compiled
+        .get(constraint)
+        .evaluate(
+            tx,
+            true,
+            ctx -> {
+              org.eclipse.emf.ecore.EClass type = compiled.get(constraint).contextClass(ctx);
+              return type == null
+                  ? List.of()
+                  : instances.stream().filter(o -> TransactionDelta.conforms(o.eClass(), type)).toList();
+            });
   }
 
   /**

@@ -64,15 +64,22 @@ public final class ConstraintAnalysis {
 
   private final ReadSet readSet;
   private final PseSet pseSet;
+  private final RelevancePlan relevancePlan;
 
   /** Analysis of a constraint that failed to compile: always re-evaluated. */
   public static ConstraintAnalysis forUncompilable() {
-    return new ConstraintAnalysis(null, null);
+    return new ConstraintAnalysis(null, null, null);
   }
 
-  public ConstraintAnalysis(ReadSet readSet, PseSet pseSet) {
+  public ConstraintAnalysis(ReadSet readSet, PseSet pseSet, RelevancePlan relevancePlan) {
     this.readSet = readSet;
     this.pseSet = pseSet;
+    this.relevancePlan = relevancePlan;
+  }
+
+  /** The level-3 plan, or {@code null} for a constraint that failed to compile. */
+  public RelevancePlan relevancePlan() {
+    return relevancePlan;
   }
 
   /** The PSE set (level 2), or {@code null} for a constraint that failed to compile. */
@@ -92,7 +99,13 @@ public final class ConstraintAnalysis {
    *     evaluation failed
    */
   public Decision decideByPolarity(TransactionDelta delta, boolean hasViolationsOrFailure) {
-    Decision levelOne = decideByReadSet(delta);
+    return decideByPolarity(delta, hasViolationsOrFailure, false);
+  }
+
+  /** Level-2 decision with optional correspondence idiom rule (see {@link #decideByReadSet}). */
+  public Decision decideByPolarity(
+      TransactionDelta delta, boolean hasViolationsOrFailure, boolean correspondenceIdiom) {
+    Decision levelOne = decideByReadSet(delta, correspondenceIdiom);
     if (levelOne != Decision.EVALUATE_READ_SET_HIT || pseSet == null || hasViolationsOrFailure) {
       return levelOne;
     }
@@ -111,6 +124,15 @@ public final class ConstraintAnalysis {
    * touches a (feature, class) pair or an extension type the constraint reads.
    */
   public Decision decideByReadSet(TransactionDelta delta) {
+    return decideByReadSet(delta, false);
+  }
+
+  /**
+   * Level-1 decision as above; with {@code correspondenceIdiom}, a constraint whose every use of
+   * correspondence is the idiom {@code Y.allInstances()->select/exists(~ …)} is not forced, but
+   * decided by its read set (rule 3c; unsound if correspondences change without model events).
+   */
+  public Decision decideByReadSet(TransactionDelta delta, boolean correspondenceIdiom) {
     if (readSet == null || readSet.requiresFullEvaluation()) {
       return Decision.EVALUATE_ALWAYS;
     }
@@ -120,7 +142,8 @@ public final class ConstraintAnalysis {
     if (delta.hasUnknownChanges()) {
       return Decision.EVALUATE_UNKNOWN_CHANGE;
     }
-    if (readSet.usesCorrespondence()) {
+    if (readSet.usesCorrespondence()
+        && !(correspondenceIdiom && relevancePlan != null && relevancePlan.correspondenceOnlyInIdiom())) {
       return Decision.EVALUATE_CORRESPONDENCE;
     }
     return touchesReadSet(delta) ? Decision.EVALUATE_READ_SET_HIT : Decision.SKIP;

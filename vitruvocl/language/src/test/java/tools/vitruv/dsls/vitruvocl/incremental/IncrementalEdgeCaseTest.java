@@ -331,7 +331,9 @@ class IncrementalEdgeCaseTest {
   @ParameterizedTest
   @MethodSource("levels")
   void randomMutationsOnEdgeModel(IncrementalLevel level) {
-    for (long seed = 1; seed <= 4; seed++) {
+    // more seeds for a larger sweep: -Dvitruvocl.incremental.edgeSeeds=N
+    int seeds = Integer.getInteger("vitruvocl.incremental.edgeSeeds", 4);
+    for (long seed = 1; seed <= seeds; seed++) {
       EdgeFixture fx = EdgeFixture.create();
       ModelMutator mutator = new ModelMutator(fx.model(), seed);
       try (IncrementalSession session =

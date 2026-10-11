@@ -39,24 +39,26 @@ public final class TransactionDelta {
   private final Set<EClass> structurallyAffectedClasses;
   private final Set<EClass> structurallyInsertedClasses;
   private final Set<EClass> structurallyRemovedClasses;
+  private final List<EObject> structurallyInsertedObjects;
+  private final List<EObject> structurallyRemovedObjects;
   private final boolean hasUnknownChanges;
 
   TransactionDelta(
       List<EChange<EObject>> changes,
       List<ModelEvent> events,
       Map<String, Set<EClass>> touchedFeatures,
-      Set<EClass> structurallyInsertedClasses,
-      Set<EClass> structurallyRemovedClasses,
+      List<EObject> structurallyInsertedObjects,
+      List<EObject> structurallyRemovedObjects,
       boolean hasUnknownChanges) {
     this.changes = List.copyOf(changes);
     this.events = List.copyOf(events);
     Map<String, Set<EClass>> copy = new HashMap<>();
     touchedFeatures.forEach((k, v) -> copy.put(k, Collections.unmodifiableSet(new LinkedHashSet<>(v))));
     this.touchedFeatures = Collections.unmodifiableMap(copy);
-    this.structurallyInsertedClasses =
-        Collections.unmodifiableSet(new LinkedHashSet<>(structurallyInsertedClasses));
-    this.structurallyRemovedClasses =
-        Collections.unmodifiableSet(new LinkedHashSet<>(structurallyRemovedClasses));
+    this.structurallyInsertedObjects = List.copyOf(structurallyInsertedObjects);
+    this.structurallyRemovedObjects = List.copyOf(structurallyRemovedObjects);
+    this.structurallyInsertedClasses = Collections.unmodifiableSet(classesOf(structurallyInsertedObjects));
+    this.structurallyRemovedClasses = Collections.unmodifiableSet(classesOf(structurallyRemovedObjects));
     Set<EClass> all = new LinkedHashSet<>(structurallyInsertedClasses);
     all.addAll(structurallyRemovedClasses);
     this.structurallyAffectedClasses = Collections.unmodifiableSet(all);
@@ -110,6 +112,30 @@ public final class TransactionDelta {
    */
   public Set<EClass> structurallyRemovedClasses() {
     return structurallyRemovedClasses;
+  }
+
+  /**
+   * The objects (each once, with their post-state transitive contents) that were structurally
+   * inserted; see {@link #structurallyInsertedClasses()}.
+   */
+  public List<EObject> structurallyInsertedObjects() {
+    return structurallyInsertedObjects;
+  }
+
+  /**
+   * The objects (each once, with their post-state transitive contents) that were structurally
+   * removed; see {@link #structurallyRemovedClasses()}.
+   */
+  public List<EObject> structurallyRemovedObjects() {
+    return structurallyRemovedObjects;
+  }
+
+  private static Set<EClass> classesOf(List<EObject> objects) {
+    Set<EClass> classes = new LinkedHashSet<>();
+    for (EObject o : objects) {
+      classes.add(o.eClass());
+    }
+    return classes;
   }
 
   /** Whether an object of a class conforming to {@code type} was structurally inserted. */

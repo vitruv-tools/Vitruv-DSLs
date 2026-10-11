@@ -97,6 +97,11 @@ final class ViolationSet {
     return state.lastFullOutcome.failed() || !state.violations.isEmpty();
   }
 
+  /** Whether the last full evaluation of {@code constraint} failed (compile or run-time error). */
+  boolean lastEvaluationFailed(String constraint) {
+    return requireState(constraint).lastFullOutcome.failed();
+  }
+
   /** Whether {@code instance} currently violates {@code constraint}. */
   boolean isViolating(String constraint, EObject instance) {
     return requireState(constraint).violations.containsKey(new InstanceKey(instance));

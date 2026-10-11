@@ -1,0 +1,2987 @@
+### Constraint corpus extracted from the existing test sources (do not edit by hand).
+### Entries are separated by lines consisting of exactly "###".
+###
+context spaceMission::Spacecraft inv c0: true
+###
+context spaceMission::Spacecraft inv c1: false
+###
+context spaceMission::Spacecraft inv c2: self.operational
+###
+context spaceMission::Spacecraft inv c3: self.mass > 0
+###
+context spaceMission::Spacecraft inv c4: self.nonExistentAttribute == 5
+###
+context spaceMission::Spacecraft inv serialNumberMatch:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    sat.serialNumber == self.serialNumber
+  )
+###
+context spaceMission::Spacecraft inv c6: satelliteSystem::Satellite.allInstances().size() == 2
+###
+context spaceMission::Spacecraft inv c7:
+  satelliteSystem::Satellite.allInstances().forAll(sat | sat.massKg > 0)
+###
+context spaceMission::Spacecraft inv c8: self.mass > 5000
+###
+context spaceMission::Spacecraft inv c9: $$$ invalid @@@
+###
+context spaceMission::Spacecraft inv order
+###
+context spaceMission::Spacecraft inv dup: true
+###
+context spaceMission::Spacecraft inv other: true
+###
+context spaceMission::Spacecraft inv spaceMissionOnly: true
+###
+context spaceMission::Spacecraft inv usesSatelliteSystemToo: satelliteSystem::Satellite.allInstances().size() >= 0
+###
+context spaceMission::Spacecraft inv: true
+###
+context unknownPackage::Class inv: true
+###
+context spaceMission::Spacecraft inv: self.operational
+###
+context spaceMission::Spacecraft inv: $$$ invalid @@@
+###
+context spaceMission::Spacecraft inv: self.nonExistentAttribute == 5
+###
+context spaceMission::Spacecraft inv: self.name + 5
+###
+context spaceMission::Spacecraft inv: SYNTAX ERROR HERE
+###
+context spaceMission::Spacecraft inv: false
+###
+context spaceMission::Spacecraft inv: true;
+context spaceMission::Spacecraft inv: self.operational
+###
+context spaceMission::Spacecraft inv operationalCheck: self.operational
+###
+context spaceMission::Spacecraft inv serialInclusion:
+  satelliteSystem::Satellite.allInstances().collect(sat |
+    sat.serialNumber
+  ).includes(self.serialNumber)
+###
+context spaceMission::Spacecraft inv andLogic:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    sat.serialNumber == self.serialNumber
+  ) and self.operational
+###
+context spaceMission::Spacecraft inv conditional:
+  if satelliteSystem::Satellite.allInstances().size() > 2
+  then self.operational
+  else self.mass > 0
+  endif
+###
+context spaceMission::Spacecraft inv massConsistency:
+  satelliteSystem::Satellite.allInstances().forAll(sat |
+    sat.massKg == self.mass implies sat.active == self.operational
+  )
+###
+context spaceMission::Spacecraft inv:
+  self.nonExistent() == true
+###
+context spaceMission::Spacecraft inv:
+  self.operational implies self.nonExistent() == true
+###
+context spaceMission::Spacecraft inv:
+  spaceMission::Spacecraft.allInstances().forAll(s |
+    s.nonExistent() == true
+  )
+###
+context spaceMission::Spacecraft inv:
+  let x : Boolean = self.nonExistent() in x
+###
+context spaceMission::Spacecraft inv:
+  spaceMission::Spacecraft.allInstances().select(s | s.operational).nonExistent() == true
+###
+context spaceMission::Spacecraft inv:
+  self.nonExistent(42, "hello") == true
+###
+context spaceMission::Spacecraft inv: self.
+###
+context spaceMission::Spacecraft inv: self.foobar() == true
+###
+context spaceMission::Spacecraft inv:
+  self.operational implies
+    spaceMission::Spacecraft.allInstances().exists(A)
+###
+context spaceMission::Spacecraft inv:
+  self.operational implies
+    spaceMission::Spacecraft.allInstances().forAll(A)
+###
+context spaceMission::Spacecraft inv:
+  self.operational implies
+    spaceMission::Spacecraft.allInstances()
+        .reject(~, e, Type = spaceMission::Spacecraft)
+        .size() == 3
+###
+context spaceMission::Spacecraft inv:
+  self.operational implies
+    spaceMission::Spacecraft.allInstances(B).size() == 3
+###
+context spaceMission::Spacecraft inv:
+  self.operational implies
+    spaceMission::Spacecraft.allInstances().size(42) == 3
+###
+context spaceMission::Spacecraft inv:
+  self.operational implies
+    spaceMission::Spacecraft.allInstances( , ).size() == 3
+###
+context spaceMission::Spacecraft inv:
+  self.operational implies
+    spaceMission::Spacecraft.allInstances()
+        .reject(~, , , Type = spaceMission::Spacecraft)
+        .size() == 3
+###
+context spaceMission::Spacecraft inv: self.serialNumber = "SN-001"
+###
+context spaceMission::Spacecraft inv: self.serialNumber === "SN-001"
+###
+context spaceMission::Spacecraft inv: self.serialNumber ======= "SN-001"
+###
+context spaceMission::Spacecraft inv:
+  self.serialNumber == implies self.operational == true
+###
+context spaceMission::Spacecraft inv:
+  self.operational == true
+    spaceMission::Spacecraft.allInstances().exists(~, Type = spaceMission::Spacecraft)
+###
+context spaceMission::Spacecraft inv: self.operational self.operational
+###
+context spaceMission::Spacecraft inv:
+  self.operational implies
+    spaceMission::Spacecraft.allInstances().select(sc | sc.operational).notEmpty
+###
+context spaceMission::Spacecraft inv:
+  self.operational implies
+    spaceMission::Spacecraft.allInstances().select.notEmpty()
+###
+context spaceMission::Spacecraft inv: slef.operational == true
+###
+context spaceMission::Spacecraft inv: sel.operational == true
+###
+context spaceMission::Spacecraft inv: self.ssssss() == true
+###
+context brakesystem::BrakeDisk inv:
+###
+context brakesystem::BrakeDisk inv:
+    @severity TYPO
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity NOPE
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity
+###
+context brakesystem::BrakeDisk inv:
+    @severity 42
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity "CRITICAL"
+    self.x > 0
+###
+context brakesystem::BrakeDisk inv:
+    @Severity CRITICAL
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @SEVERITY CRITICAL
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @sev CRITICAL
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @MESSAGE "text"
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @msg "text"
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @message "Brake disk violates the constraint"
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @message "Object {self} violates the constraint"
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @message "Brake disk {self.name} has an invalid diameter"
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @message "Disk {self.name} (id={self.id}) has diameter {self.diameterInMM}"
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @message "Error: radius must be > 0 (check your model!)"
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @message ""
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity CRITICAL
+    @message "Brake disk {self.name} failed"
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @message "Brake disk {self.name} failed"
+    @severity CRITICAL
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv BD_HasDiameter:
+    @severity WARNING
+    @message "Disk {self.name} has zero diameter"
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv BD_1:
+    @severity CRITICAL
+    @message "Disk {self.name}: diameter must be positive"
+    self.diameterInMM > 0
+context brakesystem::BrakeDisk inv BD_2:
+    @severity INFO
+    @message "Disk {self.name}: diameter should exceed 100 mm"
+    self.diameterInMM > 100
+###
+context brakesystem::BrakeDisk inv:
+    @severity MAJOR
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @message "Diameter must be positive"
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity IMPORTANT
+    @message "Disk {self.name} is invalid"
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    0 > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity CRITICAL
+    0 > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity MINOR
+    0 > 0
+###
+context brakesystem::BrakeDisk inv BD_AlwaysFails:
+    0 > 0
+###
+context brakesystem::BrakeDisk inv:
+    @message "Diameter constraint violated"
+    0 > 0
+###
+context brakesystem::BrakeDisk inv:
+    @message "Disk {self.name} is invalid"
+    0 > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity INFO
+    @message "Informational: disk {self.name} failed"
+    0 > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity MAJOR
+    0 > 0
+###
+context brakesystem::BrakeDisk inv:
+    @message "Custom: disk {self.name} failed"
+    0 > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity CRITICAL
+    @message "Disk failed"
+    0 > 0
+###
+context spaceMission::Spacecraft inv:
+  self.mass > 0
+###
+context spaceMission::Spacecraft inv:
+  self.nonExistentProperty > 0
+###
+context spaceMission::Spacecraft inv:
+  self.mass >= 0
+###
+context spaceMission::Spacecraft inv:
+  self.mass < 0
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().size() >= 0
+###
+context spaceMission::Spacecraft inv massIsPositive:
+  self.mass > 0
+###
+context spaceMission::Spacecraft post:
+  self.OCLisModified
+###
+context spaceMission::Spacecraft
+inv good1:
+  self.mass > 0
+inv broken:
+  self.thisPropertyDoesNotExist > 0
+inv good2:
+  self.mass >= 0
+###
+context spaceMission::Spacecraft::launch(dest: String)
+pre good:
+  self.mass > 0
+post broken:
+  self.thisPropertyDoesNotExist > 0
+###
+context spaceMission::Spacecraft inv massPositive:
+  self.mass > 0
+
+context spaceMission::Spacecraft inv massNotNegative:
+  self.mass >= 0
+###
+context spaceMission::Spacecraft inv satisfied:
+  self.mass > 0
+
+context spaceMission::Spacecraft inv violated:
+  self.mass < 0
+###
+context spaceMission::Spacecraft inv myConstraint:
+  self.mass > 0
+###
+context spaceMission::Spacecraft inv massPositive:
+  self.mass > 0
+post:
+  self.OCLisModified
+###
+context spaceMission::Spacecraft inv dup:
+  true
+
+context spaceMission::Spacecraft inv dup:
+  true
+###
+context spaceMission::Spacecraft inv spaceMissionOnly:
+  true
+
+context spaceMission::Spacecraft inv usesSatelliteSystemToo:
+  satelliteSystem::Satellite.allInstances().size() >= 0
+###
+context spaceMission::Spacecraft inv onlyOne:
+  self.mass >= 0
+###
+context spaceMission::Spacecraft inv myInvariant:
+  self.mass > 0
+###
+context spaceMission::Spacecraft inv  myName  :
+  self.mass > 0
+###
+context spaceMission::Spacecraft inv singleLine: self.mass > 0
+###
+context brakesystem::BrakeDisk inv overlapping:
+  self.radius > 0
+###
+context spaceMission::Spacecraft inv myName(self.mass > 0): true
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~).notEmpty()
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~).size() == 1
+###
+context family::Member inv:
+  self.firstName == "Lisa" implies
+    persons::Person.allInstances().select(~).isEmpty()
+###
+context family::Member inv:
+  self.firstName == "Lisa" implies
+    persons::Person.allInstances().select(~).size() == 0
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~).size() == 3
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Tag = "Husband").notEmpty()
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Tag = "Husband").size() == 1
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Tag = "Wife").isEmpty()
+###
+context family::Member inv:
+  self.firstName == "Bart" implies
+    persons::Person.allInstances().select(~, Tag = "Son").size() == 1
+###
+context family::Member inv:
+  persons::Person.allInstances().select(~, Tag = "NoSuchTag").isEmpty()
+###
+context family::Member inv:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances().select(~, Tag = "Wife").notEmpty()
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Type = persons::Male).size() == 1
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Type = persons::Female).isEmpty()
+###
+context family::Member inv:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances().select(~, Type = persons::Female).size() == 1
+###
+context family::Member inv:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances().select(~, Type = persons::Male).isEmpty()
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Type = persons::Person).size() == 1
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances()
+      .select(~, Type = persons::Male, Tag = "Husband").size() == 1
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances()
+      .select(~, Type = persons::Female, Tag = "Husband").isEmpty()
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances()
+      .select(~, Type = persons::Male, Tag = "Wife").isEmpty()
+###
+context family::Member inv:
+  self.firstName == "Bart" implies
+    persons::Person.allInstances()
+      .select(~, Tag = "Son", Type = persons::Male).size() == 1
+###
+context family::Member inv:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances()
+      .select(~, Type = persons::Female, Tag = "Wife").size() == 1
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().reject(~).size() == 3
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().reject(~).notEmpty()
+###
+context family::Member inv:
+  self.firstName == "Lisa" implies
+    persons::Person.allInstances().reject(~).size() == 4
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().reject(~, Tag = "Husband").size() == 3
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().reject(~, Tag = "Wife").size() == 4
+###
+context family::Member inv:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances().reject(~, Tag = "Wife").size() == 3
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().reject(~, Type = persons::Male).size() == 3
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().reject(~, Type = persons::Female).size() == 4
+###
+context family::Member inv:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances().reject(~, Type = persons::Female).size() == 3
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances()
+      .reject(~, Type = persons::Male, Tag = "Husband").size() == 3
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances()
+      .reject(~, Type = persons::Female, Tag = "Husband").size() == 4
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances()
+      .reject(~, Type = persons::Male, Tag = "Wife").size() == 4
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().exists(~)
+###
+context family::Member inv:
+  self.firstName == "Lisa" implies
+    not persons::Person.allInstances().exists(~)
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().exists(~, Tag = "Husband")
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    not persons::Person.allInstances().exists(~, Tag = "Wife")
+###
+context family::Member inv:
+  self.firstName == "Bart" implies
+    persons::Person.allInstances().exists(~, Tag = "Son")
+###
+context family::Member inv:
+  not persons::Person.allInstances().exists(~, Tag = "NoSuchTag")
+###
+context family::Member inv:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances().exists(~, Tag = "Wife")
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().exists(~, Type = persons::Male)
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    not persons::Person.allInstances().exists(~, Type = persons::Female)
+###
+context family::Member inv:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances().exists(~, Type = persons::Female)
+###
+context family::Member inv:
+  self.firstName == "Marge" implies
+    not persons::Person.allInstances().exists(~, Type = persons::Male)
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances()
+      .exists(~, Type = persons::Male, Tag = "Husband")
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    not persons::Person.allInstances()
+      .exists(~, Type = persons::Female, Tag = "Husband")
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    not persons::Person.allInstances()
+      .exists(~, Type = persons::Male, Tag = "Wife")
+###
+context family::Member inv:
+  self.firstName == "Marge" implies
+    persons::Person.allInstances()
+      .exists(~, Type = persons::Female, Tag = "Wife")
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    not persons::Person.allInstances().select(~).isEmpty()
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~).exists(p | p == p)
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~).forAll(p | p == p)
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Type = persons::Male).notEmpty()
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    not persons::Person.allInstances().reject(~).isEmpty()
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    (persons::Person.allInstances().exists(~) and true)
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    not (persons::Person.allInstances().exists(~) and false)
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    (persons::Person.allInstances().exists(~) or false)
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    not (not persons::Person.allInstances().exists(~))
+###
+context family::Member inv:
+  persons::Person.allInstances().exists(~)
+    implies
+  persons::Person.allInstances().select(~).notEmpty()
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    (persons::Person.allInstances().exists(~, Tag = "Husband")
+      and
+    persons::Person.allInstances().select(~, Tag = "Husband").size() == 1)
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~).collect(p | p.fullName).notEmpty()
+###
+context family::Member inv:
+  persons::Person.allInstances().select(~).size()
+    + persons::Person.allInstances().reject(~).size()
+    == persons::Person.allInstances().size()
+###
+context family::Member inv:
+  persons::Person.allInstances().exists(~)
+    == persons::Person.allInstances().select(~).notEmpty()
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    (persons::Person.allInstances().select(~, Tag = "Husband").size() == 1
+      and
+    persons::Person.allInstances().exists(~, Tag = "Husband"))
+###
+context family::Member inv:
+  persons::Person.allInstances().select(~, Tag = "Husband").size()
+    + persons::Person.allInstances().reject(~, Tag = "Husband").size()
+    == persons::Person.allInstances().size()
+###
+context family::Member inv:
+  persons::Person.allInstances().select(~).size() >= 0
+###
+context family::Member inv:
+  persons::Person.allInstances().select(~, Tag = "Husband").size() >= 0
+###
+context family::Member inv: true
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Tag = 3).size() == 1
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Type = "momma").size() == 1
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Tags = "Husband").size() == 1
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Types = persons::Person).size() == 1
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~).size() ++ 1 == 1
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~).size() +-+ 1 == 1
+###
+context family::Member inv:
+  persons::Person.allInstances().selcft(~, Tag = "Husband").isEmpty()
+###
+context family::Member inv:
+  persons::Person.allInstances().rejct(~).isEmpty()
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~, Tag = "Husband").size() <> 1
+###
+context family::Member inv:
+  self.firstName == "Homer" implies
+    persons::Person.allInstances().select(~).size() +- 0 == 1
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().select(sat |
+    self ~ sat).notEmpty()
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().forAll(sat |
+    self ~ sat implies sat.massKg == self.mass
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().forAll(sat |
+    self ~ sat implies (
+      sat.serialNumber == self.serialNumber and
+      sat.massKg == self.mass and
+      sat.active == self.operational
+    )
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    self ~ sat and sat.active == true
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().forAll(sat |
+    self ~ sat implies sat.active == self.operational
+  )
+###
+context satelliteSystem::Satellite inv:
+  spaceMission::Spacecraft.allInstances().reject(sc |
+    self ~ sc
+  ).size() >= 0
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().select(~).notEmpty()
+###
+context satelliteSystem::Satellite inv:
+  spaceMission::Spacecraft.allInstances().reject(~).size() >= 0
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().select(sat |
+    self ~ sat
+  ).size() >= 1
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().forAll(sat |
+    self ~ sat implies sat.massKg > 0
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().select(~).size() >= 1
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().select(sat |
+    self ~ sat
+  ).isEmpty()
+###
+context spaceMission::Spacecraft inv:
+  self.operational and
+  satelliteSystem::Satellite.allInstances().exists(sat | self ~ sat)
+###
+context spaceMission::Spacecraft inv:
+  if satelliteSystem::Satellite.allInstances().exists(sat | self ~ sat)
+  then satelliteSystem::Satellite.allInstances().forAll(sat |
+    self ~ sat implies sat.active == true
+  )
+  else true
+  endif
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().forAll(sat |
+    not (self ~ sat) or sat.massKg == self.mass
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().select(sat |
+    self ~ sat and sat.massKg > 1000
+  ).size() >= 0
+###
+context spaceMission::Spacecraft inv:
+  self.operational and
+  satelliteSystem::Satellite.allInstances().exists(~)
+###
+context spaceMission::Spacecraft inv:
+  if satelliteSystem::Satellite.allInstances().exists(~)
+  then satelliteSystem::Satellite.allInstances().forAll(sat |
+    self ~ sat implies sat.active == true
+  )
+  else true
+  endif
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().select(~)
+    .select(sat | sat.massKg > 1000).size() >= 0
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().exists(sat1 |
+    self ~ sat1 and
+    satelliteSystem::Satellite.allInstances().exists(sat2 |
+      sat1.serialNumber != sat2.serialNumber
+    )
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().select(~).isEmpty()
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    self ~ sat
+  )
+###
+context satelliteSystem::Satellite inv:
+  spaceMission::Spacecraft.allInstances().exists(sc |
+    self ~ sc
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().exists(~)
+###
+context satelliteSystem::Satellite inv:
+  spaceMission::Spacecraft.allInstances().exists(~)
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    self ~ nonExistent::FakeType
+  )
+###
+context dummy2::Container inv: self.liste.size() == 5
+###
+context dummy2::Container inv: self.liste.at(1) == 5 and self.liste.at(2) == 3 and self.liste.at(3) == 5 and self.liste.at(4) == 3 and self.liste.at(5) == 9
+###
+context dummy3::Root inv: let x = 999 in self.children.select(c | let x = 20 in c.liste.select(v | v == x).notEmpty()).size() == 1
+###
+context dummy4::Root inv: self.liste.size() == 3
+###
+context dummy4::Root inv: self.liste.at(1) == 5 and self.liste.at(2) == 3 and self.liste.at(3) == 9
+###
+context dummy4::Root inv: self.children.size() == 2
+###
+context dummy4::Root inv: self.children.select(c | c.name == "alpha").notEmpty() and self.children.select(c | c.name == "beta").notEmpty()
+###
+context dummy::Container inv: self.liste.select(x | x > 2).notEmpty()
+###
+context cad::Sphere inv:
+  cad::Sphere.allInstances().size() > 0
+###
+context cad::Cylinder inv:
+  cad::Cylinder.allInstances().size() > 0
+###
+context cad::Cone inv:
+  cad::Cone.allInstances().notEmpty()
+###
+context cad::Tube inv:
+  cad::Tube.allInstances().size() > 0
+###
+context cad::Namespace inv:
+  cad::Namespace.allInstances().size() > 0
+###
+context cad::Namespace inv:
+  cad::Shape.allInstances().size() > 0
+###
+context cad::Namespace inv:
+  cad::Parameter.allInstances().size() >= 0
+###
+context cad::Sphere inv:
+  cad::Sphere.allInstances().select(s | s.radius > 0).size() > 0
+###
+context cad::Sphere inv:
+  cad::Sphere.allInstances().forAll(s | s.radius > 0)
+###
+context cad::Sphere inv:
+  cad::Sphere.allInstances().exists(s | s.radius > 0)
+###
+context cad::Cylinder inv:
+  cad::Cylinder.allInstances().size() >= 1
+###
+context cad::Sphere inv:
+  cad::Sphere.allInstances().isEmpty() == false
+###
+context cad::Sphere inv:
+  cad::Sphere.allInstances().collect(s | s.radius).size() > 0
+###
+context cad::Sphere inv:
+  cad::Sphere.allInstances().sortedBy(s | s.radius).size() > 0
+###
+context cad::Sphere inv:
+  cad::Sphere.allInstances().one(s | s.radius > 0) or
+  cad::Sphere.allInstances().size() != 1
+###
+context cad::Box inv:
+  cad::Box.allInstances().size() >= 0
+###
+context cad::Prism inv:
+  cad::Prism.allInstances().size() >= 0
+###
+context cad::Pyramid inv:
+  cad::Pyramid.allInstances().size() >= 0
+###
+context cad::Cylinder inv:
+  cad::Cylinder.allInstances().first().notEmpty()
+###
+context brakesystem::BrakeDisk inv:
+  brakesystem::BrakeDisk.allInstances().size() > 0
+###
+context brakesystem::BrakeCaliper inv:
+  brakesystem::BrakeCaliper.allInstances().size() > 0
+###
+context brakesystem::BrakePad inv:
+  brakesystem::BrakePad.allInstances().size() >= 0
+###
+context brakesystem::BrakeDisk inv:
+  brakesystem::BrakeDisk.allInstances().size() > 0 and
+  cad::Namespace.allInstances().size() > 0
+###
+context brakesystem::BrakeDisk inv:
+  let cadDisk = cad::Namespace.allInstances().select(b | b.id == self.id) in
+  let brakeCaliper = brakesystem::BrakeCaliper.allInstances().first() in
+  let cadCaliper = cad::Namespace.allInstances()
+    .select(b | b.id == brakeCaliper.id) in
+  cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .forAll(p | p.oclAsType(cad::Coordinate).x >= self.diameterInMM / 2)
+###
+context brakesystem::BrakeDisk inv onlyCoordinates:
+  let cadCaliper = cad::Namespace.allInstances()
+    .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
+  cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size() == 4
+###
+context brakesystem::BrakeDisk inv allSubtypes:
+  let cadCaliper = cad::Namespace.allInstances()
+    .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
+  cadCaliper.parameters.select(p | p.oclIsKindOf(cad::Parameter)).size() == 5
+###
+context brakesystem::BrakeDisk inv coordinatesWithinRadius:
+  let cadCaliper = cad::Namespace.allInstances()
+    .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
+  cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .forAll(p | p.oclAsType(cad::Coordinate).x <= self.diameterInMM / 2)
+###
+context brakesystem::BrakeDisk inv:
+  cad::Namespace.allInstances().select(b | b.id == self.id)
+    .parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .collect(p | p.oclAsType(cad::Coordinate).x).size() == 2
+###
+context brakesystem::BrakeDisk inv:
+         let cadDisk = cad::Namespace.allInstances().select(b | b.id == self.id) in
+         let brakeCaliper = brakesystem::BrakeCaliper.allInstances().first() in
+         let cadCaliper = cad::Namespace.allInstances().select(b | b.id == brakeCaliper.id) in
+         cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).forAll(p |p.oclAsType(cad::Coordinate).x <= self.diameterInMM / 2)
+###
+context cad::Sphere inv radiusPositive:
+  self.radius > 0
+###
+context cad::Cylinder inv radiusPositive:
+  self.radius > 0
+###
+context cad::Cylinder inv distinctEndpoints:
+  self.bottomCenter.x != self.topCenter.x or
+  self.bottomCenter.y != self.topCenter.y or
+  self.bottomCenter.z != self.topCenter.z
+###
+context cad::Cone inv baseRadiusPositive:
+  self.baseRadius > 0
+###
+context cad::Cone inv distinctBaseAndApex:
+  self.baseCenter.x != self.apex.x or
+  self.baseCenter.y != self.apex.y or
+  self.baseCenter.z != self.apex.z
+###
+context cad::Tube inv outerRadiusPositive:
+  self.outerRadius > 0
+###
+context cad::Tube inv innerRadiusNonNegative:
+  self.innerRadius >= 0
+###
+context cad::Tube inv outerLargerThanInner:
+  self.outerRadius > self.innerRadius
+###
+context cad::Tube inv distinctEndpoints:
+  self.bottomCenter.x != self.topCenter.x or
+  self.bottomCenter.y != self.topCenter.y or
+  self.bottomCenter.z != self.topCenter.z
+###
+context cad::Prism inv extrusionNonZero:
+  self.extrusion.x != 0 or
+  self.extrusion.y != 0 or
+  self.extrusion.z != 0
+###
+context cad::Prism inv baseProfileHasEnoughVertices:
+  self.baseProfile.vertices.size() >= 3
+###
+context cad::Pyramid inv apexDefined:
+  self.apex.notEmpty()
+###
+context cad::Sphere inv noIntersectWithSphere:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Sphere))
+    .forAll(other |
+      let o: cad::Sphere = other.oclAsType(cad::Sphere) in
+      let dx: Real = self.center.x - o.center.x in
+      let dy: Real = self.center.y - o.center.y in
+      let dz: Real = self.center.z - o.center.z in
+      let rSum: Real = self.radius + o.radius in
+      dx*dx + dy*dy + dz*dz >= rSum * rSum
+    )
+###
+context cad::Sphere inv noIntersectWithCylinder:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Cylinder))
+    .forAll(other |
+      let o: cad::Cylinder = other.oclAsType(cad::Cylinder) in
+      let cx: Real = (o.bottomCenter.x + o.topCenter.x) / 2.0 in
+      let cy: Real = (o.bottomCenter.y + o.topCenter.y) / 2.0 in
+      let cz: Real = (o.bottomCenter.z + o.topCenter.z) / 2.0 in
+      let axDx: Real = o.topCenter.x - o.bottomCenter.x in
+      let axDy: Real = o.topCenter.y - o.bottomCenter.y in
+      let axDz: Real = o.topCenter.z - o.bottomCenter.z in
+      let halfH: Real = (axDx*axDx + axDy*axDy + axDz*axDz) / 4.0 in
+      let dx: Real = self.center.x - cx in
+      let dy: Real = self.center.y - cy in
+      let dz: Real = self.center.z - cz in
+      let rSum: Real = self.radius + o.radius in
+      dx*dx + dy*dy + dz*dz >= (rSum + halfH) * (rSum + halfH)
+    )
+###
+context cad::Sphere inv noIntersectWithCone:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Cone))
+    .forAll(other |
+      let o: cad::Cone = other.oclAsType(cad::Cone) in
+      let cx: Real = (o.baseCenter.x + o.apex.x) / 2.0 in
+      let cy: Real = (o.baseCenter.y + o.apex.y) / 2.0 in
+      let cz: Real = (o.baseCenter.z + o.apex.z) / 2.0 in
+      let axDx: Real = o.apex.x - o.baseCenter.x in
+      let axDy: Real = o.apex.y - o.baseCenter.y in
+      let axDz: Real = o.apex.z - o.baseCenter.z in
+      let halfH: Real = (axDx*axDx + axDy*axDy + axDz*axDz) / 4.0 in
+      let dx: Real = self.center.x - cx in
+      let dy: Real = self.center.y - cy in
+      let dz: Real = self.center.z - cz in
+      let rSum: Real = self.radius + o.baseRadius in
+      dx*dx + dy*dy + dz*dz >= (rSum + halfH) * (rSum + halfH)
+    )
+###
+context cad::Sphere inv noIntersectWithTube:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Tube))
+    .forAll(other |
+      let o: cad::Tube = other.oclAsType(cad::Tube) in
+      let cx: Real = (o.bottomCenter.x + o.topCenter.x) / 2.0 in
+      let cy: Real = (o.bottomCenter.y + o.topCenter.y) / 2.0 in
+      let cz: Real = (o.bottomCenter.z + o.topCenter.z) / 2.0 in
+      let axDx: Real = o.topCenter.x - o.bottomCenter.x in
+      let axDy: Real = o.topCenter.y - o.bottomCenter.y in
+      let axDz: Real = o.topCenter.z - o.bottomCenter.z in
+      let halfH: Real = (axDx*axDx + axDy*axDy + axDz*axDz) / 4.0 in
+      let dx: Real = self.center.x - cx in
+      let dy: Real = self.center.y - cy in
+      let dz: Real = self.center.z - cz in
+      let rSum: Real = self.radius + o.outerRadius in
+      dx*dx + dy*dy + dz*dz >= (rSum + halfH) * (rSum + halfH)
+    )
+###
+context cad::Sphere inv noIntersectWithBox:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Box))
+    .forAll(other |
+      let o: cad::Box = other.oclAsType(cad::Box) in
+      let boxCx: Real = o.origin.x + o.edgeVectorA.x/2.0
+                                   + o.edgeVectorB.x/2.0
+                                   + o.edgeVectorC.x/2.0 in
+      let boxCy: Real = o.origin.y + o.edgeVectorA.y/2.0
+                                   + o.edgeVectorB.y/2.0
+                                   + o.edgeVectorC.y/2.0 in
+      let boxCz: Real = o.origin.z + o.edgeVectorA.z/2.0
+                                   + o.edgeVectorB.z/2.0
+                                   + o.edgeVectorC.z/2.0 in
+      let dx: Real = self.center.x - boxCx in
+      let dy: Real = self.center.y - boxCy in
+      let dz: Real = self.center.z - boxCz in
+      let halfW: Real = (o.edgeVectorA.x*o.edgeVectorA.x +
+                         o.edgeVectorA.y*o.edgeVectorA.y +
+                         o.edgeVectorA.z*o.edgeVectorA.z) / 2.0 in
+      let halfH: Real = (o.edgeVectorB.x*o.edgeVectorB.x +
+                         o.edgeVectorB.y*o.edgeVectorB.y +
+                         o.edgeVectorB.z*o.edgeVectorB.z) / 2.0 in
+      let halfD: Real = (o.edgeVectorC.x*o.edgeVectorC.x +
+                         o.edgeVectorC.y*o.edgeVectorC.y +
+                         o.edgeVectorC.z*o.edgeVectorC.z) / 2.0 in
+      let bound: Real = self.radius + halfW + halfH + halfD in
+      dx*dx + dy*dy + dz*dz >= bound * bound
+    )
+###
+context cad::Sphere inv noIntersectWithPrism:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Prism))
+    .forAll(other |
+      let o: cad::Prism = other.oclAsType(cad::Prism) in
+      let verts: OrderedSet(Coordinate) = o.baseProfile.vertices in
+      let minX: Real = verts.collect(v | v.x).min() in
+      let maxX: Real = verts.collect(v | v.x).max() in
+      let minY: Real = verts.collect(v | v.y).min() in
+      let maxY: Real = verts.collect(v | v.y).max() in
+      let minZ: Real = verts.collect(v | v.z).min() in
+      let maxZ: Real = verts.collect(v | v.z).max() in
+      let extMaxX: Real =
+        if o.extrusion.x > 0.0 then maxX + o.extrusion.x else maxX endif in
+      let extMinX: Real =
+        if o.extrusion.x < 0.0 then minX + o.extrusion.x else minX endif in
+      let extMaxY: Real =
+        if o.extrusion.y > 0.0 then maxY + o.extrusion.y else maxY endif in
+      let extMinY: Real =
+        if o.extrusion.y < 0.0 then minY + o.extrusion.y else minY endif in
+      let extMaxZ: Real =
+        if o.extrusion.z > 0.0 then maxZ + o.extrusion.z else maxZ endif in
+      let extMinZ: Real =
+        if o.extrusion.z < 0.0 then minZ + o.extrusion.z else minZ endif in
+      let pcx: Real = (extMinX + extMaxX) / 2.0 in
+      let pcy: Real = (extMinY + extMaxY) / 2.0 in
+      let pcz: Real = (extMinZ + extMaxZ) / 2.0 in
+      let dx: Real = self.center.x - pcx in
+      let dy: Real = self.center.y - pcy in
+      let dz: Real = self.center.z - pcz in
+      dx.abs() >= self.radius + (extMaxX - extMinX) / 2.0 or
+      dy.abs() >= self.radius + (extMaxY - extMinY) / 2.0 or
+      dz.abs() >= self.radius + (extMaxZ - extMinZ) / 2.0
+    )
+###
+context cad::Sphere inv noIntersectWithPyramid:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Pyramid))
+    .forAll(other |
+      let o: cad::Pyramid = other.oclAsType(cad::Pyramid) in
+      let dx: Real = self.center.x - o.apex.x in
+      let dy: Real = self.center.y - o.apex.y in
+      let dz: Real = self.center.z - o.apex.z in
+      dx*dx + dy*dy + dz*dz >= self.radius * self.radius
+    )
+###
+context cad::Cylinder inv noIntersectWithCylinder:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Cylinder))
+    .forAll(other |
+      let o: cad::Cylinder = other.oclAsType(cad::Cylinder) in
+      let cx1: Real = (self.bottomCenter.x + self.topCenter.x) / 2.0 in
+      let cy1: Real = (self.bottomCenter.y + self.topCenter.y) / 2.0 in
+      let cz1: Real = (self.bottomCenter.z + self.topCenter.z) / 2.0 in
+      let cx2: Real = (o.bottomCenter.x + o.topCenter.x) / 2.0 in
+      let cy2: Real = (o.bottomCenter.y + o.topCenter.y) / 2.0 in
+      let cz2: Real = (o.bottomCenter.z + o.topCenter.z) / 2.0 in
+      let ax1x: Real = self.topCenter.x - self.bottomCenter.x in
+      let ax1y: Real = self.topCenter.y - self.bottomCenter.y in
+      let ax1z: Real = self.topCenter.z - self.bottomCenter.z in
+      let ax2x: Real = o.topCenter.x - o.bottomCenter.x in
+      let ax2y: Real = o.topCenter.y - o.bottomCenter.y in
+      let ax2z: Real = o.topCenter.z - o.bottomCenter.z in
+      let halfH1: Real = (ax1x*ax1x + ax1y*ax1y + ax1z*ax1z) / 4.0 in
+      let halfH2: Real = (ax2x*ax2x + ax2y*ax2y + ax2z*ax2z) / 4.0 in
+      let dx: Real = cx1 - cx2 in
+      let dy: Real = cy1 - cy2 in
+      let dz: Real = cz1 - cz2 in
+      let rSum: Real = self.radius + o.radius in
+      dx*dx + dy*dy + dz*dz >=
+        (rSum + halfH1 + halfH2) * (rSum + halfH1 + halfH2)
+    )
+###
+context cad::Cylinder inv noIntersectWithCone:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Cone))
+    .forAll(other |
+      let o: cad::Cone = other.oclAsType(cad::Cone) in
+      let cx1: Real = (self.bottomCenter.x + self.topCenter.x) / 2.0 in
+      let cy1: Real = (self.bottomCenter.y + self.topCenter.y) / 2.0 in
+      let cz1: Real = (self.bottomCenter.z + self.topCenter.z) / 2.0 in
+      let cx2: Real = (o.baseCenter.x + o.apex.x) / 2.0 in
+      let cy2: Real = (o.baseCenter.y + o.apex.y) / 2.0 in
+      let cz2: Real = (o.baseCenter.z + o.apex.z) / 2.0 in
+      let ax1x: Real = self.topCenter.x - self.bottomCenter.x in
+      let ax1y: Real = self.topCenter.y - self.bottomCenter.y in
+      let ax1z: Real = self.topCenter.z - self.bottomCenter.z in
+      let ax2x: Real = o.apex.x - o.baseCenter.x in
+      let ax2y: Real = o.apex.y - o.baseCenter.y in
+      let ax2z: Real = o.apex.z - o.baseCenter.z in
+      let halfH1: Real = (ax1x*ax1x + ax1y*ax1y + ax1z*ax1z) / 4.0 in
+      let halfH2: Real = (ax2x*ax2x + ax2y*ax2y + ax2z*ax2z) / 4.0 in
+      let dx: Real = cx1 - cx2 in
+      let dy: Real = cy1 - cy2 in
+      let dz: Real = cz1 - cz2 in
+      let rSum: Real = self.radius + o.baseRadius in
+      dx*dx + dy*dy + dz*dz >=
+        (rSum + halfH1 + halfH2) * (rSum + halfH1 + halfH2)
+    )
+###
+context cad::Cylinder inv noIntersectWithTube:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Tube))
+    .forAll(other |
+      let o: cad::Tube = other.oclAsType(cad::Tube) in
+      let cx1: Real = (self.bottomCenter.x + self.topCenter.x) / 2.0 in
+      let cy1: Real = (self.bottomCenter.y + self.topCenter.y) / 2.0 in
+      let cz1: Real = (self.bottomCenter.z + self.topCenter.z) / 2.0 in
+      let cx2: Real = (o.bottomCenter.x + o.topCenter.x) / 2.0 in
+      let cy2: Real = (o.bottomCenter.y + o.topCenter.y) / 2.0 in
+      let cz2: Real = (o.bottomCenter.z + o.topCenter.z) / 2.0 in
+      let ax1x: Real = self.topCenter.x - self.bottomCenter.x in
+      let ax1y: Real = self.topCenter.y - self.bottomCenter.y in
+      let ax1z: Real = self.topCenter.z - self.bottomCenter.z in
+      let ax2x: Real = o.topCenter.x - o.bottomCenter.x in
+      let ax2y: Real = o.topCenter.y - o.bottomCenter.y in
+      let ax2z: Real = o.topCenter.z - o.bottomCenter.z in
+      let halfH1: Real = (ax1x*ax1x + ax1y*ax1y + ax1z*ax1z) / 4.0 in
+      let halfH2: Real = (ax2x*ax2x + ax2y*ax2y + ax2z*ax2z) / 4.0 in
+      let dx: Real = cx1 - cx2 in
+      let dy: Real = cy1 - cy2 in
+      let dz: Real = cz1 - cz2 in
+      let rSum: Real = self.radius + o.outerRadius in
+      dx*dx + dy*dy + dz*dz >=
+        (rSum + halfH1 + halfH2) * (rSum + halfH1 + halfH2)
+    )
+###
+context cad::Cylinder inv noIntersectWithBox:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Box))
+    .forAll(other |
+      let o: cad::Box = other.oclAsType(cad::Box) in
+      let cx1: Real = (self.bottomCenter.x + self.topCenter.x) / 2.0 in
+      let cy1: Real = (self.bottomCenter.y + self.topCenter.y) / 2.0 in
+      let cz1: Real = (self.bottomCenter.z + self.topCenter.z) / 2.0 in
+      let ax1x: Real = self.topCenter.x - self.bottomCenter.x in
+      let ax1y: Real = self.topCenter.y - self.bottomCenter.y in
+      let ax1z: Real = self.topCenter.z - self.bottomCenter.z in
+      let halfH1: Real = (ax1x*ax1x + ax1y*ax1y + ax1z*ax1z) / 4.0 in
+      let boxCx: Real = o.origin.x + o.edgeVectorA.x/2.0
+                                   + o.edgeVectorB.x/2.0
+                                   + o.edgeVectorC.x/2.0 in
+      let boxCy: Real = o.origin.y + o.edgeVectorA.y/2.0
+                                   + o.edgeVectorB.y/2.0
+                                   + o.edgeVectorC.y/2.0 in
+      let boxCz: Real = o.origin.z + o.edgeVectorA.z/2.0
+                                   + o.edgeVectorB.z/2.0
+                                   + o.edgeVectorC.z/2.0 in
+      let halfW: Real = (o.edgeVectorA.x*o.edgeVectorA.x +
+                         o.edgeVectorA.y*o.edgeVectorA.y +
+                         o.edgeVectorA.z*o.edgeVectorA.z) / 2.0 in
+      let halfH2: Real = (o.edgeVectorB.x*o.edgeVectorB.x +
+                          o.edgeVectorB.y*o.edgeVectorB.y +
+                          o.edgeVectorB.z*o.edgeVectorB.z) / 2.0 in
+      let halfD: Real = (o.edgeVectorC.x*o.edgeVectorC.x +
+                         o.edgeVectorC.y*o.edgeVectorC.y +
+                         o.edgeVectorC.z*o.edgeVectorC.z) / 2.0 in
+      let dx: Real = cx1 - boxCx in
+      let dy: Real = cy1 - boxCy in
+      let dz: Real = cz1 - boxCz in
+      let bound: Real = self.radius + halfH1 + halfW + halfH2 + halfD in
+      dx*dx + dy*dy + dz*dz >= bound * bound
+    )
+###
+context cad::Cylinder inv noIntersectWithPrism:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Prism))
+    .forAll(other |
+      let o: cad::Prism = other.oclAsType(cad::Prism) in
+      let cx1: Real = (self.bottomCenter.x + self.topCenter.x) / 2.0 in
+      let cy1: Real = (self.bottomCenter.y + self.topCenter.y) / 2.0 in
+      let cz1: Real = (self.bottomCenter.z + self.topCenter.z) / 2.0 in
+      let ax1x: Real = self.topCenter.x - self.bottomCenter.x in
+      let ax1y: Real = self.topCenter.y - self.bottomCenter.y in
+      let ax1z: Real = self.topCenter.z - self.bottomCenter.z in
+      let halfH1: Real = (ax1x*ax1x + ax1y*ax1y + ax1z*ax1z) / 4.0 in
+      let verts: OrderedSet(Coordinate) = o.baseProfile.vertices in
+      let minX: Real = verts.collect(v | v.x).min() in
+      let maxX: Real = verts.collect(v | v.x).max() in
+      let minY: Real = verts.collect(v | v.y).min() in
+      let maxY: Real = verts.collect(v | v.y).max() in
+      let minZ: Real = verts.collect(v | v.z).min() in
+      let maxZ: Real = verts.collect(v | v.z).max() in
+      let extMaxX: Real =
+        if o.extrusion.x > 0.0 then maxX + o.extrusion.x else maxX endif in
+      let extMinX: Real =
+        if o.extrusion.x < 0.0 then minX + o.extrusion.x else minX endif in
+      let extMaxY: Real =
+        if o.extrusion.y > 0.0 then maxY + o.extrusion.y else maxY endif in
+      let extMinY: Real =
+        if o.extrusion.y < 0.0 then minY + o.extrusion.y else minY endif in
+      let extMaxZ: Real =
+        if o.extrusion.z > 0.0 then maxZ + o.extrusion.z else maxZ endif in
+      let extMinZ: Real =
+        if o.extrusion.z < 0.0 then minZ + o.extrusion.z else minZ endif in
+      let pcx: Real = (extMinX + extMaxX) / 2.0 in
+      let pcy: Real = (extMinY + extMaxY) / 2.0 in
+      let pcz: Real = (extMinZ + extMaxZ) / 2.0 in
+      let dx: Real = cx1 - pcx in
+      let dy: Real = cy1 - pcy in
+      let dz: Real = cz1 - pcz in
+      let bound: Real = self.radius + halfH1 +
+                        (extMaxX - extMinX) / 2.0 +
+                        (extMaxY - extMinY) / 2.0 +
+                        (extMaxZ - extMinZ) / 2.0 in
+      dx*dx + dy*dy + dz*dz >= bound * bound
+    )
+###
+context cad::Cylinder inv noIntersectWithPyramid:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Pyramid))
+    .forAll(other |
+      let o: cad::Pyramid = other.oclAsType(cad::Pyramid) in
+      let cx1: Real = (self.bottomCenter.x + self.topCenter.x) / 2.0 in
+      let cy1: Real = (self.bottomCenter.y + self.topCenter.y) / 2.0 in
+      let cz1: Real = (self.bottomCenter.z + self.topCenter.z) / 2.0 in
+      let ax1x: Real = self.topCenter.x - self.bottomCenter.x in
+      let ax1y: Real = self.topCenter.y - self.bottomCenter.y in
+      let ax1z: Real = self.topCenter.z - self.bottomCenter.z in
+      let halfH1: Real = (ax1x*ax1x + ax1y*ax1y + ax1z*ax1z) / 4.0 in
+      let dx: Real = cx1 - o.apex.x in
+      let dy: Real = cy1 - o.apex.y in
+      let dz: Real = cz1 - o.apex.z in
+      let bound: Real = self.radius + halfH1 in
+      dx*dx + dy*dy + dz*dz >= bound * bound
+    )
+###
+context cad::Cone inv noIntersectWithCone:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Cone))
+    .forAll(other |
+      let o: cad::Cone = other.oclAsType(cad::Cone) in
+      let cx1: Real = (self.baseCenter.x + self.apex.x) / 2.0 in
+      let cy1: Real = (self.baseCenter.y + self.apex.y) / 2.0 in
+      let cz1: Real = (self.baseCenter.z + self.apex.z) / 2.0 in
+      let cx2: Real = (o.baseCenter.x + o.apex.x) / 2.0 in
+      let cy2: Real = (o.baseCenter.y + o.apex.y) / 2.0 in
+      let cz2: Real = (o.baseCenter.z + o.apex.z) / 2.0 in
+      let ax1x: Real = self.apex.x - self.baseCenter.x in
+      let ax1y: Real = self.apex.y - self.baseCenter.y in
+      let ax1z: Real = self.apex.z - self.baseCenter.z in
+      let ax2x: Real = o.apex.x - o.baseCenter.x in
+      let ax2y: Real = o.apex.y - o.baseCenter.y in
+      let ax2z: Real = o.apex.z - o.baseCenter.z in
+      let halfH1: Real = (ax1x*ax1x + ax1y*ax1y + ax1z*ax1z) / 4.0 in
+      let halfH2: Real = (ax2x*ax2x + ax2y*ax2y + ax2z*ax2z) / 4.0 in
+      let dx: Real = cx1 - cx2 in
+      let dy: Real = cy1 - cy2 in
+      let dz: Real = cz1 - cz2 in
+      let rSum: Real = self.baseRadius + o.baseRadius in
+      dx*dx + dy*dy + dz*dz >=
+        (rSum + halfH1 + halfH2) * (rSum + halfH1 + halfH2)
+    )
+###
+context cad::Cone inv noIntersectWithTube:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Tube))
+    .forAll(other |
+      let o: cad::Tube = other.oclAsType(cad::Tube) in
+      let cx1: Real = (self.baseCenter.x + self.apex.x) / 2.0 in
+      let cy1: Real = (self.baseCenter.y + self.apex.y) / 2.0 in
+      let cz1: Real = (self.baseCenter.z + self.apex.z) / 2.0 in
+      let cx2: Real = (o.bottomCenter.x + o.topCenter.x) / 2.0 in
+      let cy2: Real = (o.bottomCenter.y + o.topCenter.y) / 2.0 in
+      let cz2: Real = (o.bottomCenter.z + o.topCenter.z) / 2.0 in
+      let ax1x: Real = self.apex.x - self.baseCenter.x in
+      let ax1y: Real = self.apex.y - self.baseCenter.y in
+      let ax1z: Real = self.apex.z - self.baseCenter.z in
+      let ax2x: Real = o.topCenter.x - o.bottomCenter.x in
+      let ax2y: Real = o.topCenter.y - o.bottomCenter.y in
+      let ax2z: Real = o.topCenter.z - o.bottomCenter.z in
+      let halfH1: Real = (ax1x*ax1x + ax1y*ax1y + ax1z*ax1z) / 4.0 in
+      let halfH2: Real = (ax2x*ax2x + ax2y*ax2y + ax2z*ax2z) / 4.0 in
+      let dx: Real = cx1 - cx2 in
+      let dy: Real = cy1 - cy2 in
+      let dz: Real = cz1 - cz2 in
+      let rSum: Real = self.baseRadius + o.outerRadius in
+      dx*dx + dy*dy + dz*dz >=
+        (rSum + halfH1 + halfH2) * (rSum + halfH1 + halfH2)
+    )
+###
+context cad::Cone inv noIntersectWithBox:
+  let foreignShapes: Set(Shape) =
+    cad::Namespace.allInstances()
+      .reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Box))
+    .forAll(other |
+      let o: cad::Box = other.oclAsType(cad::Box) in
+      let cx1: Real = (self.baseCenter.x + self.apex.x) / 2.0 in
+      let cy1: Real = (self.baseCenter.y + self.apex.y) / 2.0 in
+      let cz1: Real = (self.baseCenter.z + self.apex.z) / 2.0 in
+      let ax1x: Real = self.apex.x - self.baseCenter.x in
+      let ax1y: Real = self.apex.y - self.baseCenter.y in
+      let ax1z: Real = self.apex.z - self.baseCenter.z in
+      let halfH1: Real = (ax1x*ax1x + ax1y*ax1y + ax1z*ax1z) / 4.0 in
+      let boxCx: Real = o.origin.x + o.edgeVectorA.x/2.0
+                                   + o.edgeVectorB.x/2.0
+                                   + o.edgeVectorC.x/2.0 in
+      let boxCy: Real = o.origin.y + o.edgeVectorA.y/2.0
+                                   + o.edgeVectorB.y/2.0
+                                   + o.edgeVectorC.y/2.0 in
+      let boxCz: Real = o.origin.z + o.edgeVectorA.z/2.0
+                                   + o.edgeVectorB.z/2.0
+                                   + o.edgeVectorC.z/2.0 in
+      let halfW: Real = (o.edgeVectorA.x*o.edgeVectorA.x +
+                         o.edgeVectorA.y*o.edgeVectorA.y +
+                         o.edgeVectorA.z*o.edgeVectorA.z) / 2.0 in
+      let halfH2: Real = (o.edgeVectorB.x*o.edgeVectorB.x +
+                          o.edgeVectorB.y*o.edgeVectorB.y +
+                          o.edgeVectorB.z*o.edgeVectorB.z) / 2.0 in
+      let halfD: Real = (o.edgeVectorC.x*o.edgeVectorC.x +
+                         o.edgeVectorC.y*o.edgeVectorC.y +
+                         o.edgeVectorC.z*o.edgeVectorC.z) / 2.0 in
+      let dx: Real = cx1 - boxCx in
+      let dy: Real = cy1 - boxCy in
+      let dz: Real = cz1 - boxCz in
+      let bound: Real = self.baseRadius + halfH1 + halfW + halfH2 + halfD in
+      dx*dx + dy*dy + dz*dz >= bound * bound
+    )
+###
+context cad::Cone inv noIntersectWithPrism:
+  let foreignShapes: Set(Shape) =
+    cad::Namespace.allInstances()
+      .reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Prism))
+    .forAll(other |
+      let o: cad::Prism = other.oclAsType(cad::Prism) in
+      let cx1: Real = (self.baseCenter.x + self.apex.x) / 2.0 in
+      let cy1: Real = (self.baseCenter.y + self.apex.y) / 2.0 in
+      let cz1: Real = (self.baseCenter.z + self.apex.z) / 2.0 in
+      let ax1x: Real = self.apex.x - self.baseCenter.x in
+      let ax1y: Real = self.apex.y - self.baseCenter.y in
+      let ax1z: Real = self.apex.z - self.baseCenter.z in
+      let halfH1: Real = (ax1x*ax1x + ax1y*ax1y + ax1z*ax1z) / 4.0 in
+      let verts: OrderedSet(Coordinate) = o.baseProfile.vertices in
+      let minX: Real = verts.collect(v | v.x).min() in
+      let maxX: Real = verts.collect(v | v.x).max() in
+      let minY: Real = verts.collect(v | v.y).min() in
+      let maxY: Real = verts.collect(v | v.y).max() in
+      let minZ: Real = verts.collect(v | v.z).min() in
+      let maxZ: Real = verts.collect(v | v.z).max() in
+      let extMaxX: Real =
+        if o.extrusion.x > 0.0 then maxX + o.extrusion.x else maxX endif in
+      let extMinX: Real =
+        if o.extrusion.x < 0.0 then minX + o.extrusion.x else minX endif in
+      let extMaxY: Real =
+        if o.extrusion.y > 0.0 then maxY + o.extrusion.y else maxY endif in
+      let extMinY: Real =
+        if o.extrusion.y < 0.0 then minY + o.extrusion.y else minY endif in
+      let extMaxZ: Real =
+        if o.extrusion.z > 0.0 then maxZ + o.extrusion.z else maxZ endif in
+      let extMinZ: Real =
+        if o.extrusion.z < 0.0 then minZ + o.extrusion.z else minZ endif in
+      let pcx: Real = (extMinX + extMaxX) / 2.0 in
+      let pcy: Real = (extMinY + extMaxY) / 2.0 in
+      let pcz: Real = (extMinZ + extMaxZ) / 2.0 in
+      let dx: Real = cx1 - pcx in
+      let dy: Real = cy1 - pcy in
+      let dz: Real = cz1 - pcz in
+      let bound: Real = self.baseRadius + halfH1 +
+                        (extMaxX - extMinX) / 2.0 +
+                        (extMaxY - extMinY) / 2.0 +
+                        (extMaxZ - extMinZ) / 2.0 in
+      dx*dx + dy*dy + dz*dz >= bound * bound
+    )
+###
+context cad::Cone inv noIntersectWithPyramid:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Pyramid))
+    .forAll(other |
+      let o: cad::Pyramid = other.oclAsType(cad::Pyramid) in
+      let cx1: Real = (self.baseCenter.x + self.apex.x) / 2.0 in
+      let cy1: Real = (self.baseCenter.y + self.apex.y) / 2.0 in
+      let cz1: Real = (self.baseCenter.z + self.apex.z) / 2.0 in
+      let ax1x: Real = self.apex.x - self.baseCenter.x in
+      let ax1y: Real = self.apex.y - self.baseCenter.y in
+      let ax1z: Real = self.apex.z - self.baseCenter.z in
+      let halfH1: Real = (ax1x*ax1x + ax1y*ax1y + ax1z*ax1z) / 4.0 in
+      let dx: Real = cx1 - o.apex.x in
+      let dy: Real = cy1 - o.apex.y in
+      let dz: Real = cz1 - o.apex.z in
+      let bound: Real = self.baseRadius + halfH1 in
+      dx*dx + dy*dy + dz*dz >= bound * bound
+    )
+###
+context cad::Tube inv noIntersectWithTube:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Tube))
+    .forAll(other |
+      let o: cad::Tube = other.oclAsType(cad::Tube) in
+      let cx1: Real = (self.bottomCenter.x + self.topCenter.x) / 2.0 in
+      let cy1: Real = (self.bottomCenter.y + self.topCenter.y) / 2.0 in
+      let cz1: Real = (self.bottomCenter.z + self.topCenter.z) / 2.0 in
+      let cx2: Real = (o.bottomCenter.x + o.topCenter.x) / 2.0 in
+      let cy2: Real = (o.bottomCenter.y + o.topCenter.y) / 2.0 in
+      let cz2: Real = (o.bottomCenter.z + o.topCenter.z) / 2.0 in
+      let ax1x: Real = self.topCenter.x - self.bottomCenter.x in
+      let ax1y: Real = self.topCenter.y - self.bottomCenter.y in
+      let ax1z: Real = self.topCenter.z - self.bottomCenter.z in
+      let ax2x: Real = o.topCenter.x - o.bottomCenter.x in
+      let ax2y: Real = o.topCenter.y - o.bottomCenter.y in
+      let ax2z: Real = o.topCenter.z - o.bottomCenter.z in
+      let halfH1: Real = (ax1x*ax1x + ax1y*ax1y + ax1z*ax1z) / 4.0 in
+      let halfH2: Real = (ax2x*ax2x + ax2y*ax2y + ax2z*ax2z) / 4.0 in
+      let dx: Real = cx1 - cx2 in
+      let dy: Real = cy1 - cy2 in
+      let dz: Real = cz1 - cz2 in
+      let rSum: Real = self.outerRadius + o.outerRadius in
+      dx*dx + dy*dy + dz*dz >=
+        (rSum + halfH1 + halfH2) * (rSum + halfH1 + halfH2)
+    )
+###
+context cad::Tube inv noIntersectWithBox:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Box))
+    .forAll(other |
+      let o: cad::Box = other.oclAsType(cad::Box) in
+      let cx1: Real = (self.bottomCenter.x + self.topCenter.x) / 2.0 in
+      let cy1: Real = (self.bottomCenter.y + self.topCenter.y) / 2.0 in
+      let cz1: Real = (self.bottomCenter.z + self.topCenter.z) / 2.0 in
+      let ax1x: Real = self.topCenter.x - self.bottomCenter.x in
+      let ax1y: Real = self.topCenter.y - self.bottomCenter.y in
+      let ax1z: Real = self.topCenter.z - self.bottomCenter.z in
+      let halfH1: Real = (ax1x*ax1x + ax1y*ax1y + ax1z*ax1z) / 4.0 in
+      let boxCx: Real = o.origin.x + o.edgeVectorA.x/2.0
+                                   + o.edgeVectorB.x/2.0
+                                   + o.edgeVectorC.x/2.0 in
+      let boxCy: Real = o.origin.y + o.edgeVectorA.y/2.0
+                                   + o.edgeVectorB.y/2.0
+                                   + o.edgeVectorC.y/2.0 in
+      let boxCz: Real = o.origin.z + o.edgeVectorA.z/2.0
+                                   + o.edgeVectorB.z/2.0
+                                   + o.edgeVectorC.z/2.0 in
+      let halfW: Real = (o.edgeVectorA.x*o.edgeVectorA.x +
+                         o.edgeVectorA.y*o.edgeVectorA.y +
+                         o.edgeVectorA.z*o.edgeVectorA.z) / 2.0 in
+      let halfH2: Real = (o.edgeVectorB.x*o.edgeVectorB.x +
+                          o.edgeVectorB.y*o.edgeVectorB.y +
+                          o.edgeVectorB.z*o.edgeVectorB.z) / 2.0 in
+      let halfD: Real = (o.edgeVectorC.x*o.edgeVectorC.x +
+                         o.edgeVectorC.y*o.edgeVectorC.y +
+                         o.edgeVectorC.z*o.edgeVectorC.z) / 2.0 in
+      let dx: Real = cx1 - boxCx in
+      let dy: Real = cy1 - boxCy in
+      let dz: Real = cz1 - boxCz in
+      let bound: Real = self.outerRadius + halfH1 + halfW + halfH2 + halfD in
+      dx*dx + dy*dy + dz*dz >= bound * bound
+    )
+###
+context cad::Tube inv noIntersectWithPrism:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Prism))
+    .forAll(other |
+      let o: cad::Prism = other.oclAsType(cad::Prism) in
+      let cx1: Real = (self.bottomCenter.x + self.topCenter.x) / 2.0 in
+      let cy1: Real = (self.bottomCenter.y + self.topCenter.y) / 2.0 in
+      let cz1: Real = (self.bottomCenter.z + self.topCenter.z) / 2.0 in
+      let ax1x: Real = self.topCenter.x - self.bottomCenter.x in
+      let ax1y: Real = self.topCenter.y - self.bottomCenter.y in
+      let ax1z: Real = self.topCenter.z - self.bottomCenter.z in
+      let halfH1: Real = (ax1x*ax1x + ax1y*ax1y + ax1z*ax1z) / 4.0 in
+      let verts: OrderedSet(Coordinate) = o.baseProfile.vertices in
+      let minX: Real = verts.collect(v | v.x).min() in
+      let maxX: Real = verts.collect(v | v.x).max() in
+      let minY: Real = verts.collect(v | v.y).min() in
+      let maxY: Real = verts.collect(v | v.y).max() in
+      let minZ: Real = verts.collect(v | v.z).min() in
+      let maxZ: Real = verts.collect(v | v.z).max() in
+      let extMaxX: Real =
+        if o.extrusion.x > 0.0 then maxX + o.extrusion.x else maxX endif in
+      let extMinX: Real =
+        if o.extrusion.x < 0.0 then minX + o.extrusion.x else minX endif in
+      let extMaxY: Real =
+        if o.extrusion.y > 0.0 then maxY + o.extrusion.y else maxY endif in
+      let extMinY: Real =
+        if o.extrusion.y < 0.0 then minY + o.extrusion.y else minY endif in
+      let extMaxZ: Real =
+        if o.extrusion.z > 0.0 then maxZ + o.extrusion.z else maxZ endif in
+      let extMinZ: Real =
+        if o.extrusion.z < 0.0 then minZ + o.extrusion.z else minZ endif in
+      let pcx: Real = (extMinX + extMaxX) / 2.0 in
+      let pcy: Real = (extMinY + extMaxY) / 2.0 in
+      let pcz: Real = (extMinZ + extMaxZ) / 2.0 in
+      let dx: Real = cx1 - pcx in
+      let dy: Real = cy1 - pcy in
+      let dz: Real = cz1 - pcz in
+      let bound: Real = self.outerRadius + halfH1 +
+                        (extMaxX - extMinX) / 2.0 +
+                        (extMaxY - extMinY) / 2.0 +
+                        (extMaxZ - extMinZ) / 2.0 in
+      dx*dx + dy*dy + dz*dz >= bound * bound
+    )
+###
+context cad::Tube inv noIntersectWithPyramid:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Pyramid))
+    .forAll(other |
+      let o: cad::Pyramid = other.oclAsType(cad::Pyramid) in
+      let cx1: Real = (self.bottomCenter.x + self.topCenter.x) / 2.0 in
+      let cy1: Real = (self.bottomCenter.y + self.topCenter.y) / 2.0 in
+      let cz1: Real = (self.bottomCenter.z + self.topCenter.z) / 2.0 in
+      let ax1x: Real = self.topCenter.x - self.bottomCenter.x in
+      let ax1y: Real = self.topCenter.y - self.bottomCenter.y in
+      let ax1z: Real = self.topCenter.z - self.bottomCenter.z in
+      let halfH1: Real = (ax1x*ax1x + ax1y*ax1y + ax1z*ax1z) / 4.0 in
+      let dx: Real = cx1 - o.apex.x in
+      let dy: Real = cy1 - o.apex.y in
+      let dz: Real = cz1 - o.apex.z in
+      let bound: Real = self.outerRadius + halfH1 in
+      dx*dx + dy*dy + dz*dz >= bound * bound
+    )
+###
+context cad::Box inv noIntersectWithBox:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Box))
+    .forAll(other |
+      let o: cad::Box = other.oclAsType(cad::Box) in
+      let cx1: Real = self.origin.x + self.edgeVectorA.x/2.0
+                                    + self.edgeVectorB.x/2.0
+                                    + self.edgeVectorC.x/2.0 in
+      let cy1: Real = self.origin.y + self.edgeVectorA.y/2.0
+                                    + self.edgeVectorB.y/2.0
+                                    + self.edgeVectorC.y/2.0 in
+      let cz1: Real = self.origin.z + self.edgeVectorA.z/2.0
+                                    + self.edgeVectorB.z/2.0
+                                    + self.edgeVectorC.z/2.0 in
+      let cx2: Real = o.origin.x + o.edgeVectorA.x/2.0
+                                 + o.edgeVectorB.x/2.0
+                                 + o.edgeVectorC.x/2.0 in
+      let cy2: Real = o.origin.y + o.edgeVectorA.y/2.0
+                                 + o.edgeVectorB.y/2.0
+                                 + o.edgeVectorC.y/2.0 in
+      let cz2: Real = o.origin.z + o.edgeVectorA.z/2.0
+                                 + o.edgeVectorB.z/2.0
+                                 + o.edgeVectorC.z/2.0 in
+      let half1W: Real = (self.edgeVectorA.x*self.edgeVectorA.x +
+                          self.edgeVectorA.y*self.edgeVectorA.y +
+                          self.edgeVectorA.z*self.edgeVectorA.z) / 2.0 in
+      let half1H: Real = (self.edgeVectorB.x*self.edgeVectorB.x +
+                          self.edgeVectorB.y*self.edgeVectorB.y +
+                          self.edgeVectorB.z*self.edgeVectorB.z) / 2.0 in
+      let half1D: Real = (self.edgeVectorC.x*self.edgeVectorC.x +
+                          self.edgeVectorC.y*self.edgeVectorC.y +
+                          self.edgeVectorC.z*self.edgeVectorC.z) / 2.0 in
+      let half2W: Real = (o.edgeVectorA.x*o.edgeVectorA.x +
+                          o.edgeVectorA.y*o.edgeVectorA.y +
+                          o.edgeVectorA.z*o.edgeVectorA.z) / 2.0 in
+      let half2H: Real = (o.edgeVectorB.x*o.edgeVectorB.x +
+                          o.edgeVectorB.y*o.edgeVectorB.y +
+                          o.edgeVectorB.z*o.edgeVectorB.z) / 2.0 in
+      let half2D: Real = (o.edgeVectorC.x*o.edgeVectorC.x +
+                          o.edgeVectorC.y*o.edgeVectorC.y +
+                          o.edgeVectorC.z*o.edgeVectorC.z) / 2.0 in
+      let dx: Real = cx1 - cx2 in
+      let dy: Real = cy1 - cy2 in
+      let dz: Real = cz1 - cz2 in
+      let bound: Real = half1W + half1H + half1D + half2W + half2H + half2D in
+      dx*dx + dy*dy + dz*dz >= bound * bound
+    )
+###
+context cad::Box inv noIntersectWithPrism:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Prism))
+    .forAll(other |
+      let o: cad::Prism = other.oclAsType(cad::Prism) in
+      let cx1: Real = self.origin.x + self.edgeVectorA.x/2.0
+                                    + self.edgeVectorB.x/2.0
+                                    + self.edgeVectorC.x/2.0 in
+      let cy1: Real = self.origin.y + self.edgeVectorA.y/2.0
+                                    + self.edgeVectorB.y/2.0
+                                    + self.edgeVectorC.y/2.0 in
+      let cz1: Real = self.origin.z + self.edgeVectorA.z/2.0
+                                    + self.edgeVectorC.z/2.0
+                                    + self.edgeVectorC.z/2.0 in
+      let half1W: Real = (self.edgeVectorA.x*self.edgeVectorA.x +
+                          self.edgeVectorA.y*self.edgeVectorA.y +
+                          self.edgeVectorA.z*self.edgeVectorA.z) / 2.0 in
+      let half1H: Real = (self.edgeVectorB.x*self.edgeVectorB.x +
+                          self.edgeVectorB.y*self.edgeVectorB.y +
+                          self.edgeVectorB.z*self.edgeVectorB.z) / 2.0 in
+      let half1D: Real = (self.edgeVectorC.x*self.edgeVectorC.x +
+                          self.edgeVectorC.y*self.edgeVectorC.y +
+                          self.edgeVectorC.z*self.edgeVectorC.z) / 2.0 in
+      let verts: OrderedSet(Coordinate) = o.baseProfile.vertices in
+      let minX: Real = verts.collect(v | v.x).min() in
+      let maxX: Real = verts.collect(v | v.x).max() in
+      let minY: Real = verts.collect(v | v.y).min() in
+      let maxY: Real = verts.collect(v | v.y).max() in
+      let minZ: Real = verts.collect(v | v.z).min() in
+      let maxZ: Real = verts.collect(v | v.z).max() in
+      let extMaxX: Real =
+        if o.extrusion.x > 0.0 then maxX + o.extrusion.x else maxX endif in
+      let extMinX: Real =
+        if o.extrusion.x < 0.0 then minX + o.extrusion.x else minX endif in
+      let extMaxY: Real =
+        if o.extrusion.y > 0.0 then maxY + o.extrusion.y else maxY endif in
+      let extMinY: Real =
+        if o.extrusion.y < 0.0 then minY + o.extrusion.y else minY endif in
+      let extMaxZ: Real =
+        if o.extrusion.z > 0.0 then maxZ + o.extrusion.z else maxZ endif in
+      let extMinZ: Real =
+        if o.extrusion.z < 0.0 then minZ + o.extrusion.z else minZ endif in
+      let pcx: Real = (extMinX + extMaxX) / 2.0 in
+      let pcy: Real = (extMinY + extMaxY) / 2.0 in
+      let pcz: Real = (extMinZ + extMaxZ) / 2.0 in
+      let dx: Real = cx1 - pcx in
+      let dy: Real = cy1 - pcy in
+      let dz: Real = cz1 - pcz in
+      let bound: Real = half1W + half1H + half1D +
+                        (extMaxX - extMinX) / 2.0 +
+                        (extMaxY - extMinY) / 2.0 +
+                        (extMaxZ - extMinZ) / 2.0 in
+      dx*dx + dy*dy + dz*dz >= bound * bound
+    )
+###
+context cad::Box inv noIntersectWithPyramid:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Pyramid))
+    .forAll(other |
+      let o: cad::Pyramid = other.oclAsType(cad::Pyramid) in
+      let cx1: Real = self.origin.x + self.edgeVectorA.x/2.0
+                                    + self.edgeVectorB.x/2.0
+                                    + self.edgeVectorC.x/2.0 in
+      let cy1: Real = self.origin.y + self.edgeVectorA.y/2.0
+                                    + self.edgeVectorB.y/2.0
+                                    + self.edgeVectorC.y/2.0 in
+      let cz1: Real = self.origin.z + self.edgeVectorA.z/2.0
+                                    + self.edgeVectorB.z/2.0
+                                    + self.edgeVectorC.z/2.0 in
+      let half1W: Real = (self.edgeVectorA.x*self.edgeVectorA.x +
+                          self.edgeVectorA.y*self.edgeVectorA.y +
+                          self.edgeVectorA.z*self.edgeVectorA.z) / 2.0 in
+      let half1H: Real = (self.edgeVectorB.x*self.edgeVectorB.x +
+                          self.edgeVectorB.y*self.edgeVectorB.y +
+                          self.edgeVectorB.z*self.edgeVectorB.z) / 2.0 in
+      let half1D: Real = (self.edgeVectorC.x*self.edgeVectorC.x +
+                          self.edgeVectorC.y*self.edgeVectorC.y +
+                          self.edgeVectorC.z*self.edgeVectorC.z) / 2.0 in
+      let dx: Real = cx1 - o.apex.x in
+      let dy: Real = cy1 - o.apex.y in
+      let dz: Real = cz1 - o.apex.z in
+      let bound: Real = half1W + half1H + half1D in
+      dx*dx + dy*dy + dz*dz >= bound * bound
+    )
+###
+context cad::Prism inv noIntersectWithPrism:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Prism))
+    .forAll(other |
+      let o: cad::Prism = other.oclAsType(cad::Prism) in
+      let v1: OrderedSet(Coordinate) = self.baseProfile.vertices in
+      let minX1: Real = v1.collect(v | v.x).min() in
+      let maxX1: Real = v1.collect(v | v.x).max() in
+      let minY1: Real = v1.collect(v | v.y).min() in
+      let maxY1: Real = v1.collect(v | v.y).max() in
+      let minZ1: Real = v1.collect(v | v.z).min() in
+      let maxZ1: Real = v1.collect(v | v.z).max() in
+      let eMaxX1: Real =
+        if self.extrusion.x > 0.0 then maxX1 + self.extrusion.x else maxX1 endif in
+      let eMinX1: Real =
+        if self.extrusion.x < 0.0 then minX1 + self.extrusion.x else minX1 endif in
+      let eMaxY1: Real =
+        if self.extrusion.y > 0.0 then maxY1 + self.extrusion.y else maxY1 endif in
+      let eMinY1: Real =
+        if self.extrusion.y < 0.0 then minY1 + self.extrusion.y else minY1 endif in
+      let eMaxZ1: Real =
+        if self.extrusion.z > 0.0 then maxZ1 + self.extrusion.z else maxZ1 endif in
+      let eMinZ1: Real =
+        if self.extrusion.z < 0.0 then minZ1 + self.extrusion.z else minZ1 endif in
+      let cx1: Real = (eMinX1 + eMaxX1) / 2.0 in
+      let cy1: Real = (eMinY1 + eMaxY1) / 2.0 in
+      let cz1: Real = (eMinZ1 + eMaxZ1) / 2.0 in
+      let v2: OrderedSet(Coordinate) = o.baseProfile.vertices in
+      let minX2: Real = v2.collect(v | v.x).min() in
+      let maxX2: Real = v2.collect(v | v.x).max() in
+      let minY2: Real = v2.collect(v | v.y).min() in
+      let maxY2: Real = v2.collect(v | v.y).max() in
+      let minZ2: Real = v2.collect(v | v.z).min() in
+      let maxZ2: Real = v2.collect(v | v.z).max() in
+      let eMaxX2: Real =
+        if o.extrusion.x > 0.0 then maxX2 + o.extrusion.x else maxX2 endif in
+      let eMinX2: Real =
+        if o.extrusion.x < 0.0 then minX2 + o.extrusion.x else minX2 endif in
+      let eMaxY2: Real =
+        if o.extrusion.y > 0.0 then maxY2 + o.extrusion.y else maxY2 endif in
+      let eMinY2: Real =
+        if o.extrusion.y < 0.0 then minY2 + o.extrusion.y else minY2 endif in
+      let eMaxZ2: Real =
+        if o.extrusion.z > 0.0 then maxZ2 + o.extrusion.z else maxZ2 endif in
+      let eMinZ2: Real =
+        if o.extrusion.z < 0.0 then minZ2 + o.extrusion.z else minZ2 endif in
+      let cx2: Real = (eMinX2 + eMaxX2) / 2.0 in
+      let cy2: Real = (eMinY2 + eMaxY2) / 2.0 in
+      let cz2: Real = (eMinZ2 + eMaxZ2) / 2.0 in
+      let dx: Real = cx1 - cx2 in
+      let dy: Real = cy1 - cy2 in
+      let dz: Real = cz1 - cz2 in
+      let bound: Real =
+        (eMaxX1 - eMinX1) / 2.0 + (eMaxY1 - eMinY1) / 2.0 +
+        (eMaxZ1 - eMinZ1) / 2.0 + (eMaxX2 - eMinX2) / 2.0 +
+        (eMaxY2 - eMinY2) / 2.0 + (eMaxZ2 - eMinZ2) / 2.0 in
+      dx*dx + dy*dy + dz*dz >= bound * bound
+    )
+###
+context cad::Prism inv noIntersectWithPyramid:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Pyramid))
+    .forAll(other |
+      let o: cad::Pyramid = other.oclAsType(cad::Pyramid) in
+      let v1: OrderedSet(Coordinate) = self.baseProfile.vertices in
+      let minX1: Real = v1.collect(v | v.x).min() in
+      let maxX1: Real = v1.collect(v | v.x).max() in
+      let minY1: Real = v1.collect(v | v.y).min() in
+      let maxY1: Real = v1.collect(v | v.y).max() in
+      let minZ1: Real = v1.collect(v | v.z).min() in
+      let maxZ1: Real = v1.collect(v | v.z).max() in
+      let eMaxX1: Real =
+        if self.extrusion.x > 0.0 then maxX1 + self.extrusion.x else maxX1 endif in
+      let eMinX1: Real =
+        if self.extrusion.x < 0.0 then minX1 + self.extrusion.x else minX1 endif in
+      let eMaxY1: Real =
+        if self.extrusion.y > 0.0 then maxY1 + self.extrusion.y else maxY1 endif in
+      let eMinY1: Real =
+        if self.extrusion.y < 0.0 then minY1 + self.extrusion.y else minY1 endif in
+      let eMaxZ1: Real =
+        if self.extrusion.z > 0.0 then maxZ1 + self.extrusion.z else maxZ1 endif in
+      let eMinZ1: Real =
+        if self.extrusion.z < 0.0 then minZ1 + self.extrusion.z else minZ1 endif in
+      let cx1: Real = (eMinX1 + eMaxX1) / 2.0 in
+      let cy1: Real = (eMinY1 + eMaxY1) / 2.0 in
+      let cz1: Real = (eMinZ1 + eMaxZ1) / 2.0 in
+      let dx: Real = cx1 - o.apex.x in
+      let dy: Real = cy1 - o.apex.y in
+      let dz: Real = cz1 - o.apex.z in
+      let bound: Real =
+        (eMaxX1 - eMinX1) / 2.0 +
+        (eMaxY1 - eMinY1) / 2.0 +
+        (eMaxZ1 - eMinZ1) / 2.0 in
+      dx*dx + dy*dy + dz*dz >= bound * bound
+    )
+###
+context cad::Pyramid inv noIntersectWithPyramid:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Pyramid))
+    .forAll(other |
+      let o: cad::Pyramid = other.oclAsType(cad::Pyramid) in
+      let dx: Real = self.apex.x - o.apex.x in
+      let dy: Real = self.apex.y - o.apex.y in
+      let dz: Real = self.apex.z - o.apex.z in
+      dx*dx + dy*dy + dz*dz > 0.0
+    )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    sat.serialNumber == self.serialNumber
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().forAll(sat |
+    sat.massKg == self.mass implies sat.active == self.operational
+  )
+###
+context satelliteSystem::Satellite inv:
+  spaceMission::Spacecraft.allInstances().exists(sc |
+    sc.serialNumber == self.serialNumber and sc.mass == self.massKg
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().size() >= 2
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().select(sat |
+    sat.serialNumber == "NONEXISTENT-999"
+  ).isEmpty()
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().notEmpty()
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().collect(sat |
+    sat.massKg
+  ).sum() > 0
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().collect(sat |
+    sat.massKg
+  ).avg() > 0
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().collect(sat |
+    sat.serialNumber
+  ).includes(self.serialNumber)
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().collect(sat |
+    sat.serialNumber
+  ).excludes("DEFINITELY-NOT-THERE")
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().reverse().size() ==
+  satelliteSystem::Satellite.allInstances().size()
+###
+context spaceMission::Spacecraft inv:
+  Sequence{1, 2, 3}.including(4).size() == 4
+###
+context spaceMission::Spacecraft inv:
+  Sequence{1, 2, 3, 4}.excluding(4).size() == 3
+###
+context spaceMission::Spacecraft inv:
+  let satellites = satelliteSystem::Satellite.allInstances() in
+    satellites.size() >= 0
+###
+context spaceMission::Spacecraft inv:
+  let sats = satelliteSystem::Satellite.allInstances(),
+      countSat = sats.size() in
+    countSat >= 0
+###
+context spaceMission::Spacecraft inv:
+  not satelliteSystem::Satellite.allInstances().isEmpty()
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    sat.serialNumber.concat("-SUFFIX") != ""
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    sat.serialNumber.substring(1, 2) == "SC"
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().isEmpty()
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().select(sat |
+    sat.serialNumber == "NONEXISTENT"
+  ).forAll(sat | sat.massKg < 0)
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().select(sat |
+    sat.serialNumber == self.serialNumber
+  ).size() >= 1
+###
+context spaceMission::Spacecraft inv:
+  self.mass <= satelliteSystem::Satellite.allInstances().collect(sat |
+    sat.massKg
+  ).max()
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().collect(sat |
+    sat.massKg
+  ).min() > 0
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().union(
+    satelliteSystem::Satellite.allInstances()
+  ).size() >= satelliteSystem::Satellite.allInstances().size()
+###
+context spaceMission::Spacecraft inv:
+  Sequence{
+    satelliteSystem::Satellite.allInstances(),
+    satelliteSystem::Satellite.allInstances()
+  }.flatten().size() >= 2
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    sat.serialNumber == self.serialNumber
+  ) and self.operational
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    sat.serialNumber == self.serialNumber
+  ) or self.mass > 1000
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().size() > 5 xor self.operational
+###
+context spaceMission::Spacecraft inv:
+  if satelliteSystem::Satellite.allInstances().size() > 2
+  then self.operational
+  else self.mass > 0
+  endif
+###
+context spaceMission::Spacecraft inv:
+  self.mass < satelliteSystem::Satellite.allInstances().collect(sat |
+    sat.massKg
+  ).sum()
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().forAll(sat |
+    sat.serialNumber != ""
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().forAll(sat |
+    -sat.massKg < 0
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances()
+    .select(sat | sat.active)
+    .collect(sat | sat.massKg)
+    .select(mass | mass > 100)
+    .size() >= 0
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances()
+    .reject(sat | sat.active)
+    .collect(sat | sat.serialNumber)
+    .notEmpty()
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    spaceMission::Spacecraft.allInstances().exists(sc |
+      sc.serialNumber == sat.serialNumber and sc.operational
+    )
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().forAll(sat1 |
+    satelliteSystem::Satellite.allInstances().forAll(sat2 |
+      sat1.serialNumber == sat2.serialNumber implies sat1.massKg == sat2.massKg
+    )
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    (sat.massKg * 2) > self.mass
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().forAll(sat |
+    sat.massKg / 2 > 0
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().first().serialNumber != ""
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().last().massKg > 0
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    sat.serialNumber.toUpper() == self.serialNumber.toUpper()
+  )
+###
+context satelliteSystem::Satellite inv:
+  satelliteSystem::Satellite.allInstances().select(s1, s2 |
+    s1.serialNumber != s2.serialNumber
+  ).size() > 0
+###
+context satelliteSystem::Satellite inv:
+  satelliteSystem::Satellite.allInstances().forAll(s1, s2 |
+    s1.serialNumber == s2.serialNumber implies s1 == s2
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().exists(s1, s2 |
+    s1.massKg > s2.massKg
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().collect(s1, s2 |
+    s1.massKg + s2.massKg
+  ).size() > 0
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().select(sat |
+    sat.serialNumber == "NONEXISTENT"
+  ).exists(sat | sat.active)
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().forAll(sat |
+    sat.massKg < 0
+  )
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().exists(sat |
+    sat.serialNumber == "IMPOSSIBLE-SERIAL-999999"
+  )
+###
+context brakesystem::BrakeDisk inv:
+  cad::Namespace.allInstances().select(ns | ns.id == self.id).notEmpty()
+###
+context brakesystem::BrakeCaliper inv:
+  cad::Namespace.allInstances().select(ns | ns.id == self.id).notEmpty()
+###
+context brakesystem::BrakeDisk inv:
+  cad::Namespace.allInstances().select(ns | ns.id == self.id).size() == 1
+###
+context brakesystem::BrakeDisk inv:
+  let cadDisk = cad::Namespace.allInstances().select(ns | ns.id == self.id) in
+  cadDisk.size() == 1
+###
+context brakesystem::BrakeDisk inv:
+  let cadDisk = cad::Namespace.allInstances().select(ns | ns.id == self.id) in
+  cadDisk.shapes.size() >= 0
+###
+context brakesystem::BrakeDisk inv:
+  let caliper = brakesystem::BrakeCaliper.allInstances().first() in
+  let cadCaliper = cad::Namespace.allInstances().select(ns | ns.id == caliper.id) in
+  cadCaliper.notEmpty()
+###
+context brakesystem::BrakeDisk inv:
+  cad::Namespace.allInstances().select(ns | ns.id == self.id)
+    .shapes.forAll(s | s.notEmpty())
+###
+context brakesystem::BrakeDisk inv:
+  let cadCaliper = cad::Namespace.allInstances()
+    .select(ns | ns.id == brakesystem::BrakeCaliper.allInstances().first().id) in
+  cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size() == 4
+###
+context brakesystem::BrakeDisk inv:
+  let cadCaliper = cad::Namespace.allInstances()
+    .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
+  cadCaliper.parameters.select(p | p.oclIsKindOf(cad::Parameter)).size() == 5
+###
+context brakesystem::BrakeDisk inv:
+  let radius = self.diameterInMM / 2 in
+  radius > 0
+###
+context brakesystem::BrakeDisk inv:
+  let cadCaliper = cad::Namespace.allInstances()
+    .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
+  cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .forAll(p | p.oclAsType(cad::Coordinate).x >= self.diameterInMM / 2)
+###
+context brakesystem::BrakeDisk inv:
+  let cadCaliper = cad::Namespace.allInstances()
+    .select(b | b.id == brakesystem::BrakeCaliper.allInstances().first().id) in
+  cadCaliper.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .forAll(p | p.oclAsType(cad::Coordinate).x <= self.diameterInMM / 2)
+###
+context cad::Sphere inv noIntersectWithSphere:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Sphere))
+    .forAll(other |
+      let o = other.oclAsType(cad::Sphere) in
+      let dx = self.center.x - o.center.x in
+      let dy = self.center.y - o.center.y in
+      let dz = self.center.z - o.center.z in
+      let rSum = self.radius + o.radius in
+      dx*dx + dy*dy + dz*dz >= rSum * rSum
+    )
+###
+context cad::Sphere inv noIntersectWithCylinder:
+  let foreignShapes =
+    cad::Namespace.allInstances().reject(ns | ns.shapes.includes(self))
+      .collect(ns | ns.shapes).flatten()
+  in
+  foreignShapes.select(s | s.oclIsTypeOf(cad::Cylinder))
+    .forAll(other |
+      let o = other.oclAsType(cad::Cylinder) in
+      let dx = self.center.x - o.bottomCenter.x in
+      let dy = self.center.y - o.bottomCenter.y in
+      let dz = self.center.z - o.bottomCenter.z in
+      let rSum = self.radius + o.radius in
+      dx*dx + dy*dy + dz*dz >= rSum * rSum
+    )
+###
+context cad::Sphere inv:
+  self.radius > 0
+###
+context cad::Sphere inv:
+  self.radius == self.radius
+###
+context cad::Sphere inv:
+  self.radius >= 0
+###
+context cad::Sphere inv:
+  self.radius + 1 > 0
+###
+context cad::Sphere inv:
+  self.radius * 2 > 0
+###
+context cad::Sphere inv:
+  let r = self.radius in
+  r * r > 0
+###
+context cad::Sphere inv:
+  self.radius + 0.5 > 0
+###
+context cad::Sphere inv:
+  self.radius / 2 > 0
+###
+context cad::Sphere inv:
+  self.radius.abs() > 0
+###
+context cad::Sphere inv:
+  self.radius.floor() >= 0
+###
+context cad::Sphere inv:
+  self.radius.ceil() > 0
+###
+context cad::Sphere inv:
+  self.radius.round() >= 0
+###
+context cad::Sphere inv:
+  self.radius.ceiling() > 0
+###
+context cad::Sphere inv:
+  cad::Sphere.allInstances().collect(s | s.radius).max() > 0
+###
+context cad::Sphere inv:
+  cad::Sphere.allInstances().collect(s | s.radius).min() > 0
+###
+context cad::Sphere inv:
+  cad::Sphere.allInstances().collect(s | s.radius).sum() > 0
+###
+context cad::Sphere inv:
+  let r = self.radius in
+  r > 0
+###
+context cad::Sphere inv:
+  let r = self.radius in
+  r * 2.0 > 0
+###
+context cad::Tube inv:
+  let outer = self.outerRadius in
+  let inner = self.innerRadius in
+  outer > inner
+###
+context cad::Cylinder inv:
+  self.radius > 0
+###
+context cad::Tube inv:
+  self.outerRadius > 0
+###
+context cad::Tube inv:
+  self.innerRadius >= 0
+###
+context cad::Cone inv:
+  self.baseRadius > 0
+###
+context cad::Tube inv:
+  self.outerRadius > self.innerRadius
+###
+context cad::Sphere inv:
+  if self.radius > 0 then true else false endif
+###
+context cad::Tube inv:
+  if self.outerRadius > self.innerRadius
+  then self.outerRadius
+  else self.innerRadius
+  endif > 0
+###
+context cad::Sphere inv:
+  self.radius < 0
+###
+context Labelgraph1::SimpleNode inv:
+  Labelgraph2::SimpleNode.allInstances().exists(n |
+    n.name.substring(7, 9) == self.name.substring(7, 9)
+  )
+###
+context Labelgraph1::SimpleNode inv:
+  Labelgraph2::SimpleNode.allInstances().select(n |
+    n.name.substring(7, 9) == self.name.substring(7, 9)
+  ).size() == 1
+###
+context Labelgraph1::SimpleNode inv:
+  Labelgraph2::SimpleNode.allInstances().select(n |
+    n.name.substring(7, 9) == self.name.substring(7, 9)
+  ).label.size() == 1
+###
+context Labelgraph1::SimpleNode inv:
+  Labelgraph2::SimpleNode.allInstances().select(n |
+    n.name.substring(7, 9) == self.name.substring(7, 9)
+  ).forAll(e | e.label == self.label)
+###
+context spaceMission::Spacecraft inv: self.payloads.name.first() == "Camera"
+###
+context spaceMission::Spacecraft inv: self.payloads.name.last() == "Antenna"
+###
+context spaceMission::Spacecraft inv: self.payloads.name.asSequence().size() == 2
+###
+context cad::Namespace inv:
+  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .forAll(p | p.oclAsType(cad::Coordinate).x >= 0
+               or p.oclAsType(cad::Coordinate).x < 0)
+###
+context cad::Namespace inv:
+  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .collect(p | p.oclAsType(cad::Coordinate).y).size() >= 0
+###
+context cad::Namespace inv:
+  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .collect(p | p.oclAsType(cad::Coordinate).z).size() >= 0
+###
+context cad::Namespace inv:
+  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .collect(p | p.oclAsType(cad::Coordinate).x)
+    .forAll(x | x >= 0 or x < 0)
+###
+context cad::Namespace inv:
+  self.shapes.select(s | s.oclIsTypeOf(cad::Sphere))
+    .forAll(s | s.oclAsType(cad::Sphere).radius > 0)
+###
+context cad::Namespace inv:
+  self.shapes.select(s | s.oclIsTypeOf(cad::Sphere))
+    .collect(s | s.oclAsType(cad::Sphere).center.x).size() >= 0
+###
+context cad::Namespace inv:
+  self.shapes.select(s | s.oclIsTypeOf(cad::Cylinder))
+    .forAll(s | s.oclAsType(cad::Cylinder).radius > 0)
+###
+context cad::Namespace inv:
+  self.shapes.select(s | s.oclIsTypeOf(cad::Cylinder))
+    .forAll(s |
+      s.oclAsType(cad::Cylinder).bottomCenter.x
+        != s.oclAsType(cad::Cylinder).topCenter.x or
+      s.oclAsType(cad::Cylinder).bottomCenter.y
+        != s.oclAsType(cad::Cylinder).topCenter.y or
+      s.oclAsType(cad::Cylinder).bottomCenter.z
+        != s.oclAsType(cad::Cylinder).topCenter.z)
+###
+context cad::Namespace inv:
+  self.shapes.select(s | s.oclIsTypeOf(cad::Tube))
+    .forAll(s | s.oclAsType(cad::Tube).outerRadius > 0)
+###
+context cad::Namespace inv:
+  self.shapes.select(s | s.oclIsTypeOf(cad::Tube))
+    .forAll(s | s.oclAsType(cad::Tube).outerRadius
+               > s.oclAsType(cad::Tube).innerRadius)
+###
+context cad::Namespace inv:
+  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .collect(p | p.oclAsType(cad::Coordinate).x).sum() >= 0
+  or
+  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .collect(p | p.oclAsType(cad::Coordinate).x).sum() < 0
+###
+context cad::Namespace inv:
+  let firstSphere = self.shapes.select(s | s.oclIsTypeOf(cad::Sphere)).first() in
+  firstSphere.oclAsType(cad::Sphere).radius > 0
+###
+context brakesystem::BrakeDisk inv:
+  let radius = self.diameterInMM / 2 in
+  cad::Namespace.allInstances()
+    .select(ns | ns.id == brakesystem::BrakeCaliper.allInstances().first().id)
+    .parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .forAll(p | p.oclAsType(cad::Coordinate).x <= radius)
+###
+context brakesystem::BrakeDisk inv:
+  let radius = self.diameterInMM / 2 in
+  cad::Namespace.allInstances()
+    .select(ns | ns.id == brakesystem::BrakeCaliper.allInstances().first().id)
+    .parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .forAll(p | p.oclAsType(cad::Coordinate).x >= radius)
+###
+context cad::Namespace inv:
+  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .forAll(p | p.oclIsKindOf(cad::Coordinate))
+###
+context cad::Sphere inv:
+  self.oclIsKindOf(cad::Sphere)
+###
+context cad::Cylinder inv:
+  self.oclIsKindOf(cad::Cylinder)
+###
+context cad::Namespace inv:
+  self.oclIsKindOf(cad::Namespace)
+###
+context cad::Namespace inv:
+  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .forAll(p | p.oclIsKindOf(cad::Parameter))
+###
+context cad::Namespace inv:
+  self.parameters.select(p | p.oclIsTypeOf(cad::NumericParameter))
+    .forAll(p | p.oclIsKindOf(cad::Parameter))
+###
+context cad::Sphere inv:
+  self.oclIsKindOf(cad::Shape)
+###
+context cad::Cylinder inv:
+  self.oclIsKindOf(cad::Shape)
+###
+context cad::Cone inv:
+  self.oclIsKindOf(cad::Shape)
+###
+context cad::Tube inv:
+  self.oclIsKindOf(cad::Shape)
+###
+context cad::Namespace inv:
+  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .forAll(p | p.oclIsKindOf(cad::NumericParameter) == false)
+###
+context cad::Sphere inv:
+  self.oclIsKindOf(cad::Cylinder) == false
+###
+context cad::Sphere inv:
+  self.oclIsKindOf(cad::Namespace) == false
+###
+context cad::Namespace inv:
+  self.oclIsKindOf(cad::Shape) == false
+###
+context cad::Namespace inv:
+  self.parameters.forAll(p | p.oclIsKindOf(cad::Parameter))
+###
+context cad::Namespace inv:
+  self.shapes.forAll(s | s.oclIsKindOf(cad::Shape))
+###
+context cad::Namespace inv:
+  self.parameters.select(p | p.oclIsKindOf(cad::Parameter)).size()
+    == self.parameters.size()
+###
+context cad::Namespace inv:
+  self.parameters.select(p | p.oclIsKindOf(cad::Parameter)).size()
+    >= self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size()
+###
+context cad::Namespace inv:
+  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .forAll(p | p.oclIsTypeOf(cad::Coordinate))
+###
+context cad::Namespace inv:
+  self.parameters.select(p | p.oclIsTypeOf(cad::NumericParameter))
+    .forAll(p | p.oclIsTypeOf(cad::NumericParameter))
+###
+context cad::Sphere inv:
+  self.oclIsTypeOf(cad::Sphere)
+###
+context cad::Cylinder inv:
+  self.oclIsTypeOf(cad::Cylinder)
+###
+context cad::Namespace inv:
+  self.oclIsTypeOf(cad::Namespace)
+###
+context cad::Namespace inv:
+  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .forAll(p | p.oclIsTypeOf(cad::Parameter) == false)
+###
+context cad::Sphere inv:
+  self.oclIsTypeOf(cad::Shape) == false
+###
+context cad::Cylinder inv:
+  self.oclIsTypeOf(cad::Shape) == false
+###
+context cad::Namespace inv:
+  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate))
+    .forAll(p | p.oclIsTypeOf(cad::NumericParameter) == false)
+###
+context cad::Sphere inv:
+  self.oclIsTypeOf(cad::Cylinder) == false
+###
+context cad::Namespace inv:
+  self.name == "id3_front_left_caliper_namespace" implies
+  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size() == 4
+###
+context cad::Namespace inv:
+  self.parameters.select(p | p.oclIsTypeOf(cad::Coordinate)).size()
+    < self.parameters.select(p | p.oclIsKindOf(cad::Parameter)).size()
+###
+context cad::Namespace inv:
+  self.shapes.select(s | s.oclIsTypeOf(cad::Sphere))
+    .forAll(s | s.oclIsTypeOf(cad::Cylinder) == false)
+###
+context cad::Sphere inv:
+  self.center.x >= 0 or self.center.x < 0
+###
+context cad::Sphere inv:
+  self.center.y >= 0 or self.center.y < 0
+###
+context cad::Sphere inv:
+  self.center.z >= 0 or self.center.z < 0
+###
+context cad::Cylinder inv:
+  self.bottomCenter.x != self.topCenter.x or
+  self.bottomCenter.y != self.topCenter.y or
+  self.bottomCenter.z != self.topCenter.z
+###
+context cad::Cylinder inv:
+  self.radius * 2 > 0
+###
+context cad::Cone inv:
+  self.baseCenter.x != self.apex.x or
+  self.baseCenter.y != self.apex.y or
+  self.baseCenter.z != self.apex.z
+###
+context cad::Namespace inv:
+  self.shapes.size() >= 0
+###
+context cad::Namespace inv:
+  self.parameters.size() >= 0
+###
+context cad::Namespace inv:
+  self.shapes.forAll(s | s.notEmpty())
+###
+context cad::Sphere inv:
+  cad::Sphere.allInstances().includes(self)
+###
+context cad::Sphere inv:
+  cad::Namespace.allInstances().forAll(ns | self.radius > 0)
+###
+context cad::Sphere inv:
+  cad::Namespace.allInstances()
+    .reject(ns | ns.shapes.includes(self))
+    .size() >= 0
+###
+context brakesystem::BrakeDisk inv:
+  self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+  self.diameterInMM / 2 > 0
+###
+context brakesystem::BrakeCaliper inv:
+  self.id.length() > 0
+###
+context spaceMission::Spacecraft inv: self.name == "Voyager"
+###
+context spaceMission::Spacecraft inv: self.mass >= 500
+###
+context spaceMission::Spacecraft inv: self.name != "Unknown"
+###
+context spaceMission::Spacecraft inv: self.mass >= 0
+###
+context spaceMission::Spacecraft inv: self.mass > -1
+###
+context spaceMission::Spacecraft inv: self.name.concat("-1") != ""
+###
+context spaceMission::Spacecraft inv: self.operational or not self.operational
+###
+context spaceMission::Spacecraft inv: self.mass == self.mass
+###
+context spaceMission::Spacecraft inv: Set{100, 200, 300}.includes(100)
+###
+context spaceMission::Spacecraft inv: Sequence{1, 2, 2, 3}.size() == 4
+###
+context spaceMission::Spacecraft inv: self.payloads.forAll(p | p.powerConsumption > 1000)
+###
+context spaceMission::Spacecraft inv: not self.payloads.exists(p | p.powerConsumption > 0)
+###
+context spaceMission::Spacecraft inv: self.mass < 2000
+###
+context spaceMission::Spacecraft inv: not (self.mass > 10000)
+###
+context spaceMission::Spacecraft inv: (self.mass * 2) - 1000 > 0
+###
+context spaceMission::Spacecraft inv: self.mass / 2 > 0
+###
+context spaceMission::Spacecraft inv: (self.mass + 100) * 2 == self.mass * 2 + 200
+###
+context spaceMission::Spacecraft inv: self.operational and self.mass < 2000
+###
+context spaceMission::Spacecraft inv: self.mass > 5000 or self.operational
+###
+context spaceMission::Spacecraft inv: not (not self.operational) == self.operational
+###
+context spaceMission::Spacecraft inv: ((self.operational and true) or false) == self.operational
+###
+context spaceMission::Mission inv: self.spacecraft.exists(s | s.name == "Apollo")
+###
+context spaceMission::Mission inv: self.spacecraft.isEmpty() == false
+###
+context spaceMission::Mission inv: self.spacecraft.size() >= 1
+###
+context spaceMission::Spacecraft inv: self.payloads.size() == 2
+###
+context spaceMission::Spacecraft inv: self.payloads.exists(p | p.powerConsumption > 50)
+###
+context spaceMission::Spacecraft inv: self.payloads.select(p | p.powerConsumption > 30).size() >= 1
+###
+context spaceMission::Spacecraft inv: self.payloads.reject(p | p.powerConsumption > 200).notEmpty()
+###
+context spaceMission::Spacecraft inv: self.payloads.powerConsumption.excludes(999)
+###
+context spaceMission::Spacecraft inv: self.payloads.size() <= 10
+###
+context spaceMission::Spacecraft inv: self.payloads.notEmpty()
+###
+context spaceMission::Spacecraft inv: self.payloads.collect(p | 1).sum() == self.payloads.size()
+###
+context spaceMission::Spacecraft inv: self.payloads.select(p | true).size() == self.payloads.size()
+###
+context spaceMission::Spacecraft inv: self.payloads.select(p | false).isEmpty()
+###
+context spaceMission::Spacecraft inv: self.payloads.select(p | p.powerConsumption > 50).size() + self.payloads.reject(p | p.powerConsumption > 50).size() == self.payloads.size()
+###
+context spaceMission::Spacecraft inv: self.payloads.exists(p | p.powerConsumption > 30) == self.payloads.select(p | p.powerConsumption > 30).notEmpty()
+###
+context spaceMission::Spacecraft inv: self.payloads.powerConsumption.sum() < 300
+###
+context spaceMission::Spacecraft inv: self.payloads.collect(p | p.powerConsumption).sum() < 500
+###
+context spaceMission::Spacecraft inv: self.payloads.select(p | p.powerConsumption > 30).collect(p | p.powerConsumption).sum() < 400
+###
+context spaceMission::Spacecraft inv: self.payloads.forAll(p | p.powerConsumption < 100)
+###
+context spaceMission::Spacecraft inv: self.payloads.powerConsumption.max() < 150
+###
+context spaceMission::Spacecraft inv: self.payloads.powerConsumption.min() > 0
+###
+context spaceMission::Spacecraft inv: self.payloads.isEmpty() or self.payloads.size() == 0
+###
+context spaceMission::Spacecraft inv: self.payloads.powerConsumption.includes(50)
+###
+context spaceMission::Mission inv: self.spacecraft.forAll(s | s.payloads.forAll(p | p.powerConsumption > 0))
+###
+context spaceMission::Spacecraft inv: self.operational implies self.payloads.notEmpty()
+###
+context spaceMission::Spacecraft inv: (self.mass > 0 and 0 < 2000) implies self.mass < 2000
+###
+context spaceMission::Spacecraft inv: Set{self.mass}.min() == self.mass
+###
+context spaceMission::Spacecraft inv: self.payloads.forAll(p | p.powerConsumption > 0) == (self.payloads.select(p | p.powerConsumption > 0).size() == self.payloads.size())
+###
+context spaceMission::Spacecraft inv: self.payloads.collect(p | p.powerConsumption).includes(self.payloads.first().powerConsumption)
+###
+context spaceMission::Mission inv: self.spacecraft.first().payloads.notEmpty()
+###
+context spaceMission::Spacecraft inv: if self.mass >= 0 then self.mass else -1 * self.mass endif > 0
+###
+context spaceMission::Spacecraft inv: self.payloads.forAll(p | self.operational implies p.powerConsumption > 0)
+###
+context spaceMission::Spacecraft inv: Set{self.mass}.max() == self.mass
+###
+context Person inv: self.age > 0
+###
+context University::Student inv: self.age > 18
+###
+context Pkg::Foo inv Bar:
+    @severity CRITICAL
+    self.x > 0
+###
+context Pkg::Foo inv Bar:
+    @message "Foo {self.name} violated"
+    self.x > 0
+###
+context Pkg::Foo inv Bar:
+    @severity WARNING
+    @message "Object {self.name} failed"
+    self.x > 0
+###
+context Person pre: self.age > 0 post: self.age > 0
+###
+context Person pre p1: self.age > 0 post p1: self.age > 0
+###
+context Person inv: self.age > 0 pre: true post: true
+###
+context Person post: self.attr = self.attr@pre + 1
+###
+context Person post: self.child.attr@pre = 5
+###
+context Person post: self.OCLisNew
+###
+context Person post: self.OCLisModified
+###
+context Person post: self.OCLisDeleted
+###
+context Person post: self.OCLisNew(age => 5, name => "x")
+###
+context Person post: self.OCLisNew(age => 5)
+###
+context Person post: self.OCLisModified(age => self.age@pre + 1)
+###
+context Person::birthday(years: Integer) pre: years > 0 post: self.age = self.age@pre + years
+###
+context Person::birthday() pre: true post: true
+###
+context spaceMission::Spacecraft::launch(dest: String): Boolean pre: true post: true
+###
+context Person post: self.OCLisDeleted(x => 1)
+###
+context Person post: self.OCLisNew(age, 5)
+###
+context Person post: self.OCLisNew(=> 5)
+###
+context Person post: self.OCLisNew(age =>)
+###
+context brakesystem::BrakeDisk::inspect(threshold: Integer) pre: threshold > 0 post: self.diameterInMM > threshold
+###
+context brakesystem::BrakeDisk inv: self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk::inspect() pre: true post: self.unit == Unit::MM
+###
+context brakesystem::Brakesystem inv b: true
+###
+context cad::CAD_Model inv c: true
+###
+context family::FamilyRegister inv f: true
+###
+context Labelgraph1::Graph inv g1: true
+###
+context Labelgraph2::Graph inv g2: true
+###
+context model::System inv m: true
+###
+context model2::Root inv m2: true
+###
+context persons::PersonRegister inv p: true
+###
+context spaceMission::Spacecraft inv sm: true
+###
+context satelliteSystem::Satellite inv ss: true
+###
+context spaceMission::Spacecraft inv onlySpaceMission: true
+###
+context spaceMission::Spacecraft inv alsoSatelliteSystem: satelliteSystem::Satellite.allInstances().size() >= 0
+###
+context spaceMission::Spacecraft inv c: self.mass > 0
+###
+context spaceMission::Spacecraft inv a: true
+###
+context spaceMission::Spacecraft inv b: self.mass > 0
+###
+context spaceMission::Spacecraft inv c: self.operational
+###
+context spaceMission::Spacecraft inv c: true
+###
+context dummy4::Root inv: self.uniqueNums.including(99).notEmpty()
+###
+context dummy4::Root inv: self.bagNums.including(99).notEmpty()
+###
+context dummy4::Root inv: self.uniqueNums.including(self.uniqueNums).notEmpty()
+###
+context dummy4::Root inv: self.bagNums.including(self.bagNums).notEmpty()
+###
+context spaceMission::Spacecraft inv asTypeSpacecraft:
+  spaceMission::Spacecraft.allInstances().oclAsType(spaceMission::Spacecraft).size()
+    == spaceMission::Spacecraft.allInstances().size()
+###
+context spaceMission::Spacecraft inv selectThenAsType:
+  spaceMission::Spacecraft.allInstances()
+    .select(sc | sc.oclIsKindOf(spaceMission::Spacecraft))
+    .oclAsType(spaceMission::Spacecraft)
+    .size() > 0
+###
+context spaceMission::Spacecraft inv kindOfSpacecraft:
+  spaceMission::Spacecraft.allInstances().oclIsKindOf(spaceMission::Spacecraft).select(b | b).size()
+    == spaceMission::Spacecraft.allInstances().size()
+###
+context spaceMission::Spacecraft inv kindOfSatellite:
+  spaceMission::Spacecraft.allInstances()
+    .oclIsKindOf(satelliteSystem::Satellite).select(b | b).size()
+    == 0
+###
+context satelliteSystem::Satellite inv kindOfSatellite:
+  satelliteSystem::Satellite.allInstances()
+    .oclIsKindOf(satelliteSystem::Satellite).select(b | b).size()
+    == satelliteSystem::Satellite.allInstances().size()
+###
+context spaceMission::Spacecraft inv kindOfInSelect:
+  spaceMission::Spacecraft.allInstances().select(sc |
+    sc.oclIsKindOf(spaceMission::Spacecraft)
+  ).size() > 0
+###
+context spaceMission::Spacecraft inv typeOfSpacecraft:
+  spaceMission::Spacecraft.allInstances().oclIsTypeOf(spaceMission::Spacecraft).forAll(b | b)
+###
+context satelliteSystem::Satellite inv typeOfSatellite:
+  satelliteSystem::Satellite.allInstances().oclIsTypeOf(satelliteSystem::Satellite).forAll(b | b)
+###
+context spaceMission::Spacecraft inv typeOfSatellite:
+  spaceMission::Spacecraft.allInstances().oclIsTypeOf(satelliteSystem::Satellite).forAll(b | b)
+###
+context spaceMission::Spacecraft inv typeOfInSelect:
+  spaceMission::Spacecraft.allInstances().select(sc |
+    sc.oclIsTypeOf(spaceMission::Spacecraft)
+  ).size() > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity CRITICAL
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity WARNING
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity MINOR
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity INFO
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity BLOCKER
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @message "Brake disk {self.name} is invalid"
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity WARNING
+    @message "Brake disk {self.name} has invalid diameter"
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @severity WARNING
+    @severity CRITICAL
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk inv:
+    @message "first"
+    @message "second"
+    self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk pre: self.diameterInMM > 0
+post: self.diameterInMM > 0
+###
+context brakesystem::BrakeDisk
+pre: self.diameterInMM > 0
+pre: self.diameterInMM > 1
+post: true
+###
+context brakesystem::BrakeDisk
+pre: true
+post: self.diameterInMM > 0
+post: self.diameterInMM > 1
+###
+context brakesystem::BrakeDisk post: self.diameterInMM
+###
+context brakesystem::BrakeDisk pre: self.diameterInMM
+###
+context brakesystem::BrakeDisk post: self.diameterInMM@pre > 0
+###
+context brakesystem::BrakeDisk inv: self.diameterInMM@pre > 0
+###
+context brakesystem::BrakeDisk post: self@pre = self
+###
+context brakesystem::BrakeDisk post: self.OCLisNew
+###
+context brakesystem::BrakeDisk post: self.OCLisModified
+###
+context brakesystem::BrakeDisk post: self.OCLisDeleted
+###
+context brakesystem::BrakeDisk inv: self.OCLisNew
+###
+context brakesystem::BrakeDisk post: self.diameterInMM.OCLisNew
+###
+context brakesystem::BrakeDisk post: self.OCLisNew(diameterInMM => 5)
+###
+context brakesystem::BrakeDisk post: self.OCLisNew(bogusAttr => 5)
+###
+context brakesystem::BrakeDisk post: self.OCLisNew(diameterInMM => "not a number")
+###
+context brakesystem::BrakeDisk post: self.OCLisModified(diameterInMM => 5)
+###
+context brakesystem::BrakeDisk post: self.OCLisModified(bogusAttr => 5)
+###
+context brakesystem::BrakeDisk::inspect(threshold: Integer)
+pre: threshold > 0
+post: self.diameterInMM > threshold
+###
+context brakesystem::BrakeDisk::inspect(threshold: Integer)
+pre: undefinedParam > 0
+post: true
+###
+context spaceMission::Spacecraft inv: self.mass > 0
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances().exists(sat | self ~ sat)
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances()
+    .select(~, Tag = "voyager-match").notEmpty()
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances()
+    .select(~, Tag = "no-such-tag").isEmpty()
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances()
+    .reject(~, Tag = "voyager-match").isEmpty()
+###
+context spaceMission::Spacecraft inv:
+  satelliteSystem::Satellite.allInstances()
+    .exists(~, Tag = "voyager-match")
+###
+context spaceMission::Spacecraft inv:
+  not satelliteSystem::Satellite.allInstances()
+    .exists(~, Tag = "no-such-tag")
+###
+context satelliteSystem::Satellite inv: true
+###
+context spaceMission::Spacecraft post: self.mass@pre == 722
+###
+context spaceMission::Spacecraft post: self.mass == self.mass@pre + 178
+###
+context spaceMission::Spacecraft post: self.mass@pre == 999
+###
+context spaceMission::Spacecraft inv massIsPositive:
+  self.mass > 0
+context spaceMission::Spacecraft post massPreWasWrong:
+  self.mass@pre == 999
+###
+context spaceMission::Spacecraft post: self.OCLisModified
+###
+context spaceMission::Spacecraft inv: self.mass > 0 post: self.OCLisModified
+###
+context spaceMission::Spacecraft inv: self.mass < 0 post: self.OCLisModified
+###
+context spaceMission::Spacecraft post: self.OCLisNew implies self.serialNumber == "SC-002"
+###
+context spaceMission::Spacecraft post: self.OCLisNew(mass => 500) implies true
+###
+context spaceMission::Spacecraft post: not self.OCLisNew(mass => 999)
+###
+context spaceMission::Spacecraft post: not self.OCLisDeleted
