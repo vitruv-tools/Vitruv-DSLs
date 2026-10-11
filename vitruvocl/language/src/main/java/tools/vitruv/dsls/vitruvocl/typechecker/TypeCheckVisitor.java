@@ -2055,15 +2055,19 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
       // Multi-valued: respect EMF ordering and uniqueness annotations
       boolean ordered = feature.isOrdered();
       boolean unique = feature.isUnique();
+      // EMF's upperBound already uses -1 for "unbounded", matching Type.UNBOUNDED — no
+      // translation needed.
+      int lowerBound = feature.getLowerBound();
+      int upperBound = feature.getUpperBound();
 
       if (ordered && unique) {
-        return Type.orderedSet(baseType); // <T>
+        return Type.orderedSet(baseType, lowerBound, upperBound); // <T>
       } else if (ordered) {
-        return Type.sequence(baseType); // [T]
+        return Type.sequence(baseType, lowerBound, upperBound); // [T]
       } else if (unique) {
-        return Type.set(baseType); // {T}
+        return Type.set(baseType, lowerBound, upperBound); // {T}
       } else {
-        return Type.bag(baseType); // {{T}}
+        return Type.bag(baseType, lowerBound, upperBound); // {{T}}
       }
     } else {
       // EAttribute with lowerBound=0: primitive always has a default value → ¡T!
@@ -2702,10 +2706,18 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
   }
 
   /**
-   * Type checks collection modification operations (including, excluding, etc.).
+   * Type checks the {@code including} operation, including its result cardinality.
    *
-   * <p>These operations validate argument type compatibility and return the receiver collection
-   * type.
+   * <p>The argument may relate to the receiver in one of two ways (OCL#'s χ case system):
+   *
+   * <ul>
+   *   <li><b>Element case</b>: the argument conforms to the receiver's element type τ (a single
+   *       element is added). The upper bound grows by one; the lower bound only grows by one if
+   *       the receiver is non-unique (a unique collection may already contain the element).
+   *   <li><b>Collection case</b>: the argument itself conforms to the receiver's full collection
+   *       type (a whole compatible collection is merged in). Bounds combine additively, again
+   *       gated on uniqueness for the lower bound.
+   * </ul>
    */
   @Override
   public Type visitIncludingOp(VitruvOCLParser.IncludingOpContext ctx) {
@@ -2721,12 +2733,59 @@ public class TypeCheckVisitor extends AbstractPhaseVisitor<Type> {
     }
 
     Type elemType = receiverType.getElementType();
-    if (!argType.isConformantTo(elemType)) {
+    int lowerBound = receiverType.getLowerBound();
+    int upperBound = receiverType.getUpperBound();
+    boolean unique = receiverType.isUnique();
+
+    int newLowerBound;
+    int newUpperBound;
+    // The element case (χ <: τ) and the collection case (χ <: receiverType) are not defined as
+    // mutually exclusive in the specification — whenever the collection case's premise holds,
+    // τ <: τ (and thus the element case) already holds too by the definition of the <:
+    // extension to annotated collection types, so both conditions can be satisfied at once.
+    // Which case applies then is underdetermined by the specification itself. This
+    // if/else-if ordering (element case checked first) is a deliberate implementation choice,
+    // taken 1:1 from the VitruviusOCL reference implementation (Prolog, merge_expr /
+    // type_check_oclc for merge/2, using ->/; ), not a rule the specification mandates.
+    if (argType.isConformantTo(elemType)) {
+      // Fall 1/2: element case — a single new element is added
+      newUpperBound = addBound(upperBound, 1);
+      newLowerBound = unique ? lowerBound : addBound(lowerBound, 1);
+    } else if (argType.isConformantTo(receiverType)) {
+      // Fall 3/4: collection case — a whole conformant collection is merged in
+      newUpperBound = sumBounds(upperBound, argType.getUpperBound());
+      newLowerBound = unique ? lowerBound : sumBounds(lowerBound, argType.getLowerBound());
+    } else {
       reportError(ctx, "Incompatible argument type");
+      nodeTypes.put(ctx, receiverType);
+      return receiverType;
     }
 
-    nodeTypes.put(ctx, receiverType);
-    return receiverType;
+    Type resultType = withBounds(receiverType, newLowerBound, newUpperBound);
+    nodeTypes.put(ctx, resultType);
+    return resultType;
+  }
+
+  /** Adds {@code delta} to {@code bound}, propagating {@link Type#UNBOUNDED} unchanged. */
+  private static int addBound(int bound, int delta) {
+    return bound == Type.UNBOUNDED ? Type.UNBOUNDED : bound + delta;
+  }
+
+  /** Sums two bounds, propagating {@link Type#UNBOUNDED} if either operand is unbounded. */
+  private static int sumBounds(int a, int b) {
+    return (a == Type.UNBOUNDED || b == Type.UNBOUNDED) ? Type.UNBOUNDED : a + b;
+  }
+
+  /** Rebuilds {@code collectionType} with the same element type/multiplicity but new bounds. */
+  private static Type withBounds(Type collectionType, int lowerBound, int upperBound) {
+    Type elementType = collectionType.getElementType();
+    return switch (collectionType.getMultiplicity()) {
+      case SET -> Type.set(elementType, lowerBound, upperBound);
+      case BAG -> Type.bag(elementType, lowerBound, upperBound);
+      case SEQUENCE -> Type.sequence(elementType, lowerBound, upperBound);
+      case ORDERED_SET -> Type.orderedSet(elementType, lowerBound, upperBound);
+      default -> collectionType;
+    };
   }
 
   /**

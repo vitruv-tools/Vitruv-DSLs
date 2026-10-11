@@ -21,14 +21,15 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.EStructuralFeature;
 import tools.vitruv.change.atomic.EChange;
 import tools.vitruv.dsls.vitruvocl.common.CompileError;
 import tools.vitruv.dsls.vitruvocl.common.ErrorSeverity;
-import tools.vitruv.dsls.vitruvocl.evaluator.EvaluationVisitor;
-import tools.vitruv.dsls.vitruvocl.evaluator.Value;
+import tools.vitruv.dsls.vitruvocl.incremental.IncrementalConfig;
+import tools.vitruv.dsls.vitruvocl.incremental.IncrementalResult;
+import tools.vitruv.dsls.vitruvocl.incremental.IncrementalSession;
 import tools.vitruv.framework.vsum.VirtualModel;
 
 /** Static facade for evaluating VitruvOCL constraints against a VSUM or standalone files. */
@@ -473,6 +474,99 @@ public class VitruvOCL {
   }
 
   // ---------------------------------------------------------------------------
+  // Incremental evaluation (opt-in; none of the methods above are affected)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Opens and initialises an incremental evaluation session for {@code constraints} against the
+   * registered VSUM (or direct wrapper). The initial full evaluation is available via {@link
+   * IncrementalSession#latestResult()}; afterwards pass each transaction to {@link
+   * #evaluateConstraintsIncremental}, or use {@link #attachIncrementalSession} to have them
+   * delivered by the VSUM.
+   *
+   * @param constraints the constraint texts, in result order
+   * @param config level, oracle mode etc.; see {@link IncrementalConfig#fromSystemProperties()}
+   * @return the initialised session; close it when done
+   */
+  public static IncrementalSession openIncrementalSession(
+      List<String> constraints, IncrementalConfig config) {
+    IncrementalSession session = new IncrementalSession(constraints, getVsumWrapper(), config);
+    session.initialize();
+    return session;
+  }
+
+  /**
+   * Same as {@link #openIncrementalSession(List, IncrementalConfig)}, reading the constraints from
+   * a {@code .ocl} file.
+   *
+   * @throws IOException if the constraints file cannot be read
+   */
+  public static IncrementalSession openIncrementalSession(
+      Path constraintsFile, IncrementalConfig config) throws IOException {
+    return openIncrementalSession(parseConstraintsFile(constraintsFile), config);
+  }
+
+  /**
+   * Opens and initialises an incremental session over metamodels and instances loaded from files
+   * (the same loading as {@link #evaluateConstraints(Path, Path[], Path[])}).
+   *
+   * @throws IOException if the constraints file cannot be read
+   * @throws IllegalStateException if the metamodel or instance files cannot be loaded
+   */
+  public static IncrementalSession openIncrementalSession(
+      Path constraintsFile, Path[] ecoreFiles, Path[] xmiFiles, IncrementalConfig config)
+      throws IOException {
+    List<String> constraints = parseConstraintsFile(constraintsFile);
+    SmartLoader.LoadResult loadResult =
+        SmartLoader.loadForConstraints(constraints, ecoreFiles, xmiFiles);
+    if (loadResult.hasErrors()) {
+      throw new IllegalStateException("Could not load model files: " + loadResult.fileErrors);
+    }
+    IncrementalSession session = new IncrementalSession(constraints, loadResult.wrapper, config);
+    session.initialize();
+    return session;
+  }
+
+  /**
+   * Processes one transaction (already applied to the model) in {@code session} and returns all
+   * current violations.
+   *
+   * @param transaction the transaction's atomic changes in chronological order
+   */
+  public static IncrementalResult evaluateConstraintsIncremental(
+      IncrementalSession session, List<EChange<EObject>> transaction) {
+    return session.onTransaction(transaction);
+  }
+
+  /**
+   * Opens an incremental session over the VSUM registered with {@link #registerVSUM} and
+   * registers it as change-propagation listener: every {@code commitChanges()} is evaluated as one
+   * transaction and its result handed to {@code onResult}. Closing the session removes the
+   * listener.
+   *
+   * @param onFailure receives exceptions (e.g. oracle mismatches) instead of the propagation
+   * @throws IllegalStateException if no VSUM (as opposed to a direct wrapper) is registered
+   */
+  public static IncrementalSession attachIncrementalSession(
+      List<String> constraints,
+      IncrementalConfig config,
+      Consumer<IncrementalResult> onResult,
+      Consumer<RuntimeException> onFailure) {
+    VsumWrapper wrapper;
+    synchronized (VitruvOCL.class) {
+      wrapper = vsumWrapper;
+    }
+    if (wrapper == null) {
+      throw new IllegalStateException(
+          "attachIncrementalSession requires a VSUM registered via VitruvOCL.registerVSUM(vsum)");
+    }
+    IncrementalSession session = new IncrementalSession(constraints, wrapper, config);
+    session.initialize();
+    session.attachTo(wrapper, onResult, onFailure);
+    return session;
+  }
+
+  // ---------------------------------------------------------------------------
   // Shared compile + evaluate logic
   // ---------------------------------------------------------------------------
 
@@ -482,60 +576,10 @@ public class VitruvOCL {
       List<Warning> loaderWarnings,
       List<EChange<EObject>> transaction,
       boolean transactionSupported) {
-    // The transaction-less VitruvOCLCompiler constructor (not the 3-arg one with an empty list)
-    // must be used when the caller has no notion of a transaction at all — otherwise pre/post
-    // blocks would be evaluated with vacuous empty-transaction semantics instead of being skipped.
-    // See EvaluationVisitor#transactionSupported.
-    VitruvOCLCompiler compiler =
-        transactionSupported
-            ? new VitruvOCLCompiler(wrapper, null, transaction)
-            : new VitruvOCLCompiler(wrapper, null);
-    Value result = compiler.compile(constraint);
-
-    if (result == null) {
-      List<CompileError> passErrors =
-          compiler.hasErrors() ? compiler.getErrors().getErrors() : List.of();
-      if (passErrors.isEmpty()) {
-        passErrors =
-            List.of(
-                new CompileError(
-                    1, 0, "Syntax error in constraint", ErrorSeverity.ERROR, constraint));
-      }
-      return new ConstraintResult(constraint, false, passErrors, List.of(), loaderWarnings);
-    }
-
-    List<CompileError> compilerErrors =
-        compiler.hasErrors() ? compiler.getErrors().getErrors() : List.of();
-    if (!compilerErrors.isEmpty()) {
-      return new ConstraintResult(constraint, false, compilerErrors, List.of(), loaderWarnings);
-    }
-
-    List<Warning> warnings = new ArrayList<>(loaderWarnings);
-    EvaluationVisitor evaluator = compiler.getLastEvaluator();
-    List<EvaluationVisitor.ViolationRecord> records =
-        evaluator != null ? evaluator.getViolationRecords() : List.of();
-
-    if (evaluator != null) {
-      for (EvaluationVisitor.SkippedConstraint skipped : evaluator.getSkippedConstraints()) {
-        warnings.add(new Warning(Warning.WarningType.PRE_POST_SKIPPED, formatSkipNotice(skipped)));
-      }
-    }
-
-    boolean satisfied = records.isEmpty();
-    String constraintName = extractConstraintName(constraint);
-    for (EvaluationVisitor.ViolationRecord violation : records) {
-      String sourceFile = wrapper.getSourceFileForInstance(violation.instance());
-      String filename = sourceFile != null ? sourceFile : "unknown";
-      String instanceLabel = describeInstance(violation.instance());
-      String message =
-          violation.customMessage() != null ? violation.customMessage() : instanceLabel;
-      String block =
-          formatViolationBlock(
-              violation.severity(), constraintName, filename, instanceLabel, message);
-      warnings.add(new Warning(Warning.WarningType.CONSTRAINT_VIOLATION, block));
-    }
-
-    return new ConstraintResult(constraint, satisfied, compilerErrors, List.of(), warnings);
+    EvaluationOutcome outcome =
+        ConstraintEvaluations.evaluateFresh(
+            constraint, wrapper, transaction, transactionSupported);
+    return ConstraintEvaluations.render(constraint, wrapper, loaderWarnings, outcome);
   }
 
   // ---------------------------------------------------------------------------
@@ -556,55 +600,7 @@ public class VitruvOCL {
   }
 
   private static ConstraintResult duplicateResult(String constraint) {
-    return new ConstraintResult(
-        constraint,
-        false,
-        List.of(),
-        List.of(),
-        List.of(
-            new Warning(
-                Warning.WarningType.DUPLICATE_CONSTRAINT, "Constraint specified multiple times")));
-  }
-
-  private static String describeInstance(EObject instance) {
-    StringBuilder sb = new StringBuilder(instance.eClass().getName()).append("(");
-    List<String> parts = new ArrayList<>();
-    for (EStructuralFeature feature : instance.eClass().getEAllStructuralFeatures()) {
-      if (!feature.isMany()) {
-        Object value = instance.eGet(feature);
-        if (value instanceof String || value instanceof Integer || value instanceof Boolean) {
-          parts.add(feature.getName() + "=\"" + value + "\"");
-        }
-      }
-      if (parts.size() >= 3) {
-        break;
-      }
-    }
-    sb.append(String.join(", ", parts)).append(")");
-    return sb.toString();
-  }
-
-  private static final String VIOLATION_SEP = "-".repeat(57);
-
-  private static String formatViolationBlock(
-      String severity, String constraintName, String model, String object, String message) {
-    return VIOLATION_SEP
-        + "\n"
-        + "["
-        + severity
-        + "] "
-        + constraintName
-        + "\n"
-        + "Model   : "
-        + model
-        + "\n"
-        + "Object  : "
-        + object
-        + "\n"
-        + "Message : "
-        + message
-        + "\n"
-        + VIOLATION_SEP;
+    return ConstraintEvaluations.duplicateResult(constraint);
   }
 
   /**
@@ -615,25 +611,6 @@ public class VitruvOCL {
    * constraint's invariants all passed (a skipped pre/post is not a violation).
    */
   public static final String PRE_POST_SKIPPED_PREFIX = "PRE/POST SKIPPED:";
-
-  private static String formatSkipNotice(EvaluationVisitor.SkippedConstraint skipped) {
-    String label =
-        skipped.blockName() != null ? skipped.kind() + " " + skipped.blockName() : skipped.kind();
-    return PRE_POST_SKIPPED_PREFIX
-        + " '"
-        + label
-        + "' block in context "
-        + skipped.contextName()
-        + " was not evaluated — pre/post constraints require a transaction, which this"
-        + " evaluation mode does not provide. Only invariants (inv) were checked.";
-  }
-
-  private static String extractConstraintName(String constraint) {
-    java.util.regex.Matcher m =
-        java.util.regex.Pattern.compile("(?<!@)\\b(?:inv|pre|post)\\s+(\\w+)\\s*:")
-            .matcher(constraint);
-    return m.find() ? m.group(1) : "unnamed";
-  }
 
   private static List<String> parseConstraintsFile(Path file) throws IOException {
     String content = Files.readString(file);

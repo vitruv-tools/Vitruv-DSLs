@@ -26,6 +26,7 @@ import org.eclipse.emf.ecore.EEnum;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.resource.Resource;
+import tools.vitruv.change.composite.propagation.ChangePropagationListener;
 import tools.vitruv.change.correspondence.Correspondence;
 import tools.vitruv.change.correspondence.view.CorrespondenceModelView;
 import tools.vitruv.dsls.vitruvocl.allinstances.AllInstancesEngine;
@@ -244,6 +245,26 @@ public class VsumWrapper implements MetamodelWrapperInterface {
   public List<EObject> getAllRootObjects() {
     return ((ViewSource) vsum)
         .getViewSourceModels().stream().flatMap(r -> r.getContents().stream()).toList();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Transaction hook (incremental evaluation)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Registers {@code listener} for the change propagations of the wrapped VSUM. Used only by an
+   * incremental evaluation session ({@code tools.vitruv.dsls.vitruvocl.incremental}); nothing is
+   * registered unless such a session is attached, so plain (full) evaluation is unaffected.
+   *
+   * @param listener receives one {@code finishedChangePropagation} callback per committed change
+   */
+  public void addTransactionListener(ChangePropagationListener listener) {
+    vsum.addChangePropagationListener(listener);
+  }
+
+  /** Removes a listener registered with {@link #addTransactionListener}. */
+  public void removeTransactionListener(ChangePropagationListener listener) {
+    vsum.removeChangePropagationListener(listener);
   }
 
   // ---------------------------------------------------------------------------

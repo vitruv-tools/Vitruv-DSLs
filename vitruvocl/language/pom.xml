@@ -91,6 +91,15 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Needed at runtime by a real (non-mocked) VSUM built in incremental-evaluation tests
+             (VsumFileSystemLayout uses org.eclipse.core.runtime.IPath). Version managed by the
+             tools.vitruv.dsls parent. -->
+        <dependency>
+            <groupId>org.eclipse.platform</groupId>
+            <artifactId>org.eclipse.equinox.common</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.eclipse.emf</groupId>
             <artifactId>org.eclipse.emf.ecore.xmi</artifactId>

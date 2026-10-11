@@ -125,6 +125,22 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
   private final List<SkippedConstraint> skippedConstraints = new ArrayList<>();
 
+  /**
+   * Number of context instances {@link #visitClassifierContextCS} evaluated its inv/pre/post blocks
+   * for during this run. Pure bookkeeping for the incremental evaluator's test statistics; it has
+   * no influence on evaluation.
+   */
+  private int evaluatedInstanceCount = 0;
+
+  /**
+   * Optional replacement for the context extension in {@link #visitClassifierContextCS}: when set,
+   * it supplies the instances to evaluate per classifier context instead of {@code
+   * specification.getAllInstances(contextClass)}. {@code null} (the default, and the value for
+   * every caller except the incremental evaluator) keeps the full-extension behaviour unchanged.
+   */
+  private Function<VitruvOCLParser.ClassifierContextCSContext, List<EObject>>
+      contextInstanceOverride = null;
+
   /* Cache for allInstances() results to avoid redundant metamodel queries during evaluation. */
   private final java.util.Map<EClass, Value> allInstancesCache = new java.util.HashMap<>();
 
@@ -310,12 +326,17 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
       return Value.empty(Type.bag(Type.BOOLEAN));
     }
 
-    // Retrieve all instances of the context type from the metamodel
-    List<EObject> instances = specification.getAllInstances(eClass);
+    // Retrieve all instances of the context type from the metamodel (or the incremental
+    // evaluator's relevant subset of them, if an override is installed)
+    List<EObject> instances =
+        contextInstanceOverride != null
+            ? contextInstanceOverride.apply(ctx)
+            : specification.getAllInstances(eClass);
     List<OCLElement> allResults = new ArrayList<>();
 
     // Evaluate invariants for each instance
     for (EObject instance : instances) {
+      evaluatedInstanceCount++;
       // Create instance-specific scope
       Scope instanceScope = new LocalScope(symbolTable.getCurrentScope());
       symbolTable.enterScope(instanceScope);
@@ -422,6 +443,26 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   public List<SkippedConstraint> getSkippedConstraints() {
     return Collections.unmodifiableList(skippedConstraints);
+  }
+
+  /**
+   * Returns how many context instances this run evaluated (summed over all classifier contexts).
+   * Used only for statistics; see {@link #evaluatedInstanceCount}.
+   */
+  public int getEvaluatedInstanceCount() {
+    return evaluatedInstanceCount;
+  }
+
+  /**
+   * Installs a replacement for the context extension (see {@link #contextInstanceOverride}). Only
+   * used by the incremental evaluator to evaluate a constraint on its relevant instances.
+   *
+   * @param override per classifier context, the instances to evaluate; {@code null} restores the
+   *     default full-extension behaviour
+   */
+  public void setContextInstanceOverride(
+      Function<VitruvOCLParser.ClassifierContextCSContext, List<EObject>> override) {
+    this.contextInstanceOverride = override;
   }
 
   /**

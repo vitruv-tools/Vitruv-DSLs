@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import tools.vitruv.dsls.vitruvocl.incremental.IncrementalConfig;
+import tools.vitruv.dsls.vitruvocl.incremental.IncrementalLevel;
+import tools.vitruv.dsls.vitruvocl.incremental.IncrementalSession;
 import tools.vitruv.dsls.vitruvocl.pipeline.BatchValidationResult;
 import tools.vitruv.dsls.vitruvocl.pipeline.ConstraintResult;
 import tools.vitruv.dsls.vitruvocl.pipeline.VitruvOCL;
@@ -106,13 +109,41 @@ public class VitruvOclCli {
   private static void evalBatch(String[] args) throws IOException {
     CLIArgs parsed = parseArgs(args);
     Integer threadPoolSize = parseThreadPoolSize(args);
+    IncrementalLevel incrementalLevel = parseIncrementalLevel(args);
 
-    BatchValidationResult batch =
-        threadPoolSize != null
-            ? VitruvOCL.evaluateConstraints(
-                parsed.constraintFile, parsed.ecoreFiles, parsed.xmiFiles, threadPoolSize)
-            : VitruvOCL.evaluateConstraints(
-                parsed.constraintFile, parsed.ecoreFiles, parsed.xmiFiles);
+    BatchValidationResult batch;
+    if (incrementalLevel != null && incrementalLevel != IncrementalLevel.FULL) {
+      // The CLI has no transaction: an incremental session can only perform its initial full
+      // evaluation here, which yields exactly the batch result of level 0.
+      IncrementalConfig config =
+          IncrementalConfig.fromSystemProperties()
+              .withLevel(incrementalLevel)
+              .withThreads(threadPoolSize != null ? threadPoolSize : 1);
+      IncrementalSession session;
+      try {
+        session =
+            VitruvOCL.openIncrementalSession(
+                parsed.constraintFile, parsed.ecoreFiles, parsed.xmiFiles, config);
+      } catch (IllegalStateException loadFailure) {
+        session = null; // model files could not be loaded: report exactly as level 0 does
+      }
+      if (session != null) {
+        try (IncrementalSession s = session) {
+          batch = s.latestResult().result();
+        }
+      } else {
+        batch =
+            VitruvOCL.evaluateConstraints(
+                parsed.constraintFile, parsed.ecoreFiles, parsed.xmiFiles, config.threads());
+      }
+    } else {
+      batch =
+          threadPoolSize != null
+              ? VitruvOCL.evaluateConstraints(
+                  parsed.constraintFile, parsed.ecoreFiles, parsed.xmiFiles, threadPoolSize)
+              : VitruvOCL.evaluateConstraints(
+                  parsed.constraintFile, parsed.ecoreFiles, parsed.xmiFiles);
+    }
 
     // Build batch result JSON
     StringBuilder json = new StringBuilder();
@@ -185,6 +216,31 @@ public class VitruvOclCli {
       }
     }
     return null;
+  }
+
+  /**
+   * Parses an optional {@code --incremental-level <0-3>} argument for {@code eval-batch}. Without
+   * it, the level is taken from the system property {@value IncrementalConfig#PROP_LEVEL} (default
+   * 0); level 0 uses the unchanged batch path.
+   *
+   * @param args full CLI argument array
+   * @return the requested level, or {@code null} if neither option nor property is set
+   */
+  @SuppressWarnings("java:S127")
+  private static IncrementalLevel parseIncrementalLevel(String[] args) {
+    for (int i = 2; i < args.length; i++) {
+      if ("--incremental-level".equals(args[i]) && i + 1 < args.length) {
+        String value = args[++i];
+        try {
+          return IncrementalLevel.parse(value);
+        } catch (IllegalArgumentException e) {
+          System.err.println("Invalid --incremental-level value: " + value + " (must be 0-3)");
+          System.exit(1);
+        }
+      }
+    }
+    String fromProperty = System.getProperty(IncrementalConfig.PROP_LEVEL);
+    return fromProperty == null ? null : IncrementalLevel.parse(fromProperty);
   }
 
   /**
@@ -350,6 +406,7 @@ public class VitruvOclCli {
               Evaluate single constraint against model instances
 
           vitruvocl eval-batch <constraints-file> --ecore <files> --xmi <files> [--threads <N>]
+                               [--incremental-level <0-3>]
               Evaluate all constraints (in parallel) and return individual results
 
           vitruvocl version
@@ -362,6 +419,11 @@ public class VitruvOclCli {
           --xmi <files>         Comma-separated model instance files
           --threads <N>         eval-batch only: worker threads for constraint evaluation
                                  (default: number of available processors)
+          --incremental-level <0-3>
+                                eval-batch only: incremental evaluation level (default 0, or the
+                                 system property vitruvocl.incremental.level). The CLI has no
+                                 transaction, so every level reports the result of the initial
+                                 full evaluation.
 
         Examples:
           vitruvocl check constraints.ocl --ecore spacemission.ecore

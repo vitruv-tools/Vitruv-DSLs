@@ -67,6 +67,14 @@ public abstract class Type {
   /** Top type in the type hierarchy - all types conform to ANY. */
   public static final Type ANY = new AnyType();
 
+  /**
+   * Sentinel value for an unbounded upper cardinality bound (OCL's {@code *}).
+   *
+   * <p>Matches EMF's {@code EStructuralFeature.getUpperBound()} convention so bounds read from
+   * metamodel features can be passed through without translation.
+   */
+  public static final int UNBOUNDED = -1;
+
   // ==================== Factory Methods ====================
 
   /**
@@ -82,6 +90,18 @@ public abstract class Type {
   }
 
   /**
+   * Creates a Set type {T} with explicit cardinality bounds.
+   *
+   * @param elementType The type of elements in the set
+   * @param lowerBound minimum number of elements (0 if unknown)
+   * @param upperBound maximum number of elements, or {@link #UNBOUNDED}
+   * @return A collection type with SET multiplicity and the given bounds
+   */
+  public static Type set(Type elementType, int lowerBound, int upperBound) {
+    return new CollectionType(elementType, Multiplicity.SET, lowerBound, upperBound);
+  }
+
+  /**
    * Creates a Bag type {{T}} with unordered elements allowing duplicates.
    *
    * <p>Example: {@code bag(STRING)} produces Bag{{String}}
@@ -91,6 +111,18 @@ public abstract class Type {
    */
   public static Type bag(Type elementType) {
     return new CollectionType(elementType, Multiplicity.BAG);
+  }
+
+  /**
+   * Creates a Bag type {{T}} with explicit cardinality bounds.
+   *
+   * @param elementType The type of elements in the bag
+   * @param lowerBound minimum number of elements (0 if unknown)
+   * @param upperBound maximum number of elements, or {@link #UNBOUNDED}
+   * @return A collection type with BAG multiplicity and the given bounds
+   */
+  public static Type bag(Type elementType, int lowerBound, int upperBound) {
+    return new CollectionType(elementType, Multiplicity.BAG, lowerBound, upperBound);
   }
 
   /**
@@ -106,6 +138,18 @@ public abstract class Type {
   }
 
   /**
+   * Creates an OrderedSet type &lt;T&gt; with explicit cardinality bounds.
+   *
+   * @param elementType The type of elements in the ordered set
+   * @param lowerBound minimum number of elements (0 if unknown)
+   * @param upperBound maximum number of elements, or {@link #UNBOUNDED}
+   * @return A collection type with ORDERED_SET multiplicity and the given bounds
+   */
+  public static Type orderedSet(Type elementType, int lowerBound, int upperBound) {
+    return new CollectionType(elementType, Multiplicity.ORDERED_SET, lowerBound, upperBound);
+  }
+
+  /**
    * Creates a Sequence type [T] with ordered elements allowing duplicates.
    *
    * <p>Example: {@code sequence(INTEGER)} produces Sequence[Integer]
@@ -115,6 +159,18 @@ public abstract class Type {
    */
   public static Type sequence(Type elementType) {
     return new CollectionType(elementType, Multiplicity.SEQUENCE);
+  }
+
+  /**
+   * Creates a Sequence type [T] with explicit cardinality bounds.
+   *
+   * @param elementType The type of elements in the sequence
+   * @param lowerBound minimum number of elements (0 if unknown)
+   * @param upperBound maximum number of elements, or {@link #UNBOUNDED}
+   * @return A collection type with SEQUENCE multiplicity and the given bounds
+   */
+  public static Type sequence(Type elementType, int lowerBound, int upperBound) {
+    return new CollectionType(elementType, Multiplicity.SEQUENCE, lowerBound, upperBound);
   }
 
   /**
@@ -173,6 +229,28 @@ public abstract class Type {
    */
   public Multiplicity getMultiplicity() {
     return Multiplicity.SINGLETON;
+  }
+
+  /**
+   * Returns the minimum cardinality of this type.
+   *
+   * <p>Overridden by CollectionType to return its explicit lower bound.
+   *
+   * @return the lower bound (default: 1, matching implicit SINGLETON multiplicity)
+   */
+  public int getLowerBound() {
+    return 1;
+  }
+
+  /**
+   * Returns the maximum cardinality of this type.
+   *
+   * <p>Overridden by CollectionType to return its explicit upper bound.
+   *
+   * @return the upper bound (default: 1, matching implicit SINGLETON multiplicity)
+   */
+  public int getUpperBound() {
+    return 1;
   }
 
   /**
@@ -614,10 +692,30 @@ public abstract class Type {
   private static class CollectionType extends Type {
     private final Type elementType;
     private final Multiplicity multiplicity;
+    private final int lowerBound;
+    private final int upperBound;
 
     public CollectionType(Type elementType, Multiplicity multiplicity) {
+      this(elementType, multiplicity, defaultLowerBound(multiplicity), defaultUpperBound(multiplicity));
+    }
+
+    public CollectionType(Type elementType, Multiplicity multiplicity, int lowerBound, int upperBound) {
       this.elementType = elementType;
       this.multiplicity = multiplicity;
+      this.lowerBound = lowerBound;
+      this.upperBound = upperBound;
+    }
+
+    /** Default lower bound for a multiplicity that was not given explicit bounds. */
+    private static int defaultLowerBound(Multiplicity multiplicity) {
+      return multiplicity == Multiplicity.SINGLETON ? 1 : 0;
+    }
+
+    /** Default upper bound for a multiplicity that was not given explicit bounds. */
+    private static int defaultUpperBound(Multiplicity multiplicity) {
+      return (multiplicity == Multiplicity.SINGLETON || multiplicity == Multiplicity.OPTIONAL)
+          ? 1
+          : UNBOUNDED;
     }
 
     @Override
@@ -628,6 +726,16 @@ public abstract class Type {
     @Override
     public Multiplicity getMultiplicity() {
       return multiplicity;
+    }
+
+    @Override
+    public int getLowerBound() {
+      return lowerBound;
+    }
+
+    @Override
+    public int getUpperBound() {
+      return upperBound;
     }
 
     @Override
