@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.eclipse.emf.ecore.EClass;
@@ -281,6 +282,36 @@ public class VsumWrapper implements MetamodelWrapperInterface {
    */
   public Set<EObject> getCorrespondingObjects(EObject source) {
     return correspondenceModel.getCorrespondingEObjects(source);
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>One tagged lookup in the correspondence model instead of one tag check per correspondent.
+   */
+  @Override
+  public Set<EObject> getCorrespondingObjectsWithTag(EObject source, String tag) {
+    return correspondenceModel.getCorrespondingEObjects(source, tag);
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>{@link #correspondenceHasTag} is defined as exactly that two-way tagged lookup.
+   */
+  @Override
+  public boolean hasTaggedCorrespondenceLookup() {
+    return true;
+  }
+
+  @Override
+  public Optional<Set<EObject>> getAllObjectsInACorrespondence() {
+    return Optional.of(correspondenceModel.getAllEObjectsInACorrespondence());
+  }
+
+  @Override
+  public Map<String, Set<EObject>> getCorrespondingObjectsByTag(EObject source) {
+    return correspondenceModel.getCorrespondingEObjectsWithTag(source);
   }
 
   /**

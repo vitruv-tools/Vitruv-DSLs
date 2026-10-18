@@ -55,6 +55,7 @@ public final class PathAnalyzer {
   private final ParseTreeProperty<Type> nodeTypes;
   private final boolean untrustedTypes;
   private final List<RelevancePlan.Read> reads = new ArrayList<>();
+  private final Set<RelevancePlan.CorrespondenceRead> correspondenceReads = new LinkedHashSet<>();
   private final Set<EClass> contextTypes = new LinkedHashSet<>();
   private final Set<EClass> classEventTypes = new LinkedHashSet<>();
   private final Set<EClass> correspondentTypes = new LinkedHashSet<>();
@@ -89,7 +90,8 @@ public final class PathAnalyzer {
         analyzer.classEventTypes,
         analyzer.correspondentTypes,
         analyzer.correspondenceOnlyInIdiom,
-        analyzer.unknownExtension || readSet.unknownExtension());
+        analyzer.unknownExtension || readSet.unknownExtension(),
+        List.copyOf(analyzer.correspondenceReads));
   }
 
   private void addSafetyNet(ReadSet readSet) {
@@ -107,6 +109,10 @@ public final class PathAnalyzer {
       if (reads.stream().noneMatch(r -> r.feature().equals(name) && r.receiverClass() == null)) {
         reads.add(new RelevancePlan.Read(name, null, Origin.CLASS));
       }
+    }
+    if (readSet.usesCorrespondence() && correspondenceReads.isEmpty()) {
+      // a use of ~ the walk did not reach: every correspondence change is a class event
+      correspondenceReads.add(new RelevancePlan.CorrespondenceRead(Origin.CLASS, Origin.CLASS));
     }
     for (EClass type : readSet.extensionTypes()) {
       if (!contextTypes.contains(type)
@@ -167,10 +173,16 @@ public final class PathAnalyzer {
       }
       return last;
     }
-    if (node instanceof VitruvOCLParser.CorrespondenceContext) {
+    if (node instanceof VitruvOCLParser.CorrespondenceContext corr) {
       correspondenceOnlyInIdiom = false;
-      walkChildren(node, scope);
+      recordCorrespondence(walk(corr.left, scope), walk(corr.right, scope));
       return Origin.VALUE;
+    }
+    if (isCorrespondenceFilter(node)) {
+      // a filter form reached outside a navigation chain: one partner is always self
+      recordCorrespondence(Origin.SELF_ROOT, Origin.CLASS);
+      walkChildren(node, scope);
+      return Origin.CLASS;
     }
     if (node instanceof VitruvOCLParser.PrimaryWithNavContext nav) {
       Origin base = walkPrimary(nav.base, scope);
@@ -350,6 +362,10 @@ public final class PathAnalyzer {
       return Origin.CLASS;
     }
     ParserRuleContext concrete = concreteOperation(call);
+    if (isCorrespondenceFilter(concrete)) {
+      // select/reject/exists(~ …) relate self to every receiver element
+      recordCorrespondence(Origin.SELF_ROOT, receiver);
+    }
     if (concrete instanceof VitruvOCLParser.SelectCorrespondenceContext
         || concrete instanceof VitruvOCLParser.ExistsCorrespondenceContext) {
       walkChildren(concrete, scope);
@@ -469,6 +485,22 @@ public final class PathAnalyzer {
       return t.typeOpCS();
     }
     return call;
+  }
+
+  private static boolean isCorrespondenceFilter(ParseTree node) {
+    return node instanceof VitruvOCLParser.SelectCorrespondenceContext
+        || node instanceof VitruvOCLParser.RejectCorrespondenceContext
+        || node instanceof VitruvOCLParser.ExistsCorrespondenceContext;
+  }
+
+  /** Records a use of {@code ~}; value and (with untrusted types) all origins count as untraceable. */
+  private void recordCorrespondence(Origin left, Origin right) {
+    correspondenceReads.add(
+        new RelevancePlan.CorrespondenceRead(partnerOrigin(left), partnerOrigin(right)));
+  }
+
+  private Origin partnerOrigin(Origin origin) {
+    return untrustedTypes || origin.kind() == Origin.Kind.VALUE ? Origin.CLASS : origin;
   }
 
   private void record(String feature, EClass receiverClass, Origin origin) {

@@ -35,6 +35,9 @@ import org.eclipse.emf.ecore.EObject;
  *     Y.allInstances()->select/exists(~ …)} (needed to apply rule 3c at all)
  * @param unknownExtension some context or {@code allInstances()} type is unknown: every
  *     structural event is a class event
+ * @param correspondenceReads every use of {@code ~} with the origins of its two partners; a change
+ *     of the correspondence between {@code a} and {@code b} affects the context instances that
+ *     reach {@code a} or {@code b} through a traceable partner origin
  */
 public record RelevancePlan(
     List<Read> reads,
@@ -42,7 +45,8 @@ public record RelevancePlan(
     Set<EClass> classEventTypes,
     Set<EClass> correspondentTypes,
     boolean correspondenceOnlyInIdiom,
-    boolean unknownExtension) {
+    boolean unknownExtension,
+    List<CorrespondenceRead> correspondenceReads) {
 
   /**
    * One feature read.
@@ -62,8 +66,21 @@ public record RelevancePlan(
     }
   }
 
+  /**
+   * One use of {@code ~}: {@code left ~ right} for the binary operator, {@code self} and the
+   * receiver elements for {@code select/reject/exists(~ …)}. A correspondence {@code (a, b)} can
+   * change the use's value for context instance {@code x} only if {@code x} reaches {@code a} or
+   * {@code b} through {@code left}, and likewise through {@code right}; so inverting either
+   * traceable origin from both {@code a} and {@code b} yields a superset of the affected instances.
+   *
+   * @param left the origin of the left partner ({@link Origin#SELF_ROOT} for the filter forms)
+   * @param right the origin of the right partner
+   */
+  public record CorrespondenceRead(Origin left, Origin right) {}
+
   public RelevancePlan {
     reads = List.copyOf(reads);
+    correspondenceReads = List.copyOf(correspondenceReads);
     contextTypes = Set.copyOf(contextTypes);
     classEventTypes = Set.copyOf(classEventTypes);
     correspondentTypes = Set.copyOf(correspondentTypes);

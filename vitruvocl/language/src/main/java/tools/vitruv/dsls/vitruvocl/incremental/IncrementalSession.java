@@ -28,6 +28,7 @@ import org.eclipse.emf.ecore.EObject;
 import tools.vitruv.change.atomic.EChange;
 import tools.vitruv.dsls.vitruvocl.incremental.analysis.ConstraintAnalysis;
 import tools.vitruv.dsls.vitruvocl.incremental.analysis.FeatureIndex;
+import tools.vitruv.dsls.vitruvocl.incremental.analysis.ReadSet;
 import tools.vitruv.dsls.vitruvocl.pipeline.BatchValidationResult;
 import tools.vitruv.dsls.vitruvocl.pipeline.ConstraintEvaluations;
 import tools.vitruv.dsls.vitruvocl.pipeline.ConstraintResult;
@@ -52,6 +53,16 @@ import tools.vitruv.dsls.vitruvocl.pipeline.VsumWrapper;
  */
 public final class IncrementalSession implements AutoCloseable {
 
+  /**
+   * System property that turns off the shared correspondence lookup (step C4): evaluations then
+   * query the wrapper directly, as before. Read once per session.
+   */
+  public static final String PROP_NO_SHARED_CORRESPONDENCE_LOOKUP =
+      "vitruvocl.incremental.noSharedCorrespondenceLookup";
+
+  private final boolean sharedCorrespondenceLookup =
+      !Boolean.getBoolean(PROP_NO_SHARED_CORRESPONDENCE_LOOKUP);
+
   private final List<String> constraints;
   private final List<String> distinctConstraints;
   private final MetamodelWrapperInterface wrapper;
@@ -63,6 +74,26 @@ public final class IncrementalSession implements AutoCloseable {
   private final RelevantInstanceResolver resolver;
   private IncrementalResult latest;
   private TransactionCollector attachedCollector;
+
+  /**
+   * Whether correspondence changes are observed at all: a level above 0 and some constraint that is
+   * not always evaluated uses {@code ~}. Decided once in {@link #initialize()}.
+   */
+  private boolean observingCorrespondences;
+
+  /**
+   * The correspondence relation after the last processed transaction, or {@code null} if there is
+   * no baseline: not observing, the wrapper cannot enumerate correspondences, or the last capture
+   * failed. Without a baseline a transaction carries an unknown correspondence delta.
+   */
+  private CorrespondenceSnapshot correspondenceSnapshot;
+
+  /**
+   * The wrapper the current transaction's evaluations use: a {@link SnapshotCorrespondenceWrapper}
+   * over the current snapshot if there is one (step C4), else the session's wrapper. Rebuilt
+   * whenever the snapshot is replaced.
+   */
+  private MetamodelWrapperInterface evaluationWrapper;
 
   /**
    * Set while a transaction is being processed and cleared only after it completed (including the
@@ -89,7 +120,7 @@ public final class IncrementalSession implements AutoCloseable {
     this.config = config;
     this.executor = config.threads() > 1 ? Executors.newFixedThreadPool(config.threads()) : null;
     this.reverseIndex = new ReverseIndex(wrapper::getAllRootObjects);
-    this.resolver = new RelevantInstanceResolver(wrapper, reverseIndex);
+    this.resolver = new RelevantInstanceResolver(() -> evaluationWrapper, reverseIndex);
   }
 
   /** The configuration this session runs with. */
@@ -109,8 +140,13 @@ public final class IncrementalSession implements AutoCloseable {
     for (String constraint : distinctConstraints) {
       compiled.put(constraint, CompiledConstraint.compile(constraint, wrapper, features));
     }
+    observingCorrespondences = observesCorrespondences();
+    correspondenceSnapshot = observingCorrespondences ? captureCorrespondences() : null;
+    evaluationWrapper = viewOf(correspondenceSnapshot);
+    MetamodelWrapperInterface view = evaluationWrapper;
     List<EvaluationOutcome> outcomes =
-        evaluateAll(distinctConstraints, c -> compiled.get(c).evaluate(List.of(), false, null));
+        evaluateAll(
+            distinctConstraints, c -> compiled.get(c).evaluate(view, List.of(), false, null));
     for (int i = 0; i < distinctConstraints.size(); i++) {
       violations.replaceAll(distinctConstraints.get(i), outcomes.get(i));
       stats.evaluated(true, outcomes.get(i).evaluatedInstances());
@@ -138,7 +174,8 @@ public final class IncrementalSession implements AutoCloseable {
     List<EChange<EObject>> transaction = changes == null ? List.of() : List.copyOf(changes);
     boolean recovering = forceFullEvaluation;
     forceFullEvaluation = true;
-    TransactionDelta delta = EChangeClassifier.classify(transaction);
+    TransactionDelta delta =
+        EChangeClassifier.classify(transaction).withCorrespondenceDelta(observeCorrespondences());
     IncrementalStats.Builder stats = new IncrementalStats.Builder().constraints(distinctConstraints.size());
 
     if (config.level().atLeast(IncrementalLevel.RELEVANT_INSTANCES)) {
@@ -173,7 +210,8 @@ public final class IncrementalSession implements AutoCloseable {
         }
       } else if (outcome.failed()) {
         // a partial evaluation failed: fall back to a full evaluation of the constraint
-        EvaluationOutcome full = compiled.get(constraint).evaluate(transaction, true, null);
+        EvaluationOutcome full =
+            compiled.get(constraint).evaluate(evaluationWrapper, transaction, true, null);
         violations.replaceAll(constraint, full);
         outcome = full;
       } else {
@@ -189,6 +227,65 @@ public final class IncrementalSession implements AutoCloseable {
     forceFullEvaluation = false;
     latest = new IncrementalResult(render(), stats.build());
     return latest;
+  }
+
+  /**
+   * Whether correspondence changes are worth observing: some constraint uses {@code ~} and is not
+   * evaluated after every transaction anyway.
+   */
+  private boolean observesCorrespondences() {
+    if (config.level() == IncrementalLevel.FULL) {
+      return false;
+    }
+    for (CompiledConstraint constraint : compiled.values()) {
+      ConstraintAnalysis analysis = constraint.analysis();
+      ReadSet readSet = analysis == null ? null : analysis.readSet();
+      if (readSet != null && readSet.usesCorrespondence() && !readSet.requiresFullEvaluation()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Diffs the correspondence relation against the previous transaction's. The snapshot is replaced
+   * before evaluation, so a failure later in the transaction cannot leave it stale; the recovery
+   * flag then re-evaluates everything once. Without a baseline (see {@link #correspondenceSnapshot})
+   * the delta is unknown and the current relation becomes the new baseline.
+   */
+  private CorrespondenceDelta observeCorrespondences() {
+    if (!observingCorrespondences) {
+      return CorrespondenceDelta.unknown();
+    }
+    CorrespondenceSnapshot previous = correspondenceSnapshot;
+    CorrespondenceSnapshot current = captureCorrespondences();
+    correspondenceSnapshot = current;
+    evaluationWrapper = viewOf(current);
+    return previous == null || current == null
+        ? CorrespondenceDelta.unknown()
+        : previous.diff(current);
+  }
+
+  /** The evaluation view for {@code snapshot}: answers correspondence queries from it (step C4). */
+  private MetamodelWrapperInterface viewOf(CorrespondenceSnapshot snapshot) {
+    // The snapshot answers correspondenceHasTag as the two-way tagged lookup, which is only the
+    // wrapper's own answer under that contract.
+    return snapshot == null || !sharedCorrespondenceLookup || !wrapper.hasTaggedCorrespondenceLookup()
+        ? wrapper
+        : new SnapshotCorrespondenceWrapper(wrapper, snapshot);
+  }
+
+  /**
+   * Captures the correspondence relation; {@code null} if the wrapper cannot enumerate it or a
+   * lookup fails, so that a broken correspondence model degrades to the conservative handling of
+   * {@code ~} instead of failing every transaction.
+   */
+  private CorrespondenceSnapshot captureCorrespondences() {
+    try {
+      return CorrespondenceSnapshot.capture(wrapper).orElse(null);
+    } catch (RuntimeException e) {
+      return null;
+    }
   }
 
   private ConstraintAnalysis.Decision decide(String constraint, TransactionDelta delta) {
@@ -228,13 +325,15 @@ public final class IncrementalSession implements AutoCloseable {
 
   private EvaluationOutcome evaluateSelected(
       String constraint, RelevantInstanceResolver.Relevance relevance, List<EChange<EObject>> tx) {
+    MetamodelWrapperInterface view = evaluationWrapper;
     if (relevance.classEvent()) {
-      return compiled.get(constraint).evaluate(tx, true, null);
+      return compiled.get(constraint).evaluate(view, tx, true, null);
     }
     List<EObject> instances = List.copyOf(relevance.relevant());
     return compiled
         .get(constraint)
         .evaluate(
+            view,
             tx,
             true,
             ctx -> {

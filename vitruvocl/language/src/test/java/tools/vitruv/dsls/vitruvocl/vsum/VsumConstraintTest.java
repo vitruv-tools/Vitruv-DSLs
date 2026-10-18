@@ -240,7 +240,34 @@ class VsumConstraintTest {
               return Set.of(result.toArray(new Object[0]));
             });
 
+    // getAllEObjectsInACorrespondence — consistent with the lookups above (used by the
+    // evaluator's participant filter)
+    when(corrModel.getAllEObjectsInACorrespondence())
+        .thenAnswer(invocation -> allParticipants(correspondenceResources));
+
     return corrModel;
+  }
+
+  @SuppressWarnings("unchecked")
+  private Set<EObject> allParticipants(Collection<Resource> corrResources) {
+    Set<EObject> result = new java.util.HashSet<>();
+    for (Resource corrResource : corrResources) {
+      ResourceSet resourceSet = corrResource.getResourceSet();
+      for (EObject root : corrResource.getContents()) {
+        if (!root.eClass().getName().equals("Correspondences")) {
+          continue;
+        }
+        var corrFeature = root.eClass().getEStructuralFeature("correspondences");
+        for (EObject corr : (List<EObject>) root.eGet(corrFeature)) {
+          for (String side : List.of("leftEObjects", "rightEObjects")) {
+            for (EObject o : (List<EObject>) corr.eGet(corr.eClass().getEStructuralFeature(side))) {
+              result.add(EcoreUtil.resolve(o, resourceSet));
+            }
+          }
+        }
+      }
+    }
+    return result;
   }
 
   /** Sets up the mock VSUM with the given model resources and correspondence model. */

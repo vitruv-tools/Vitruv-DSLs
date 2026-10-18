@@ -17,8 +17,10 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.function.Function;
@@ -179,6 +181,28 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   private final boolean transactionSupported;
 
+  /**
+   * System property that switches the correspondence fast paths off (participant filter of {@link
+   * CorrespondenceLookup} and guard short-circuits, steps A3/A4); read once per visitor.
+   */
+  public static final String PROP_NO_CORRESPONDENCE_FAST_PATHS =
+      "vitruvocl.eval.noCorrespondenceFastPaths";
+
+  /**
+   * Memoized correspondence checks for every form of {@code ~}; lives as long as this visitor, so
+   * each distinct object is looked up in the correspondence model at most once per evaluation.
+   */
+  private final CorrespondenceLookup correspondences;
+
+  /** Whether the correspondence fast paths are on (see {@link #PROP_NO_CORRESPONDENCE_FAST_PATHS}). */
+  private final boolean correspondenceFastPaths;
+
+  /** Result of {@link #cannotReportErrors} per constraint (parse-tree root). */
+  private final Map<ParseTree, Boolean> errorFreeConstraints = new IdentityHashMap<>();
+
+  /** Right operands skipped because their correspondence guard was false (statistics). */
+  private int correspondenceShortCircuits;
+
   // ==================== Constructor ====================
 
   /**
@@ -239,6 +263,16 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     this.nodeTypes = nodeTypes;
     this.transaction = new TransactionModel(transactionChanges);
     this.transactionSupported = transactionSupported;
+    this.correspondenceFastPaths = !Boolean.getBoolean(PROP_NO_CORRESPONDENCE_FAST_PATHS);
+    this.correspondences = new CorrespondenceLookup(specification, correspondenceFastPaths);
+  }
+
+  /**
+   * How many right operands of {@code G and R} / {@code G implies R} were skipped because the
+   * correspondence guard {@code G} was false (step A4); for tests and statistics.
+   */
+  public int getCorrespondenceShortCircuits() {
+    return correspondenceShortCircuits;
   }
 
   // ==================== Error Reporting ====================
@@ -2962,6 +2996,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
    */
   @Override
   public Value visitLogicalAnd(VitruvOCLParser.LogicalAndContext ctx) {
+    if (isCorrespondenceGuard(ctx.left)) {
+      Value guard = visit(ctx.left);
+      if (isFalse(guard) && cannotReportErrors(ctx.right)) {
+        correspondenceShortCircuits++;
+        return Value.boolValue(false); // false and R is false for every value of R
+      }
+      return combineLogical(guard, visit(ctx.right), (left, right) -> left && right);
+    }
     return evaluateBinaryLogical(ctx.left, ctx.right, (left, right) -> left && right);
   }
 
@@ -3008,7 +3050,14 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
 
     Value leftValue = visit(leftCtx);
     Value rightValue = visit(rightCtx);
+    return combineLogical(leftValue, rightValue, logicalFn);
+  }
 
+  /** Applies a binary logical operation to two already evaluated operands. */
+  private static Value combineLogical(
+      Value leftValue,
+      Value rightValue,
+      java.util.function.BiPredicate<Boolean, Boolean> logicalFn) {
     if (leftValue.isEmpty() || rightValue.isEmpty()) {
       return Value.boolValue(false);
     }
@@ -3051,6 +3100,10 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   @Override
   public Value visitImplication(VitruvOCLParser.ImplicationContext ctx) {
     Value leftValue = visit(ctx.left);
+    if (isCorrespondenceGuard(ctx.left) && isFalse(leftValue) && cannotReportErrors(ctx.right)) {
+      correspondenceShortCircuits++;
+      return Value.boolValue(true); // false implies R is true for every value of R
+    }
     Value rightValue = visit(ctx.right);
 
     if (leftValue.isEmpty() || rightValue.isEmpty()) {
@@ -4245,26 +4298,147 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     return Value.boolValue(corresponds);
   }
 
+  // ==================== Correspondence guard short-circuit (step A4) ====================
+
+  /** Whether {@code operand} is a binary {@code ~} and the fast paths are on. */
+  private boolean isCorrespondenceGuard(ParserRuleContext operand) {
+    return correspondenceFastPaths && operand instanceof VitruvOCLParser.CorrespondenceContext;
+  }
+
+  private static boolean isFalse(Value value) {
+    if (value.isEmpty() || value.size() != 1) {
+      return false;
+    }
+    return Boolean.FALSE.equals(value.getElements().get(0).tryGetBool());
+  }
+
+  /**
+   * Whether skipping {@code operand} is unobservable: no expression evaluated while {@code operand}
+   * is evaluated can report a runtime error or throw because of the constraint's own content.
+   *
+   * <p>The evaluator reports runtime errors only for comparisons whose operands are not singletons
+   * at runtime and for unbound variables (excluded by the type checker), and throws for integer
+   * literals that do not fit an {@code int} and for {@code substring} bounds that are no integers.
+   * The check covers the <em>whole constraint</em>, not just {@code operand}, because lazily
+   * evaluated {@code let} values from outside can be forced inside it. It requires: no {@code
+   * append}/{@code iterate} (result types not trusted, as in the incremental analysis), no node
+   * typed {@code OclAny} or erroneous (an {@code OclAny} may hold a collection), every comparison
+   * operand of a non-collection type, and every integer literal within {@code int} range. Exceptions
+   * from the model access itself (the wrapper) are infrastructure failures and are not considered.
+   */
+  private boolean cannotReportErrors(ParserRuleContext operand) {
+    return errorFreeConstraints.computeIfAbsent(root(operand), this::isErrorFree);
+  }
+
+  private boolean isErrorFree(ParseTree node) {
+    if (node instanceof VitruvOCLParser.AppendOpContext
+        || node instanceof VitruvOCLParser.IterateOpContext) {
+      return false;
+    }
+    if (isUntyped(nodeTypes.get(node))) {
+      return false;
+    }
+    if (isComparison(node)) {
+      ParserRuleContext ctx = (ParserRuleContext) node;
+      for (ParseTree side : List.of(ctx.getChild(0), ctx.getChild(ctx.getChildCount() - 1))) {
+        Type type = staticType(side);
+        if (type == null || type.isCollection() || isUntyped(type)) {
+          return false;
+        }
+      }
+    }
+    if (node instanceof VitruvOCLParser.NumberLitContext literal && !fitsLiteral(literal.getText())) {
+      return false;
+    }
+    if (node instanceof VitruvOCLParser.SubstringOpContext substring
+        && !(isInteger(staticType(substring.start)) && isInteger(staticType(substring.end)))) {
+      return false; // visitSubstringOp casts both bounds to IntValue
+    }
+    for (int i = 0; i < node.getChildCount(); i++) {
+      if (!isErrorFree(node.getChild(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /** {@code OclAny} or an error type, also as the element of an optional. */
+  private static boolean isUntyped(Type type) {
+    if (type == null) {
+      return false;
+    }
+    if (type == Type.ANY || type.isError()) {
+      return true;
+    }
+    if (type.isOptional()) {
+      Type element = type.getElementType();
+      return element == Type.ANY || element != null && element.isError();
+    }
+    return false;
+  }
+
+  private static boolean isInteger(Type type) {
+    return type != null && type.equals(Type.INTEGER);
+  }
+
+  /** Mirrors {@link #visitNumberLit}: whether parsing the literal cannot throw. */
+  private static boolean fitsLiteral(String text) {
+    if (text.contains(".") || text.contains("e") || text.contains("E")) {
+      return true;
+    }
+    try {
+      Integer.parseInt(text);
+      return true;
+    } catch (NumberFormatException e) {
+      return false;
+    }
+  }
+
+  /** The type checker's type of {@code node}, looking through single-child wrapper nodes. */
+  private Type staticType(ParseTree node) {
+    ParseTree current = node;
+    while (current != null) {
+      Type type = nodeTypes.get(current);
+      if (type != null) {
+        return type;
+      }
+      current = current.getChildCount() == 1 ? current.getChild(0) : null;
+    }
+    return null;
+  }
+
+  private static boolean isComparison(ParseTree node) {
+    return node instanceof VitruvOCLParser.EqualityComparisonContext
+        || node instanceof VitruvOCLParser.InequalityComparisonContext
+        || node instanceof VitruvOCLParser.LessThanComparisonContext
+        || node instanceof VitruvOCLParser.LessThanOrEqualComparisonContext
+        || node instanceof VitruvOCLParser.GreaterThanComparisonContext
+        || node instanceof VitruvOCLParser.GreaterThanOrEqualComparisonContext
+        || node instanceof VitruvOCLParser.SingleEqualsOpContext
+        || node instanceof VitruvOCLParser.MultiEqualsOpContext
+        || node instanceof VitruvOCLParser.InvalidBinaryOpContext;
+  }
+
+  private static ParseTree root(ParseTree node) {
+    ParseTree current = node;
+    while (current.getParent() != null) {
+      current = current.getParent();
+    }
+    return current;
+  }
+
   /**
    * Checks if two EObjects are related via a Correspondence.
    *
-   * <p>Searches all Correspondence objects loaded in the VSUM for a relationship between obj1 and
-   * obj2. The correspondence is bidirectional: obj1 can appear in leftEObjects or rightEObjects.
+   * <p>The correspondence is bidirectional: obj1 can appear in leftEObjects or rightEObjects.
+   * Lookups are memoized per visitor (see {@link CorrespondenceLookup}).
    *
    * @param obj1 First object
    * @param obj2 Second object
    * @return true if a Correspondence relates obj1 and obj2, false otherwise
    */
   private boolean checkCorrespondence(EObject obj1, EObject obj2) {
-    // VSUM-Pfad: über MetamodelWrapperInterface (funktioniert sowohl mit
-    // VsumWrapper als auch mit MetamodelWrapper falls getCorrespondingObjects
-    // dort implementiert ist)
-    Set<EObject> correspondents = specification.getCorrespondingObjects(obj1);
-    if (correspondents.contains(obj2)) {
-      return true;
-    }
-    // bidirektional
-    return specification.getCorrespondingObjects(obj2).contains(obj1);
+    return correspondences.corresponds(obj1, obj2);
   }
 
   // ==================== Not Yet Implemented Features ====================
@@ -5148,8 +5322,8 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
   /**
    * Returns true if elemObject passes both the type and tag filter relative to selfObject.
    *
-   * <p>Type filter is a pure EMF instanceof check (cheap). Tag filter delegates to {@code
-   * specification.correspondenceHasTag} which searches the correspondence model. When no filter is
+   * <p>Type filter is a pure EMF instanceof check (cheap). Tag filter goes through the memoized
+   * {@link CorrespondenceLookup}, like the plain check. When no filter is
    * set the plain {@code checkCorrespondence} result is returned.
    */
   private boolean passesCorrespondenceFilter(
@@ -5160,7 +5334,7 @@ public class EvaluationVisitor extends AbstractPhaseVisitor<Value> {
     }
     // Tag filter: correspondence must carry the required tag
     if (tagFilter != null) {
-      return specification.correspondenceHasTag(selfObject, elemObject, tagFilter);
+      return correspondences.corresponds(selfObject, elemObject, tagFilter);
     }
     // No filter: plain bidirectional correspondence check
     return checkCorrespondence(selfObject, elemObject);

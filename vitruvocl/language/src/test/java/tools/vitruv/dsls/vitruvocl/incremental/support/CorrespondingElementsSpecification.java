@@ -41,7 +41,11 @@ import tools.vitruv.change.utils.ResourceAccess;
  *   <li>{@code AElem} removed → remove the correspondence and the partner {@code BElem};
  *   <li>{@code AElem.trigger := 1} → add a correspondence (tag {@code late}) between the {@code
  *       AElem} and the <em>already existing</em> spare {@code BElem} — no model change in {@code
- *       incrb}; {@code trigger := 2} removes it again.
+ *       incrb}; {@code trigger := 2} removes it again;
+ *   <li>{@code AElem.trigger := 3} → delete the spare {@code BElem} from its model <em>without</em>
+ *       removing its correspondences (used to observe how Vitruvius treats dangling partners);
+ *   <li>{@code AElem.trigger := 4} → add a multi-element correspondence {@code [AElem, ARoot] ~
+ *       [spare]} (tag {@code multi}).
  * </ul>
  */
 public final class CorrespondingElementsSpecification extends AbstractChangePropagationSpecification {
@@ -143,6 +147,11 @@ public final class CorrespondingElementsSpecification extends AbstractChangeProp
       correspondenceModel.addCorrespondenceBetween(elemA, spare, "late");
     } else if (Integer.valueOf(2).equals(newValue)) {
       correspondenceModel.removeCorrespondencesBetween(elemA, spare, "late");
+    } else if (Integer.valueOf(3).equals(newValue)) {
+      EcoreUtil.delete(spare);
+    } else if (Integer.valueOf(4).equals(newValue)) {
+      correspondenceModel.addCorrespondenceBetween(
+          List.of(elemA, elemA.eContainer()), List.of(spare), "multi");
     }
   }
 

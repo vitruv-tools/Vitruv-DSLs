@@ -152,19 +152,32 @@ final class CompiledConstraint {
       List<EChange<EObject>> transaction,
       boolean transactionSupported,
       Function<VitruvOCLParser.ClassifierContextCSContext, List<EObject>> instanceOverride) {
+    return evaluate(wrapper, transaction, transactionSupported, instanceOverride);
+  }
+
+  /**
+   * As {@link #evaluate(List, boolean, Function)}, but evaluating through {@code view}: a view of
+   * the compile-time wrapper on the same model state (e.g. one that answers correspondence queries
+   * from a snapshot, step C4).
+   */
+  EvaluationOutcome evaluate(
+      MetamodelWrapperInterface view,
+      List<EChange<EObject>> transaction,
+      boolean transactionSupported,
+      Function<VitruvOCLParser.ClassifierContextCSContext, List<EObject>> instanceOverride) {
     if (!isCompiled()) {
       return tools.vitruv.dsls.vitruvocl.pipeline.ConstraintEvaluations.evaluateFresh(
-          text, wrapper, transaction, transactionSupported);
+          text, view, transaction, transactionSupported);
     }
     ErrorCollector errors = new ErrorCollector();
-    SymbolTableImpl symbolTable = new SymbolTableImpl(wrapper);
-    new SymbolTableBuilder(symbolTable, wrapper, errors, new ScopeAnnotator()).visit(tree);
+    SymbolTableImpl symbolTable = new SymbolTableImpl(view);
+    new SymbolTableBuilder(symbolTable, view, errors, new ScopeAnnotator()).visit(tree);
     if (errors.hasErrors()) {
       return EvaluationOutcome.failure(errors.getErrors());
     }
     EvaluationVisitor evaluator =
         new EvaluationVisitor(
-            symbolTable, wrapper, errors, nodeTypes, transaction, transactionSupported);
+            symbolTable, view, errors, nodeTypes, transaction, transactionSupported);
     if (instanceOverride != null) {
       evaluator.setContextInstanceOverride(instanceOverride);
     }

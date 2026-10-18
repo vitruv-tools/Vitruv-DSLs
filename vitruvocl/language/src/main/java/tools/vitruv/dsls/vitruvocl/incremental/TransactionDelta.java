@@ -42,6 +42,7 @@ public final class TransactionDelta {
   private final List<EObject> structurallyInsertedObjects;
   private final List<EObject> structurallyRemovedObjects;
   private final boolean hasUnknownChanges;
+  private final CorrespondenceDelta correspondenceDelta;
 
   TransactionDelta(
       List<EChange<EObject>> changes,
@@ -50,6 +51,24 @@ public final class TransactionDelta {
       List<EObject> structurallyInsertedObjects,
       List<EObject> structurallyRemovedObjects,
       boolean hasUnknownChanges) {
+    this(
+        changes,
+        events,
+        touchedFeatures,
+        structurallyInsertedObjects,
+        structurallyRemovedObjects,
+        hasUnknownChanges,
+        CorrespondenceDelta.unknown());
+  }
+
+  private TransactionDelta(
+      List<EChange<EObject>> changes,
+      List<ModelEvent> events,
+      Map<String, Set<EClass>> touchedFeatures,
+      List<EObject> structurallyInsertedObjects,
+      List<EObject> structurallyRemovedObjects,
+      boolean hasUnknownChanges,
+      CorrespondenceDelta correspondenceDelta) {
     this.changes = List.copyOf(changes);
     this.events = List.copyOf(events);
     Map<String, Set<EClass>> copy = new HashMap<>();
@@ -63,6 +82,27 @@ public final class TransactionDelta {
     all.addAll(structurallyRemovedClasses);
     this.structurallyAffectedClasses = Collections.unmodifiableSet(all);
     this.hasUnknownChanges = hasUnknownChanges;
+    this.correspondenceDelta = correspondenceDelta;
+  }
+
+  /** A copy of this delta that carries the observed change of the correspondence relation. */
+  TransactionDelta withCorrespondenceDelta(CorrespondenceDelta delta) {
+    return new TransactionDelta(
+        changes,
+        events,
+        touchedFeatures,
+        structurallyInsertedObjects,
+        structurallyRemovedObjects,
+        hasUnknownChanges,
+        delta);
+  }
+
+  /**
+   * How the correspondence relation changed; {@link CorrespondenceDelta#unknown()} unless the
+   * session observed it (correspondence edits never appear in {@link #changes()}).
+   */
+  public CorrespondenceDelta correspondenceDelta() {
+    return correspondenceDelta;
   }
 
   /** The raw changes in chronological order, as passed to {@code @pre}/lifecycle evaluation. */
@@ -75,7 +115,7 @@ public final class TransactionDelta {
     return events;
   }
 
-  /** Whether the transaction contained no change at all. */
+  /** Whether the transaction contained no model change (correspondence changes are separate). */
   public boolean isEmpty() {
     return changes.isEmpty();
   }

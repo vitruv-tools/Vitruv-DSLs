@@ -126,12 +126,43 @@ class ReadSetSkipTest {
   }
 
   @Test
-  void correspondenceConstraintIsEvaluatedOnAnyNonEmptyTransaction() {
-    IncrementalStats stats =
-        statsAfter(CORR, IncrementalLevel.READ_SET, fx -> EdgeFixture.list(fx.root(1), "tags").add("t"));
-    assertEvaluated(stats);
-    assertEquals(1, stats.forcedEvaluations());
-    assertSkipped(statsAfter(CORR, IncrementalLevel.READ_SET, fx -> {}));
+  void correspondenceConstraintIsSkippedWhenNeitherItsReadsNorAnyCorrespondenceChange() {
+    for (IncrementalLevel level : List.of(IncrementalLevel.READ_SET, IncrementalLevel.POLARITY, IncrementalLevel.RELEVANT_INSTANCES)) {
+      assertSkipped(statsAfter(CORR, level, fx -> EdgeFixture.list(fx.root(1), "tags").add("t")));
+      assertSkipped(statsAfter(CORR, level, fx -> {}));
+    }
+  }
+
+  @Test
+  void correspondenceConstraintIsEvaluatedWhenACorrespondenceChangesSilently() {
+    for (IncrementalLevel level : List.of(IncrementalLevel.READ_SET, IncrementalLevel.POLARITY, IncrementalLevel.RELEVANT_INSTANCES)) {
+      // no model event at all: only the correspondence model changes
+      IncrementalStats silent = statsAfter(CORR, level, fx -> correspond(fx, "a1", "x"));
+      assertEvaluated(silent);
+      assertEquals(0, silent.forcedEvaluations(), "observed, so not forced: " + silent);
+      // together with an unrelated model change
+      IncrementalStats mixed =
+          statsAfter(
+              CORR,
+              level,
+              fx -> {
+                EdgeFixture.list(fx.root(1), "tags").add("t");
+                correspond(fx, "a1", "x");
+              });
+      assertEvaluated(mixed);
+      assertEquals(0, mixed.forcedEvaluations(), "observed, so not forced: " + mixed);
+    }
+  }
+
+  @Test
+  void correspondenceChangeDoesNotForceConstraintsWithoutCorrespondence() {
+    assertSkipped(statsAfter(OTHER_LABEL, IncrementalLevel.READ_SET, fx -> correspond(fx, "a1", "x")));
+  }
+
+  private static void correspond(EdgeFixture fx, String left, String right) {
+    fx.model()
+        .correspondences()
+        .addCorrespondenceBetween(List.of(fx.find(left)), List.of(fx.find(right)), null);
   }
 
   @Test

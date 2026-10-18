@@ -16,6 +16,7 @@ package tools.vitruv.dsls.vitruvocl.incremental.analysis;
 import java.util.Map;
 import java.util.Set;
 import org.eclipse.emf.ecore.EClass;
+import tools.vitruv.dsls.vitruvocl.incremental.CorrespondenceDelta;
 import tools.vitruv.dsls.vitruvocl.incremental.TransactionDelta;
 
 /**
@@ -35,6 +36,11 @@ public final class ConstraintAnalysis {
     EVALUATE_ALWAYS,
     /** Re-evaluate: uses correspondences, which can change without an observed model event. */
     EVALUATE_CORRESPONDENCE,
+    /**
+     * Re-evaluate: uses correspondences, and an observed correspondence changed; at level 3 only
+     * the instances affected by the changed pairs are re-evaluated.
+     */
+    EVALUATE_CORRESPONDENCE_CHANGE,
     /** Re-evaluate: the transaction contains a change of an unknown kind. */
     EVALUATE_UNKNOWN_CHANGE,
     /** Re-evaluate: the transaction touches the read set. */
@@ -136,15 +142,29 @@ public final class ConstraintAnalysis {
     if (readSet == null || readSet.requiresFullEvaluation()) {
       return Decision.EVALUATE_ALWAYS;
     }
+    CorrespondenceDelta correspondences = delta.correspondenceDelta();
     if (delta.isEmpty()) {
-      return Decision.SKIP;
+      // An unknown correspondence delta keeps the documented assumption that correspondences
+      // never change in a propagation without model changes.
+      return readSet.usesCorrespondence() && correspondences.hasChanges()
+          ? Decision.EVALUATE_CORRESPONDENCE_CHANGE
+          : Decision.SKIP;
     }
     if (delta.hasUnknownChanges()) {
       return Decision.EVALUATE_UNKNOWN_CHANGE;
     }
-    if (readSet.usesCorrespondence()
-        && !(correspondenceIdiom && relevancePlan != null && relevancePlan.correspondenceOnlyInIdiom())) {
-      return Decision.EVALUATE_CORRESPONDENCE;
+    if (readSet.usesCorrespondence()) {
+      // An observed change is evaluated, also under the idiom rule; the relevant-instance
+      // resolution narrows it to the instances that reach a changed pair.
+      if (correspondences.hasChanges()) {
+        return Decision.EVALUATE_CORRESPONDENCE_CHANGE;
+      }
+      // With the relation known to be unchanged, every ~ answers as before for the same operands,
+      // so the read set (which covers the operands) decides.
+      if (!correspondences.isKnownEmpty()
+          && !(correspondenceIdiom && relevancePlan != null && relevancePlan.correspondenceOnlyInIdiom())) {
+        return Decision.EVALUATE_CORRESPONDENCE;
+      }
     }
     return touchesReadSet(delta) ? Decision.EVALUATE_READ_SET_HIT : Decision.SKIP;
   }

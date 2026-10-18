@@ -14,8 +14,6 @@
 package tools.vitruv.dsls.vitruvocl.incremental;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -174,28 +172,44 @@ class RelevantInstanceTest {
             IncrementalConfig.of(IncrementalLevel.RELEVANT_INSTANCES),
             fx -> correspond(fx, "a1", "x"),
             fx -> set(fx, "x", "amount", -1));
-    assertEquals(1, stats.forcedEvaluations(), stats.toString());
+    // No correspondence changed (observed by the snapshot diff), so the constraint is not forced;
+    // without the idiom rule a read through select(~) is untraceable: a class event.
+    assertEquals(0, stats.forcedEvaluations(), stats.toString());
+    assertEquals(1, stats.classEventFallbacks(), stats.toString());
     assertEquals(2, stats.instancesEvaluated(), "both SubA instances: " + stats);
   }
 
   @Test
-  void idiomRuleIsUnsoundWhenCorrespondencesChangeWithoutModelEvents() {
-    // The reason the rule is off by default (CorrespondenceVisibilityExperimentTest): a
-    // correspondence added silently together with an unrelated change is not seen.
+  void silentCorrespondenceChangeEvaluatesOnlyThePartnerWithoutTheIdiomRule() {
+    IncrementalStats stats =
+        statsAfter(
+            IDIOM,
+            IncrementalConfig.of(IncrementalLevel.RELEVANT_INSTANCES),
+            fx -> set(fx, "x", "amount", -1),
+            fx -> {
+              correspond(fx, "a2", "x");
+              EdgeFixture.list(fx.root(2), "tags").add("unrelated");
+            });
+    // the changed pair (a2, x) makes only a2 relevant (step C3), not both SubA instances
+    assertPartial(stats, 1);
+  }
+
+  @Test
+  void idiomRuleSeesSilentCorrespondenceChangesOnceTheyAreObserved() {
+    // Without the snapshot diff the idiom rule missed this (CorrespondenceVisibilityExperimentTest):
+    // a correspondence added silently together with an unrelated change. The observed
+    // correspondence delta now makes a2 relevant (step C3); verify mode checks the result.
     IncrementalConfig on =
         IncrementalConfig.of(IncrementalLevel.RELEVANT_INSTANCES).withCorrespondenceIdiom(true);
-    IncrementalMismatchException e =
-        assertThrows(
-            IncrementalMismatchException.class,
-            () ->
-                statsAfter(
-                    IDIOM,
-                    on,
-                    fx -> set(fx, "x", "amount", -1),
-                    fx -> {
-                      correspond(fx, "a2", "x");
-                      EdgeFixture.list(fx.root(2), "tags").add("unrelated");
-                    }));
-    assertTrue(e.getMessage().contains("missing violation"), e.getMessage());
+    IncrementalStats stats =
+        statsAfter(
+            IDIOM,
+            on,
+            fx -> set(fx, "x", "amount", -1),
+            fx -> {
+              correspond(fx, "a2", "x");
+              EdgeFixture.list(fx.root(2), "tags").add("unrelated");
+            });
+    assertPartial(stats, 1);
   }
 }

@@ -13,8 +13,10 @@
 
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EClassifier;
@@ -124,6 +126,70 @@ public interface MetamodelWrapperInterface {
    * @return true if a correspondence with that tag exists between obj1 and obj2
    */
   boolean correspondenceHasTag(EObject obj1, EObject obj2, String tag);
+
+  /**
+   * Returns all objects corresponding to {@code source} via a correspondence carrying {@code tag}.
+   *
+   * <p>The default filters {@link #getCorrespondingObjects(EObject)} with {@link
+   * #correspondenceHasTag}; implementations with a direct tagged lookup should override it.
+   *
+   * @param source the source object
+   * @param tag the required tag value
+   * @return the tagged correspondents of {@code source}; empty if none
+   */
+  default Set<EObject> getCorrespondingObjectsWithTag(EObject source, String tag) {
+    Set<EObject> result = new LinkedHashSet<>();
+    Set<EObject> candidates = getCorrespondingObjects(source);
+    if (candidates == null) {
+      return result;
+    }
+    for (EObject candidate : candidates) {
+      if (correspondenceHasTag(source, candidate, tag)) {
+        result.add(candidate);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Whether {@link #correspondenceHasTag correspondenceHasTag(a, b, tag)} is exactly {@code b ∈
+   * getCorrespondingObjectsWithTag(a, tag) ∨ a ∈ getCorrespondingObjectsWithTag(b, tag)}. When
+   * {@code true}, the evaluator answers tagged checks from memoized tagged lookups instead of
+   * calling {@code correspondenceHasTag} for every pair.
+   *
+   * @return {@code false} unless the implementation guarantees the equivalence
+   */
+  default boolean hasTaggedCorrespondenceLookup() {
+    return false;
+  }
+
+  /**
+   * Every object that currently takes part in a correspondence, if the implementation can
+   * enumerate them; used to observe correspondence changes, which no EChange reports. If this
+   * returns a value, {@link #getCorrespondingObjectsByTag} must be supported as well.
+   *
+   * <p>The incremental evaluator skips {@code ~} constraints when these two methods show no change,
+   * so they must describe exactly the relation that {@link #getCorrespondingObjects}, {@link
+   * #getCorrespondingObjectsWithTag} and {@link #correspondenceHasTag} answer: an implementation
+   * that overrides one of these lookups must override the enumeration methods consistently.
+   *
+   * @return the objects, or empty if enumeration is not supported (the default)
+   */
+  default Optional<Set<EObject>> getAllObjectsInACorrespondence() {
+    return Optional.empty();
+  }
+
+  /**
+   * The result of {@link #getCorrespondingObjectsWithTag} for every tag at once ({@code null} key
+   * for untagged correspondences), in one lookup.
+   *
+   * @param source the source object
+   * @return tag → correspondents of {@code source}; empty if none
+   * @throws UnsupportedOperationException if {@link #getAllObjectsInACorrespondence()} is empty
+   */
+  default Map<String, Set<EObject>> getCorrespondingObjectsByTag(EObject source) {
+    throw new UnsupportedOperationException("correspondence enumeration is not supported");
+  }
 
   /** Resolves a qualified name to its {@link EClass} using a name-keyed metamodel registry. */
   static EClass resolveEClassInRegistry(

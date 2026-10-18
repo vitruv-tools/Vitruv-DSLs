@@ -19,6 +19,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
@@ -62,10 +63,19 @@ final class RelevantInstanceResolver {
     }
   }
 
-  private final MetamodelWrapperInterface wrapper;
+  /**
+   * The wrapper of the current state, read per call: the session's evaluation view, which answers
+   * correspondence queries from the transaction's snapshot (step C4).
+   */
+  private final Supplier<MetamodelWrapperInterface> wrapper;
+
   private final ReverseIndex reverseIndex;
 
   RelevantInstanceResolver(MetamodelWrapperInterface wrapper, ReverseIndex reverseIndex) {
+    this(() -> wrapper, reverseIndex);
+  }
+
+  RelevantInstanceResolver(Supplier<MetamodelWrapperInterface> wrapper, ReverseIndex reverseIndex) {
     this.wrapper = wrapper;
     this.reverseIndex = reverseIndex;
   }
@@ -105,6 +115,12 @@ final class RelevantInstanceResolver {
       }
     }
 
+    CorrespondenceDelta correspondences = delta.correspondenceDelta();
+    if (correspondences.hasChanges()
+        && !addCorrespondenceInverses(plan, correspondences, useCorrespondenceIdiom, relevant)) {
+      return Relevance.fullExtension();
+    }
+
     for (EObject inserted : delta.structurallyInsertedObjects()) {
       if (conformsToAny(inserted, plan.classEventTypes())) {
         return Relevance.fullExtension();
@@ -133,7 +149,7 @@ final class RelevantInstanceResolver {
     Set<EObject> removedSet = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
     removedSet.addAll(removed.keySet());
     Set<EObject> rootSet = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
-    rootSet.addAll(wrapper.getAllRootObjects());
+    rootSet.addAll(wrapper.get().getAllRootObjects());
     for (EObject candidate : relevant.keySet()) {
       if (!conformsToAny(candidate, plan.contextTypes())) {
         continue;
@@ -191,8 +207,49 @@ final class RelevantInstanceResolver {
     return true;
   }
 
+  /**
+   * Adds, for every changed pair {@code (a, b)} and every use of {@code ~}, the inverse of one
+   * invertible partner origin from both {@code a} and {@code b} (see {@link
+   * RelevancePlan.CorrespondenceRead}); returns {@code false} if some use has no invertible partner
+   * (class event). Post-state inversion suffices as for model events: the changed correspondence is
+   * the first changed link, the path to it is unchanged or itself changed by a model event.
+   */
+  private boolean addCorrespondenceInverses(
+      RelevancePlan plan,
+      CorrespondenceDelta correspondences,
+      boolean useCorrespondenceIdiom,
+      Map<EObject, Boolean> sink) {
+    for (RelevancePlan.CorrespondenceRead read : plan.correspondenceReads()) {
+      Origin partner =
+          isSelfPath(read.left()) ? read.left() : isSelfPath(read.right()) ? read.right() : null;
+      if (partner == null) {
+        return false;
+      }
+      for (Set<CorrespondenceDelta.Pair> pairs :
+          List.of(correspondences.added(), correspondences.removed())) {
+        for (CorrespondenceDelta.Pair pair : pairs) {
+          if (!addInverse(partner, pair.first(), plan, useCorrespondenceIdiom, sink)
+              || !addInverse(partner, pair.second(), plan, useCorrespondenceIdiom, sink)) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Only reference paths from {@code self} are inverted for correspondence changes. A {@code
+   * CORRESPONDENTS} origin is not: {@link #addCorrespondents} follows a single-object lookup, which
+   * misses multi-element correspondences visible only from the other side (see {@code
+   * CorrespondenceLookupSemanticsExperimentTest}).
+   */
+  private static boolean isSelfPath(Origin origin) {
+    return origin.kind() == Origin.Kind.SELF;
+  }
+
   private void addCorrespondents(EObject y, RelevancePlan plan, Map<EObject, Boolean> sink) {
-    for (EObject c : wrapper.getCorrespondingObjects(y)) {
+    for (EObject c : wrapper.get().getCorrespondingObjects(y)) {
       if (conformsToAny(c, plan.contextTypes())) {
         sink.put(c, Boolean.TRUE);
       }
