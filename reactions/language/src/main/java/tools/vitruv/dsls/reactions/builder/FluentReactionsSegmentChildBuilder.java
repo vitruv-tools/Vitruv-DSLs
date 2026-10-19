@@ -1,45 +1,50 @@
-package tools.vitruv.dsls.reactions.builder
+package tools.vitruv.dsls.reactions.builder;
 
-import org.eclipse.xtend.lib.annotations.Accessors
-import org.eclipse.xtext.common.types.JvmIdentifiableElement
-import org.eclipse.xtext.common.types.JvmOperation
-import org.eclipse.xtext.xbase.XBlockExpression
-import org.eclipse.xtext.xbase.XExpression
-import org.eclipse.xtext.xbase.XbaseFactory
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
+import org.eclipse.xtend.lib.annotations.Accessors;
+import org.eclipse.xtext.common.types.JvmIdentifiableElement;
+import org.eclipse.xtext.common.types.JvmOperation;
+import org.eclipse.xtext.xbase.XBlockExpression;
+import org.eclipse.xtext.xbase.XExpression;
+import org.eclipse.xtext.xbase.XbaseFactory;
 
-import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.CALL_BLOCK_FACADE_PARAMETER_NAME
+import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.CALL_BLOCK_FACADE_PARAMETER_NAME;
 
-abstract package class FluentReactionsSegmentChildBuilder extends FluentReactionElementBuilder {
+abstract class FluentReactionsSegmentChildBuilder extends FluentReactionElementBuilder {
 
-	@Accessors(PACKAGE_SETTER, PACKAGE_GETTER)
-	var FluentReactionsSegmentBuilder segmentBuilder
+	@Getter(AccessLevel.PACKAGE)
+	@Setter(AccessLevel.PACKAGE)
+	private FluentReactionsSegmentBuilder segmentBuilder;
 
-	protected new(FluentBuilderContext context) {
-		super(context)
+	protected FluentReactionsSegmentChildBuilder(FluentBuilderContext context) {
+		super(context);
 	}
 
-	override willGenerateCode() {
-		true
+	@Override
+	public boolean willGenerateCode() {
+		return true;
 	}
 
-	def protected void transferReactionsSegmentTo(FluentReactionsSegmentChildBuilder infector,
+	protected void transferReactionsSegmentTo(FluentReactionsSegmentChildBuilder infector,
 		FluentReactionsSegmentChildBuilder infected) {
-		infector.beforeAttached[infect(infected)]
-		infected.beforeAttached[checkReactionsSegmentIsCompatibleTo(infector)]
+		beforeAttached(infector, infectorX -> infect(infector, infected));
+		beforeAttached(infected, infectedX -> checkReactionsSegmentIsCompatibleTo(infector, infected));
 	}
 
-	def private infect(FluentReactionsSegmentChildBuilder infector, FluentReactionsSegmentChildBuilder infected) {
-		infector.checkReactionsSegmentIsCompatibleTo(infected)
-		if (infector.segmentBuilder !== null && infected.segmentBuilder === null) {
-			infector.segmentBuilder.add(infected)
+	private void infect(FluentReactionsSegmentChildBuilder infector, FluentReactionsSegmentChildBuilder infected) {
+		checkReactionsSegmentIsCompatibleTo(infected, infected);
+		if (infector.segmentBuilder != null && infected.segmentBuilder == null) {
+			infector.segmentBuilder.add(infected);
 		}
 	}
 
-	def private checkReactionsSegmentIsCompatibleTo(FluentReactionsSegmentChildBuilder a,
+	private void checkReactionsSegmentIsCompatibleTo(FluentReactionsSegmentChildBuilder a,
 		FluentReactionsSegmentChildBuilder b) {
-		if (a.attachedReactionsFile !== null && b.attachedReactionsFile !== null &&
-			a.attachedReactionsFile != b.attachedReactionsFile) {
-			throw new RuntimeException('''«a» is in a different reaction file than «b»!''')
+		if (a.getAttachedReactionsFile() != null && b.getAttachedReactionsFile() != null &&
+			!a.getAttachedReactionsFile().equals(b.getAttachedReactionsFile())) {
+			throw new RuntimeException(a + "is in a different reaction file than" + b + "!");
 		}
 	}
 
