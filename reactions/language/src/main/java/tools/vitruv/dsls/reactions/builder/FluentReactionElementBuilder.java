@@ -69,7 +69,7 @@ abstract class FluentReactionElementBuilder {
   }
 
   /**
-   * Discards all elements stored in {@link list}. After this method was
+   * Discards all elements. After this method was
    * called, attempting to modify (but not read from) this list will
    * throw an exception.
    */
@@ -182,7 +182,7 @@ abstract class FluentReactionElementBuilder {
     return (importedType.getQualifiedName().equals(type.getQualifiedName()));
   }
 
-  protected <T extends JvmDeclaredType> imported(T type) {
+  protected <T extends JvmDeclaredType> T imported(T type) {
     Optional<XImportDeclaration> section =
         getXImportSection().getImportDeclarations().stream()
             .filter(declaration -> equalImportTypes(declaration.getImportedType(), type))
@@ -193,7 +193,7 @@ abstract class FluentReactionElementBuilder {
     return type;
   }
 
-  protected <T extends JvmIdentifiableElement> possiblyImported(T type) {
+  protected <T extends JvmIdentifiableElement> T possiblyImported(T type) {
     if (type instanceof JvmDeclaredType declaredType) {
       imported(declaredType);
     } else if (type instanceof JvmMember member) {
@@ -330,14 +330,14 @@ abstract class FluentReactionElementBuilder {
     return newImport;
   }
 
-  protected <T extends MetaclassReference> reference(T metaclassReference, EClass eClass) {
+  protected <T extends MetaclassReference> T reference(T metaclassReference, EClass eClass) {
     metaclassReference.setMetaclass(eClass);
     return beforeAttached(metaclassReference, reference -> {
       reference.setMetamodel(metamodelImport(eClass.getEPackage()));
     });
   }
 
-  protected <T extends MetaclassEReferenceReference> reference(T referenceReference, EClass eClass,
+  protected <T extends MetaclassEReferenceReference> T reference(T referenceReference, EClass eClass,
                                                                EReference eReference) {
     referenceReference.setFeature(eReference);
     referenceReference.setMetaclass(eClass);
@@ -346,7 +346,7 @@ abstract class FluentReactionElementBuilder {
     });
   }
 
-  protected <T extends MetaclassEAttributeReference> reference(T attributeReference, EClass eClass,
+  protected <T extends MetaclassEAttributeReference> T reference(T attributeReference, EClass eClass,
                                                                EAttribute attribute) {
     attributeReference.setFeature(attribute);
     attributeReference.setMetaclass(eClass);
@@ -355,7 +355,7 @@ abstract class FluentReactionElementBuilder {
     });
   }
 
-  protected <T extends NamedJavaElementReference> reference(T javaElementReference, Class<?> clazz) {
+  protected <T extends NamedJavaElementReference> T reference(T javaElementReference, Class<?> clazz) {
     return beforeAttached(javaElementReference, reference -> {
       reference.setType(context.getTypeReferences().getTypeForName(clazz, targetResource));
     });

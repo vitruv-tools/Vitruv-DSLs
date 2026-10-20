@@ -1,14 +1,19 @@
 package tools.vitruv.dsls.reactions.builder;
 
+import java.util.List;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.eclipse.xtend.lib.annotations.Accessors;
+import org.eclipse.xtext.common.types.JvmFormalParameter;
 import org.eclipse.xtext.common.types.JvmIdentifiableElement;
 import org.eclipse.xtext.common.types.JvmOperation;
 import org.eclipse.xtext.xbase.XBlockExpression;
 import org.eclipse.xtext.xbase.XExpression;
+import org.eclipse.xtext.xbase.XFeatureCall;
 import org.eclipse.xtext.xbase.XbaseFactory;
+import tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants;
 
 import static tools.vitruv.dsls.reactions.codegen.ReactionsLanguageConstants.CALL_BLOCK_FACADE_PARAMETER_NAME;
 
@@ -48,49 +53,58 @@ abstract class FluentReactionsSegmentChildBuilder extends FluentReactionElementB
 		}
 	}
 
-	def protected String getCreatedElementName();
+	protected abstract String getCreatedElementName();
 
-	def protected String getCreatedElementType();
+	protected abstract String getCreatedElementType();
 
-	def protected correspondingMethodParameter(XExpression correpondingExpression, String parameterName) {
-		val method = correpondingExpression.correspondingMethod
-		val parameter = method.parameters.findFirst[name == parameterName]
-		if (parameter === null) {
+	protected JvmFormalParameter correspondingMethodParameter(XExpression correpondingExpression, String parameterName) {
+		JvmOperation method = getCorrespondingMethod(correpondingExpression);
+		Optional<JvmFormalParameter> parameter =
+				method.getParameters()
+						.stream()
+						.filter(param -> param.getName().equals(parameterName))
+						.findFirst();
+		if (parameter.isEmpty()) {
 			// most likely an error by the client
-			throw new IllegalStateException('''Could not find the variable or parameter “«parameterName»” in the «createdElementType» “«createdElementName»”.''')
+			throw new IllegalStateException("Could not find the variable or parameter " + parameterName + " in the " + getCreatedElementType() + " " + getCreatedElementName());
 		}
-		return parameter
+		return parameter.get();
 	}
 
-	def protected getCorrespondingMethod(XExpression correpondingExpression) {
+	protected JvmOperation getCorrespondingMethod(XExpression correpondingExpression) {
 		// Takes parent containers into account in order to work in both routine and reaction contexts:
-		val method = context.jvmModelAssociator.getNearestLogicalContainer(correpondingExpression)
-		if (method instanceof JvmOperation) {
-			return method
+		JvmIdentifiableElement element = context.getJvmModelAssociator().getNearestLogicalContainer(correpondingExpression);
+		if (element instanceof JvmOperation method) {
+			return method;
 		}
-		throw new IllegalStateException('''Could not find the method corresponding to “«correpondingExpression»” in the «createdElementType» “«createdElementName»”''')
+		throw new IllegalStateException("Could not find the method corresponding to " + correpondingExpression + " in the " + getCreatedElementType() + " " + getCreatedElementName());
 	}
 
-	def protected static extractExpressions(XExpression expression) {
-		if (expression === null) return #[]
-		switch expression {
-			XBlockExpression: expression.expressions
-			default: #[expression]
+	protected static List<XExpression> extractExpressions(XExpression expression) {
+		if (expression == null) {
+			return List.of();
 		}
+		if (expression instanceof XBlockExpression block) {
+			return block.getExpressions();
+		}
+		return List.of(expression);
+
 	}
 
-	def protected featureCall(JvmIdentifiableElement element) {
-		if (element === null) return null
-		XbaseFactory.eINSTANCE.createXFeatureCall => [
-			feature = element
-		]
+	protected XFeatureCall featureCall(JvmIdentifiableElement element) {
+		if (element == null) {
+			return null;
+		}
+		XFeatureCall featureCall = XbaseFactory.eINSTANCE.createXFeatureCall();
+		featureCall.setFeature(element);
+		return featureCall;
 	}
 
-	def protected getTypeProvider(XExpression scopeExpression) {
-		new TypeProvider(delegateTypeProvider, referenceBuilderFactory, this, scopeExpression)
+	protected TypeProvider getTypeProvider(XExpression scopeExpression) {
+		return new TypeProvider(delegateTypeProvider(), referenceBuilderFactory(), this, scopeExpression);
 	}
 
-	def getJvmOperationRoutineFacade(XExpression codeBlock) {
-		codeBlock.correspondingMethodParameter(CALL_BLOCK_FACADE_PARAMETER_NAME).featureCall
+	public XFeatureCall getJvmOperationRoutineFacade(XExpression codeBlock) {
+		return this.featureCall(this.correspondingMethodParameter(codeBlock, ReactionsLanguageConstants.CALL_BLOCK_FACADE_PARAMETER_NAME));
 	}
 }

@@ -18,8 +18,11 @@ public class FluentReactionsFileBuilder extends FluentReactionElementBuilder {
 	@Getter(AccessLevel.PUBLIC)
 	private final ReactionsFile reactionsFile = TopLevelElementsFactory.eINSTANCE.createReactionsFile();
 
-	@Getter(AccessLevel.PUBLIC)
 	private final String fileName;
+
+	public String getFileName() {
+		return fileName;
+	}
 
 	FluentReactionsFileBuilder(String fileName, FluentBuilderContext context) {
 		super(context);

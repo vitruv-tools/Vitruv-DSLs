@@ -5,6 +5,7 @@ import com.google.inject.Singleton;
 import java.util.List;
 import java.util.function.Consumer;
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import tools.vitruv.dsls.common.elements.MetaclassReference;
@@ -34,11 +35,11 @@ public class FluentReactionsLanguageBuilder {
 		return new FluentReactionsFileBuilder(name, context).start();
 	}
 
-	public FluentReactionsSegmentBuilder reactionsSegment(String name) {
+	public FluentReactionsSegmentBuilder.ReactionsSegmentSourceBuilder reactionsSegment(String name) {
 		return new FluentReactionsSegmentBuilder(name, context).start();
 	}
 
-	public FluentRoutineBuilder routine(String name) {
+	public FluentRoutineBuilder.RoutineStartBuilder routine(String name) {
 		return new FluentRoutineBuilder(name, context).start();
 	}
 
@@ -50,8 +51,8 @@ public class FluentReactionsLanguageBuilder {
 		return new ExistingRoutineBuilder(routine, context);
 	}
 
-	public FluentReactionBuilder reaction(String name) {
-		new FluentReactionBuilder(name, context).start();
+	public FluentReactionBuilder.TriggerBuilder reaction(String name) {
+		return new FluentReactionBuilder(name, context).start();
 	}
 
 	public ExistingReactionBuilder from(Reaction reaction) {
@@ -75,12 +76,12 @@ public class FluentReactionsLanguageBuilder {
 
 		private void init() {
 			this.readyToBeAttached = true;
-			EList<EObject> contents = EcoreUtil.getAllContents(List.of(routine));
-			contents.stream().filter(eObject -> eObject instanceof MetaclassReference)
-					.forEach(eObject -> {
-						MetaclassReference ref = (MetaclassReference) eObject;
-						this.reference((EClass) ref.getMetaclass());
-					});
+			TreeIterator<EObject> contents = EcoreUtil.getAllContents(List.of(routine));
+			contents.forEachRemaining(eObject -> {
+				if (eObject instanceof MetaclassReference ref) {
+					this.reference(ref, (EClass) ref.getMetaclass());
+				}
+			});
 		}
 	}
 
