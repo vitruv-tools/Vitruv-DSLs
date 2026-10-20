@@ -49,7 +49,7 @@ public class FluentReactionBuilder extends FluentReactionsSegmentChildBuilder {
     reaction.setName(reactionName);
   }
 
-  TriggerBuilder start() {
+  OverrideOrTriggerBuilder start() {
     return new OverrideOrTriggerBuilder(this);
   }
 

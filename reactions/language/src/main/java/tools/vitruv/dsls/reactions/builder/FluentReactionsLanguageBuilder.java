@@ -51,7 +51,7 @@ public class FluentReactionsLanguageBuilder {
 		return new ExistingRoutineBuilder(routine, context);
 	}
 
-	public FluentReactionBuilder.TriggerBuilder reaction(String name) {
+	public FluentReactionBuilder.OverrideOrTriggerBuilder reaction(String name) {
 		return new FluentReactionBuilder(name, context).start();
 	}
 

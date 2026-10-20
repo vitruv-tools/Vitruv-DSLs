@@ -136,7 +136,7 @@ public class FluentReactionsSegmentBuilder extends FluentReactionElementBuilder 
 					reactionBuilder.getSegmentBuilder() == null,
 					"The "+ reactionBuilder+ " has already been added to the " + reactionBuilder.getSegmentBuilder());
 			checkArgument(
-				segment.getReactions().stream()
+				!segment.getReactions().stream()
 						.anyMatch(reaction -> reaction.getName().equals(reactionBuilder.getReaction().getName())),
 					"The " + this + " already contains a reaction with name '" + reactionBuilder.getReaction().getName() + "'!");
 			segment.getReactions().add(reactionBuilder.getReaction());
@@ -153,7 +153,7 @@ public class FluentReactionsSegmentBuilder extends FluentReactionElementBuilder 
 					routineBuilder.getSegmentBuilder() == null,
 					"The "+ routineBuilder+ " has already been added to the " + routineBuilder.getSegmentBuilder());
 			checkArgument(
-					segment.getRoutines().stream()
+					!segment.getRoutines().stream()
 							.anyMatch(routine -> routine.getName().equals(routineBuilder.getRoutine().getName())),
 					"The " + this + " already contains a routine with name '" + routineBuilder.getRoutine().getName() + "'!");
 			segment.getRoutines().add(routineBuilder.getRoutine());

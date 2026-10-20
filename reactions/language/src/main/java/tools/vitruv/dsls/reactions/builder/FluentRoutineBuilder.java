@@ -497,7 +497,7 @@ public class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
     }
   }
 
-  protected static class UpdateStatementBuilder {
+  public static class UpdateStatementBuilder {
     private final FluentRoutineBuilder builder;
 		private final XBlockExpression expressionBlock;
 

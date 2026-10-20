@@ -42,7 +42,7 @@ public class FluentReactionsFileBuilder extends FluentReactionElementBuilder {
 	}
 
 	public void attachTo(Resource resource) {
-		triggerBeforeAttached(reactionsFile, resource);
+		git triggerBeforeAttached(reactionsFile, resource);
 		val resourceContentLength = resource.getContents().size();
 		resource.getContents().add(reactionsFile);
 
@@ -58,7 +58,7 @@ public class FluentReactionsFileBuilder extends FluentReactionElementBuilder {
 		getChildBuilders().add(new MetamodelImportBuilder(mmImport, context));
 	}
 
-	FluentReactionsFileBuilder operator_add(FluentReactionsSegmentBuilder reactionsSegmentBuilder) {
+	public FluentReactionsFileBuilder operator_add(FluentReactionsSegmentBuilder reactionsSegmentBuilder) {
 		checkNotYetAttached();
 		reactionsFile.getReactionsSegments().add(reactionsSegmentBuilder.getSegment());
 		getChildBuilders().add(reactionsSegmentBuilder);
