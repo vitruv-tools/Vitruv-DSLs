@@ -8,14 +8,26 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 import lombok.val;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.xbase.lib.Exceptions;
 import org.eclipse.xtext.xbase.lib.Extension;
+import tools.vitruv.change.atomic.EChange;
+import tools.vitruv.change.atomic.TypeInferringAtomicEChangeFactory;
+import tools.vitruv.change.atomic.command.internal.ApplyEChangeSwitch;
+import tools.vitruv.change.atomic.eobject.CreateEObject;
+import tools.vitruv.change.atomic.eobject.DeleteEObject;
+import tools.vitruv.change.atomic.feature.attribute.ReplaceSingleValuedEAttribute;
+import tools.vitruv.change.atomic.feature.reference.InsertEReference;
+import tools.vitruv.change.atomic.feature.reference.RemoveEReference;
 import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView;
 import tools.vitruv.dsls.reactions.runtime.correspondence.ReactionsCorrespondence;
 import tools.vitruv.dsls.reactions.runtime.helper.PersistenceHelper;
@@ -26,6 +38,7 @@ import tools.vitruv.dsls.reactions.runtime.structure.Loggable;
 /**
  * AbstractRoutine provides a base implementation of a {@link Routine}.
  */
+@Log4j2
 public abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
   private final AbstractRoutinesFacade routinesFacade;
 
@@ -330,6 +343,91 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
       executionState
           .getCorrespondenceModel()
           .addCorrespondenceBetween(firstElement, secondElement, tag == null ? "" : tag);
+    }
+
+    /**
+     * Applies {@code change} on the underlying models.
+     *
+     * <p>Normally, {@link EChange}s are only created in response to modifications to the models.
+     * What this means is that we cannot check applicability conditions for these {@link EChange}s
+     * or ensure that they conflict with other concurrently running changes.
+     * We provide this method to hide such condition checking behind.
+     *
+     * @param change {@link EChange}
+     */
+    protected void issueEChange(EChange<EObject> change) {
+      System.out.println("Change to process: " + change);
+      ApplyEChangeSwitch.applyEChange(change, true);
+    }
+
+    /**
+     * Issues a {@link CreateEObject} change for {@code eObject}.
+     *
+     * @param eObject {@link EObject}
+     */
+    public void create(EObject eObject){
+      CreateEObject<EObject> createEObject =
+          TypeInferringAtomicEChangeFactory.getInstance().createCreateEObjectChange(eObject);
+      issueEChange(createEObject);
+    }
+
+    /**
+     * Issues a {@link DeleteEObject} change for {@code eObject}.
+     *
+     * @param eObject {@link EObject}
+     */
+    public void delete(EObject eObject) {
+      DeleteEObject<EObject> deleteEObject =
+          TypeInferringAtomicEChangeFactory.getInstance().createDeleteEObjectChange(eObject);
+      issueEChange(deleteEObject);
+    }
+
+    /**
+     * Issues a {@link ReplaceSingleValuedEAttribute} that sets {@code eObject.attribute} to {@code value}.
+     *
+     * @param attribute {@link EAttribute}
+     * @param eObject {@link EObject}
+     * @param value AttributeValue
+     * @param <AttributeValue> the type of {@param attribute}
+     */
+    public <AttributeValue> void setAttribute(EAttribute attribute, EObject eObject, AttributeValue value) {
+      ReplaceSingleValuedEAttribute<EObject, AttributeValue> replaceSingleValuedEAttribute =
+          TypeInferringAtomicEChangeFactory.getInstance().createReplaceSingleAttributeChange(
+              eObject,
+              attribute,
+              (AttributeValue) eObject.eGet(attribute),
+              value
+          );
+      issueEChange(replaceSingleValuedEAttribute);
+    }
+
+    /**
+     * Issues a {@link InsertEReference} change that add {@code eObjectTo} to {@code eObjectFrom.reference}.
+     *
+     * @param reference {@link EReference}
+     * @param eObjectFrom {@link EObject}
+     * @param eObjectTo {@link EObject}
+     */
+    public void addReference(EReference reference, EObject eObjectFrom, EObject eObjectTo) {
+      InsertEReference<EObject> insertEReference =
+          TypeInferringAtomicEChangeFactory.getInstance().createInsertReferenceChange(
+              eObjectFrom,
+              reference,
+              eObjectTo,
+              ((EList<?>) eObjectFrom.eGet(reference)).size()
+          );
+      issueEChange(insertEReference);
+    }
+
+    public void removeReference(EReference reference, EObject eObjectFrom, EObject eObjectTo) {
+      RemoveEReference<EObject> removeEReference =
+          TypeInferringAtomicEChangeFactory.getInstance().createRemoveReferenceChange(
+              eObjectFrom,
+              reference,
+              eObjectTo,
+              ((EList<?>) eObjectFrom.eGet(reference)).lastIndexOf(eObjectTo)
+          );
+      issueEChange(removeEReference);
     }
 
     /**
