@@ -163,7 +163,7 @@ class InternalReactionsGenerator implements IReactionsGenerator {
 			resourcesToGenerate.mapFixed [ resource |
 				val serializationInput = new PipedOutputStream
 				val serializationOutput = new PipedInputStream(serializationInput, 102400 /* 100 kiB */)
-				serializationExecutor.submit [resource.writeTo(serializationInput)]
+				serializationExecutor.submit [resource.writeTo(serializationInput)].get()
 				
 				resource -> serializationOutput
 			].forEach [
