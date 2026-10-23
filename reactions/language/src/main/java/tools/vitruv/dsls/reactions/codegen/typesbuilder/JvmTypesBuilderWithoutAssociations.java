@@ -1,27 +1,28 @@
-package tools.vitruv.dsls.reactions.codegen.typesbuilder
+package tools.vitruv.dsls.reactions.codegen.typesbuilder;
 
-import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder
-import org.eclipse.xtext.common.types.JvmVisibility
-import org.eclipse.xtext.common.types.JvmOperation
-import org.eclipse.xtext.common.types.JvmTypeReference
-import org.eclipse.xtext.xbase.lib.Procedures.Procedure1
-import org.eclipse.xtext.common.types.TypesFactory
-import com.google.inject.Inject
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.xtext.common.types.JvmField
-import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociator
-import org.eclipse.xtext.common.types.JvmFormalParameter
-import org.eclipse.xtext.common.types.JvmGenericType
-import com.google.inject.Singleton
-import org.eclipse.xtext.common.types.JvmConstructor
+import org.eclipse.xtext.util.Pair;
+import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder;
+import org.eclipse.xtext.common.types.JvmVisibility;
+import org.eclipse.xtext.common.types.JvmOperation;
+import org.eclipse.xtext.common.types.JvmTypeReference;
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
+import org.eclipse.xtext.common.types.TypesFactory;
+import com.google.inject.Inject;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.xtext.common.types.JvmField;
+import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociator;
+import org.eclipse.xtext.common.types.JvmFormalParameter;
+import org.eclipse.xtext.common.types.JvmGenericType;
+import com.google.inject.Singleton;
+import org.eclipse.xtext.common.types.JvmConstructor;
 
 @Singleton
-class JvmTypesBuilderWithoutAssociations extends JvmTypesBuilder {
+public class JvmTypesBuilderWithoutAssociations extends JvmTypesBuilder {
 	@Inject
-	TypesFactory typesFactory;
+	private TypesFactory typesFactory;
 
 	@Inject
-	IJvmModelAssociator associator;
+	private IJvmModelAssociator associator;
 
 	/**
 	 * Creates a public class with the given name.
@@ -31,14 +32,18 @@ class JvmTypesBuilderWithoutAssociations extends JvmTypesBuilder {
 	 * 
 	 * @return a {@link JvmGenericType} representing a Java class with the given name, {@code null} if name is {@code null}.
 	 */
-	def JvmGenericType generateUnassociatedClass( /* @Nullable */ String name, /* @Nullable */ Procedure1<? super JvmGenericType> initializer) {
-		if (name === null)
+	public JvmGenericType generateUnassociatedClass(
+			/* @Nullable */ String name,
+			/* @Nullable */ Procedure1<? super JvmGenericType> initializer) {
+		if (name == null) {
 			return null;
-		val fullName = splitQualifiedName(name);
-		val result = typesFactory.createJvmGenericType();
+		}
+		Pair<String, String> fullName = splitQualifiedName(name);
+		JvmGenericType result = typesFactory.createJvmGenericType();
 		result.setSimpleName(fullName.getSecond());
-		if (fullName.getFirst() !== null)
+		if (fullName.getFirst() != null) {
 			result.setPackageName(fullName.getFirst());
+		}
 		result.setVisibility(JvmVisibility.PUBLIC);
 		return initializeSafely(result, initializer);
 	}
@@ -52,11 +57,14 @@ class JvmTypesBuilderWithoutAssociations extends JvmTypesBuilder {
 	 * 
 	 * @return a {@link JvmField} representing a Java field with the given simple name and type, {@code null} if name is {@code null}.
 	 */
-	def JvmField generateUnassociatedField( /* @Nullable */ String name,
-		JvmTypeReference typeRef, /* @Nullable */ Procedure1<? super JvmField> initializer) {
-		if (name === null)
+	public JvmField generateUnassociatedField(
+			/* @Nullable */ String name,
+			JvmTypeReference typeRef,
+			/* @Nullable */ Procedure1<? super JvmField> initializer) {
+		if (name == null) {
 			return null;
-		val result = typesFactory.createJvmField();
+		}
+		JvmField result = typesFactory.createJvmField();
 		result.setSimpleName(name);
 		result.setVisibility(JvmVisibility.PRIVATE);
 		result.setType(cloneWithProxies(typeRef));
@@ -70,8 +78,9 @@ class JvmTypesBuilderWithoutAssociations extends JvmTypesBuilder {
 	 * 
 	 * @return a {@link JvmConstructor} representing a Java constructor
 	 */
-	def JvmConstructor generateUnassociatedConstructor( /* @Nullable */ Procedure1<? super JvmConstructor> initializer) {
-		val result = typesFactory.createJvmConstructor();
+	public JvmConstructor generateUnassociatedConstructor(
+			/* @Nullable */ Procedure1<? super JvmConstructor> initializer) {
+		JvmConstructor result = typesFactory.createJvmConstructor();
 		return initializeSafely(result, initializer);
 	}
 
@@ -84,19 +93,21 @@ class JvmTypesBuilderWithoutAssociations extends JvmTypesBuilder {
 	 * 
 	 * @return a {@code JvmOperation} representing a Java method with the given name, {@code null} if name is {@code null}.
 	 */
-	def JvmOperation generateUnassociatedMethod( /* @Nullable */ String name,
-		JvmTypeReference returnType, /* @Nullable */ Procedure1<? super JvmOperation> initializer) {
-		if (name === null)
+	public JvmOperation generateUnassociatedMethod( /* @Nullable */ String name,
+			JvmTypeReference returnType,
+			/* @Nullable */ Procedure1<? super JvmOperation> initializer) {
+		if (name == null) {
 			return null;
-		val result = typesFactory.createJvmOperation();
+		}
+		JvmOperation result = typesFactory.createJvmOperation();
 		result.setSimpleName(name);
 		result.setVisibility(JvmVisibility.PUBLIC);
 		result.setReturnType(cloneWithProxies(returnType));
 		return initializeSafely(result, initializer);
 	}
 
-	def JvmFormalParameter createParameter(String name, JvmTypeReference typeRef) {
-		val result = typesFactory.createJvmFormalParameter();
+	public JvmFormalParameter createParameter(String name, JvmTypeReference typeRef) {
+		JvmFormalParameter result = typesFactory.createJvmFormalParameter();
 		result.setName(name);
 		result.setParameterType(cloneWithProxies(typeRef));
 		return result;
@@ -111,8 +122,11 @@ class JvmTypesBuilderWithoutAssociations extends JvmTypesBuilder {
 	 * 
 	 * @return the target for convenience.
 	 */
-	override <T extends EObject> T associate( /* @Nullable */ EObject sourceElement, /* @Nullable */ T target) {
-		if (sourceElement !== null && target !== null && sourceElement.eResource !== null &&
+	@Override
+	public <T extends EObject> T associate(
+			/* @Nullable */ EObject sourceElement,
+			/* @Nullable */ T target) {
+		if (sourceElement != null && target != null && sourceElement.eResource() != null &&
 			isValidSource(sourceElement))
 			associator.associate(sourceElement, target);
 		return target;
@@ -128,11 +142,12 @@ class JvmTypesBuilderWithoutAssociations extends JvmTypesBuilder {
 	 * 
 	 * @return the target for convenience.
 	 */
-	def <T extends EObject> T associatePrimary( /* @Nullable */ EObject sourceElement, /* @Nullable */ T target) {
-		if (sourceElement !== null && target !== null && sourceElement.eResource !== null &&
+	public <T extends EObject> T associatePrimary(
+			/* @Nullable */ EObject sourceElement,
+			/* @Nullable */ T target) {
+		if (sourceElement != null && target != null && sourceElement.eResource() != null &&
 			isValidSource(sourceElement))
 			associator.associatePrimary(sourceElement, target);
 		return target;
 	}
-
 }
