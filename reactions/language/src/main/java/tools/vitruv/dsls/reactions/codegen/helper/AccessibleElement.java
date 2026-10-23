@@ -1,44 +1,56 @@
-package tools.vitruv.dsls.reactions.codegen.helper
+package tools.vitruv.dsls.reactions.codegen.helper;
 
-import java.util.List
-import org.eclipse.xtend.lib.annotations.Accessors
-import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder
-import static extension edu.kit.ipd.sdq.commons.util.java.lang.IterableUtil.*
-import org.eclipse.xtext.common.types.JvmUnknownTypeReference
-import java.util.Optional
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import org.eclipse.xtend.lib.annotations.Accessors;
+import org.eclipse.xtext.common.types.JvmTypeReference;
+import org.eclipse.xtext.xbase.jvmmodel.JvmTypeReferenceBuilder;
+import static edu.kit.ipd.sdq.commons.util.java.lang.IterableUtil.*;
+import org.eclipse.xtext.common.types.JvmUnknownTypeReference;
+import java.util.Optional;
 
-class AccessibleElement {
-	static val UNKNOWN_TYPEREF_NAME = "unknown"
-	@Accessors(PUBLIC_GETTER)
-	val String name;
-	val String fullyQualifiedTypeName;
-	val List<String> typeParameters;
+public class AccessibleElement {
+	private static final String UNKNOWN_TYPEREF_NAME = "unknown";
+	private final String name;
+	private final String fullyQualifiedTypeName;
+	private final List<String> typeParameters;
 	
-	new(String name, String fullyQualifiedTypeName) {
+	public AccessibleElement(String name, String fullyQualifiedTypeName) {
 		this.name = name;
 		this.fullyQualifiedTypeName = fullyQualifiedTypeName;
-		this.typeParameters = newArrayList
+		this.typeParameters = new ArrayList<>();
 	}
-	
-	new(String name, String fullyQualifiedTypeName, String... typeParameters) {
+
+	public AccessibleElement(String name, String fullyQualifiedTypeName, String... typeParameters) {
 		this(name, fullyQualifiedTypeName);
-		this.typeParameters += typeParameters;
+		this.typeParameters.addAll(List.of(typeParameters));
+	}
+
+	public AccessibleElement(String name, Class<?> type) {
+		this(name, type.getName());
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public boolean isOptional() {
+		return Optional.class.getName().equals(fullyQualifiedTypeName);
 	}
 	
-	new(String name, Class<?> type) {
-		this(name, type.name)
-	}
-	
-	def boolean isOptional() {
-		return Optional.name.equals(fullyQualifiedTypeName)
-	}
-	
-	def generateTypeRef(@Extension JvmTypeReferenceBuilder typeReferenceBuilder) {
-		if (fullyQualifiedTypeName === null) {
-			return typeRef(UNKNOWN_TYPEREF_NAME)
+	public JvmTypeReference generateTypeRef(JvmTypeReferenceBuilder typeReferenceBuilder) {
+		if (fullyQualifiedTypeName == null) {
+			return typeReferenceBuilder.typeRef(UNKNOWN_TYPEREF_NAME);
 		}
-		val typeParameterReferences = typeParameters.map[if (it === null) UNKNOWN_TYPEREF_NAME else it].mapFixed [typeRef]
-		// TODO this is a hack to make Xtext print parameterized types even if one of
+		List<JvmTypeReference> typeParameterReferences = typeParameters.stream()
+				.map(parameter ->
+          Objects.requireNonNullElse(parameter, UNKNOWN_TYPEREF_NAME)
+				)
+				.map(typeReferenceBuilder::typeRef)
+				.toList();
+
+		// This is a hack to make Xtext print parameterized types even if one of
 		// the parameter classes are not currently on the classpath. While Xtext prints
 		// a direct type reference to some unknown class normally, it does not print type
 		// references with unknown type parameters. For example, ‘Known<Unknown>’ becomes 
@@ -47,19 +59,27 @@ class AccessibleElement {
 		// leads to a lookup of the java code (e.g. Known<Unknown>), which must fail.
 		// I (Joshua Gleitze) found no other way, but a better way would be highly 
 		// appreciated!
-		if (typeParameterReferences.exists [it instanceof JvmUnknownTypeReference]) {
-			typeRef(toJavaCode())
+		if (typeParameterReferences
+				.stream()
+				.anyMatch(jvmTypeReference -> jvmTypeReference instanceof JvmUnknownTypeReference)) {
+			return typeReferenceBuilder.typeRef(toJavaCode());
 		} else {
-			typeRef(fullyQualifiedTypeName, typeParameterReferences)
+			return typeReferenceBuilder.typeRef(fullyQualifiedTypeName,
+					typeParameterReferences.toArray(new JvmTypeReference[]{}));
 		}
 	}
 	
-	private def toJavaCode() {
-		if (typeParameters.isEmpty) fullyQualifiedTypeName
-		else fullyQualifiedTypeName + typeParameters.join('<', ', ', '>') [it]
+	private String toJavaCode() {
+		if (typeParameters.isEmpty()) {
+			return fullyQualifiedTypeName;
+		} else {
+			return fullyQualifiedTypeName +
+					"<" + String.join(", ", typeParameters) + ">";
+		}
 	}
 	
-	override toString() {
-		toJavaCode()
+	@Override
+	public String toString() {
+		return toJavaCode();
 	}
 }
