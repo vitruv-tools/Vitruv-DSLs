@@ -103,14 +103,16 @@ public class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
       namedJavaElementReference.setName(parameterName);
       routine.getInput().getJavaInputElements().add(reference(namedJavaElementReference, clazz));
     }
-    throw new IllegalArgumentException("Unable to handle type "+type);
+    else {
+      throw new IllegalArgumentException("Unable to handle type " + type);
+    }
   }
 
   void setValueType(EClassifier type) {
     if (valueType == null) {
       valueType = type;
     }
-    if (!isAssignableFrom(type, valueType)) {
+    if (!isAssignableFrom(valueType, type)) {
       throw new IllegalStateException("The "+this+" already has the value type \""+valueType.getName()+"\""
 					+" set, which is not a super type of \""+type.getName()+"\". The value type can thus not be set to" +
 				"\""+type.getName()+"\"!");
@@ -121,7 +123,7 @@ public class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
     if (affectedObjectType == null) {
       affectedObjectType = type;
     }
-		if (!isAssignableFrom(type, valueType)) {
+		if (!isAssignableFrom(affectedObjectType, type)) {
 			throw new IllegalStateException("The "+this+" already has the affected object type \""+affectedObjectType.getName()+"\""
 					+" set, which is not a super type of \""+type.getName()+"\". The value type can thus not be set to" +
 					"\""+type.getName()+"\"!");
@@ -139,7 +141,7 @@ public class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 				|| (a instanceof EClass && b instanceof EDataType)) {
 			return false;
 		}
-		throw new IllegalArgumentException("Cannot invoke isAssignableFrom with "+a.getClass()+" and "+b.getClass());
+		throw new IllegalArgumentException("Cannot invoke isAssignableFrom with "+a+" and "+b);
 	}
 
   public static class CreatorOrUpdateBuilder extends UpdateBuilder {
@@ -508,13 +510,14 @@ public class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
     }
 
     public void delete(String existingElement) {
-      XFeatureCall statement = XbaseFactory.eINSTANCE.createXFeatureCall();
-			statement.setExplicitOperationCall(true);
-			builder.whenJvmTypes(statement, stat -> {
-				stat.setFeature(builder.getTypeProvider(stat).findMethod(AbstractRoutine.Update.class, "removeObject"));
-				stat.getFeatureCallArguments().add(builder.existingElement(existingElement));
-			});
-      expressionBlock.getExpressions().add(statement);
+      XFeatureCall deleteStatement = XbaseFactory.eINSTANCE.createXFeatureCall();
+			deleteStatement.setExplicitOperationCall(true);
+      expressionBlock.getExpressions().add(
+          builder.whenJvmTypes(deleteStatement, stat -> {
+            stat.setFeature(builder.getTypeProvider(stat).findMethod(AbstractRoutine.Update.class, "removeObject"));
+            stat.getFeatureCallArguments().add(builder.existingElement(existingElement));
+          })
+      );
     }
 
     public CorrespondenceElementBuilder<Consumer<XExpression>> addCorrespondenceBetween() {
@@ -530,6 +533,7 @@ public class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
 
     public CorrespondenceTargetBuilder addCorrespondenceBetween(String existingElement) {
       XFeatureCall statement = createCorrespondenceMethodCall();
+      expressionBlock.getExpressions().add(statement);
       statement.getFeatureCallArguments().add(builder.existingElement(existingElement));
       return new CorrespondenceTargetBuilder(builder, statement);
     }
@@ -537,16 +541,21 @@ public class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
     public CorrespondenceTargetBuilder addCorrespondenceBetween(Function<TypeProvider, XExpression> expressionBuilder) {
       XFeatureCall statement = createCorrespondenceMethodCall();
       statement.getFeatureCallArguments().add(builder.existingElement(expressionBuilder));
+      expressionBlock.getExpressions().add(statement);
       return new CorrespondenceTargetBuilder(builder, statement);
     }
 
     private XFeatureCall createCorrespondenceMethodCall() {
+      XFeatureCall correspondenceCall = XbaseFactory.eINSTANCE.createXFeatureCall();
+      correspondenceCall.setExplicitOperationCall(true);
       return builder.whenJvmTypes(
-          XbaseFactory.eINSTANCE.createXFeatureCall(),
-          xFeatureCall ->
-              builder.getTypeProvider(xFeatureCall).findMethod(
+          correspondenceCall,
+          xFeatureCall -> {
+              JvmOperation methodToCall = builder.getTypeProvider(xFeatureCall).findMethod(
                   AbstractRoutine.Update.class,
-                  "addCorrespondenceBetween")
+                  "addCorrespondenceBetween");
+              xFeatureCall.setFeature(methodToCall);
+          }
       );
     }
 
@@ -575,10 +584,11 @@ public class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
     }
 
     private XFeatureCall deleteCorrespondenceMethodCall() {
+      XFeatureCall deleteCorrespondenceCall = XbaseFactory.eINSTANCE.createXFeatureCall();
+      deleteCorrespondenceCall.setExplicitOperationCall(true);
       return builder.whenJvmTypes(
-          XbaseFactory.eINSTANCE.createXFeatureCall(),
+          deleteCorrespondenceCall,
           xFeatureCall -> {
-            xFeatureCall.setExplicitOperationCall(true);
             TypeProvider typeProvider = builder.getTypeProvider(xFeatureCall);
             xFeatureCall.setFeature(
                 typeProvider.findMethod(AbstractRoutine.Update.class, "removeCorrespondenceBetween")
@@ -766,37 +776,42 @@ public class FluentRoutineBuilder extends FluentReactionsSegmentChildBuilder {
     }
 
     public void taggedWith(Function<TypeProvider, XExpression> tagExpressionBuilder) {
-      XBlockExpression blockExpression = builder.whenJvmTypes(
+      correspondenceCreation.getFeatureCallArguments().add(builder.whenJvmTypes(
           XbaseFactory.eINSTANCE.createXBlockExpression(),
           block -> {
             TypeProvider typeProvider = builder.getTypeProvider(block);
             block.getExpressions().addAll(extractExpressions(tagExpressionBuilder.apply(typeProvider)));
           }
+        )
       );
-      correspondenceCreation.getFeatureCallArguments().add(blockExpression);
     }
   }
 
   private XExpression existingElement(String name) {
-		return whenJvmTypes(XbaseFactory.eINSTANCE.createXFeatureCall(), xFeatureCall -> {
-			xFeatureCall.setFeature(correspondingMethodParameter(xFeatureCall, name));
-		});
+		return whenJvmTypes(XbaseFactory.eINSTANCE.createXFeatureCall(),
+        xFeatureCall ->
+			xFeatureCall.setFeature(correspondingMethodParameter(xFeatureCall, name))
+		);
   }
 
   private XExpression existingElement(Function<TypeProvider, XExpression> expressionBuilder) {
-		return whenJvmTypes(XbaseFactory.eINSTANCE.createXBlockExpression(), xBlock -> {
-			xBlock.getExpressions().addAll(extractExpressions(expressionBuilder.apply(getTypeProvider(xBlock))));
-		});
+		return whenJvmTypes(
+        XbaseFactory.eINSTANCE.createXBlockExpression(),
+        xBlock ->
+			xBlock.getExpressions().addAll(extractExpressions(expressionBuilder.apply(getTypeProvider(xBlock))))
+		);
   }
 
   private XExpression correspondingElement(String name) {
-    return whenJvmTypes(XbaseFactory.eINSTANCE.createXFeatureCall(), xFeatureCall -> {
+    return whenJvmTypes(XbaseFactory.eINSTANCE.createXFeatureCall(),
+        xFeatureCall -> {
 			xFeatureCall.setFeature(correspondingMethodParameter(xFeatureCall, name));
 		});
   }
 
   private XExpression correspondingElement(Function<TypeProvider, XExpression> expressionBuilder) {
-		return whenJvmTypes(XbaseFactory.eINSTANCE.createXBlockExpression(), xBlock -> {
+		return whenJvmTypes(XbaseFactory.eINSTANCE.createXBlockExpression(),
+        xBlock -> {
 			xBlock.getExpressions()
 					.addAll(extractExpressions(expressionBuilder.apply(getTypeProvider(xBlock))));
 		});

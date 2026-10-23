@@ -57,15 +57,10 @@ abstract class FluentReactionElementBuilder {
    * the current iteration ends. This ends as soon as no new elements are
    * added to the list.
    */
-  public static <T> List<T> patientForEach(List<T> delegate, Consumer<T> consumer) {
-    List<T> allList = delegate;
-    while (!delegate.isEmpty()) {
-      List<T> fromLastIteration = delegate;
-      delegate = new LinkedList<>();
-      fromLastIteration.forEach(consumer);
-      allList.addAll(delegate);
+  public static <T> void patientForEach(List<T> delegate, Consumer<T> consumer) {
+    for (int i = 0; i < delegate.size(); i++) {
+      consumer.accept(delegate.get(i));
     }
-    return allList;
   }
 
   /**
@@ -277,7 +272,7 @@ abstract class FluentReactionElementBuilder {
     newImports.clear();
     oldImports.stream().filter(
         oldImport -> !oldImport.isStatic()
-            && !equalImportTypes(oldImport.getImportedType(), type)
+            || !equalImportTypes(oldImport.getImportedType(), type)
     ).forEach(newImports::add);
     newImports.add(newDeclaration);
     return newDeclaration;

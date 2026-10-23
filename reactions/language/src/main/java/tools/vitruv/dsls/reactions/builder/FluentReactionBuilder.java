@@ -351,12 +351,11 @@ public class FluentReactionBuilder extends FluentReactionsSegmentChildBuilder {
 
     public RoutineCallBuilder with(Function<TypeProvider, XExpression> expressionProvider) {
       XBlockExpression precondition = XbaseFactory.eINSTANCE.createXBlockExpression();
-      builder.whenJvmTypes(precondition, blockExpression -> {
+      builder.reaction.getTrigger().setPrecondition(builder.whenJvmTypes(precondition, blockExpression -> {
         blockExpression.getExpressions().addAll(
             extractExpressions(expressionProvider.apply(builder.getTypeProvider(blockExpression)))
         );
-      });
-      builder.reaction.getTrigger().setPrecondition(precondition);
+      }));
       return new RoutineCallBuilder(builder);
     }
   }

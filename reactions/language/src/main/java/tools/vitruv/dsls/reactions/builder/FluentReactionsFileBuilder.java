@@ -42,15 +42,15 @@ public class FluentReactionsFileBuilder extends FluentReactionElementBuilder {
 	}
 
 	public void attachTo(Resource resource) {
-		git triggerBeforeAttached(reactionsFile, resource);
-		val resourceContentLength = resource.getContents().size();
+		triggerBeforeAttached(reactionsFile, resource);
+		int resourceContentLength = resource.getContents().size();
 		resource.getContents().add(reactionsFile);
 
 		// this call has the (desired!) side effect to create the jvm types!
 		EList<EObject> newContents = resource.getContents();
 		// very rough check
 		checkState(newContents.size() > resourceContentLength + 1,
-			"Jvm type creation for failed for the reactions file «fileName»!");
+			"Jvm type creation for failed for the reactions file " + fileName + "!");
 		triggerAfterJvmTypeCreation();
 	}
 

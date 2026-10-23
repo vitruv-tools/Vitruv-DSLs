@@ -73,11 +73,14 @@ abstract class FluentReactionsSegmentChildBuilder extends FluentReactionElementB
 
 	protected JvmOperation getCorrespondingMethod(XExpression correpondingExpression) {
 		// Takes parent containers into account in order to work in both routine and reaction contexts:
-		JvmIdentifiableElement element = context.getJvmModelAssociator().getNearestLogicalContainer(correpondingExpression);
-		if (element instanceof JvmOperation method) {
-			return method;
+		JvmIdentifiableElement element = context
+				.getJvmModelAssociator()
+				.getNearestLogicalContainer(correpondingExpression);
+		if (element instanceof JvmOperation) {
+			return (JvmOperation) element;
 		}
-		throw new IllegalStateException("Could not find the method corresponding to " + correpondingExpression + " in the " + getCreatedElementType() + " " + getCreatedElementName());
+		throw new IllegalStateException("Could not find the method corresponding to "
+				+ correpondingExpression + " in the " + getCreatedElementType() + " " + getCreatedElementName());
 	}
 
 	protected static List<XExpression> extractExpressions(XExpression expression) {
