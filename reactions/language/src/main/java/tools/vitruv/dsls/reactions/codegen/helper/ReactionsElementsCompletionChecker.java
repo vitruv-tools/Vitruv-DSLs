@@ -12,8 +12,8 @@ import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsImport;
 public final class ReactionsElementsCompletionChecker {
 	private ReactionsElementsCompletionChecker() {}
 
-	private static boolean nullOrEmpty(String string) {
-		return string != null && !string.isEmpty();
+	public static boolean nullOrEmpty(String string) {
+		return string == null || string.isEmpty();
 	}
 
  	public static boolean isReferenceable(ReactionsSegment reactionsSegment) {
