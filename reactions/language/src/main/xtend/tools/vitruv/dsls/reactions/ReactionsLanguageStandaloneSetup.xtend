@@ -13,6 +13,8 @@ class ReactionsLanguageStandaloneSetup extends ReactionsLanguageStandaloneSetupG
 	override createInjectorAndDoEMFRegistration() {
 		// Register metamodels from plugin.xml explicitly when not running in Equinox environment
 		EcorePlugin.ExtensionProcessor.process(null)
+		// Register metamodels without plugin.xml, e.g. plain Maven artifacts, from their genmodels
+		ClasspathGenModelRegistrar.registerGeneratedPackages(class.classLoader)
 		return super.createInjectorAndDoEMFRegistration()
 	}
 	
