@@ -26,7 +26,9 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLLexer;
 import tools.vitruv.dsls.vitruvocl.VitruvOCLParser;
+import tools.vitruv.framework.vsum.constraints.ConstraintDiagnostic;
 import tools.vitruv.framework.vsum.constraints.ConstraintSeverity;
+import tools.vitruv.framework.vsum.constraints.InvalidConstraintException;
 
 /**
  * Splits the content of a {@code .ocl} file into single invariants, each of which can be evaluated
@@ -52,12 +54,12 @@ final class OclInvariantParser {
    *
    * @param content the content of a {@code .ocl} file
    * @return the invariants in declaration order
-   * @throws IllegalArgumentException if the content contains syntax errors
+   * @throws InvalidConstraintException if the content contains syntax errors or unknown severities
    */
   static List<ParsedInvariant> parse(String content) {
     CharStream input = CharStreams.fromString(withoutImports(content));
     VitruvOCLLexer lexer = new VitruvOCLLexer(input);
-    List<String> syntaxErrors = new ArrayList<>();
+    List<ConstraintDiagnostic> syntaxErrors = new ArrayList<>();
     BaseErrorListener collector =
         new BaseErrorListener() {
           @Override
@@ -68,7 +70,7 @@ final class OclInvariantParser {
               int column,
               String message,
               RecognitionException exception) {
-            syntaxErrors.add(line + ":" + column + " " + message);
+            syntaxErrors.add(new ConstraintDiagnostic(line, column, message));
           }
         };
     lexer.removeErrorListeners();
@@ -87,16 +89,13 @@ final class OclInvariantParser {
     Token next = tokens.LT(1);
     if (next.getType() != Token.EOF) {
       syntaxErrors.add(
-          next.getLine()
-              + ":"
-              + next.getCharPositionInLine()
-              + " unexpected input '"
-              + next.getText()
-              + "'");
+          new ConstraintDiagnostic(
+              next.getLine(),
+              next.getCharPositionInLine(),
+              "unexpected input '" + next.getText() + "'"));
     }
     if (!syntaxErrors.isEmpty()) {
-      throw new IllegalArgumentException(
-          "Syntax errors in OCL constraints: " + String.join("; ", syntaxErrors));
+      throw new InvalidConstraintException(syntaxErrors);
     }
 
     List<ParsedInvariant> invariants = new ArrayList<>();
@@ -119,7 +118,8 @@ final class OclInvariantParser {
     return invariants;
   }
 
-  private static String withoutImports(String content) {
+  /** Removes import declarations, keeping the line count so that positions stay valid. */
+  static String withoutImports(String content) {
     StringBuilder result = new StringBuilder();
     for (String line : content.split("\\R", -1)) {
       // keep the line count so that positions in error messages match the original content
@@ -147,15 +147,15 @@ final class OclInvariantParser {
           // the type checker accepts exactly the upper-case names of the severity levels
           return ConstraintSeverity.valueOf(value);
         } catch (IllegalArgumentException unknownSeverity) {
-          throw new IllegalArgumentException(
-              severity.start.getLine()
-                  + ":"
-                  + severity.start.getCharPositionInLine()
-                  + " unknown severity '"
-                  + value
-                  + "', valid values are "
-                  + Arrays.toString(ConstraintSeverity.values()),
-              unknownSeverity);
+          throw new InvalidConstraintException(
+              List.of(
+                  new ConstraintDiagnostic(
+                      severity.start.getLine(),
+                      severity.start.getCharPositionInLine(),
+                      "unknown severity '"
+                          + value
+                          + "', valid values are "
+                          + Arrays.toString(ConstraintSeverity.values()))));
         }
       }
     }

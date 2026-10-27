@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,9 +34,14 @@ import tools.vitruv.dsls.vitruvocl.vitruv.OclInvariantParser.ParsedInvariant;
 import tools.vitruv.framework.vsum.constraints.ConstraintCheckContext;
 import tools.vitruv.framework.vsum.constraints.ConstraintChecker;
 import tools.vitruv.framework.vsum.constraints.ConstraintDescriptor;
+import tools.vitruv.framework.vsum.constraints.ConstraintDiagnostic;
 import tools.vitruv.framework.vsum.constraints.ConstraintKind;
 import tools.vitruv.framework.vsum.constraints.ConstraintResult;
 import tools.vitruv.framework.vsum.constraints.ConstraintViolation;
+import tools.vitruv.framework.vsum.constraints.DuplicateConstraintException;
+import tools.vitruv.framework.vsum.constraints.EditableConstraintChecker;
+import tools.vitruv.framework.vsum.constraints.InvalidConstraintException;
+import tools.vitruv.framework.vsum.constraints.UnknownConstraintException;
 
 /**
  * A Vitruv {@link ConstraintChecker} for VitruvOCL constraints. Register it at a virtual model via
@@ -47,18 +53,26 @@ import tools.vitruv.framework.vsum.constraints.ConstraintViolation;
  * in OCL. Unnamed invariants are numbered per context in declaration order ({@code
  * shop::Item#1}); name invariants to get ids that do not change when constraints are added.
  *
+ * <p>Constraints can be created, updated and deleted while the virtual model is running, see
+ * {@link EditableConstraintChecker}. Such constraints must be named, so their ids are stable.
+ *
  * <p>Unlike {@link VitruvOCL#registerVSUM}, the checker does not register a VSUM globally.
  * Metamodels are still resolved by the name of their package, both from the global {@link
  * org.eclipse.emf.ecore.EPackage.Registry} and from the models of the checked virtual model.
  */
-public final class VitruvOclConstraintChecker implements ConstraintChecker {
+public final class VitruvOclConstraintChecker implements EditableConstraintChecker {
 
   /** The language identifier of VitruvOCL constraints. */
   public static final String LANGUAGE = "vitruvocl";
 
-  private final Map<String, ConstraintDescriptor> constraints = new LinkedHashMap<>();
+  /**
+   * The constraints by id. The map is never changed but replaced, so a running check always sees a
+   * consistent set of constraints.
+   */
+  private volatile Map<String, ConstraintDescriptor> constraints;
 
   private VitruvOclConstraintChecker(List<ParsedInvariant> invariants) {
+    Map<String, ConstraintDescriptor> initial = new LinkedHashMap<>();
     Map<String, Integer> unnamedPerContext = new LinkedHashMap<>();
     for (ParsedInvariant invariant : invariants) {
       String id;
@@ -71,21 +85,25 @@ public final class VitruvOclConstraintChecker implements ConstraintChecker {
         id = invariant.contextType() + "::" + invariant.name();
         name = invariant.name();
       }
-      if (constraints.containsKey(id)) {
+      if (initial.containsKey(id)) {
         throw new IllegalArgumentException(
             "Duplicate OCL invariant " + name + " in context " + invariant.contextType());
       }
-      constraints.put(
-          id,
-          new ConstraintDescriptor(
-              id,
-              name,
-              invariant.contextType(),
-              ConstraintKind.INVARIANT,
-              invariant.severity(),
-              LANGUAGE,
-              invariant.source()));
+      initial.put(id, toDescriptor(id, name, invariant));
     }
+    this.constraints = Collections.unmodifiableMap(initial);
+  }
+
+  private static ConstraintDescriptor toDescriptor(
+      String id, String name, ParsedInvariant invariant) {
+    return new ConstraintDescriptor(
+        id,
+        name,
+        invariant.contextType(),
+        ConstraintKind.INVARIANT,
+        invariant.severity(),
+        LANGUAGE,
+        invariant.source());
   }
 
   /**
@@ -154,6 +172,110 @@ public final class VitruvOclConstraintChecker implements ConstraintChecker {
     return List.copyOf(constraints.values());
   }
 
+  @Override
+  public String getLanguage() {
+    return LANGUAGE;
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>The source must contain exactly one named invariant, e.g. {@code context shop::Item inv
+   * positive: self.price > 0}. It is type-checked against the metamodels registered in the global
+   * {@link org.eclipse.emf.ecore.EPackage.Registry}, which contains the metamodels of a running
+   * virtual model.
+   */
+  @Override
+  public ConstraintDescriptor create(String source) {
+    ConstraintDescriptor created = parseSingle(source);
+    if (constraints.containsKey(created.id())) {
+      throw new DuplicateConstraintException(created.id());
+    }
+    typeCheck(source);
+    Map<String, ConstraintDescriptor> changed = new LinkedHashMap<>(constraints);
+    changed.put(created.id(), created);
+    constraints = Collections.unmodifiableMap(changed);
+    return created;
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>The source must contain exactly one named invariant with the same context type and name.
+   */
+  @Override
+  public ConstraintDescriptor update(String id, String source) {
+    if (!constraints.containsKey(id)) {
+      throw new UnknownConstraintException(id);
+    }
+    ConstraintDescriptor updated = parseSingle(source);
+    if (!updated.id().equals(id)) {
+      throw new InvalidConstraintException(
+          List.of(
+              new ConstraintDiagnostic(
+                  1,
+                  0,
+                  "The source defines the constraint "
+                      + updated.id()
+                      + ", but "
+                      + id
+                      + " is updated; context type and invariant name cannot be changed")));
+    }
+    typeCheck(source);
+    Map<String, ConstraintDescriptor> changed = new LinkedHashMap<>(constraints);
+    changed.put(id, updated);
+    constraints = Collections.unmodifiableMap(changed);
+    return updated;
+  }
+
+  @Override
+  public void delete(String id) {
+    if (!constraints.containsKey(id)) {
+      throw new UnknownConstraintException(id);
+    }
+    Map<String, ConstraintDescriptor> changed = new LinkedHashMap<>(constraints);
+    changed.remove(id);
+    constraints = Collections.unmodifiableMap(changed);
+  }
+
+  /** Parses a source that must contain exactly one named invariant. */
+  private static ConstraintDescriptor parseSingle(String source) {
+    List<ParsedInvariant> invariants = OclInvariantParser.parse(source == null ? "" : source);
+    if (invariants.size() != 1) {
+      throw new InvalidConstraintException(
+          List.of(
+              new ConstraintDiagnostic(
+                  1, 0, "Expected exactly one invariant, found " + invariants.size())));
+    }
+    ParsedInvariant invariant = invariants.get(0);
+    if (invariant.name() == null) {
+      throw new InvalidConstraintException(
+          List.of(
+              new ConstraintDiagnostic(
+                  1, 0, "Name the invariant, e.g. inv positive: ..., to give it a stable id")));
+    }
+    return toDescriptor(
+        invariant.contextType() + "::" + invariant.name(), invariant.name(), invariant);
+  }
+
+  /**
+   * Compiles the constraint against the registered metamodels and an empty model, reporting
+   * unknown types, features and other compile errors with their position in the given source.
+   */
+  private static void typeCheck(String source) {
+    tools.vitruv.dsls.vitruvocl.pipeline.ConstraintResult result =
+        VitruvOCL.evaluateConstraint(
+            OclInvariantParser.withoutImports(source), new VsumWrapper(EmptyCheckContext.INSTANCE));
+    if (!result.getCompilerErrors().isEmpty()) {
+      List<ConstraintDiagnostic> diagnostics = new ArrayList<>();
+      for (CompileError error : result.getCompilerErrors()) {
+        diagnostics.add(
+            new ConstraintDiagnostic(error.getLine(), error.getColumn(), error.getMessage()));
+      }
+      throw new InvalidConstraintException(diagnostics);
+    }
+  }
+
   /**
    * {@inheritDoc}
    *
@@ -165,9 +287,10 @@ public final class VitruvOclConstraintChecker implements ConstraintChecker {
       ConstraintCheckContext context, Collection<String> constraintIds) {
     // a fresh wrapper per check sees all metamodels registered up to now
     VsumWrapper wrapper = new VsumWrapper(context);
+    Map<String, ConstraintDescriptor> current = constraints;
     List<ConstraintResult> results = new ArrayList<>();
     for (String id : constraintIds) {
-      ConstraintDescriptor descriptor = constraints.get(id);
+      ConstraintDescriptor descriptor = current.get(id);
       if (descriptor != null) {
         results.add(evaluate(descriptor, wrapper));
       }

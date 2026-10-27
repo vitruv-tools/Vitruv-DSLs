@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.util.List;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
@@ -35,6 +36,7 @@ import tools.vitruv.change.atomic.uuid.UuidResolver;
 import tools.vitruv.change.composite.description.VitruviusChange;
 import tools.vitruv.change.composite.description.VitruviusChangeResolverFactory;
 import tools.vitruv.change.composite.recording.ChangeRecorder;
+import tools.vitruv.change.correspondence.CorrespondencePackage;
 import tools.vitruv.change.interaction.UserInteractionFactory;
 import tools.vitruv.framework.vsum.VirtualModelBuilder;
 import tools.vitruv.framework.vsum.constraints.ConstraintStatus;
@@ -58,17 +60,22 @@ class VitruvOclVsumIntegrationTest {
     Resource.Factory.Registry.INSTANCE
         .getExtensionToFactoryMap()
         .put(FILE_EXTENSION, new XMIResourceFactoryImpl());
-    vsum =
-        new VirtualModelBuilder()
-            .withStorageFolder(folder.resolve("vsum"))
-            .withUserInteractor(
-                UserInteractionFactory.instance.createUserInteractor(
-                    UserInteractionFactory.instance.createPredefinedInteractionResultProvider(
-                        null)))
-            .withConstraintChecker(
-                VitruvOclConstraintChecker.fromString(
-                    "context shop::Item inv nonNegativePrice: self.price >= 0"))
-            .buildAndInitialize();
+    vsum = buildVsum();
+  }
+
+  private InternalVirtualModel buildVsum() throws Exception {
+    // other tests remove the correspondence package from the global registry, but a restarted
+    // virtual model needs it to load its correspondences
+    EPackage.Registry.INSTANCE.put(CorrespondencePackage.eNS_URI, CorrespondencePackage.eINSTANCE);
+    return new VirtualModelBuilder()
+        .withStorageFolder(folder.resolve("vsum"))
+        .withUserInteractor(
+            UserInteractionFactory.instance.createUserInteractor(
+                UserInteractionFactory.instance.createPredefinedInteractionResultProvider(null)))
+        .withConstraintChecker(
+            VitruvOclConstraintChecker.fromString(
+                "context shop::Item inv nonNegativePrice: self.price >= 0"))
+        .buildAndInitialize();
   }
 
   @AfterEach
@@ -95,6 +102,27 @@ class VitruvOclVsumIntegrationTest {
     assertSame(violation.element(), vsumElement);
     assertEquals("coupon", vsumElement.eGet(shop.name));
     assertEquals(modelUri, violation.resourceUri());
+  }
+
+  @Test
+  @DisplayName("VitruvOCL constraints created at runtime are validated and survive a restart")
+  void constraintsCreatedAtRuntime() throws Exception {
+    URI modelUri = URI.createFileURI(folder.resolve("items.shop").toString());
+    propagateItems(modelUri, shop.createItem("book", 2000));
+
+    vsum.createConstraint(
+        VitruvOclConstraintChecker.LANGUAGE, "context shop::Item inv cheap: self.price < 1000");
+
+    assertEquals(
+        ConstraintStatus.VIOLATED,
+        vsum.validateConstraints(List.of("shop::Item::cheap")).results().get(0).status());
+
+    vsum.dispose();
+    vsum = buildVsum();
+
+    assertEquals(
+        List.of("shop::Item::nonNegativePrice", "shop::Item::cheap"),
+        vsum.getConstraints().stream().map(constraint -> constraint.id()).toList());
   }
 
   private void propagateItems(URI modelUri, EObject... items) {
