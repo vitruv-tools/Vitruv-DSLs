@@ -39,6 +39,12 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- required at runtime by a real virtual model (VitruvOclVsumIntegrationTest) -->
+        <dependency>
+            <groupId>org.eclipse.platform</groupId>
+            <artifactId>org.eclipse.equinox.common</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.antlr</groupId>

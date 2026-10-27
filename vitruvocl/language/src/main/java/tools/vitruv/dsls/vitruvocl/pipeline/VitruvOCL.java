@@ -98,6 +98,18 @@ public class VitruvOCL {
   }
 
   /**
+   * Evaluates a single constraint against the given wrapper, independent of any registered VSUM.
+   *
+   * @param constraint the OCL constraint expression
+   * @param wrapper access to the metamodels and instances to evaluate against
+   * @return the evaluation result
+   */
+  public static ConstraintResult evaluateConstraint(
+      String constraint, MetamodelWrapperInterface wrapper) {
+    return compileAndEvaluate(constraint, wrapper, List.of());
+  }
+
+  /**
    * Evaluates a single constraint against metamodels and instances loaded from files.
    *
    * @param constraint the OCL constraint expression
@@ -281,6 +293,7 @@ public class VitruvOCL {
 
     boolean satisfied = records.isEmpty();
     String constraintName = extractConstraintName(constraint);
+    List<Violation> violations = new ArrayList<>();
     for (EvaluationVisitor.ViolationRecord violation : records) {
       String sourceFile = wrapper.getSourceFileForInstance(violation.instance());
       String filename = sourceFile != null ? sourceFile : "unknown";
@@ -291,9 +304,11 @@ public class VitruvOCL {
           formatViolationBlock(
               violation.severity(), constraintName, filename, instanceLabel, message);
       warnings.add(new Warning(Warning.WarningType.CONSTRAINT_VIOLATION, block));
+      violations.add(new Violation(violation.severity(), message, violation.instance()));
     }
 
-    return new ConstraintResult(constraint, satisfied, compilerErrors, List.of(), warnings);
+    return new ConstraintResult(
+        constraint, satisfied, compilerErrors, List.of(), warnings, violations);
   }
 
   // ---------------------------------------------------------------------------
@@ -372,7 +387,10 @@ public class VitruvOCL {
   }
 
   private static List<String> parseConstraintsFile(Path file) throws IOException {
-    String content = Files.readString(file);
+    return splitConstraints(Files.readString(file));
+  }
+
+  private static List<String> splitConstraints(String content) {
     List<String> constraints = new ArrayList<>();
     String[] lines = content.split("\n");
     StringBuilder cleaned = new StringBuilder();

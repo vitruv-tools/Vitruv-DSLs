@@ -14,11 +14,14 @@
 package tools.vitruv.dsls.vitruvocl.pipeline;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EEnum;
@@ -29,6 +32,8 @@ import tools.vitruv.change.correspondence.Correspondence;
 import tools.vitruv.change.correspondence.view.CorrespondenceModelView;
 import tools.vitruv.framework.views.ViewSource;
 import tools.vitruv.framework.vsum.VirtualModel;
+import tools.vitruv.framework.vsum.constraints.ConstraintCheckContext;
+import tools.vitruv.framework.vsum.constraints.ConstraintChecker;
 import tools.vitruv.framework.vsum.internal.InternalVirtualModel;
 
 /**
@@ -48,8 +53,8 @@ import tools.vitruv.framework.vsum.internal.InternalVirtualModel;
  */
 public class VsumWrapper implements MetamodelWrapperInterface {
 
-  /** The Vitruvius virtual model providing access to all registered model resources. */
-  private final VirtualModel vsum;
+  /** Provides the current model resources of the VSUM, read live on every access. */
+  private final Supplier<Collection<Resource>> modelResources;
 
   /**
    * The correspondence model view, used to resolve the {@code ~} operator in VitruvOCL constraints.
@@ -64,6 +69,14 @@ public class VsumWrapper implements MetamodelWrapperInterface {
    * registers all metamodels during {@code buildAndInitialize()}, before any instances exist.
    */
   private final Map<String, EPackage> metamodelRegistry = new HashMap<>();
+
+  /**
+   * Instances per metaclass, only used for wrappers of a single constraint check; {@code null} for
+   * wrappers reading the live VSUM.
+   */
+  private final Map<EClass, List<EObject>> instanceCache;
+
+  private static final int REGISTRY_SNAPSHOT_ATTEMPTS = 3;
 
   /**
    * Creates a new VSUM wrapper and initializes the metamodel registry and correspondence model.
@@ -83,9 +96,33 @@ public class VsumWrapper implements MetamodelWrapperInterface {
       throw new IllegalArgumentException(
           "VsumWrapper requires an InternalVirtualModel to access the correspondence model");
     }
-    this.vsum = vsum;
+    this.modelResources = ((ViewSource) vsum)::getViewSourceModels;
     this.correspondenceModel = ((InternalVirtualModel) vsum).getCorrespondenceModel();
+    this.instanceCache = null;
     loadMetamodelsFromRegistry();
+  }
+
+  /**
+   * Creates a new wrapper for the VSUM state provided to a Vitruv {@link ConstraintChecker}, valid
+   * for a single check. Since the models do not change during a check, the instances of each
+   * metaclass are computed only once.
+   *
+   * <p>Metamodels are taken from the global {@link EPackage.Registry} and from the elements of the
+   * models; packages of the models take precedence for equal names.
+   *
+   * @param context read access to the model resources and correspondences of the VSUM
+   */
+  public VsumWrapper(ConstraintCheckContext context) {
+    this.modelResources = context::getModelResources;
+    this.correspondenceModel = context.getCorrespondenceModel();
+    this.instanceCache = new HashMap<>();
+    loadMetamodelsFromRegistry();
+    for (Resource resource : context.getModelResources()) {
+      for (EObject root : resource.getContents()) {
+        EPackage pkg = root.eClass().getEPackage();
+        metamodelRegistry.put(pkg.getName(), pkg);
+      }
+    }
   }
 
   /**
@@ -96,12 +133,27 @@ public class VsumWrapper implements MetamodelWrapperInterface {
    * avoids the need to have instances in the VSUM at construction time.
    */
   private void loadMetamodelsFromRegistry() {
-    EPackage.Registry.INSTANCE.forEach(
-        (nsURI, value) -> {
-          if (value instanceof EPackage pkg) {
-            metamodelRegistry.put(pkg.getName(), pkg);
-          }
-        });
+    for (Object value : snapshotOfGlobalRegistry()) {
+      if (value instanceof EPackage pkg) {
+        metamodelRegistry.put(pkg.getName(), pkg);
+      }
+    }
+  }
+
+  /**
+   * Copies the values of the global registry, which is not thread-safe and may be modified
+   * concurrently, e.g., when another virtual model is initialized.
+   */
+  private static List<Object> snapshotOfGlobalRegistry() {
+    ConcurrentModificationException lastFailure = null;
+    for (int attempt = 0; attempt < REGISTRY_SNAPSHOT_ATTEMPTS; attempt++) {
+      try {
+        return new ArrayList<>(EPackage.Registry.INSTANCE.values());
+      } catch (ConcurrentModificationException e) {
+        lastFailure = e;
+      }
+    }
+    throw lastFailure;
   }
 
   /**
@@ -129,12 +181,18 @@ public class VsumWrapper implements MetamodelWrapperInterface {
    */
   @Override
   public List<EObject> getAllInstances(EClass eClass) {
-    return ((ViewSource) vsum)
-        .getViewSourceModels().stream()
-            .flatMap(r -> r.getContents().stream())
-            .flatMap(root -> getAllContentsRecursive(root).stream())
-            .filter(obj -> eClass.isSuperTypeOf(obj.eClass()))
-            .toList();
+    if (instanceCache != null) {
+      return instanceCache.computeIfAbsent(eClass, this::collectAllInstances);
+    }
+    return collectAllInstances(eClass);
+  }
+
+  private List<EObject> collectAllInstances(EClass eClass) {
+    return modelResources.get().stream()
+        .flatMap(r -> r.getContents().stream())
+        .flatMap(root -> getAllContentsRecursive(root).stream())
+        .filter(obj -> eClass.isSuperTypeOf(obj.eClass()))
+        .toList();
   }
 
   /**
@@ -178,8 +236,7 @@ public class VsumWrapper implements MetamodelWrapperInterface {
    */
   @Override
   public List<EObject> getAllRootObjects() {
-    return ((ViewSource) vsum)
-        .getViewSourceModels().stream().flatMap(r -> r.getContents().stream()).toList();
+    return modelResources.get().stream().flatMap(r -> r.getContents().stream()).toList();
   }
 
   // ---------------------------------------------------------------------------

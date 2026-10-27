@@ -52,8 +52,11 @@ public class ConstraintResult {
   /** Non-fatal warnings about the constraint. */
   private final List<Warning> warnings;
 
+  /** The violating instances, one record per violated invariant instance. */
+  private final List<Violation> violations;
+
   /**
-   * Creates a constraint evaluation result.
+   * Creates a constraint evaluation result without structured violations.
    *
    * @param constraint The constraint expression
    * @param satisfied Whether constraint was satisfied
@@ -67,11 +70,43 @@ public class ConstraintResult {
       List<CompileError> compilerErrors,
       List<FileError> fileErrors,
       List<Warning> warnings) {
+    this(constraint, satisfied, compilerErrors, fileErrors, warnings, List.of());
+  }
+
+  /**
+   * Creates a constraint evaluation result.
+   *
+   * @param constraint The constraint expression
+   * @param satisfied Whether constraint was satisfied
+   * @param compilerErrors Compilation errors (empty if successful)
+   * @param fileErrors File system errors (empty if successful)
+   * @param warnings Non-fatal warnings
+   * @param violations The violating instances (empty if satisfied)
+   */
+  public ConstraintResult(
+      String constraint,
+      boolean satisfied,
+      List<CompileError> compilerErrors,
+      List<FileError> fileErrors,
+      List<Warning> warnings,
+      List<Violation> violations) {
     this.constraint = constraint;
     this.satisfied = satisfied;
     this.compilerErrors = new ArrayList<>(compilerErrors);
     this.fileErrors = new ArrayList<>(fileErrors);
     this.warnings = new ArrayList<>(warnings);
+    this.violations = List.copyOf(violations);
+  }
+
+  /**
+   * Returns the instances violating the constraint, including the severity and message of each
+   * violation.
+   *
+   * @return Unmodifiable list of violations, empty if the constraint is satisfied or could not be
+   *     evaluated
+   */
+  public List<Violation> getViolations() {
+    return violations;
   }
 
   /**
