@@ -42,18 +42,23 @@ class ReactionsClasspathRegistrar {
 	val Set<String> addedClassesDirs = new HashSet
 
 	def void ensureRegisteredNear(URI resourceUri) {
-		val root = ReactionsWorkspaceRoots.findRepoRoot(resourceUri)
-		if (root === null) {
-			return;
-		}
-		val now = System.currentTimeMillis
-		val lastScan = lastScanTimeByRoot.get(root)
-		if (lastScan !== null && now - lastScan < MIN_RESCAN_INTERVAL_MILLIS) {
-			return;
-		}
-		lastScanTimeByRoot.put(root, now)
+		ensureRegisteredIn(ReactionsWorkspaceRoots.findRepoRoots(resourceUri), resourceUri)
+	}
+
+	/**
+	 * Adds the {@code target/classes} directories below each of {@code roots}, except the one of
+	 * the module containing {@code resourceUri}, skipping roots that were already scanned recently.
+	 */
+	def void ensureRegisteredIn(List<URI> roots, URI resourceUri) {
 		val ownModuleRoot = findOwnModuleRoot(resourceUri)
-		collectClassesDirs(new File(root.toFileString), ownModuleRoot, new AtomicInteger(0))
+		for (root : roots) {
+			val now = System.currentTimeMillis
+			val lastScan = lastScanTimeByRoot.get(root)
+			if (lastScan === null || now - lastScan >= MIN_RESCAN_INTERVAL_MILLIS) {
+				lastScanTimeByRoot.put(root, now)
+				collectClassesDirs(new File(root.toFileString), ownModuleRoot, new AtomicInteger(0))
+			}
+		}
 	}
 
 	/**
