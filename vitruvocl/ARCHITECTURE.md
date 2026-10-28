@@ -100,6 +100,12 @@ tools.vitruv.dsls.vitruvocl/
 │   ├── FileError              Non-constraint errors (missing files, parse failures)
 │   └── Warning                Non-fatal issues
 │
+├── vitruv/          Integration as a Vitruv constraint checker
+│   ├── VitruvOclConstraintChecker  Implements the EditableConstraintChecker SPI of the
+│   │                               Vitruv framework (constraint ids, checking, runtime CRUD)
+│   ├── OclInvariantParser     Splits constraint files into single invariants with ids
+│   └── EmptyCheckContext      Check context for validating new constraints without models
+│
 └── cli/
     └── VitruvOclCli           Command-line interface
 ```
