@@ -1,9 +1,11 @@
 package tools.vitruv.dsls.reactions
 
+import java.io.File
 import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
 import org.eclipse.emf.ecore.EPackage
+import org.eclipse.emf.ecore.EcoreFactory
 import org.eclipse.emf.ecore.EcorePackage
 import org.eclipse.emf.ecore.xml.type.XMLTypePackage
 import org.junit.jupiter.api.AfterEach
@@ -11,6 +13,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
 import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertNotNull
 import static org.junit.jupiter.api.Assertions.assertSame
 
 /**
@@ -54,6 +57,29 @@ class ClasspathGenModelRegistrarTest {
 		writeModel()
 		registerFromModelDirectory()
 		assertSame(XMLTypePackage.eINSTANCE, EPackage.Registry.INSTANCE.getEPackage(PREREGISTERED_NS_URI))
+	}
+
+	/**
+	 * A jar without {@code plugin.xml}, such as the language server's shaded jar, holds EMF's own
+	 * {@code Ecore.genmodel}. Before Ecore registered itself, a lazy descriptor for it made
+	 * {@code EcoreFactory}'s initialization fail. Runs on fresh copies of the classes, in which
+	 * Ecore is not initialized yet.
+	 */
+	@Test
+	def void ecoreStaysUsableWithEcoreGenModelOutsidePluginJar() {
+		val ecoreModelDirectory = Files.createDirectories(modelDirectory.resolve("model"))
+		for (file : #["Ecore.genmodel", "Ecore.ecore"]) {
+			try (val in = EcorePackage.getResourceAsStream("/model/" + file)) {
+				Files.copy(in, ecoreModelDirectory.resolve(file))
+			}
+		}
+		val urls = newArrayList(modelDirectory.toUri.toURL)
+		urls += System.getProperty("java.class.path").split(File.pathSeparator).map[Path.of(it).toUri.toURL]
+		try (val classLoader = new URLClassLoader(urls, ClassLoader.platformClassLoader)) {
+			classLoader.loadClass(ClasspathGenModelRegistrar.name).getMethod("registerGeneratedPackages", ClassLoader)
+				.invoke(null, classLoader)
+			assertNotNull(classLoader.loadClass(EcoreFactory.name).getField("eINSTANCE").get(null))
+		}
 	}
 
 	def private void registerFromModelDirectory() {

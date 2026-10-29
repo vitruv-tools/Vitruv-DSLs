@@ -12,7 +12,6 @@
 
     <groupId>tools.vitruv.dsls</groupId>
     <artifactId>vitruvocl</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -114,12 +113,12 @@
             <dependency>
                 <groupId>tools.vitruv</groupId>
                 <artifactId>tools.vitruv.framework.views</artifactId>
-                <version>${vitruv-change.version}</version>
+                <version>${vitruv.version}</version>
             </dependency>
             <dependency>
                 <groupId>tools.vitruv</groupId>
                 <artifactId>tools.vitruv.framework.vsum</artifactId>
-                <version>${vitruv-change.version}</version>
+                <version>${vitruv.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
