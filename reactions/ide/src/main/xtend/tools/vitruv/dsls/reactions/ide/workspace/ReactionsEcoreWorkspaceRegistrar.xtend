@@ -15,6 +15,7 @@ import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EPackage
 import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl
+import org.eclipse.emf.ecore.xmi.XMLResource
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl
 
 /**
@@ -40,6 +41,8 @@ class ReactionsEcoreWorkspaceRegistrar {
 	static final List<String> EXCLUDED_SEGMENTS = #["target", "bin", "build", "node_modules", ".git"]
 	static final long MIN_RESCAN_INTERVAL_MILLIS = 2000L
 	static final int MAX_VISITED_ENTRIES = 20000
+	/** nsURI of UML2's GenModel, which extends EMF's (e.g. for metamodels imported from UML, like SysML v2). */
+	static final String UML2_GENMODEL_NS_URI = "http://www.eclipse.org/uml2/2.2.0/GenModel"
 
 	/** nsURI -> file it was last registered from, so we only ever touch registry entries we contributed ourselves. */
 	val Map<String, URI> registeredFrom = new HashMap
@@ -76,7 +79,9 @@ class ReactionsEcoreWorkspaceRegistrar {
 		val baseFile = new File(baseDir.toFileString)
 		val ecoreFiles = new HashSet<File>
 		collectEcoreFiles(baseFile, ecoreFiles, new AtomicInteger(0))
-		for (ecoreFile : ecoreFiles) {
+		// Several files can declare the same nsURI (e.g. copies in a vendored clone). Register the
+		// deepest first, so the one closest to the search root wins, whatever the listing order.
+		for (ecoreFile : ecoreFiles.sortBy[absolutePath].sortBy[-toPath.nameCount]) {
 			registerFile(URI.createFileURI(ecoreFile.absolutePath))
 		}
 	}
@@ -124,7 +129,8 @@ class ReactionsEcoreWorkspaceRegistrar {
 	 * <p>
 	 * The sibling {@code .genmodel} file next to almost every hand- or tool-authored {@code .ecore}
 	 * file records exactly the Java class name EMF's code generator would have assigned, so loading
-	 * it lets us reproduce that assignment ourselves.
+	 * it lets us reproduce that assignment ourselves. A UML2 genmodel is read as an EMF one; the
+	 * options only UML2 knows are skipped.
 	 */
 	def private void resolveInstanceClassNamesFromGenModel(ResourceSet resourceSet, URI ecoreFileUri) {
 		val genModelUri = ecoreFileUri.trimFileExtension.appendFileExtension(GENMODEL_EXTENSION)
@@ -133,7 +139,9 @@ class ReactionsEcoreWorkspaceRegistrar {
 		}
 		try {
 			GenModelPackage.eINSTANCE.getClass() // ensure the genmodel metamodel is registered
-			val genModelResource = resourceSet.getResource(genModelUri, true)
+			resourceSet.packageRegistry.put(UML2_GENMODEL_NS_URI, GenModelPackage.eINSTANCE)
+			val genModelResource = resourceSet.createResource(genModelUri)
+			genModelResource.load(#{XMLResource.OPTION_RECORD_UNKNOWN_FEATURE -> true})
 			genModelResource.contents.filter(GenModel).forEach [
 				genPackages.forEach [ genPackage |
 					genPackage.genClassifiers.forEach [ genClassifier |
