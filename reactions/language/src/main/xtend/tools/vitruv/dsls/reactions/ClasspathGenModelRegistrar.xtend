@@ -15,6 +15,7 @@ import javax.xml.parsers.DocumentBuilderFactory
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.eclipse.emf.ecore.EPackage
+import org.eclipse.emf.ecore.EcorePackage
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 
@@ -49,6 +50,10 @@ class ClasspathGenModelRegistrar {
 	 * directories visible to {@code classLoader}.
 	 */
 	def static void registerGeneratedPackages(ClassLoader classLoader) {
+		// Ecore registers itself when first used. Jars repackaged without plugin.xml (e.g. the
+		// language server's shaded jar) still hold Ecore.genmodel, and a lazy descriptor for Ecore
+		// would make EcoreFactory's initialization recurse into the Ecore package's, which fails.
+		EcorePackage.eINSTANCE.getClass()
 		val registrar = new ClasspathGenModelRegistrar(classLoader)
 		for (genModelUrl : registrar.findGenModels) {
 			try {
