@@ -47,14 +47,22 @@ class ReactionsEcoreWorkspaceRegistrar {
 	val Map<URI, Long> lastScanTimeByRoot = new HashMap
 
 	/**
-	 * Ensures that {@code .ecore} files near {@code resourceUri} have been scanned and their
-	 * packages registered, unless that search root was already scanned recently.
+	 * Ensures that {@code .ecore} files in the repository of {@code resourceUri} have been scanned
+	 * and their packages registered, unless that search root was already scanned recently.
 	 */
 	def void ensureRegisteredNear(URI resourceUri) {
-		val root = ReactionsWorkspaceRoots.findRepoRoot(resourceUri)
-		if (root === null) {
-			return;
-		}
+		ensureRegisteredIn(ReactionsWorkspaceRoots.findRepoRoots(resourceUri))
+	}
+
+	/**
+	 * Ensures that {@code .ecore} files below each of {@code roots} have been scanned and their
+	 * packages registered, skipping roots that were already scanned recently.
+	 */
+	def void ensureRegisteredIn(List<URI> roots) {
+		roots.forEach[ensureRegisteredIn(it)]
+	}
+
+	def private void ensureRegisteredIn(URI root) {
 		val now = System.currentTimeMillis
 		val lastScan = lastScanTimeByRoot.get(root)
 		if (lastScan !== null && now - lastScan < MIN_RESCAN_INTERVAL_MILLIS) {
