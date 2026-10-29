@@ -52,7 +52,7 @@ Add it to your `pom.xml`:
 <dependency>
     <groupId>tools.vitruv.dsls</groupId>
     <artifactId>vitruvocl-language</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>4.0.1</version>
 </dependency>
 ```
 
