@@ -12,7 +12,6 @@
 
     <groupId>tools.vitruv.dsls</groupId>
     <artifactId>vitruvocl</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -36,8 +35,8 @@
         <assertj.version>3.27.7</assertj.version>
         <mockito.version>5.24.0</mockito.version>
         <lsp4j.version>1.0.0</lsp4j.version>
-        <gson.version>2.14.0</gson.version>
-        <jacoco.version>0.8.15</jacoco.version>
+        <gson.version>2.15.0</gson.version>
+        <jacoco.version>0.8.16</jacoco.version>
     </properties>
 
     <dependencyManagement>
@@ -114,12 +113,12 @@
             <dependency>
                 <groupId>tools.vitruv</groupId>
                 <artifactId>tools.vitruv.framework.views</artifactId>
-                <version>${vitruv-change.version}</version>
+                <version>${vitruv.version}</version>
             </dependency>
             <dependency>
                 <groupId>tools.vitruv</groupId>
                 <artifactId>tools.vitruv.framework.vsum</artifactId>
-                <version>${vitruv-change.version}</version>
+                <version>${vitruv.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
