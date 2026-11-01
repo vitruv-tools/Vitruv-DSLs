@@ -14,6 +14,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import org.eclipse.emf.common.util.URI;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.CleanupMode;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
@@ -115,9 +116,13 @@ class ReactionsClasspathRegistrarTest {
   /**
    * Verifies that a {@code .jar} file in the workspace (e.g. a library the model's Java classes
    * come from) is added, so that its classes resolve.
+   *
+   * <p>The shared class loader keeps the jar open for the rest of the JVM's life, so on Windows
+   * the directory cannot be deleted after the test.
    */
   @Test
-  void addsJarFileToClassLoader(@TempDir Path repoRoot) throws IOException {
+  void addsJarFileToClassLoader(@TempDir(cleanup = CleanupMode.NEVER) Path repoRoot)
+      throws IOException {
     Files.createDirectory(repoRoot.resolve(".git"));
     Path jarClassesDir = Files.createDirectories(repoRoot.resolve("jar-content"));
     compileDummyClass(repoRoot, "library", "JarLibraryClass", jarClassesDir);
