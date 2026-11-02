@@ -1,1 +1,0 @@
-context shop::Item inv nonNegativePrice: self.price >= 0

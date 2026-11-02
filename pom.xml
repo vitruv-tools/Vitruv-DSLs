@@ -35,7 +35,6 @@
     <module>reactions</module>
     <module>testutils</module>
     <module>p2wrappers</module>
-    <module>vitruvocl</module>
   </modules>
   <properties>
     <vitruv-change.version>4.0.1-SNAPSHOT</vitruv-change.version>
