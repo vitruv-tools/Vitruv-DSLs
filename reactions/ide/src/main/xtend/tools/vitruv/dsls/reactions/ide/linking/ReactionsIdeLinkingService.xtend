@@ -9,12 +9,13 @@ import org.eclipse.xtext.linking.impl.IllegalNodeException
 import org.eclipse.xtext.nodemodel.INode
 import tools.vitruv.dsls.reactions.ide.workspace.ReactionsClasspathRegistrar
 import tools.vitruv.dsls.reactions.ide.workspace.ReactionsEcoreWorkspaceRegistrar
+import tools.vitruv.dsls.reactions.ide.workspace.ReactionsWorkspaceRoots
 import tools.vitruv.dsls.reactions.linking.ReactionsLinkingService
 
 /**
  * Extends {@link ReactionsLinkingService} for the language server: whenever a metamodel import is
- * linked, (re-)scans the workspace project containing the file being linked for {@code .ecore}
- * files and {@code target/classes} directories (see {@link ReactionsEcoreWorkspaceRegistrar} and
+ * linked, (re-)scans the workspace folders (or, for a file outside them, its repository, see
+ * {@link ReactionsWorkspaceRoots}) for {@code .ecore} files and {@code target/classes} directories (see {@link ReactionsEcoreWorkspaceRegistrar} and
  * {@link ReactionsClasspathRegistrar}) before delegating to the default resolution.
  * <p>
  * This runs unconditionally rather than only when resolution first fails: once an
@@ -33,9 +34,10 @@ class ReactionsIdeLinkingService extends ReactionsLinkingService {
 		if (ref.getEType() != EcorePackage.Literals.EPACKAGE) {
 			return super.getLinkedObjects(context, ref, node)
 		}
-		val resourceUri = context.eResource?.URI
-		ecoreWorkspaceRegistrar.ensureRegisteredNear(resourceUri)
-		classpathRegistrar.ensureRegisteredNear(resourceUri)
+		val resource = context.eResource
+		val roots = ReactionsWorkspaceRoots.findSearchRoots(resource)
+		ecoreWorkspaceRegistrar.ensureRegisteredIn(roots)
+		classpathRegistrar.ensureRegisteredIn(roots, resource?.URI)
 		return super.getLinkedObjects(context, ref, node)
 	}
 
