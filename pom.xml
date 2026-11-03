@@ -35,7 +35,6 @@
     <module>reactions</module>
     <module>testutils</module>
     <module>p2wrappers</module>
-    <module>vitruvocl</module>
   </modules>
   <properties>
     <!-- Vitruvius dependencies, released independently of this project -->
