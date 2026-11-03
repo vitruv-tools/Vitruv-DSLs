@@ -12,7 +12,7 @@ import org.eclipse.xtext.testing.extensions.InjectionExtension
 import tools.vitruv.dsls.reactions.tests.ReactionsLanguageInjectorProvider
 import org.eclipse.xtext.testing.InjectWith
 import org.junit.jupiter.api.^extension.ExtendWith
-import static tools.vitruv.dsls.reactions.formatting2.MultilineTextMatcher.hasEachLineEqualTo
+import static tools.vitruv.dsls.reactions.formatting.MultilineTextMatcher.hasEachLineEqualTo
 import static org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
