@@ -9,6 +9,7 @@ import "http://vitruv.tools/dsls/reactions/language/toplevelelements" as topleve
 ReactionsFile returns toplevelelements::ReactionsFile:
 	(namespaceImports=XImportSection)?
 	(metamodelImports+=MetamodelImport)*
+    (maturityModels+=MaturityModel)?
 	(reactionsSegments+=ReactionsSegment)+;
 
 MetamodelImport returns common::MetamodelImport:
@@ -43,7 +44,8 @@ RoutineCall returns toplevelelements::RoutineCall:
 
 // *********** TRIGGER ***********
 Trigger returns toplevelelements::Trigger:
-	'after' (ArbitraryModelChange | ConcreteModelChange);
+	'after' (ArbitraryModelChange | ConcreteModelChange)
+	('where' 'maturity' level=[toplevelelements::MaturityLevel])?;
 
 ConcreteModelChange:
 	ModelElementChange | ModelAttributeChange;
@@ -194,4 +196,19 @@ MetaclassEAttributeReference returns common::MetaclassEAttributeReference:
 
 MetaclassEReferenceReference returns common::MetaclassEReferenceReference:
 	MetaclassReference '[' feature=[ecore::EReference|ValidID] ']';
-	
+
+// *********************************
+// *********** MATURITY ************
+// *********************************
+MaturityModel returns toplevelelements::MaturityModel:
+    'maturityModel' name=ValidID '{'
+        levels+=MaturityLevel*
+    '}';
+
+MaturityLevel returns toplevelelements::MaturityLevel:
+    'level' level=MaturityLevelEnum
+    ('description' description=STRING)?
+    ('next' '=' next=[toplevelelements::MaturityLevel])?;
+
+enum MaturityLevelEnum returns toplevelelements::MaturityLevelEnum:
+    DRAFT | REVIEWED | FINAL;

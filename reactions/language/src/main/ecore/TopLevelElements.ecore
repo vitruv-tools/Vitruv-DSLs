@@ -8,6 +8,8 @@
     <eStructuralFeatures xsi:type="ecore:EReference" name="metamodelImports" upperBound="-1"
         eType="ecore:EClass http://vitruv.tools/dsls/common/elements#//MetamodelImport"
         containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="maturityModels" upperBound="-1"
+        eType="#//MaturityModel" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="reactionsSegments" upperBound="-1"
         eType="#//ReactionsSegment" containment="true"/>
   </eClassifiers>
@@ -45,6 +47,7 @@
   <eClassifiers xsi:type="ecore:EClass" name="Trigger">
     <eStructuralFeatures xsi:type="ecore:EReference" name="precondition" eType="ecore:EClass http://www.eclipse.org/xtext/xbase/Xbase#//XExpression"
         containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="level" eType="#//MaturityLevel"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Routine">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="documentation" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -94,5 +97,20 @@
   <eClassifiers xsi:type="ecore:EClass" name="CodeExecutionBlock">
     <eStructuralFeatures xsi:type="ecore:EReference" name="code" eType="ecore:EClass http://www.eclipse.org/xtext/xbase/Xbase#//XExpression"
         containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="MaturityModel">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="levels" upperBound="-1"
+        eType="#//MaturityLevel" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="MaturityLevel">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="level" eType="#//MaturityLevelEnum"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="description" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="next" eType="#//MaturityLevel"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="MaturityLevelEnum">
+    <eLiterals name="DRAFT" value="0"/>
+    <eLiterals name="REVIEWED" value="1"/>
+    <eLiterals name="FINAL" value="2"/>
   </eClassifiers>
 </ecore:EPackage>
