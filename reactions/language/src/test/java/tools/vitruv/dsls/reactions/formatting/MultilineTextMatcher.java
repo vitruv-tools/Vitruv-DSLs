@@ -1,9 +1,6 @@
 package tools.vitruv.dsls.reactions.formatting;
 
-import java.util.List;
-import java.util.Objects;
 import java.util.function.Consumer;
-import org.eclipse.xtext.xbase.lib.Conversions;
 import org.eclipse.xtext.xbase.lib.Pair;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
@@ -21,7 +18,7 @@ public class MultilineTextMatcher extends TypeSafeMatcher<String> {
   protected boolean matchesSafely(String item) {
     Pair<String, String> firstMismatchingLines = firstMismatchingLines(item, this.expectedText);
     if (firstMismatchingLines != null) {
-      mismatch = (Description description) -> {
+      mismatch = description -> {
         description.appendText("text has wrong content")
             .appendText(".\nExpected was:\n\n")
             .appendText(this.expectedText)
@@ -31,8 +28,8 @@ public class MultilineTextMatcher extends TypeSafeMatcher<String> {
             .appendText("\tActual: ")
             .appendValue(firstMismatchingLines.getKey())
             .appendText("\n")
-            .appendText("\tExpected: ").
-            appendValue(firstMismatchingLines.getValue());
+            .appendText("\tExpected: ")
+            .appendValue(firstMismatchingLines.getValue());
       };
       return false;
     }
@@ -62,7 +59,7 @@ public class MultilineTextMatcher extends TypeSafeMatcher<String> {
       String comparedFirstTextLine = firstTextLines[lineNumber];
       String comparedSecondTextLine = secondTextLines[lineNumber];
       if (!comparedFirstTextLine.equals(comparedSecondTextLine)) {
-        return Pair.<String, String>of(comparedFirstTextLine, comparedSecondTextLine);
+        return Pair.of(comparedFirstTextLine, comparedSecondTextLine);
       }
     }
 
@@ -70,7 +67,7 @@ public class MultilineTextMatcher extends TypeSafeMatcher<String> {
       return Pair.of(firstTextLines[numberOfCommonLines], "");
     }
     if (secondTextLinesCount > firstTextLinesCount) {
-      return Pair.<String, String>of("", secondTextLines[numberOfCommonLines]);
+      return Pair.of("", secondTextLines[numberOfCommonLines]);
     }
     return null;
   }

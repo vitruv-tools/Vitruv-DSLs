@@ -1,0 +1,50 @@
+import static tools.vitruv.dsls.^reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor.ChangeType.*;
+import tools.vitruv.change.atomic.eobject.EObjectExistenceEChange
+import static extension tools.vitruv.change.testutils.metamodels.TestMetamodelsPathFactory.allElementTypes
+
+import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as minimal
+import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as minimal2
+
+reactions: simpleChangesTests
+in reaction to changes in minimal
+execute actions in minimal
+
+// A test reaction
+reaction InsertedNonRoot {
+	after element minimal::NonRoot inserted in minimal::NonRootObjectContainerHelper[nonRootObjectsContainment]
+	call insertNonRoot(newValue)
+}
+
+/*
+ * This is a routine.
+ * The only one.
+ */
+routine insertNonRoot(minimal::NonRoot nonRootElement) {
+	match {
+		require absence of minimal::NonRoot corresponding to nonRootElement
+		val correspondingContainer = retrieve EObject corresponding to nonRootElement.eContainer tagged "test" with true
+		val optionalCorresponding = retrieve optional minimal::NonRoot corresponding to {
+			nonRootElement
+		} tagged null
+		val correspondingAsIterable = retrieve many minimal::NonRoot corresponding to {
+			return nonRootElement;
+		} with {
+			correspondingAsIterable !== null
+		}
+	}
+	create {
+		val newNonRoot = new minimal::NonRoot
+	}
+	update {
+		if (optionalCorresponding.empty) {
+			// This can never happen due to matcher checks
+		}
+		newNonRoot.id = nonRootElement.id
+		{
+			{
+				newNonRoot.value = "new"
+			}
+		}
+		insertNonRoot(newNonRoot)
+	}
+}
