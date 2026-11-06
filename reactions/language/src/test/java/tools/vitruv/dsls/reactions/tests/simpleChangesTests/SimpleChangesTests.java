@@ -47,7 +47,6 @@ class SimpleChangesTests extends ReactionsExecutionTest {
   @BeforeEach
   void createRoot() {
     propagate(resourceAt(SOURCE_MODEL), resource -> {
-
       Root root = AllElementTypesCreators.aet.Root();
       root.setId("EachTestModelSource");
       NonRootObjectContainerHelper nonRootObjectContainerHelper
