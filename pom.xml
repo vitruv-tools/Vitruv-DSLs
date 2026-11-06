@@ -7,11 +7,11 @@
   <parent>
     <groupId>tools.vitruv</groupId>
     <artifactId>parent</artifactId>
-    <version>4.0.0</version>
+    <version>4.0.2</version>
   </parent>
   <!-- Project Information -->
   <artifactId>tools.vitruv.dsls</artifactId>
-  <version>4.0.1-SNAPSHOT</version>
+  <version>4.0.2-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Vitruv Consistency DSLs</name>
   <description>Domain specific languages for specifying consistency preservation rules in the Vitruv framework</description>
@@ -35,7 +35,6 @@
     <module>reactions</module>
     <module>testutils</module>
     <module>p2wrappers</module>
-    <module>vitruvocl</module>
   </modules>
   <properties>
     <!-- Vitruvius dependencies, released independently of this project -->
@@ -99,7 +98,7 @@
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
-        <version>33.7.2-jre</version>
+        <version>33.8.0-jre</version>
       </dependency>
       <dependency>
         <groupId>com.google.inject</groupId>
