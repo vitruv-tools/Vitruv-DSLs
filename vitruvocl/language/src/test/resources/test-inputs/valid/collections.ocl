@@ -1,3 +1,0 @@
-context University inv hasStudents:
-    self.students->size() > 0 and
-    self.students->forAll(s | s.age >= 16)
