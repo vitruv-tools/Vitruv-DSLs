@@ -9,14 +9,14 @@ import tools.vitruv.dsls.reactions.runtime.routines.Routine;
  * A CallHierarchyHaving object can be used to trace the calling hierarchy of {@link Reaction}s
  * and {@link Routine}s at runtime.
  */
-public class CallHierarchyHaving extends Loggable {
+public abstract class CallHierarchyHaving extends Loggable {
   @Getter(AccessLevel.PROTECTED) 
   private final CallHierarchyHaving calledBy;
 
   /**
    * Creates a new CallHierarchyHaving object without caller.
    */
-  public CallHierarchyHaving() {
+  protected CallHierarchyHaving() {
     calledBy = null;
   }
 
@@ -25,12 +25,12 @@ public class CallHierarchyHaving extends Loggable {
    *
    * @param calledBy - CallHierarchyHaving
    */
-  public CallHierarchyHaving(CallHierarchyHaving calledBy) {
+  protected CallHierarchyHaving(CallHierarchyHaving calledBy) {
     this.calledBy = calledBy;
   }
 
   /**
-   * Prints the calling hierarchy, that is, the acutal class name of the {@link CallHierarchyHaving}
+   * Prints the calling hierarchy, that is, the actual class name of the {@link CallHierarchyHaving}
    * instance, plus the underlying hierarchy of calledBy.
    *
    * @return String
