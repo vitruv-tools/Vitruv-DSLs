@@ -1,0 +1,23 @@
+import tools.vitruv.dsls.^reactions.tests.annotationTests.AnnotationTestsMonitor
+import tools.vitruv.dsls.^reactions.tests.annotationTests.Author
+
+import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as minimal
+
+reactions: annotationTests
+in reaction to changes in minimal
+execute actions in minimal
+
+reaction RootIdReplaced {
+	after attribute replaced at minimal::Root[id]
+	call {
+		AnnotationTestsMonitor.instance.authorInReaction = changeAnnotations.getAnnotation(Author)
+		recordAnnotationsInRoutine()
+	}
+}
+
+routine recordAnnotationsInRoutine() {
+	update {
+		AnnotationTestsMonitor.instance.authorInRoutine = changeAnnotations.getAnnotation(Author)
+		AnnotationTestsMonitor.instance.userInteractorInRoutine = userInteractor
+	}
+}

@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.emf.ecore.EObject;
 import tools.vitruv.change.atomic.EChange;
 import tools.vitruv.change.composite.MetamodelDescriptor;
+import tools.vitruv.change.composite.description.AnnotationSource;
 import tools.vitruv.change.correspondence.Correspondence;
 import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView;
 import tools.vitruv.change.interaction.UserInteractor;
@@ -66,10 +67,18 @@ public abstract class AbstractReactionsChangePropagationSpecification
    * These modifications happen by executing all reactions this specification has.
    */
   @Override
-  public void propagateChange(EChange<EObject> change, 
-      EditableCorrespondenceModelView<Correspondence> correspondenceModel, 
+  public void propagateChange(EChange<EObject> change,
+      EditableCorrespondenceModelView<Correspondence> correspondenceModel,
       ResourceAccess resourceAccess) {
-    logger.trace("Call relevant reactions from %s to %s", 
+    propagateChange(change, AnnotationSource.EMPTY, correspondenceModel, resourceAccess);
+  }
+
+  @Override
+  public void propagateChange(EChange<EObject> change,
+      AnnotationSource changeAnnotations,
+      EditableCorrespondenceModelView<Correspondence> correspondenceModel,
+      ResourceAccess resourceAccess) {
+    logger.trace("Call relevant reactions from %s to %s",
         getSourceMetamodelDescriptor(), getTargetMetamodelDescriptor());
     for (var reaction : reactions) {
       logger.trace("Calling reaction: %s with change: %s",
@@ -78,7 +87,8 @@ public abstract class AbstractReactionsChangePropagationSpecification
           getUserInteractor(),
           getReactionsView(correspondenceModel),
           resourceAccess,
-          this);
+          this,
+          changeAnnotations);
       reaction.execute(change, executionState);
     }
   }
