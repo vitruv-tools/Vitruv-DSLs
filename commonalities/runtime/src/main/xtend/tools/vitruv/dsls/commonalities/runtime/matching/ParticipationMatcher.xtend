@@ -101,13 +101,13 @@ class ParticipationMatcher {
 			checkArgument(!containmentContext.attributeReferenceEdges.empty,
 				"Containment context specifies an attribute reference root node but no attribute reference edges!")
 		}
-		logger.trace('''ContainmentContext: «containmentContext»''')
-		logger.trace('''Start object: «startObject»''')
-		logger.trace('''followAttributeReferences: «followAttributeReferences»''')
+		if (logger.traceEnabled) logger.trace('''ContainmentContext: «containmentContext»''')
+		if (logger.traceEnabled) logger.trace('''Start object: «startObject»''')
+		if (logger.traceEnabled) logger.trace('''followAttributeReferences: «followAttributeReferences»''')
 		// TODO Actually support multiple roots
 		val rootNode = containmentContext.roots.head
 		val candidateRootObjects = startObject.getCandidateRoots(followAttributeReferences)
-		logger.trace('''Candidate root objects: «candidateRootObjects»''')
+		if (logger.traceEnabled) logger.trace('''Candidate root objects: «candidateRootObjects»''')
 
 		val candidateMatches = candidateRootObjects.filter [ candidateRootObject |
 			candidateRootObject.matchesRootNode()
@@ -121,11 +121,11 @@ class ParticipationMatcher {
 			return matchChilds(rootMatch, rootNode, rootObject, 1)
 		]
 		if (candidateMatches.empty) {
-			logger.trace('''No candidate matches found.''')
+			if (logger.traceEnabled) logger.trace('''No candidate matches found.''')
 		}
 
 		return candidateMatches.map [ match |
-			logger.trace('''Candidate match: «match»''')
+			if (logger.traceEnabled) logger.trace('''Candidate match: «match»''')
 			if (containmentContext.attributeReferenceRootNode !== null) {
 				// Match the attribute reference root node and add its object to the result:
 				if (!match.matchAttributeReferenceRoot()) {
@@ -139,7 +139,7 @@ class ParticipationMatcher {
 				// Check that all attribute reference edges are fulfilled:
 				return containmentContext.attributeReferenceEdges.forall [ attributeReferenceEdge |
 					val attributeEdgeFulfilled = isAttributeReferenceEdgeFulfilled(match, attributeReferenceEdge)
-					logger.trace('''Attribute reference edge «attributeReferenceEdge.toSimpleString» fulfilled: «
+					if (logger.traceEnabled) logger.trace('''Attribute reference edge «attributeReferenceEdge.toSimpleString» fulfilled: «
 						attributeEdgeFulfilled»''')
 					return attributeEdgeFulfilled
 				]
@@ -176,10 +176,10 @@ class ParticipationMatcher {
 		if (containerObject !== null && attributeReferenceRootNode.matchesObject(containerObject,
 			containmentContext.rootIntermediateType, 0)) {
 			match.addObject(attributeReferenceRootNode.name, containerObject)
-			logger.trace('''Matched attribute reference root: «containerObject»''')
+			if (logger.traceEnabled) logger.trace('''Matched attribute reference root: «containerObject»''')
 			return true
 		}
-		logger.trace('''Could not match attribute reference root: «Objects.toString(containerObject)»''')
+		if (logger.traceEnabled) logger.trace('''Could not match attribute reference root: «Objects.toString(containerObject)»''')
 		return false
 	}
 
@@ -223,8 +223,8 @@ class ParticipationMatcher {
 			if (attributeReferenceRootNode !== null) {
 				if (followAttributeReferences && attributeReferenceRootNode.matchesObject(object,
 					containmentContext.rootIntermediateType, 0)) {
-					logger.trace('''Found attribute reference root: «object»''')
-					logger.trace('''Following attribute references in order to find candidate root objects ...''')
+					if (logger.traceEnabled) logger.trace('''Found attribute reference root: «object»''')
+					if (logger.traceEnabled) logger.trace('''Following attribute references in order to find candidate root objects ...''')
 					// Note on map and flatten: This has the same effect as flatMap, but we cannot use flatMap here,
 					// because flatMap expects Iterable<R> as result, but we produce Iterable<? extends R>.
 					return containmentContext.attributeReferenceEdges
@@ -314,16 +314,16 @@ class ParticipationMatcher {
 
 	private def Iterable<ParticipationObjects> matchContainmentEdge(ParticipationObjects parentMatch,
 		ContainmentContext.Node currentNode, EObject currentObject, ContainmentContext.Edge containment, int depth) {
-		logger.trace('''«indent(depth)»Matching edge «containment.toSimpleString» ...''')
+		if (logger.traceEnabled) logger.trace('''«indent(depth)»Matching edge «containment.toSimpleString» ...''')
 		currentObject.getMatchingObjects(containment, depth)
 			.filter [ childObject |
 				// Skip already matched objects:
 				val alreadyMatched = parentMatch.objects.contains(childObject)
 				if (alreadyMatched) {
-					logger.trace('''«indent(depth)»Edge «containment.toSimpleString»: Ignoring already matched object «
+					if (logger.traceEnabled) logger.trace('''«indent(depth)»Edge «containment.toSimpleString»: Ignoring already matched object «
 						childObject»''')
 				} else {
-					logger.trace('''«indent(depth)»Edge «containment.toSimpleString»: Found matching object «
+					if (logger.traceEnabled) logger.trace('''«indent(depth)»Edge «containment.toSimpleString»: Found matching object «
 						childObject»''')
 				}
 				!alreadyMatched
@@ -369,7 +369,7 @@ class ParticipationMatcher {
 	private def matchesObject(ContainmentContext.Node node, EObject object, EClass correspondingIntermediateType,
 		int depth) {
 		if (!node.type.isInstance(object)) { // also checks for null object
-			logger.trace('''«indent(depth)»Node «node.toSimpleString»: Object is of wrong type «object»''')
+			if (logger.traceEnabled) logger.trace('''«indent(depth)»Node «node.toSimpleString»: Object is of wrong type «object»''')
 			return false
 		}
 
@@ -380,16 +380,16 @@ class ParticipationMatcher {
 				object).filter(Intermediate).head
 			if (correspondingIntermediateType != correspondingIntermediate?.eClass) {
 				if (correspondingIntermediateType === null) {
-					logger.trace('''«indent(depth)»Node «node.toSimpleString»: Object already corresponds to an «
+					if (logger.traceEnabled) logger.trace('''«indent(depth)»Node «node.toSimpleString»: Object already corresponds to an «
 						»Intermediate «object»''')
 				} else {
-					logger.trace('''«indent(depth)»Node «node.toSimpleString»: Object has no matching Intermediate «
+					if (logger.traceEnabled) logger.trace('''«indent(depth)»Node «node.toSimpleString»: Object has no matching Intermediate «
 						»correspondence «object»''')
 				}
 				return false
 			}
 		}
-		logger.trace('''«indent(depth)»Node «node.toSimpleString»: Found matching object «object»''')
+		if (logger.traceEnabled) logger.trace('''«indent(depth)»Node «node.toSimpleString»: Found matching object «object»''')
 		return true
 	}
 

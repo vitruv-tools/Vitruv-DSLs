@@ -23,7 +23,7 @@ class EqualsOperator extends AbstractSingleArgumentConditionOperator {
 		val leftValue = leftOperandObject.eGet(leftOperandFeature)
 		val rightValue = rightOperandValue
 		val result = Objects.equals(leftValue, rightOperandValue)
-		if (!result) {
+		if (!result && logger.debugEnabled) {
 			logger.debug('''Condition check failed. leftObject='«leftOperandObject»', leftFeature='«leftOperandFeature
 				»', leftValue='«leftValue»', rightValue='«rightValue»'.''')
 		}

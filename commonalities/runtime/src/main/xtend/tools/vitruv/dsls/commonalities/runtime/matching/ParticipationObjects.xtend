@@ -25,8 +25,8 @@ class ParticipationObjects {
 	}
 
 	def addObject(String name, EObject object) {
-		checkArgument(!objectsByName.containsKey(name), '''There is already an object for this name: «name»''')
-		checkArgument(!objectsByName.containsValue(object), '''The object is already present: «object»''')
+		checkArgument(!objectsByName.containsKey(name), "There is already an object for this name: %s", name)
+		checkArgument(!objectsByName.containsValue(object), "The object is already present: %s", object)
 		objectsByName.put(name, object)
 	}
 
