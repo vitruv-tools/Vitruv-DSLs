@@ -20,6 +20,8 @@ import static com.google.common.base.Preconditions.checkState
 import tools.vitruv.dsls.reactions.runtime.routines.RoutinesFacadesProvider
 import tools.vitruv.dsls.reactions.runtime.state.ReactionExecutionState
 import tools.vitruv.dsls.reactions.codegen.helper.AccessibleElement
+import tools.vitruv.dsls.reactions.runtime.routines.RoutinesFacade
+import java.util.function.Function
 
 class ChangePropagationSpecificationClassGenerator extends ClassGenerator {
 	final ReactionsSegment reactionsSegment
@@ -58,6 +60,17 @@ class ChangePropagationSpecificationClassGenerator extends ClassGenerator {
 				'''
 			]
 
+			// creates the routines facades of a reaction, the import path is only parsed once per reaction:
+			members += reactionsSegment.toMethod("createRoutinesFacadeGenerator",
+				typeRef(Function, typeRef(ReactionExecutionState), typeRef(RoutinesFacade))) [
+				visibility = JvmVisibility.PRIVATE
+				val importPathParameter = generateParameter(new AccessibleElement("reactionsImportPath", ReactionsImportPath))
+				parameters += importPathParameter
+				body = '''
+					return (executionState) -> createRoutinesFacadesProvider(executionState).getRoutinesFacade(«importPathParameter.name»);
+				'''
+			]
+
 			// register all reactions, including imported and overridden reactions:
 			members += reactionsSegment.toMethod("setup", typeRef(Void.TYPE)) [
 				visibility = JvmVisibility.PROTECTED
@@ -71,7 +84,7 @@ class ChangePropagationSpecificationClassGenerator extends ClassGenerator {
 						«val reaction = reactionEntry.key»
 						«val reactionsImportPath = reactionEntry.value»
 						«val reactionsNameGenerator = reaction.reactionClassNameGenerator»
-						addReaction(new «reactionsNameGenerator.qualifiedName»((executionState) -> createRoutinesFacadesProvider(executionState).getRoutinesFacade(«
+						addReaction(new «reactionsNameGenerator.qualifiedName»(createRoutinesFacadeGenerator(«
 							»«ReactionsImportPath».fromPathString("«reactionsImportPath.pathString»"))));
 					«ENDFOR»
 				'''
