@@ -138,6 +138,7 @@ class ReactionClassGenerator extends ClassGenerator {
 		return reaction.trigger.toMethod(MATCH_CHANGE_METHOD_NAME, typeRef(Boolean.TYPE)) [
 			val changeParameter = generateParameter(new AccessibleElement("change", EChange))
 			visibility = JvmVisibility.PUBLIC
+			annotations += annotationRef(Override)
 			parameters += changeParameter
 			body = changeType.generateCheckMethodBody(changeParameter.name)
 		]

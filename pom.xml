@@ -38,7 +38,7 @@
   </modules>
   <properties>
     <!-- Vitruvius dependencies, released independently of this project -->
-    <vitruv-change.version>4.0.1</vitruv-change.version>
+    <vitruv-change.version>4.0.2</vitruv-change.version>
     <vitruv.version>4.0.1</vitruv.version>
     <!-- SonarQube configuration -->
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
