@@ -78,17 +78,16 @@ public abstract class AbstractReactionsChangePropagationSpecification
       AnnotationSource changeAnnotations,
       EditableCorrespondenceModelView<Correspondence> correspondenceModel,
       ResourceAccess resourceAccess) {
-    logger.trace("Call relevant reactions from %s to %s",
+    logger.trace("Call relevant reactions from {} to {}",
         getSourceMetamodelDescriptor(), getTargetMetamodelDescriptor());
+    var executionState = new ReactionExecutionState(
+        getUserInteractor(),
+        getReactionsView(correspondenceModel),
+        resourceAccess,
+        this,
+        changeAnnotations);
     for (var reaction : reactions) {
-      logger.trace("Calling reaction: %s with change: %s",
-          reaction.getClass().getSimpleName(), change);
-      var executionState = new ReactionExecutionState(
-          getUserInteractor(),
-          getReactionsView(correspondenceModel),
-          resourceAccess,
-          this,
-          changeAnnotations);
+      logger.trace("Calling reaction: {} with change: {}", reaction, change);
       reaction.execute(change, executionState);
     }
   }
