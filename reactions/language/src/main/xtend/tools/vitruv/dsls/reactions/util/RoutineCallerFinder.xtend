@@ -44,9 +44,22 @@ class RoutineCallerFinder {
 	@Inject IResourceServiceProvider.Registry resourceServiceProviderRegistry
 	@Inject ResourceDescriptionsProvider resourceDescriptionsProvider
 
+	/**
+	 * Returns whether the routine has callers. Routines are usually called from their own file, so
+	 * that file is searched first, which avoids searching the whole index for most routines. This
+	 * matters in particular for the standalone builder used by Maven builds: its index entries log
+	 * an error with a stack trace for every request of their reference descriptions.
+	 */
 	def boolean hasCallers(Routine routine) {
 		val targetURIs = targetURIProvider.get()
 		targetURICollector.add(routine, targetURIs)
+		val found = new AtomicBoolean(false)
+		val acceptor = new ReferenceAcceptor(resourceServiceProviderRegistry, [ IReferenceDescription reference | found.set(true) ])
+		referenceFinder.findReferences(targetURIs, routine.eResource, acceptor, null)
+		if (found.get) {
+			return true
+		}
+
 		val index = resourceDescriptionsProvider.getResourceDescriptions(routine.eResource)
 		val resourceSet = routine.eResource.resourceSet
 		val resourceAccess = new IReferenceFinder.IResourceAccess {
@@ -54,9 +67,7 @@ class RoutineCallerFinder {
 				work.exec(resourceSet)
 			}
 		}
-		val found = new AtomicBoolean(false)
-		referenceFinder.findAllReferences(targetURIs, resourceAccess, index,
-			new ReferenceAcceptor(resourceServiceProviderRegistry, [ IReferenceDescription reference | found.set(true) ]), null)
+		referenceFinder.findAllReferences(targetURIs, resourceAccess, index, acceptor, null)
 		return found.get
 	}
 
