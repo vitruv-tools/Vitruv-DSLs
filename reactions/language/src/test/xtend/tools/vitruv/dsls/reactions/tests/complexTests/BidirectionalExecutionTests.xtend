@@ -99,8 +99,14 @@ class BidirectionalExecutionTests extends ReactionsExecutionTest {
 
 		assertThat(propagatedChanges.size, is(2))
 		val consequentialSourceModelChange = propagatedChanges.get(0).sourceModelChanges
-		assertThat(consequentialSourceModelChange.EChanges.get(0), is(instanceOf(RemoveRootEObject)))
-		assertThat(consequentialSourceModelChange.EChanges.get(1), is(instanceOf(DeleteEObject)))
+		val eChanges = consequentialSourceModelChange.EChanges
+		assertThat(eChanges.get(0), is(instanceOf(RemoveRootEObject)))
+		// the root and its four cascade deleted contents are deleted, and the contents are removed
+		// from their containers first, so that the changes can also be applied backwards
+		assertThat(eChanges.filter(DeleteEObject).size, is(5))
+		assertThat(eChanges.filter(ReplaceSingleValuedEReference).size, is(1))
+		assertThat(eChanges.filter(RemoveEReference).size, is(3))
+		assertThat(eChanges.size, is(10))
 		assertThat(resourceAt(SOURCE_MODEL), doesNotExist())
 		assertThat(resourceAt(TARGET_MODEL), doesNotExist())
 		assertThat(propagatedChanges.get(1).consequentialChanges.EChanges, is(emptyList))

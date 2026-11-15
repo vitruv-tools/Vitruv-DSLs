@@ -17,6 +17,7 @@ import org.eclipse.xtend.lib.annotations.Delegate
 import org.junit.jupiter.api.BeforeEach
 import static tools.vitruv.change.testutils.views.ChangePublishingTestView.createDefaultChangePublishingTestView
 import org.junit.jupiter.api.AfterEach
+import tools.vitruv.change.propagation.ChangePropagationSpecification
 
 @ExtendWith(InjectionExtension)
 @InjectWith(ReactionsLanguageInjectorProvider)
@@ -44,7 +45,12 @@ abstract class ReactionsExecutionTest implements TestView {
 
 	@BeforeEach
 	def void prepareTestView(@TestProject Path testProjectPath) {
-		testView = createDefaultChangePublishingTestView(testProjectPath, getChangePropagationSpecifications())
+		testView = createTestView(testProjectPath, getChangePropagationSpecifications())
+	}
+
+	protected def TestView createTestView(Path testProjectPath,
+		Iterable<ChangePropagationSpecification> changePropagationSpecifications) {
+		createDefaultChangePublishingTestView(testProjectPath, changePropagationSpecifications)
 	}
 
 	@Inject
