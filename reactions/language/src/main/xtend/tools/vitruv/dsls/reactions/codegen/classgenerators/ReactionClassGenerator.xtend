@@ -64,8 +64,6 @@ class ReactionClassGenerator extends ClassGenerator {
 		generatedClass => [
 			documentation = getCommentWithoutMarkers(reaction.documentation)
 			superTypes += typeRef(AbstractReaction)
-			members +=
-				reaction.toField(changeType.name, changeType.accessibleElement.generateTypeRef(_typeReferenceBuilder))
 			members += reaction.generateConstructor()
 			members += routineCallClassGenerator.generateBody()
 			members += generateMethodExecuteReactionAndDependentMethods()
@@ -100,6 +98,7 @@ class ReactionClassGenerator extends ClassGenerator {
 			body = '''
 				«facadeClassName» «ROUTINES_FACADE_VARIABLE» = («facadeClassName»)«ROUTINES_FACADE_VARIABLE»Untyped;
 				«generateMatchChangeMethodCallCode(matchChangeMethod, changeParameter.name)»
+				«changeType.getLocalVariableCode(changeParameter.name)»
 				«changeType.generatePropertiesAssignmentCode»
 				«generateUserDefinedPreconditionMethodCall(userDefinedPreconditionMethod)»
 			  «ChangePropagationSpecification» «specificationLocal.name» = («specificationLocal») «reactionExecutionStateParameter.name».getChangePropagationObservable();
