@@ -38,7 +38,8 @@ public class GeneratedReactionsMatcherBuilder {
   @Inject
   private Provider<XtextResourceSet> resourceSetProvider;
 
-  private static class GeneratedReactionsMatcher extends TypeSafeMatcher<FluentReactionsFileBuilder> {
+  private static class GeneratedReactionsMatcher
+      extends TypeSafeMatcher<FluentReactionsFileBuilder> {
     private final GeneratedReactionsMatcherBuilder generatedReactions;
     private final String expectedReaction;
     private Consumer<Description> mismatch;
@@ -81,7 +82,8 @@ public class GeneratedReactionsMatcherBuilder {
     private boolean hasSingleGeneratedFile(InMemoryFileSystemAccess fsa) {
       if (fsa.getAllFiles().size() != 1) {
         if (fsa.getAllFiles().isEmpty()) {
-          mismatch = description -> description.appendText("serializing the builder had no results");
+          mismatch = description ->
+              description.appendText("serializing the builder had no results");
         } else {
           mismatch =
               description ->

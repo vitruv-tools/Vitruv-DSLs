@@ -140,7 +140,8 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
                         .create(creates -> creates.vall("newRoot").create(Root))
                         .update(
                             updates ->
-                                updates.addCorrespondenceBetween("newRoot").and().affectedEObject())));
+                                updates.addCorrespondenceBetween("newRoot")
+                                    .and().affectedEObject())));
 
     FluentReactionsSegmentBuilder baseSegment2 =
         create
@@ -256,7 +257,8 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
                         .create(creates -> creates.vall("newRoot").create(Root))
                         .update(
                             updates ->
-                                updates.addCorrespondenceBetween("newRoot").and().affectedEObject())));
+                                updates.addCorrespondenceBetween("newRoot")
+                                    .and().affectedEObject())));
 
     FluentReactionsSegmentBuilder extendedSegment =
         create
@@ -337,8 +339,6 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 
   @Test
   void overrideRoutines() {
-    FluentReactionsFileBuilder builder = create.reactionsFile("overrideRoutinesTest");
-
     FluentReactionsSegmentBuilder baseSegment =
         create
             .reactionsSegment("baseSegment")
@@ -355,7 +355,8 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
                         .create(creates -> creates.vall("newRoot").create(Root))
                         .update(
                             updates ->
-                                updates.addCorrespondenceBetween("newRoot").and().affectedEObject())));
+                                updates.addCorrespondenceBetween("newRoot")
+                                    .and().affectedEObject())));
 
     FluentReactionsSegmentBuilder extendedSegment =
         create
@@ -389,6 +390,7 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
             .update(
                 updates -> updates.addCorrespondenceBetween("newRoot3").and().affectedEObject()));
 
+    FluentReactionsFileBuilder builder = create.reactionsFile("overrideRoutinesTest");
     builder.operator_add(baseSegment);
     builder.operator_add(extendedSegment);
     builder.operator_add(extendedSegment2);
@@ -457,32 +459,24 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
 
   @Test
   void noEmptyReactionsFile() {
+    FluentReactionsFileBuilder builder = create.reactionsFile("empty");
     IllegalStateException exception =
-        assertThrows(
-            IllegalStateException.class,
-            () -> {
-              FluentReactionsFileBuilder builder = create.reactionsFile("empty");
-              matcher.build(builder);
-            });
+        assertThrows(IllegalStateException.class, () -> matcher.build(builder));
     assertThat(exception.getMessage(), containsString("No reactions segments"));
   }
 
   @Test
   void noEmptyReactionsSegment() {
+    FluentReactionsFileBuilder builder =
+        create
+            .reactionsFile("Test")
+            .operator_add(
+                create
+                    .reactionsSegment("empty")
+                    .inReactionToChangesIn(AllElementTypesPackage.eINSTANCE)
+                    .executeActionsIn(AllElementTypesPackage.eINSTANCE));
     IllegalStateException exception =
-        assertThrows(
-            IllegalStateException.class,
-            () -> {
-              FluentReactionsFileBuilder builder =
-                  create
-                      .reactionsFile("Test")
-                      .operator_add(
-                          create
-                              .reactionsSegment("empty")
-                              .inReactionToChangesIn(AllElementTypesPackage.eINSTANCE)
-                              .executeActionsIn(AllElementTypesPackage.eINSTANCE));
-              matcher.build(builder);
-            });
+        assertThrows(IllegalStateException.class, () -> matcher.build(builder));
     assertThat(
         exception.getMessage(), containsString("Neither routines, nor reactions, nor imports"));
   }
@@ -543,7 +537,11 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
             .executeActionsIn(AllElementTypesPackage.eINSTANCE)
             .operator_add(
                 new FluentReactionBuilder[] {
-                  create.reaction("CreateRootTest").afterElement(Root).created().call(commonRoutine),
+                  create
+                      .reaction("CreateRootTest")
+                      .afterElement(Root)
+                      .created()
+                      .call(commonRoutine),
                   create
                       .reaction("CreateNonRootTest")
                       .afterElement(NonRoot)
@@ -590,8 +588,6 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
   @Test
   void routineForTwoReactionsExplicitlyAdded() {
     FluentRoutineBuilder commonRoutine = commonRootCreateRoutine();
-
-    FluentReactionsFileBuilder reactionsFile = create.reactionsFile("createRootTest");
     FluentReactionsSegmentBuilder reactionsSegment =
         create
             .reactionsSegment("simpleChangesRootTests")
@@ -599,13 +595,12 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
             .executeActionsIn(AllElementTypesPackage.eINSTANCE);
 
     reactionsSegment.operator_add(commonRoutine);
-
     reactionsSegment.operator_add(
         create.reaction("CreateRootTest").afterElement(Root).created().call(commonRoutine));
-
     reactionsSegment.operator_add(
         create.reaction("CreateNonRootTest").afterElement(NonRoot).created().call(commonRoutine));
 
+    FluentReactionsFileBuilder reactionsFile = create.reactionsFile("createRootTest");
     reactionsFile.operator_add(reactionsSegment);
 
     String expectedReaction =
@@ -773,7 +768,11 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
             .inReactionToChangesIn(AllElementTypesPackage.eINSTANCE)
             .executeActionsIn(AllElementTypesPackage.eINSTANCE)
             .operator_add(
-                create.reaction("CreateRootTest").afterElement(Root).created().call(commonRoutine)));
+                create
+                    .reaction("CreateRootTest")
+                    .afterElement(Root)
+                    .created()
+                    .call(commonRoutine)));
 
     reactionsFile.operator_add(
         create
@@ -841,7 +840,11 @@ class FluentReactionsLanguageBuilderTests extends FluentReactionsBuilderTest {
             .inReactionToChangesIn(AllElementTypesPackage.eINSTANCE)
             .executeActionsIn(AllElementTypesPackage.eINSTANCE)
             .operator_add(
-                create.reaction("CreateRootTest").afterElement(Root).created().call(commonRoutine)));
+                create
+                    .reaction("CreateRootTest")
+                    .afterElement(Root)
+                    .created()
+                    .call(commonRoutine)));
 
     FluentReactionsSegmentBuilder secondSegment =
         create

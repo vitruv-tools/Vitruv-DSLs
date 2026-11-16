@@ -1,5 +1,6 @@
 package tools.vitruv.dsls.reactions.tests.importTests;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import allElementTypes.Root;
@@ -7,7 +8,6 @@ import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.List;
 import org.eclipse.emf.ecore.resource.Resource;
-import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +38,7 @@ public class ImportTests extends ReactionsExecutionTest {
 
   @Override
   protected TestReactionsCompiler createCompiler(TestReactionsCompiler.Factory factory) {
-    return factory.createCompiler((TestReactionsCompiler.TestReactionsCompilerParameters compilerParameters) -> {
+    return factory.createCompiler(compilerParameters -> {
       compilerParameters.setReactions(reactionNames);
       compilerParameters.setChangePropagationSegments(List.of("importTestsRoot"));
     });
@@ -77,12 +77,13 @@ public class ImportTests extends ReactionsExecutionTest {
           ImportTestsExecutionMonitor.ExecutionType.Transitive3SNReaction);
 
   /**
-   * Import hierarchy:
-   * <p>
-   * root -> directSN, direct2SN, directRoutinesQN r qn
+   * Import hierarchy.
+   *
+   * <p>root -> directSN, direct2SN, directRoutinesQN r qn
    * directSN -> transitiveSN, transitiveRoutinesQN r qn
    * direct2SN -> transitive3SN
-   * directRoutinesQN -> transitive2SN, transitiveRoutinesSN r, transitiveRoutinesQN r qn, commonRoutines r qn
+   * directRoutinesQN -> transitive2SN, transitiveRoutinesSN r,
+   *                     transitiveRoutinesQN r qn, commonRoutines r qn
    * transitiveSN -> commonRoutines r qn
    * transitive2SN
    * transitive3SN
@@ -104,38 +105,50 @@ public class ImportTests extends ReactionsExecutionTest {
   public static final String TAG_TEST_ROUTINES_ONLY_ROUTINES = "testRoutinesOnlyRoutines";
   public static final String TAG_TEST_IMPORTED_SEGMENTS_WORKING = "testImportedSegmentsWorking";
   public static final String TAG_TEST_REACTION_OVERRIDE = "testReactionOverride";
-  public static final String TAG_TEST_TRANSITIVE_REACTION_OVERRIDE = "testTransitiveReactionOverride";
+  public static final String TAG_TEST_TRANSITIVE_REACTION_OVERRIDE
+      = "testTransitiveReactionOverride";
   public static final String TAG_CALL_OVERRIDDEN_ROUTINE = "callOverriddenRoutine";
-  public static final String TAG_CALL_OVERRIDDEN_TRANSITIVE_ROUTINE = "callOverriddenTransitiveRoutine";
-  public static final String TAG_CALL_OVERRIDDEN_TRANSITIVE_ROUTINE_WITH_SEPARATE_OVERRIDE_HIERARCHY = "callOverriddenTransitiveRoutineWithSeparateOverrideHierarchy";
-  public static final String TAG_CALL_ALREADY_OVERRIDDEN_TRANSITIVE_ROUTINE = "callAlreadyOverriddenTransitiveRoutine";
-  public static final String TAG_CALL_TRANSITIVE_ROUTINE_OVERRIDDEN_BY_IMPORTED_SEGMENT = "callTransitiveRoutineOverriddenByImportedSegment";
+  public static final String TAG_CALL_OVERRIDDEN_TRANSITIVE_ROUTINE
+      = "callOverriddenTransitiveRoutine";
+  public static final String TAG_CALL_OVERRIDDEN_TRANSITIVE_ROUTINE_WITH_SEPARATE_OVERRIDE_HIERARCHY
+      = "callOverriddenTransitiveRoutineWithSeparateOverrideHierarchy";
+  public static final String TAG_CALL_ALREADY_OVERRIDDEN_TRANSITIVE_ROUTINE
+      = "callAlreadyOverriddenTransitiveRoutine";
+  public static final String TAG_CALL_TRANSITIVE_ROUTINE_OVERRIDDEN_BY_IMPORTED_SEGMENT
+      = "callTransitiveRoutineOverriddenByImportedSegment";
   public static final String TAG_FROM_ROOT = "fromRoot";
   public static final String TAG_FROM_OVERRIDDEN_SEGMENT = "fromOverriddenSegment";
   public static final String TAG_FROM_SEGMENT_IN_BETWEEN = "fromSegmentInBetween";
-  public static final String TAG_TEST_MULTIPLE_IMPORTS_OF_SAME_ROUTINES_IMPORT_PATH_1 = "testMultipleImportsOfSameRoutinesImportPath1";
-  public static final String TAG_TEST_MULTIPLE_IMPORTS_OF_SAME_ROUTINES_IMPORT_PATH_2 = "testMultipleImportsOfSameRoutinesImportPath2";
+  public static final String TAG_TEST_MULTIPLE_IMPORTS_OF_SAME_ROUTINES_IMPORT_PATH_1
+      = "testMultipleImportsOfSameRoutinesImportPath1";
+  public static final String TAG_TEST_MULTIPLE_IMPORTS_OF_SAME_ROUTINES_IMPORT_PATH_2
+      = "testMultipleImportsOfSameRoutinesImportPath2";
 
   @Test
   void testRootReaction() {
     triggerSetRootIdReaction();
-    assertThat(getExecutionMonitor().getObservedExecutions(), CoreMatchers.hasItem(ImportTestsExecutionMonitor.ExecutionType.RootReaction));
+    assertThat(getExecutionMonitor().getObservedExecutions(),
+        hasItem(ImportTestsExecutionMonitor.ExecutionType.RootReaction));
   }
 
   @Test
   void testImportedReaction() {
     triggerSetRootIdReaction();
-    assertThat(getExecutionMonitor().getObservedExecutions(), CoreMatchers.hasItem(ImportTestsExecutionMonitor.ExecutionType.DirectSNReaction));
+    assertThat(getExecutionMonitor().getObservedExecutions(),
+        hasItem(ImportTestsExecutionMonitor.ExecutionType.DirectSNReaction));
   }
 
   @Test
   void testTransitiveImportedReaction() {
     triggerSetRootIdReaction();
-    assertThat(getExecutionMonitor().getObservedExecutions(), CoreMatchers.hasItem(ImportTestsExecutionMonitor.ExecutionType.TransitiveSNReaction));
+    assertThat(getExecutionMonitor().getObservedExecutions(),
+        hasItem(ImportTestsExecutionMonitor.ExecutionType.TransitiveSNReaction));
   }
 
-  private void assertObservedExecutions(EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions) {
-    MatcherAssert.assertThat(getExecutionMonitor(), ExecutionMonitor.observedExecutions(expectedExecutions));
+  private void assertObservedExecutions(
+      EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions) {
+    MatcherAssert.assertThat(getExecutionMonitor(),
+        ExecutionMonitor.observedExecutions(expectedExecutions));
   }
 
   @Test

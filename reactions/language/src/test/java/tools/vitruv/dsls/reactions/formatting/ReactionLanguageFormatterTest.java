@@ -51,19 +51,20 @@ class ReactionLanguageFormatterTest {
   })
   void testExistingReactionsFilesFormatting(String filePathInSourceFolder) {
     String content = loadJavaFileContents(filePathInSourceFolder);
-    MatcherAssert.assertThat(format(destroyFormatting(content)), MultilineTextMatcher.hasEachLineEqualTo(content));
+    MatcherAssert.assertThat(format(destroyFormatting(content)),
+        MultilineTextMatcher.hasEachLineEqualTo(content));
   }
 
   private String loadJavaFileContents(String filePathInSourceFolder) {
     try {
       ClassLoader classLoader = this.getClass().getClassLoader();
       File file =
-          (Platform.isRunning()) ?
-          new File(("src/" + filePathInSourceFolder)) :
-          new File(classLoader.getResource(filePathInSourceFolder).getFile());
+          (Platform.isRunning())
+              ? new File(("src/" + filePathInSourceFolder))
+              : new File(classLoader.getResource(filePathInSourceFolder).getFile());
       return new Scanner(file).useDelimiter("\\Z").next();
-    } catch (Throwable _e) {
-      throw Exceptions.sneakyThrow(_e);
+    } catch (Throwable e) {
+      throw Exceptions.sneakyThrow(e);
     }
   }
 
@@ -72,27 +73,29 @@ class ReactionLanguageFormatterTest {
   void testAllStatementTypes() {
     String expected = loadJavaFileContents(
         "tools/vitruv/dsls/reactions/tests/AllStatementTypes.reactions");
-    MatcherAssert.assertThat(format(destroyFormatting(expected)), MultilineTextMatcher.hasEachLineEqualTo(expected));
+    MatcherAssert.assertThat(format(destroyFormatting(expected)),
+        MultilineTextMatcher.hasEachLineEqualTo(expected));
   }
 
   private String format(String reactionsCodeToFormat) {
     try {
       return iSerializer.serialize(
           parseHelper.parse(reactionsCodeToFormat), SaveOptions.newBuilder().format().getOptions());
-    } catch (Throwable _e) {
-      throw Exceptions.sneakyThrow(_e);
+    } catch (Throwable e) {
+      throw Exceptions.sneakyThrow(e);
     }
   }
 
   private String destroyFormatting(String textToUnformat) {
     return preserveEmptyLines(textToUnformat,
         text -> applyToEachLineRemovingLinebreaks(text, line -> {
-      if (isCommentLine(line)) {
-        return preserveCommentLine(line);
-      } else {
-        return mixUpSpacingTerminals(line);
-      }
-    }));
+          if (isCommentLine(line)) {
+            return preserveCommentLine(line);
+          } else {
+            return mixUpSpacingTerminals(line);
+          }
+        }
+    ));
   }
 
   private String preserveEmptyLines(String text, Function<String, String> applicator) {
@@ -148,7 +151,8 @@ class ReactionLanguageFormatterTest {
     return modifyTextUsingPlaceholderChar(text, (inputText, placeholder) -> {
       String placeholderString = ("" + placeholder);
       String textWithPlaceholder = inputText.replace(original, placeholderString);
-      String modifiedTextWithPlaceholder = applyOnIntermediatePlaceholderString.apply(textWithPlaceholder);
+      String modifiedTextWithPlaceholder =
+          applyOnIntermediatePlaceholderString.apply(textWithPlaceholder);
       return modifiedTextWithPlaceholder.replace(placeholderString, replacement);
     });
   }
@@ -166,8 +170,9 @@ class ReactionLanguageFormatterTest {
    * To this end, we use usually unused ASCII symbols as placeholders, specifically
    * the ASCII symbols 14 to 31.
    */
-  private String modifyTextUsingPlaceholderChar(String text,
-                                                BiFunction<? super String, ? super Character, ? extends String> modifier) {
+  private String modifyTextUsingPlaceholderChar(
+      String text,
+      BiFunction<? super String, ? super Character, ? extends String> modifier) {
     String result = modifier.apply(text, retrievePlaceholderChar());
     this.returnPlaceholderChar();
     return result;

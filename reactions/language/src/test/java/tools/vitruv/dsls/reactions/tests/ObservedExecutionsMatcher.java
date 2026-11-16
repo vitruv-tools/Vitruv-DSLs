@@ -28,7 +28,9 @@ class ObservedExecutionsMatcher<ExecutionType extends Enum<ExecutionType>> exten
   }
 
   @Override
-  public void describeMismatchSafely(ExecutionMonitor<ExecutionType> item, Description mismatchDescription) {
+  public void describeMismatchSafely(
+      ExecutionMonitor<ExecutionType> item,
+      Description mismatchDescription) {
     Set<ExecutionType> occuredButShouldNot = null;
     Set<ExecutionType> occuredNotButShould = null;
 
@@ -38,20 +40,22 @@ class ObservedExecutionsMatcher<ExecutionType extends Enum<ExecutionType>> exten
     } else {
       Class<ExecutionType> itemClass =
           (Class<ExecutionType>) item.getObservedExecutions().iterator().next().getClass();
-          occuredButShouldNot = new HashSet<>();
-          occuredNotButShould = new HashSet<>();
+      occuredButShouldNot = new HashSet<>();
+      occuredNotButShould = new HashSet<>();
 
       for (var execution : allOf(itemClass)) {
-        if (expectedExecutions.contains(execution) && !item.getObservedExecutions().contains(execution)) {
+        if (expectedExecutions.contains(execution)
+            && !item.getObservedExecutions().contains(execution)) {
           occuredNotButShould.add(execution);
-        } else if (item.getObservedExecutions().contains(execution) && !expectedExecutions.contains(execution)) {
+        } else if (item.getObservedExecutions().contains(execution)
+            && !expectedExecutions.contains(execution)) {
           occuredButShouldNot.add(execution);
         }
       }
     }
     if (!occuredNotButShould.isEmpty()) {
-      mismatchDescription.
-          appendText("these expected executions were missing: ")
+      mismatchDescription
+          .appendText("these expected executions were missing: ")
           .appendValueList("[", ",", "]", occuredNotButShould);
     }
     if (!occuredButShouldNot.isEmpty()) {

@@ -119,7 +119,8 @@ class ReactionsGeneratorTest {
 
     Optional<String> secondChangePropagationSpecificationFileName =
         fsa.getAllFiles().keySet().stream()
-            .filter(name -> name.endsWith(getChangePropagationSpecificationFileSuffix(SECOND_SEGMENT)))
+            .filter(name ->
+                name.endsWith(getChangePropagationSpecificationFileSuffix(SECOND_SEGMENT)))
             .findFirst();
     assertTrue(secondChangePropagationSpecificationFileName.isPresent());
     fsa.deleteFile(secondChangePropagationSpecificationFileName.get(), "");

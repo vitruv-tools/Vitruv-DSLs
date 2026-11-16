@@ -28,14 +28,18 @@ import tools.vitruv.dsls.reactions.tests.ReactionsExecutionTest;
 import tools.vitruv.dsls.reactions.tests.TestReactionsCompiler;
 
 class BidirectionalExecutionTests extends ReactionsExecutionTest {
-  private static final Path SOURCE_MODEL = TestMetamodelsPathFactory.allElementTypes("BidirectionalSource");
-  private static final Path TARGET_MODEL = TestMetamodelsPathFactory.allElementTypes("BidirectionalTarget");
-  private final String[] nonContainmentNonRootIds = { "NonRootHelper0", "NonRootHelper1", "NonRootHelper2" };
+  private static final Path SOURCE_MODEL =
+      TestMetamodelsPathFactory.allElementTypes("BidirectionalSource");
+  private static final Path TARGET_MODEL =
+      TestMetamodelsPathFactory.allElementTypes("BidirectionalTarget");
+  private final String[] nonContainmentNonRootIds =
+        { "NonRootHelper0", "NonRootHelper1", "NonRootHelper2" };
 
   @Override
   protected TestReactionsCompiler createCompiler(TestReactionsCompiler.Factory factory) {
-    return factory.createCompiler((TestReactionsCompiler.TestReactionsCompilerParameters compilerParameters) -> {
-      compilerParameters.setReactions(List.of("/tools/vitruv/dsls/reactions/tests/AllElementTypesRedundancy.reactions"));
+    return factory.createCompiler(compilerParameters -> {
+      compilerParameters.setReactions(List.of(
+          "/tools/vitruv/dsls/reactions/tests/AllElementTypesRedundancy.reactions"));
       compilerParameters.setChangePropagationSegments(List.of("simpleChangesTests"));
     });
   }
@@ -48,7 +52,7 @@ class BidirectionalExecutionTests extends ReactionsExecutionTest {
       NonRootObjectContainerHelper nonRootObjectContainerHelper
           = AllElementTypesCreators.aet.NonRootObjectContainerHelper();
       nonRootObjectContainerHelper.setId("NonRootObjectContainer");
-      for (var nonContainmentRootId: nonContainmentNonRootIds) {
+      for (var nonContainmentRootId : nonContainmentNonRootIds) {
         NonRoot nonRoot = AllElementTypesCreators.aet.NonRoot();
         nonRoot.setId(nonContainmentRootId);
         nonRootObjectContainerHelper.getNonRootObjectsContainment().add(nonRoot);
@@ -88,33 +92,42 @@ class BidirectionalExecutionTests extends ReactionsExecutionTest {
   void testBasicBidirectionalApplication() {
     List<PropagatedChange> propagatedChanges = propagate(from(Root.class, TARGET_MODEL),
         root -> {
-      NonRoot nonRoot = AllElementTypesCreators.aet.NonRoot();
-      nonRoot.setId("bidirectionalId");
-      root.setSingleValuedContainmentEReference(nonRoot);
-    });
+        NonRoot nonRoot = AllElementTypesCreators.aet.NonRoot();
+        nonRoot.setId("bidirectionalId");
+        root.setSingleValuedContainmentEReference(nonRoot);
+      });
     assertThat(propagatedChanges.size(), is(2));
-    VitruviusChange<EObject> consequentialSourceModelChange = getSourceModelChanges(propagatedChanges.getFirst());
+    VitruviusChange<EObject> consequentialSourceModelChange =
+        getSourceModelChanges(propagatedChanges.getFirst());
     expectChangeAt(consequentialSourceModelChange, 0, CreateEObject.class);
     expectChangeAt(consequentialSourceModelChange, 1, ReplaceSingleValuedEReference.class);
 
     assertThat(resourceAt(SOURCE_MODEL), ModelMatchers.containsModelOf(resourceAt(TARGET_MODEL)));
-    assertThat(from(Root.class, SOURCE_MODEL).getSingleValuedContainmentEReference().getId(), is("bidirectionalId"));
-    assertThat(from(Root.class, TARGET_MODEL).getSingleValuedContainmentEReference().getId(), is("bidirectionalId"));
+    assertThat(from(Root.class, SOURCE_MODEL).getSingleValuedContainmentEReference().getId(),
+        is("bidirectionalId"));
+    assertThat(from(Root.class, TARGET_MODEL).getSingleValuedContainmentEReference().getId(),
+        is("bidirectionalId"));
     assertThat(propagatedChanges.get(1).getConsequentialChanges().getEChanges(), is(List.of()));
   }
 
   @Test
   void testApplyRemoveInTargetModel() {
     List<PropagatedChange> propagatedChanges = propagate(from(Root.class, TARGET_MODEL),
-        root -> root.getNonRootObjectContainerHelper().getNonRootObjectsContainment().removeFirst());
+        root ->
+            root.getNonRootObjectContainerHelper().getNonRootObjectsContainment().removeFirst());
     assertThat(propagatedChanges.size(), is(2));
-    VitruviusChange<EObject> consequentialSourceModelChange = getSourceModelChanges(propagatedChanges.getFirst());
+    VitruviusChange<EObject> consequentialSourceModelChange =
+        getSourceModelChanges(propagatedChanges.getFirst());
 
     expectChangeAt(consequentialSourceModelChange, 0, RemoveEReference.class);
     expectChangeAt(consequentialSourceModelChange, 1, DeleteEObject.class);
     assertThat(resourceAt(SOURCE_MODEL), ModelMatchers.containsModelOf(resourceAt(TARGET_MODEL)));
-    assertThat(from(Root.class, SOURCE_MODEL).getNonRootObjectContainerHelper().getNonRootObjectsContainment().size(), is(2));
-    assertThat(from(Root.class, TARGET_MODEL).getNonRootObjectContainerHelper().getNonRootObjectsContainment().size(), is(2));
+    assertThat(from(Root.class, SOURCE_MODEL)
+            .getNonRootObjectContainerHelper().getNonRootObjectsContainment().size(),
+        is(2));
+    assertThat(from(Root.class, TARGET_MODEL)
+            .getNonRootObjectContainerHelper().getNonRootObjectsContainment().size(),
+        is(2));
     assertThat(propagatedChanges.get(1).getConsequentialChanges().getEChanges(), is(List.of()));
   }
 
@@ -122,14 +135,15 @@ class BidirectionalExecutionTests extends ReactionsExecutionTest {
   void testApplyRemoveRootInTargetModel() {
     List<PropagatedChange> propagatedChanges = propagate(resourceAt(TARGET_MODEL),
         resource -> {
-      try {
-        resource.delete(null);
-      } catch (Throwable _e) {
-        throw Exceptions.sneakyThrow(_e);
-      }
-    });
+        try {
+          resource.delete(null);
+        } catch (Throwable e) {
+          throw Exceptions.sneakyThrow(e);
+        }
+      });
     assertThat(propagatedChanges.size(), is(2));
-    VitruviusChange<EObject> consequentialSourceModelChange = getSourceModelChanges(propagatedChanges.getFirst());
+    VitruviusChange<EObject> consequentialSourceModelChange =
+        getSourceModelChanges(propagatedChanges.getFirst());
     expectChangeAt(consequentialSourceModelChange, 0, RemoveRootEObject.class);
     expectChangeAt(consequentialSourceModelChange, 1, DeleteEObject.class);
     assertThat(resourceAt(SOURCE_MODEL), ModelMatchers.doesNotExist());
