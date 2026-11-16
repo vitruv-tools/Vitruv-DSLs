@@ -100,7 +100,7 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
    * between two model elements.
    */
   protected static class CorrespondenceRetriever extends Loggable {
-    private EditableCorrespondenceModelView<ReactionsCorrespondence> correspondenceModel;
+    private final EditableCorrespondenceModelView<ReactionsCorrespondence> correspondenceModel;
 
     /**
      * Creates a new CorrespondenceRetriever that works on <code>correspondenceModel</code>.
@@ -365,7 +365,7 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
      *
      * @param eObject {@link EObject}
      */
-    public void create(EObject eObject){
+    public void create(EObject eObject) {
       CreateEObject<EObject> createEObject =
           TypeInferringAtomicEChangeFactory.getInstance().createCreateEObjectChange(eObject);
       issueEChange(createEObject);
@@ -383,14 +383,16 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
     }
 
     /**
-     * Issues a {@link ReplaceSingleValuedEAttribute} that sets {@code eObject.attribute} to {@code value}.
+     * Issues a {@link ReplaceSingleValuedEAttribute}
+     * that sets {@code eObject.attribute} to {@code value}.
      *
      * @param attribute {@link EAttribute}
      * @param eObject {@link EObject}
      * @param value AttributeValue
      * @param <AttributeValue> the type of {@param attribute}
      */
-    public <AttributeValue> void setAttribute(EAttribute attribute, EObject eObject, AttributeValue value) {
+    public <AttributeValue> void setAttribute(
+        EAttribute attribute, EObject eObject, AttributeValue value) {
       ReplaceSingleValuedEAttribute<EObject, AttributeValue> replaceSingleValuedEAttribute =
           TypeInferringAtomicEChangeFactory.getInstance().createReplaceSingleAttributeChange(
               eObject,
@@ -402,13 +404,15 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
     }
 
     /**
-     * Issues a {@link InsertEReference} change that add {@code eObjectTo} to {@code eObjectFrom.reference}.
+     * Issues a {@link InsertEReference} change that adds {@code eObjectTo}
+     * to {@code eObjectFrom.reference}.
      *
      * @param reference {@link EReference}
      * @param eObjectFrom {@link EObject}
      * @param eObjectTo {@link EObject}
      */
-    public void addReference(EReference reference, EObject eObjectFrom, EObject eObjectTo) {
+    public void addReference(
+        EReference reference, EObject eObjectFrom, EObject eObjectTo) {
       InsertEReference<EObject> insertEReference =
           TypeInferringAtomicEChangeFactory.getInstance().createInsertReferenceChange(
               eObjectFrom,
@@ -419,7 +423,16 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
       issueEChange(insertEReference);
     }
 
-    public void removeReference(EReference reference, EObject eObjectFrom, EObject eObjectTo) {
+    /**
+     * Issues a {@link RemoveEReference} change that removes {@code eObjectTo}
+     * from {@code eObjectFrom.reference}.
+     *
+     * @param reference {@link EReference}
+     * @param eObjectFrom {@link EObject}
+     * @param eObjectTo {@link EObject}
+     */
+    public void removeReference(
+        EReference reference, EObject eObjectFrom, EObject eObjectTo) {
       RemoveEReference<EObject> removeEReference =
           TypeInferringAtomicEChangeFactory.getInstance().createRemoveReferenceChange(
               eObjectFrom,
