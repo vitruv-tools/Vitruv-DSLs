@@ -25,10 +25,13 @@ import tools.vitruv.change.atomic.TypeInferringAtomicEChangeFactory;
 import tools.vitruv.change.atomic.command.internal.ApplyEChangeSwitch;
 import tools.vitruv.change.atomic.eobject.CreateEObject;
 import tools.vitruv.change.atomic.eobject.DeleteEObject;
+import tools.vitruv.change.atomic.feature.attribute.InsertEAttributeValue;
+import tools.vitruv.change.atomic.feature.attribute.RemoveEAttributeValue;
 import tools.vitruv.change.atomic.feature.attribute.ReplaceSingleValuedEAttribute;
 import tools.vitruv.change.atomic.feature.reference.InsertEReference;
 import tools.vitruv.change.atomic.feature.reference.RemoveEReference;
 import tools.vitruv.change.composite.description.AnnotationSource;
+import tools.vitruv.change.atomic.feature.reference.ReplaceSingleValuedEReference;
 import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView;
 import tools.vitruv.change.interaction.UserInteractor;
 import tools.vitruv.dsls.reactions.runtime.correspondence.ReactionsCorrespondence;
@@ -407,8 +410,8 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
     }
 
     /**
-     * Issues a {@link ReplaceSingleValuedEAttribute}
-     * that sets {@code eObject.attribute} to {@code value}.
+     * Issues a {@link ReplaceSingleValuedEAttribute} change
+     * that sets the single-valued {@code eObject.attribute} to {@code value}.
      *
      * @param attribute {@link EAttribute}
      * @param eObject {@link EObject}
@@ -428,8 +431,71 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
     }
 
     /**
+     * Issues an {@link InsertEAttributeValue}
+     * that adds {@code value} to the multi-valued {@code eObject.attribute}.
+     *
+     * @param attribute {@link EAttribute}
+     * @param eObject {@link EObject}
+     * @param value AttributeValue
+     * @param <AttributeValue> the type of {@param attribute}
+     */
+    public <AttributeValue> void insertAttributeValue(
+        EAttribute attribute, EObject eObject, AttributeValue value) {
+      InsertEAttributeValue<EObject, AttributeValue> insertEAttributeValue =
+          TypeInferringAtomicEChangeFactory.getInstance().createInsertAttributeChange(
+              eObject,
+              attribute,
+              ((EList<?>) eObject.eGet(attribute)).size(),
+              value
+          );
+      issueEChange(insertEAttributeValue);
+    }
+
+    /**
+     * Issues an {@link RemoveEAttributeValue}
+     * that removes {@code value} from the multi-valued {@code eObject.attribute}.
+     *
+     * @param attribute {@link EAttribute}
+     * @param eObject {@link EObject}
+     * @param value AttributeValue
+     * @param <AttributeValue> the type of {@param attribute}
+     */
+    public <AttributeValue> void removeAttributeValue(
+        EAttribute attribute, EObject eObject, AttributeValue value) {
+      RemoveEAttributeValue<EObject, AttributeValue> removeEAttributeValue =
+          TypeInferringAtomicEChangeFactory.getInstance().createRemoveAttributeChange(
+              eObject,
+              attribute,
+              ((EList<?>) eObject.eGet(attribute)).lastIndexOf(value),
+              value
+      );
+      issueEChange(removeEAttributeValue);
+    }
+
+    /**
+     * Issues a {@link ReplaceSingleValuedEReference} change that sets the value
+     * of the single-valued {@code eObjectFrom.reference} to {@code eObjectTo}.
+     *
+     * @param reference {@link EReference}
+     * @param eObjectFrom {@link EObject}
+     * @param eObjectTo {@link EObject}
+     */
+    public void setReference(
+        EReference reference, EObject eObjectFrom, EObject eObjectTo
+    ) {
+      ReplaceSingleValuedEReference<EObject> replaceEReference =
+          TypeInferringAtomicEChangeFactory.getInstance().createReplaceSingleReferenceChange(
+              eObjectFrom,
+              reference,
+              (EObject) eObjectFrom.eGet(reference),
+              eObjectTo
+          );
+      issueEChange(replaceEReference);
+    }
+
+    /**
      * Issues a {@link InsertEReference} change that adds {@code eObjectTo}
-     * to {@code eObjectFrom.reference}.
+     * to the multi-valued {@code eObjectFrom.reference}.
      *
      * @param reference {@link EReference}
      * @param eObjectFrom {@link EObject}
@@ -449,7 +515,7 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
 
     /**
      * Issues a {@link RemoveEReference} change that removes {@code eObjectTo}
-     * from {@code eObjectFrom.reference}.
+     * from the multi-valued {@code eObjectFrom.reference}.
      *
      * @param reference {@link EReference}
      * @param eObjectFrom {@link EObject}

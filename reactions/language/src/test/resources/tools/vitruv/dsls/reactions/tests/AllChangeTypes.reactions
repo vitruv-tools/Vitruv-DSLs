@@ -183,6 +183,7 @@ routine deleteNonRootEObjectSingle(minimal::Root container, minimal::NonRoot con
 	}
 	update {
 		removeCorrespondenceBetween(containedObject, targetElement)
+		setReference(AllElementTypesPackage.eINSTANCE.root_SingleValuedContainmentEReference, correspondingContainer, null)
 		delete(targetElement)
 		SimpleChangesTestsExecutionMonitor.instance.set(DeleteNonRootEObjectSingle);
 	}
@@ -197,7 +198,7 @@ routine createNonRootEObjectSingle(minimal::Root sourceRoot, minimal::NonRoot co
 		val newNonRoot = AllElementTypesFactory.eINSTANCE.createNonRoot
 		create(newNonRoot)
 	  setAttribute(AllElementTypesPackage.eINSTANCE.identified_Id, newNonRoot, containedObject.id);
-		targetElement.singleValuedContainmentEReference = newNonRoot;
+		setReference(AllElementTypesPackage.eINSTANCE.root_SingleValuedContainmentEReference, targetElement, newNonRoot)
 		addCorrespondenceBetween(newNonRoot, containedObject)
 		SimpleChangesTestsExecutionMonitor.instance.set(CreateNonRootEObjectSingle);
 	}
@@ -217,7 +218,7 @@ routine replaceSingleValuedNonContainmentReference(minimal::Root rootElement, mi
 		val targetElement = retrieve asserted minimal::NonRoot corresponding to newReferencedElement
 	}
 	update {
-		targetContainer.singleValuedNonContainmentEReference = targetElement;
+		setReference(AllElementTypesPackage.eINSTANCE.root_SingleValuedNonContainmentEReference, targetContainer, targetElement)
 		SimpleChangesTestsExecutionMonitor.instance.set(UpdateSingleValuedNonContainmentEReference);
 	}
 }
@@ -233,9 +234,11 @@ reaction InsertedEAttributeValue {
 routine insertEAttribute(minimal::Root rootElement, Integer attributeValue) {
 	match {
 		val targetElement = retrieve asserted minimal::Root corresponding to rootElement
+		// Attribute values are unique: skip changes that were already applied (e.g. echoed from the target)
+		check { !targetElement.multiValuedEAttribute.contains(attributeValue) }
 	}
 	update {
-		targetElement.multiValuedEAttribute += attributeValue;
+		insertAttributeValue(AllElementTypesPackage.eINSTANCE.root_MultiValuedEAttribute, targetElement, attributeValue)
 		SimpleChangesTestsExecutionMonitor.instance.set(InsertEAttributeValue);
 	}
 }
@@ -251,10 +254,10 @@ reaction RemovedEAttributeValue {
 routine removeEAttribute(minimal::Root rootElement, Integer removedAttributeValue) {
 	match {
 		val targetElement = retrieve asserted minimal::Root corresponding to rootElement
+		check { targetElement.multiValuedEAttribute.contains(removedAttributeValue) }
 	}
 	update {
-		val sourceValueList = rootElement.multiValuedEAttribute;
-		targetElement.multiValuedEAttribute.removeIf[!sourceValueList.contains(it.intValue)];
+		removeAttributeValue(AllElementTypesPackage.eINSTANCE.root_MultiValuedEAttribute, targetElement, removedAttributeValue)
 		SimpleChangesTestsExecutionMonitor.instance.set(RemoveEAttributeValue);
 	}
 }
@@ -276,7 +279,7 @@ routine insertNonContainmentReference(minimal::Root rootElement, minimal::NonRoo
 			it.id == insertedNonRoot.id
 		];
 		addReference(AllElementTypesPackage.eINSTANCE.root_MultiValuedNonContainmentEReference, targetElement, addedNonRoot)
-		SimpleChangesTestsExecutionMonitor.instance.set(InsertNonContainmentEReference);
+		SimpleChangesTestsExecutionMonitor.instance.set(InsertNonContainmentEReference)
 	}
 }
 
@@ -293,7 +296,8 @@ routine removeNonContainmentReference(minimal::Root rootElement, minimal::NonRoo
 		val targetRoot = retrieve asserted minimal::Root corresponding to rootElement
 	}
 	update {
-		targetRoot.multiValuedNonContainmentEReference.removeIf[it.id == removedNonRoot.id];
+		val removedTarget = targetRoot.multiValuedNonContainmentEReference.findFirst[it.id == removedNonRoot.id]
+		removeReference(AllElementTypesPackage.eINSTANCE.root_MultiValuedNonContainmentEReference, targetRoot, removedTarget)
 		SimpleChangesTestsExecutionMonitor.instance.set(RemoveNonContainmentEReference);
 	}
 }
@@ -316,7 +320,7 @@ routine createNonRootObjectContainer(minimal::Root rootElement, minimal::NonRoot
 		val newNonRootContainer = AllElementTypesFactory.eINSTANCE.createNonRootObjectContainerHelper
 		create(newNonRootContainer)
 		setAttribute(AllElementTypesPackage.eINSTANCE.identified_Id, newNonRootContainer, nonRootObjectContainer.id)
-		targetElement.nonRootObjectContainerHelper = newNonRootContainer;
+		setReference(AllElementTypesPackage.eINSTANCE.root_NonRootObjectContainerHelper, targetElement, newNonRootContainer)
 		addCorrespondenceBetween(newNonRootContainer, nonRootObjectContainer)
 	}
 }

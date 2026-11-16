@@ -11,6 +11,7 @@ import allElementTypes.NonRootObjectContainerHelper;
 import allElementTypes.Root;
 import java.util.List;
 import org.eclipse.emf.common.util.EList;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tools.vitruv.change.testutils.matchers.ModelMatchers;
@@ -48,11 +49,16 @@ class SimpleChangesExplicitTests extends ReactionsExecutionTest {
     assertThat(getExecutionMonitor(), ExecutionMonitor.observedExecutions(changes));
   }
 
-  @BeforeEach
-  void createRoot() {
+  @AfterEach
+  void clearEventsFromExecutionMonitor() {
     // The monitor is a singleton: drop events left over from the previous test
     resetExecutionMonitor();
+  }
 
+  @BeforeEach
+  void createRoot() {
+    // Other test classes share the monitor singleton and may leave events behind
+    resetExecutionMonitor();
     propagate(resourceAt(SOURCE_MODEL), resource -> {
       Root root = AllElementTypesCreators.aet.Root();
       root.setId("EachTestModelSource");
@@ -90,8 +96,6 @@ class SimpleChangesExplicitTests extends ReactionsExecutionTest {
     return from(Root.class, SOURCE_MODEL);
   }
 
-  // setAttribute
-
   @Test
   void testUpdateSingleValuedEAttribute() {
     propagate(getRoot(), root -> root.setSingleValuedEAttribute(-1));
@@ -106,7 +110,101 @@ class SimpleChangesExplicitTests extends ReactionsExecutionTest {
     expectChangeInTargetModel();
   }
 
-  // addReference (insert)
+  @Test
+  void testAddMultiValuedEAttribute() {
+    propagate(getRoot(), root -> root.getMultiValuedEAttribute().add(1));
+    expectChanges(ChangeType.InsertEAttributeValue);
+    expectChangeInTargetModel();
+  }
+
+  @Test
+  void testDeleteMultiValuedEAttribute() {
+    propagate(getRoot(), root -> root.getMultiValuedEAttribute().addAll(List.of(1, 2)));
+    resetExecutionMonitor();
+    propagate(getRoot(), root -> root.getMultiValuedEAttribute().removeFirst());
+    expectChanges(ChangeType.RemoveEAttributeValue);
+    assertThat(getRoot().getMultiValuedEAttribute().getFirst(), is(2));
+    expectChangeInTargetModel();
+  }
+
+  @Test
+  void testReplaceMultiValuedEAttribute() {
+    propagate(getRoot(), root -> root.getMultiValuedEAttribute().addAll(List.of(1, 2)));
+    resetExecutionMonitor();
+    propagate(getRoot(), root -> root.getMultiValuedEAttribute().set(1, 3));
+    expectChanges(ChangeType.RemoveEAttributeValue, ChangeType.InsertEAttributeValue);
+    assertThat(getRoot().getMultiValuedEAttribute().get(1), is(3));
+    expectChangeInTargetModel();
+  }
+
+  @Test
+  void testCreateSingleValuedContainmentEReference() {
+    propagate(getRoot(), root -> {
+      NonRoot nonRoot = AllElementTypesCreators.aet.NonRoot();
+      nonRoot.setId("singleValuedContainmentNonRootTest");
+      root.setSingleValuedContainmentEReference(nonRoot);
+    });
+    expectChanges(ChangeType.CreateEObject, ChangeType.CreateNonRootEObjectSingle);
+    expectChangeInTargetModel();
+  }
+
+  @Test
+  void testDeleteSingleValuedContainmentEReference() {
+    propagate(getRoot(), root -> {
+      NonRoot nonRoot = AllElementTypesCreators.aet.NonRoot();
+      nonRoot.setId("singleValuedContainmentNonRoot");
+      root.setSingleValuedContainmentEReference(nonRoot);
+    });
+    resetExecutionMonitor();
+
+    propagate(getRoot(), root -> root.setSingleValuedContainmentEReference(null));
+    expectChanges(ChangeType.DeleteEObject, ChangeType.DeleteNonRootEObjectSingle);
+    expectChangeInTargetModel();
+  }
+
+  @Test
+  void testReplaceSingleValuedContainmentEReference() {
+    propagate(getRoot(), root -> {
+      NonRoot nonRoot = AllElementTypesCreators.aet.NonRoot();
+      nonRoot.setId("singleValuedContainmentNonRootBefore");
+      root.setSingleValuedContainmentEReference(nonRoot);
+    });
+    resetExecutionMonitor();
+
+    propagate(getRoot(), root -> {
+      NonRoot nonRoot = AllElementTypesCreators.aet.NonRoot();
+      nonRoot.setId("singleValuedContainmentNonRootAfter");
+      root.setSingleValuedContainmentEReference(nonRoot);
+    });
+    expectChanges(
+        ChangeType.DeleteNonRootEObjectSingle,
+        ChangeType.DeleteEObject,
+        ChangeType.CreateNonRootEObjectSingle,
+        ChangeType.CreateEObject);
+    expectChangeInTargetModel();
+  }
+
+  @Test
+  void testSetSingleValuedNonContainmentEReference() {
+    String testId = nonContainmentNonRootIds[1];
+    propagate(getRoot(), root -> root.setSingleValuedNonContainmentEReference(nonRootWithId(root, testId)));
+    expectChanges(ChangeType.UpdateSingleValuedNonContainmentEReference);
+    assertThat(getRoot().getSingleValuedNonContainmentEReference().getId(), is(testId));
+    expectChangeInTargetModel();
+  }
+
+  @Test
+  void testReplaceSingleValuedNonContainmentEReference() {
+    propagate(getRoot(), root ->
+        root.setSingleValuedNonContainmentEReference(nonRootWithId(root, nonContainmentNonRootIds[0])));
+    resetExecutionMonitor();
+
+    String testId = nonContainmentNonRootIds[1];
+    propagate(getRoot(), root -> root.setSingleValuedNonContainmentEReference(nonRootWithId(root, testId)));
+    expectChanges(ChangeType.UpdateSingleValuedNonContainmentEReference);
+    assertThat(getRoot().getSingleValuedNonContainmentEReference().getId(), is(testId));
+    expectChangeInTargetModel();
+  }
 
   @Test
   void testAddMultiValuedContainmentEReference() {
@@ -126,8 +224,6 @@ class SimpleChangesExplicitTests extends ReactionsExecutionTest {
     expectChanges(ChangeType.InsertNonContainmentEReference);
     expectChangeInTargetModel();
   }
-
-  // removeReference
 
   @Test
   void testDeleteMultiValuedContainmentEReference() {
