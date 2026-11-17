@@ -11,6 +11,7 @@ import allElementTypes.NonRootObjectContainerHelper;
 import allElementTypes.Root;
 import java.util.List;
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.xtext.xbase.lib.Exceptions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -267,6 +268,23 @@ class SimpleChangesExplicitTests extends ReactionsExecutionTest {
     assertThat(from.getMultiValuedNonContainmentEReference().size(), is(2));
     assertThat(from.getMultiValuedNonContainmentEReference().get(1).getId(), is(nonContainmentNonRootIds[2]));
     expectChangeInTargetModel();
+  }
+
+
+  @Test
+  void testDeleteEachTestModel() {
+    assertThat(resourceAt(SOURCE_MODEL), ModelMatchers.exists());
+    assertThat(resourceAt(TARGET_MODEL), ModelMatchers.exists());
+
+    propagate(resourceAt(SOURCE_MODEL), resource -> {
+      try {
+        resource.delete(null);
+      } catch (Throwable e) {
+        throw Exceptions.sneakyThrow(e);
+      }
+    });
+    assertThat(resourceAt(SOURCE_MODEL), ModelMatchers.doesNotExist());
+    assertThat(resourceAt(TARGET_MODEL), ModelMatchers.doesNotExist());
   }
 
   @Test

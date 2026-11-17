@@ -32,6 +32,8 @@ import tools.vitruv.change.atomic.feature.reference.InsertEReference;
 import tools.vitruv.change.atomic.feature.reference.RemoveEReference;
 import tools.vitruv.change.composite.description.AnnotationSource;
 import tools.vitruv.change.atomic.feature.reference.ReplaceSingleValuedEReference;
+import tools.vitruv.change.atomic.root.InsertRootEObject;
+import tools.vitruv.change.atomic.root.RemoveRootEObject;
 import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView;
 import tools.vitruv.change.interaction.UserInteractor;
 import tools.vitruv.dsls.reactions.runtime.correspondence.ReactionsCorrespondence;
@@ -470,6 +472,42 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
               value
       );
       issueEChange(removeEAttributeValue);
+    }
+
+    /**
+     * Issues an {@link InsertRootEObject} change
+     * that adds {@code elementToInsert} as root of the resource at {@code uri}.
+     * The resource is created if it does not exist yet.
+     *
+     * @param elementToInsert {@link EObject}
+     * @param uri {@link URI}
+     */
+    public void insertRoot(EObject elementToInsert, URI uri) {
+      Resource resource = executionState.getResourceAccess().getModelResource(uri);
+      InsertRootEObject<EObject> insertRootEObject =
+          TypeInferringAtomicEChangeFactory.getInstance().createInsertRootChange(
+              elementToInsert,
+              resource,
+              resource.getContents().size()
+          );
+      issueEChange(insertRootEObject);
+    }
+
+    /**
+     * Issues a {@link RemoveRootEObject} change that removes {@code eObject}
+     * from its resource.
+     *
+     * @param eObject {@link EObject}
+     */
+    public void removeRoot(EObject eObject) {
+      Resource resource = eObject.eResource();
+      RemoveRootEObject<EObject> removeRootEObject =
+          TypeInferringAtomicEChangeFactory.getInstance().createRemoveRootChange(
+              eObject,
+              resource,
+              resource.getContents().indexOf(eObject)
+          );
+      issueEChange(removeRootEObject);
     }
 
     /**
