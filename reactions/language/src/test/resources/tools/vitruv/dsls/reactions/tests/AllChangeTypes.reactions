@@ -36,7 +36,8 @@ routine createRoot(minimal::Root rootElement) {
 		  .trimFileExtension.lastSegment.replace('Source', 'Target')
 		  .allElementTypes
 
-		persistProjectRelative(rootElement, newRoot, targetModel.toString)
+		val targetUri = rootElement.eResource.URI.trimSegments(1).appendSegment(targetModel.toString)
+		insertRoot(newRoot, targetUri)
 		addCorrespondenceBetween(newRoot, rootElement)
 	}
 }
@@ -52,8 +53,8 @@ routine deleteRoot(minimal::Root rootElement) {
 	}
 	update {
 		removeCorrespondenceBetween(rootElement, oldModel)
+		removeRoot(oldModel)
 		delete(oldModel)
-		// removeObject(oldModel)
 	}
 }
 

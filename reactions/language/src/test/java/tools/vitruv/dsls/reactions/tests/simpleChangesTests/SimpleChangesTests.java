@@ -350,7 +350,7 @@ class SimpleChangesTests extends ReactionsExecutionTest {
       root.getMultiValuedNonContainmentEReference().sort((a, b) -> -a.getId().compareTo(b.getId()));
     });
     expectChanges(ChangeType.PermuteNonContainmentEReference);
-   expectChangeInTargetModel();
+    expectChangeInTargetModel();
   }
 
   @Test
