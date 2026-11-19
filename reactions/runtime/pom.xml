@@ -105,6 +105,11 @@
       <artifactId>junit-jupiter-api</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>tools.vitruv</groupId>
+      <artifactId>tools.vitruv.change.testutils.metamodels</artifactId>
+      <scope>test</scope>
+    </dependency>
     <!-- p2 compile dependencies -->
     <dependency>
       <groupId>${project.groupId}</groupId>

@@ -14,9 +14,10 @@ import java.util.function.Predicate;
  * A {@link URLClassLoader} that can have entries added after construction, so that model
  * projects discovered later in the session (see {@link ReactionsClasspathRegistrar}) become
  * visible to Xbase's JVM type resolution without restarting the language server.
- * <p>
- * Besides plain classpath entries, it can serve classes from a directory only for the class names
- * a filter accepts (see {@link #addFilteredClassesDirectory(File, Predicate)}). Plain entries win.
+ *
+ * <p>Besides plain classpath entries, it can serve classes from a directory only for
+ * the class names a filter accepts (see {@link #addFilteredClassesDirectory(File, Predicate)}).
+ * Plain entries win.
  */
 public class MutableUrlClassLoader extends URLClassLoader {
 

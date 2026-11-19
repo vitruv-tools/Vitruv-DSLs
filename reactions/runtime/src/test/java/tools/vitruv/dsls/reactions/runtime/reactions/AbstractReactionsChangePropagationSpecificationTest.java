@@ -91,8 +91,8 @@ class AbstractReactionsChangePropagationSpecificationTest {
 
     @Override
     protected void setup() {
-      Reaction recordingReaction = (change, executionState) -> {
-        changes.add(change);
+      Reaction recordingReaction = (eChange, executionState) -> {
+        changes.add(eChange);
         executionStates.add(executionState);
       };
       addReaction(recordingReaction);

@@ -1,0 +1,59 @@
+package tools.vitruv.dsls.reactions.builder;
+
+import allElementTypes.AllElementTypesPackage;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import org.eclipse.xtext.common.types.JvmFormalParameter;
+import org.eclipse.xtext.testing.InjectWith;
+import org.eclipse.xtext.testing.extensions.InjectionExtension;
+import org.eclipse.xtext.xbase.XExpression;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import tools.vitruv.dsls.reactions.tests.ReactionsLanguageInjectorProvider;
+
+@ExtendWith(InjectionExtension.class)
+@InjectWith(ReactionsLanguageInjectorProvider.class)
+
+class ComplexRoutineLogicTests extends FluentReactionsBuilderTest {
+  @Test
+  void testCase() {
+    FluentReactionsFileBuilder reactionsFile = this.create.reactionsFile("createRootTest");
+    FluentReactionsSegmentBuilder executeActionsIn = this.create
+        .reactionsSegment("simpleChangesRootTests")
+        .inReactionToChangesIn(AllElementTypesPackage.eINSTANCE)
+        .executeActionsIn(AllElementTypesPackage.eINSTANCE);
+
+    final Consumer<FluentRoutineBuilder.RoutineStartBuilder> function =
+        (FluentRoutineBuilder.RoutineStartBuilder it) -> {
+          Consumer<FluentRoutineBuilder.UpdateStatementBuilder> function1 =
+              (FluentRoutineBuilder.UpdateStatementBuilder statementBuilder) -> {
+                Function<TypeProvider, XExpression> updateBody = (TypeProvider provider) -> {
+                  JvmFormalParameter loopVariable = formalParameter("b");
+                  return forLoop(
+                      loopVariable,
+                      xtendListOf(number("10")),
+                      block(
+                          assign(loopVariable, number("20"))
+                      )
+                  );
+                };
+                statementBuilder.execute(updateBody);
+              };
+          it.update(function1);
+        };
+    FluentReactionBuilder reactionBuilder = this.create
+        .reaction("CreateRootTest")
+        .afterElement(FluentReactionsBuilderTest.Root)
+        .created()
+        .call(function);
+    FluentReactionsSegmentBuilder segmentBuilder = executeActionsIn.operator_add(reactionBuilder);
+    final FluentReactionsFileBuilder builder = reactionsFile.operator_add(segmentBuilder);
+
+    String complexRoutineLogicReactionText = readReactions("ComplexRoutineLogic.reactions");
+
+    MatcherAssert.<FluentReactionsFileBuilder>assertThat(
+        builder, this.builds(complexRoutineLogicReactionText));
+  }
+
+}

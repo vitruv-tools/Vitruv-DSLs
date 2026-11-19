@@ -8,14 +8,31 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 import lombok.val;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.xbase.lib.Exceptions;
 import org.eclipse.xtext.xbase.lib.Extension;
+import tools.vitruv.change.atomic.EChange;
+import tools.vitruv.change.atomic.TypeInferringAtomicEChangeFactory;
+import tools.vitruv.change.atomic.command.internal.ApplyEChangeSwitch;
+import tools.vitruv.change.atomic.eobject.CreateEObject;
+import tools.vitruv.change.atomic.eobject.DeleteEObject;
+import tools.vitruv.change.atomic.feature.attribute.InsertEAttributeValue;
+import tools.vitruv.change.atomic.feature.attribute.RemoveEAttributeValue;
+import tools.vitruv.change.atomic.feature.attribute.ReplaceSingleValuedEAttribute;
+import tools.vitruv.change.atomic.feature.reference.InsertEReference;
+import tools.vitruv.change.atomic.feature.reference.RemoveEReference;
+import tools.vitruv.change.atomic.feature.reference.ReplaceSingleValuedEReference;
+import tools.vitruv.change.atomic.root.InsertRootEObject;
+import tools.vitruv.change.atomic.root.RemoveRootEObject;
 import tools.vitruv.change.composite.description.AnnotationSource;
 import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView;
 import tools.vitruv.change.interaction.UserInteractor;
@@ -28,6 +45,7 @@ import tools.vitruv.dsls.reactions.runtime.structure.Loggable;
 /**
  * AbstractRoutine provides a base implementation of a {@link Routine}.
  */
+@Log4j2
 public abstract class AbstractRoutine extends CallHierarchyHaving implements Routine {
   private final AbstractRoutinesFacade routinesFacade;
 
@@ -89,7 +107,7 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
    * between two model elements.
    */
   protected static class CorrespondenceRetriever extends Loggable {
-    private EditableCorrespondenceModelView<ReactionsCorrespondence> correspondenceModel;
+    private final EditableCorrespondenceModelView<ReactionsCorrespondence> correspondenceModel;
 
     /**
      * Creates a new CorrespondenceRetriever that works on <code>correspondenceModel</code>.
@@ -354,6 +372,202 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
       executionState
           .getCorrespondenceModel()
           .addCorrespondenceBetween(firstElement, secondElement, tag == null ? "" : tag);
+    }
+
+    /**
+     * Applies {@code change} on the underlying models.
+     *
+     * <p>Normally, {@link EChange}s are only created in response to modifications to the models.
+     * What this means is that we cannot check applicability conditions for these {@link EChange}s
+     * or ensure that they conflict with other concurrently running changes.
+     * We provide this method to hide such condition checking behind.
+     *
+     * @param change {@link EChange}
+     */
+    protected void issueEChange(EChange<EObject> change) {
+      ApplyEChangeSwitch.applyEChange(change, true);
+    }
+
+    /**
+     * Issues a {@link CreateEObject} change for {@code eObject}.
+     *
+     * @param eObject {@link EObject}
+     */
+    public void create(EObject eObject) {
+      CreateEObject<EObject> createEObject =
+          TypeInferringAtomicEChangeFactory.getInstance().createCreateEObjectChange(eObject);
+      issueEChange(createEObject);
+    }
+
+    /**
+     * Issues a {@link DeleteEObject} change for {@code eObject}.
+     *
+     * @param eObject {@link EObject}
+     */
+    public void delete(EObject eObject) {
+      DeleteEObject<EObject> deleteEObject =
+          TypeInferringAtomicEChangeFactory.getInstance().createDeleteEObjectChange(eObject);
+      issueEChange(deleteEObject);
+    }
+
+    /**
+     * Issues a {@link ReplaceSingleValuedEAttribute} change
+     * that sets the single-valued {@code eObject.attribute} to {@code value}.
+     *
+     * @param attribute {@link EAttribute}
+     * @param eObject {@link EObject}
+     * @param value AttributeValue
+     * @param <AttributeValue> the type of {@param attribute}
+     */
+    public <AttributeValue> void setAttribute(
+        EAttribute attribute, EObject eObject, AttributeValue value) {
+      ReplaceSingleValuedEAttribute<EObject, AttributeValue> replaceSingleValuedEAttribute =
+          TypeInferringAtomicEChangeFactory.getInstance().createReplaceSingleAttributeChange(
+              eObject,
+              attribute,
+              (AttributeValue) eObject.eGet(attribute),
+              value
+          );
+      issueEChange(replaceSingleValuedEAttribute);
+    }
+
+    /**
+     * Issues an {@link InsertEAttributeValue}
+     * that adds {@code value} to the multi-valued {@code eObject.attribute}.
+     *
+     * @param attribute {@link EAttribute}
+     * @param eObject {@link EObject}
+     * @param value AttributeValue
+     * @param <AttributeValue> the type of {@param attribute}
+     */
+    public <AttributeValue> void insertAttributeValue(
+        EAttribute attribute, EObject eObject, AttributeValue value) {
+      InsertEAttributeValue<EObject, AttributeValue> insertEAttributeValue =
+          TypeInferringAtomicEChangeFactory.getInstance().createInsertAttributeChange(
+              eObject,
+              attribute,
+              ((EList<?>) eObject.eGet(attribute)).size(),
+              value
+          );
+      issueEChange(insertEAttributeValue);
+    }
+
+    /**
+     * Issues an {@link RemoveEAttributeValue}
+     * that removes {@code value} from the multi-valued {@code eObject.attribute}.
+     *
+     * @param attribute {@link EAttribute}
+     * @param eObject {@link EObject}
+     * @param value AttributeValue
+     * @param <AttributeValue> the type of {@param attribute}
+     */
+    public <AttributeValue> void removeAttributeValue(
+        EAttribute attribute, EObject eObject, AttributeValue value) {
+      RemoveEAttributeValue<EObject, AttributeValue> removeEAttributeValue =
+          TypeInferringAtomicEChangeFactory.getInstance().createRemoveAttributeChange(
+              eObject,
+              attribute,
+              ((EList<?>) eObject.eGet(attribute)).lastIndexOf(value),
+              value
+      );
+      issueEChange(removeEAttributeValue);
+    }
+
+    /**
+     * Issues an {@link InsertRootEObject} change
+     * that adds {@code elementToInsert} as root of the resource at {@code uri}.
+     * The resource is created if it does not exist yet.
+     *
+     * @param elementToInsert {@link EObject}
+     * @param uri {@link URI}
+     */
+    public void insertRoot(EObject elementToInsert, URI uri) {
+      Resource resource = executionState.getResourceAccess().getModelResource(uri);
+      InsertRootEObject<EObject> insertRootEObject =
+          TypeInferringAtomicEChangeFactory.getInstance().createInsertRootChange(
+              elementToInsert,
+              resource,
+              resource.getContents().size()
+          );
+      issueEChange(insertRootEObject);
+    }
+
+    /**
+     * Issues a {@link RemoveRootEObject} change that removes {@code eObject}
+     * from its resource.
+     *
+     * @param eObject {@link EObject}
+     */
+    public void removeRoot(EObject eObject) {
+      Resource resource = eObject.eResource();
+      RemoveRootEObject<EObject> removeRootEObject =
+          TypeInferringAtomicEChangeFactory.getInstance().createRemoveRootChange(
+              eObject,
+              resource,
+              resource.getContents().indexOf(eObject)
+          );
+      issueEChange(removeRootEObject);
+    }
+
+    /**
+     * Issues a {@link ReplaceSingleValuedEReference} change that sets the value
+     * of the single-valued {@code eObjectFrom.reference} to {@code eObjectTo}.
+     *
+     * @param reference {@link EReference}
+     * @param eObjectFrom {@link EObject}
+     * @param eObjectTo {@link EObject}
+     */
+    public void setReference(
+        EReference reference, EObject eObjectFrom, EObject eObjectTo
+    ) {
+      ReplaceSingleValuedEReference<EObject> replaceEReference =
+          TypeInferringAtomicEChangeFactory.getInstance().createReplaceSingleReferenceChange(
+              eObjectFrom,
+              reference,
+              (EObject) eObjectFrom.eGet(reference),
+              eObjectTo
+          );
+      issueEChange(replaceEReference);
+    }
+
+    /**
+     * Issues a {@link InsertEReference} change that adds {@code eObjectTo}
+     * to the multi-valued {@code eObjectFrom.reference}.
+     *
+     * @param reference {@link EReference}
+     * @param eObjectFrom {@link EObject}
+     * @param eObjectTo {@link EObject}
+     */
+    public void addReference(
+        EReference reference, EObject eObjectFrom, EObject eObjectTo) {
+      InsertEReference<EObject> insertEReference =
+          TypeInferringAtomicEChangeFactory.getInstance().createInsertReferenceChange(
+              eObjectFrom,
+              reference,
+              eObjectTo,
+              ((EList<?>) eObjectFrom.eGet(reference)).size()
+          );
+      issueEChange(insertEReference);
+    }
+
+    /**
+     * Issues a {@link RemoveEReference} change that removes {@code eObjectTo}
+     * from the multi-valued {@code eObjectFrom.reference}.
+     *
+     * @param reference {@link EReference}
+     * @param eObjectFrom {@link EObject}
+     * @param eObjectTo {@link EObject}
+     */
+    public void removeReference(
+        EReference reference, EObject eObjectFrom, EObject eObjectTo) {
+      RemoveEReference<EObject> removeEReference =
+          TypeInferringAtomicEChangeFactory.getInstance().createRemoveReferenceChange(
+              eObjectFrom,
+              reference,
+              eObjectTo,
+              ((EList<?>) eObjectFrom.eGet(reference)).lastIndexOf(eObjectTo)
+          );
+      issueEChange(removeEReference);
     }
 
     /**

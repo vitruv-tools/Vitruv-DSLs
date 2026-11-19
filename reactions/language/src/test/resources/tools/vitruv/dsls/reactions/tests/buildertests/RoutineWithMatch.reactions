@@ -1,0 +1,18 @@
+import %s
+
+import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as allElementTypes
+
+reactions: routineWithMatchTest
+in reaction to changes in allElementTypes
+execute actions in allElementTypes
+
+routine withMatch() {
+  match {
+    check {
+      "test" === "test"
+    }
+  }
+  create {
+    val newRoot = new allElementTypes::Root
+  }
+}
