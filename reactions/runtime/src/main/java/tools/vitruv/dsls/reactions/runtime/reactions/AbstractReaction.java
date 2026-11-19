@@ -28,6 +28,9 @@ public abstract class AbstractReaction extends CallHierarchyHaving implements Re
 
   @Override
   public void execute(EChange<EObject> change, ReactionExecutionState reactionExecutionState) {
+    if (!isCurrentChangeMatchingTrigger(change)) {
+      return;
+    }
     val routinesFacade = routinesFacadeGenerator.apply(reactionExecutionState);
     routinesFacade.pushCaller(this);
     try {
@@ -35,6 +38,18 @@ public abstract class AbstractReaction extends CallHierarchyHaving implements Re
     } finally {
       routinesFacade.dropLastCaller();
     }
+  }
+
+  /**
+   * Checks whether change matches the trigger of this reaction. Called before the routines facade
+   * is created, so that reactions whose trigger does not match cost next to nothing.
+   * By default, every change matches.
+   *
+   * @param change - {@link EChange}
+   * @return whether this reaction has to be executed for change
+   */
+  protected boolean isCurrentChangeMatchingTrigger(EChange<EObject> change) {
+    return true;
   }
 
   /**

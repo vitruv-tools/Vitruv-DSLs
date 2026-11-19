@@ -1,0 +1,13 @@
+import tools.vitruv.dsls.^reactions.runtime.^routines.AbstractRoutine.Update
+
+import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as allElementTypes
+
+reactions: simpleChangesRootTests
+in reaction to changes in allElementTypes
+execute actions in allElementTypes
+
+routine withArguments(allElementTypes::Root rootParameter, allElementTypes::NonRoot nonRootParameter) {
+  update {
+    addCorrespondenceBetween(rootParameter, nonRootParameter)
+  }
+}

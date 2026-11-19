@@ -1,0 +1,50 @@
+import tools.vitruv.dsls.^reactions.runtime.^routines.AbstractRoutine.Update
+
+import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as allElementTypes
+
+reactions: baseSegment
+in reaction to changes in allElementTypes
+execute actions in allElementTypes
+
+reaction CreateRootTest {
+  after element allElementTypes::Root created
+  call createRootTestRepair(affectedEObject)
+}
+
+routine createRootTestRepair(allElementTypes::Root affectedEObject) {
+  create {
+    val newRoot = new allElementTypes::Root
+  }
+  update {
+    addCorrespondenceBetween(newRoot, affectedEObject)
+  }
+}
+
+
+
+reactions: baseSegment2
+in reaction to changes in allElementTypes
+execute actions in allElementTypes
+
+reaction DeleteRootTest {
+  after element allElementTypes::Root deleted
+  call deleteRootTestRepair(affectedEObject)
+}
+
+routine deleteRootTestRepair(allElementTypes::Root affectedEObject) {
+  match {
+    val toDelete = retrieve allElementTypes::Root corresponding to affectedEObject
+  }
+  update {
+    removeObject(toDelete)
+  }
+}
+
+
+
+reactions: extendedSegment
+in reaction to changes in allElementTypes
+execute actions in allElementTypes
+
+import baseSegment
+import routines baseSegment2 using qualified names

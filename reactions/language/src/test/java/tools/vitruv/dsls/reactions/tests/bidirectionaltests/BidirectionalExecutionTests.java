@@ -13,6 +13,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.xtext.xbase.lib.Exceptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tools.vitruv.change.atomic.EChange;
 import tools.vitruv.change.atomic.eobject.CreateEObject;
 import tools.vitruv.change.atomic.eobject.DeleteEObject;
 import tools.vitruv.change.atomic.feature.reference.RemoveEReference;
@@ -144,8 +145,16 @@ class BidirectionalExecutionTests extends ReactionsExecutionTest {
     assertThat(propagatedChanges.size(), is(2));
     VitruviusChange<EObject> consequentialSourceModelChange =
         getSourceModelChanges(propagatedChanges.getFirst());
+    List<EChange<EObject>> eChanges = consequentialSourceModelChange.getEChanges();
+    // the root and its four cascade deleted contents are deleted, and the contents are removed
+    // from their containers first, so that the changes can also be applied backwards
+    assertThat(eChanges.size(), is(10));
     expectChangeAt(consequentialSourceModelChange, 0, RemoveRootEObject.class);
-    expectChangeAt(consequentialSourceModelChange, 1, DeleteEObject.class);
+    assertThat((int) eChanges.stream().filter(DeleteEObject.class::isInstance).count(), is(5));
+    assertThat((int) eChanges.stream().filter(ReplaceSingleValuedEReference.class::isInstance)
+            .count(), is(1));
+    assertThat((int) eChanges.stream().filter(RemoveEReference.class::isInstance).count(), is(3));
+
     assertThat(resourceAt(SOURCE_MODEL), ModelMatchers.doesNotExist());
     assertThat(resourceAt(TARGET_MODEL), ModelMatchers.doesNotExist());
     assertThat(propagatedChanges.get(1).getConsequentialChanges().getEChanges(), is(List.of()));

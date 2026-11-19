@@ -112,10 +112,23 @@ public abstract class ReactionsExecutionTest implements TestView {
    */
   @BeforeEach
   public void prepareTestView(@TestProject Path testProjectPath) {
-    this.testView =
-        ChangePublishingTestView.createDefaultChangePublishingTestView(
-            testProjectPath,
-            getChangePropagationSpecifications());
+    this.testView = createTestView(testProjectPath, getChangePropagationSpecifications());
+  }
+
+  /**
+   * Creates the {@link TestView} that is used for a test case. Subclasses can override this method
+   * to use a customized view, for example to change how changes are propagated.
+   *
+   * @param testProjectPath {@link Path} under which the view stores its resources
+   * @param changePropagationSpecifications the compiled {@link ChangePropagationSpecification}s
+   * @return {@link TestView}
+   */
+  protected TestView createTestView(
+      Path testProjectPath,
+      Iterable<ChangePropagationSpecification> changePropagationSpecifications) {
+    return ChangePublishingTestView.createDefaultChangePublishingTestView(
+        testProjectPath,
+        changePropagationSpecifications);
   }
 
   /**

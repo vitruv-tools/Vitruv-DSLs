@@ -19,7 +19,11 @@ import tools.vitruv.change.testutils.metamodels.TestMetamodelsPathFactory;
 import tools.vitruv.dsls.reactions.tests.ReactionsExecutionTest;
 import tools.vitruv.dsls.reactions.tests.TestReactionsCompiler;
 
-class ImportTests extends ReactionsExecutionTest {
+/**
+ * Generated reactions code static-imports the TAG_* constants of this test class,
+ * so it is made public.
+ */
+public class ImportTests extends ReactionsExecutionTest {
   private static final Path SOURCE_MODEL =
       TestMetamodelsPathFactory.allElementTypes("ImportTestsModelSource");
 

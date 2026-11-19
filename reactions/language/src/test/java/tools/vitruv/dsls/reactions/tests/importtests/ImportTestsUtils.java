@@ -40,5 +40,22 @@ public final class ImportTestsUtils {
     return TEST_NAME_PREFIX + testName + DATA_TAG_SEPARATOR + joined + DATA_TAG_SEPARATOR;
   }
 
+  /**
+   * Checks whether {@code testDataString} contains the data tag {@code dataTag}. The strings are
+   * created by {@link #toTestDataString(String, String...)}.
+   *
+   * <p>Called from the reactions in the {@code import}, so it wrongly appears as unused in
+   * Java.
+   *
+   * @param testDataString {@link String}
+   * @param dataTag {@link String} tag without prefix and separator
+   * @return {@code true} if testDataString contains dataTag, {@code false} otherwise
+   */
+  public static boolean containsDataTag(String testDataString, String dataTag) {
+    return testDataString != null
+        && testDataString.contains(
+            DATA_TAG_SEPARATOR + DATA_TAG_PREFIX + dataTag + DATA_TAG_SEPARATOR);
+  }
+
   private ImportTestsUtils() {}
 }
