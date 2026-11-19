@@ -361,7 +361,6 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
      * @param change {@link EChange}
      */
     protected void issueEChange(EChange<EObject> change) {
-      System.out.println("Change to process: " + change);
       ApplyEChangeSwitch.applyEChange(change, true);
     }
 

@@ -23,7 +23,15 @@ import tools.vitruv.dsls.reactions.api.generator.IReactionsGenerator;
 import tools.vitruv.dsls.reactions.language.toplevelelements.ReactionsFile;
 import tools.vitruv.dsls.testutils.InMemoryClassesCompiler;
 
+/**
+ * Compiles reactions files selected by {@code inputReactionFiles}
+ * and {@code changePropagationSegments}. These are then made available to the various
+ * {@link ReactionsExecutionTest}s through {@code getChangePropagationSpecifications}.
+ */
 public class TestReactionsCompiler {
+  /**
+   * Various parameters to configure the {@link Factory} with.
+   */
   @Accessors
   public static class TestReactionsCompilerParameters {
     private Object reactionsOwner;
@@ -31,16 +39,8 @@ public class TestReactionsCompiler {
     private Iterable<String> reactions = null;
     private Iterable<String> changePropagationSegments = null;
 
-    public Object getReactionsOwner() {
-      return reactionsOwner;
-    }
-
     public void setReactionsOwner(Object reactionsOwner) {
       this.reactionsOwner = reactionsOwner;
-    }
-
-    public Path getCompilationProjectDir() {
-      return compilationProjectDir;
     }
 
     public void setCompilationProjectDir(Path compilationProjectDir) {
@@ -55,15 +55,14 @@ public class TestReactionsCompiler {
       this.reactions = reactions;
     }
 
-    public Iterable<String> getChangePropagationSegments() {
-      return changePropagationSegments;
-    }
-
     public void setChangePropagationSegments(final Iterable<String> changePropagationSegments) {
       this.changePropagationSegments = changePropagationSegments;
     }
   }
 
+  /**
+   * Factory for new {@link TestReactionsCompiler}s.
+   */
   public static class Factory {
     @Inject
     private ParseHelper<ReactionsFile> parseHelper;
@@ -76,13 +75,27 @@ public class TestReactionsCompiler {
     private final TestReactionsCompiler.TestReactionsCompilerParameters parameters
         = new TestReactionsCompiler.TestReactionsCompilerParameters();
 
+    /**
+     * Configures this factory using the parameters provided in {@code configurer}.
+     *
+     * @param configurer {@link TestReactionsCompilerParameters}
+     * @return this
+     */
     public TestReactionsCompiler.Factory setParameters(
         Consumer<TestReactionsCompiler.TestReactionsCompilerParameters> configurer) {
       configurer.accept(parameters);
       return this;
     }
 
-    public TestReactionsCompiler createCompiler(final Consumer<TestReactionsCompiler.TestReactionsCompilerParameters> configurer) {
+    /**
+     * Configures this factory using the parameters provided in {@code configurer},
+     * and then creates a new compiler for reactions.
+     *
+     * @param configurer {@link TestReactionsCompilerParameters}
+     * @return new {@link TestReactionsCompiler}
+     */
+    public TestReactionsCompiler createCompiler(
+        final Consumer<TestReactionsCompiler.TestReactionsCompilerParameters> configurer) {
       this.setParameters(configurer);
       Class<?> clazz = parameters.reactionsOwner.getClass();
       return new TestReactionsCompiler(clazz,
@@ -110,9 +123,11 @@ public class TestReactionsCompiler {
   private Set<ChangePropagationSpecification> compileReactions() {
     try {
       Path sourceFolder =
-          Files.createDirectories(compilationProjectFolder.resolve(IProjectUtil.JAVA_SOURCE_FOLDER));
+          Files.createDirectories(
+              compilationProjectFolder.resolve(IProjectUtil.JAVA_SOURCE_FOLDER));
       Path generatedSourceFolder =
-          Files.createDirectories(compilationProjectFolder.resolve(IProjectUtil.SOURCE_GEN_FOLDER));
+          Files.createDirectories(
+              compilationProjectFolder.resolve(IProjectUtil.SOURCE_GEN_FOLDER));
       JavaIoFileSystemAccess fsa = fsaProvider.get();
       fsa.setOutputPath(generatedSourceFolder.toString());
 
@@ -133,24 +148,30 @@ public class TestReactionsCompiler {
       generator.generate(fsa);
 
       final Function1<ChangePropagationSpecification, Boolean> specificationNameFilter
-          = (specification) ->
-      IterableExtensions.exists(changePropagationSegments, it ->
-          specification.getClass().getName().contains(it));
+          = specification ->
+          IterableExtensions.exists(changePropagationSegments, it ->
+              specification.getClass().getName().contains(it));
 
       InMemoryClassesCompiler inMemoryClassesCompiler =
           new InMemoryClassesCompiler(generatedSourceFolder);
       inMemoryClassesCompiler.compile();
-      return inMemoryClassesCompiler.<ChangePropagationSpecification>filterAndInstantiateClasses(
+      return inMemoryClassesCompiler.filterAndInstantiateClasses(
         ChangePropagationSpecification.class, specificationNameFilter::apply);
-    } catch (Throwable _e) {
-      throw Exceptions.sneakyThrow(_e);
+    } catch (Throwable e) {
+      throw Exceptions.sneakyThrow(e);
     }
   }
 
-  public static String getBatchCompilerString(final Path path) {
-    return path.toString().replace("[", "\\[").replace("]", "\\]");
-  }
 
+  /**
+   * Returns the {@link ChangePropagationSpecification}s that are
+   * implemented by the provided reaction files.
+   *
+   * <p>Compiles all reactions selected by {@code inputReactionFiles}
+   * and {@code changePropagationSegments}, if required beforehand.
+   *
+   * @return {@link Iterable}
+   */
   public Iterable<ChangePropagationSpecification> getChangePropagationSpecifications() {
     if (!compiled) {
       changePropagationSpecifications = compileReactions();
@@ -159,6 +180,18 @@ public class TestReactionsCompiler {
     return changePropagationSpecifications;
   }
 
+  /**
+   * Creates a new {@link TestReactionsCompiler}.
+   *
+   * @param reactionsOwner {@link Class}
+   * @param compilationProjectFolder {@link Path}
+   * @param inputReactionFiles {@link Iterable} of {@link String}s
+   * @param changePropagationSegments {@link Iterable} of {@link String}s
+   * @param parseHelper {@link ParseHelper}
+   * @param generatorProvider {@link Provider}
+   * @param resourceSetProvider {@link Provider}
+   * @param fsaProvider {@link Provider}
+   */
   public TestReactionsCompiler(
       Class<?> reactionsOwner,
       Path compilationProjectFolder,
@@ -168,7 +201,6 @@ public class TestReactionsCompiler {
       Provider<IReactionsGenerator> generatorProvider,
       Provider<XtextResourceSet> resourceSetProvider,
       Provider<JavaIoFileSystemAccess> fsaProvider) {
-    super();
     this.reactionsOwner = reactionsOwner;
     this.compilationProjectFolder = compilationProjectFolder;
     this.inputReactionFiles = inputReactionFiles;

@@ -1,7 +1,8 @@
-package tools.vitruv.dsls.reactions.tests.importTests;
+package tools.vitruv.dsls.reactions.tests.importtests;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static tools.vitruv.dsls.reactions.tests.ExecutionMonitor.observedExecutions;
 
 import allElementTypes.Root;
 import java.nio.file.Path;
@@ -15,11 +16,10 @@ import org.junit.jupiter.api.TestInfo;
 import tools.vitruv.change.composite.description.PropagatedChange;
 import tools.vitruv.change.testutils.metamodels.AllElementTypesCreators;
 import tools.vitruv.change.testutils.metamodels.TestMetamodelsPathFactory;
-import tools.vitruv.dsls.reactions.tests.ExecutionMonitor;
 import tools.vitruv.dsls.reactions.tests.ReactionsExecutionTest;
 import tools.vitruv.dsls.reactions.tests.TestReactionsCompiler;
 
-public class ImportTests extends ReactionsExecutionTest {
+class ImportTests extends ReactionsExecutionTest {
   private static final Path SOURCE_MODEL =
       TestMetamodelsPathFactory.allElementTypes("ImportTestsModelSource");
 
@@ -70,11 +70,11 @@ public class ImportTests extends ReactionsExecutionTest {
   }
 
   private static final EnumSet<ImportTestsExecutionMonitor.ExecutionType> rootReactions =
-      EnumSet.of(ImportTestsExecutionMonitor.ExecutionType.RootReaction,
-          ImportTestsExecutionMonitor.ExecutionType.DirectSNReaction,
-          ImportTestsExecutionMonitor.ExecutionType.Direct2SNReaction,
-          ImportTestsExecutionMonitor.ExecutionType.TransitiveSNReaction,
-          ImportTestsExecutionMonitor.ExecutionType.Transitive3SNReaction);
+      EnumSet.of(ImportTestsExecutionMonitor.ExecutionType.ROOT_REACTION,
+          ImportTestsExecutionMonitor.ExecutionType.DIRECT_SN_REACTION,
+          ImportTestsExecutionMonitor.ExecutionType.DIRECT_2_SN_REACTION,
+          ImportTestsExecutionMonitor.ExecutionType.TRANSITIVE_SN_REACTION,
+          ImportTestsExecutionMonitor.ExecutionType.TRANSITIVE_3_SN_REACTION);
 
   /**
    * Import hierarchy.
@@ -128,88 +128,91 @@ public class ImportTests extends ReactionsExecutionTest {
   void testRootReaction() {
     triggerSetRootIdReaction();
     assertThat(getExecutionMonitor().getObservedExecutions(),
-        hasItem(ImportTestsExecutionMonitor.ExecutionType.RootReaction));
+        hasItem(ImportTestsExecutionMonitor.ExecutionType.ROOT_REACTION));
   }
 
   @Test
   void testImportedReaction() {
     triggerSetRootIdReaction();
     assertThat(getExecutionMonitor().getObservedExecutions(),
-        hasItem(ImportTestsExecutionMonitor.ExecutionType.DirectSNReaction));
+        hasItem(ImportTestsExecutionMonitor.ExecutionType.DIRECT_SN_REACTION));
   }
 
   @Test
   void testTransitiveImportedReaction() {
     triggerSetRootIdReaction();
     assertThat(getExecutionMonitor().getObservedExecutions(),
-        hasItem(ImportTestsExecutionMonitor.ExecutionType.TransitiveSNReaction));
+        hasItem(ImportTestsExecutionMonitor.ExecutionType.TRANSITIVE_SN_REACTION));
   }
 
   private void assertObservedExecutions(
       EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions) {
     MatcherAssert.assertThat(getExecutionMonitor(),
-        ExecutionMonitor.observedExecutions(expectedExecutions));
+        observedExecutions(expectedExecutions));
   }
 
   @Test
   void testMultipleImportedReactions() {
     triggerSetRootIdReaction();
-    assertThat(getExecutionMonitor(), ExecutionMonitor.observedExecutions(rootReactions));
+    assertThat(getExecutionMonitor(), observedExecutions(rootReactions));
   }
 
   @Test
   void testReactionCallsRootRoutine() {
     triggerSetRootIdReaction(TAG_CALL_ROUTINE_FROM_REACTION, TAG_ROOT_ROUTINE);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.ROOT_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
-  void testReactionCallsImportedRoutine_SN() {
+  void testReactionCallsImportedRoutineSN() {
     triggerSetRootIdReaction(TAG_CALL_ROUTINE_FROM_REACTION, TAG_DIRECT_ROUTINE_SN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DirectSNRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DIRECT_SN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
-  void testReactionCallsImportedRoutine_QN() {
+  void testReactionCallsImportedRoutineQN() {
     triggerSetRootIdReaction(TAG_CALL_ROUTINE_FROM_REACTION, TAG_DIRECT_ROUTINE_QN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DirectRoutinesQNRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DIRECT_ROUTINES_QN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
-  void testReactionCallsTransitiveImportedRoutine_SN_SN() {
+  void testReactionCallsTransitiveImportedRoutineSNSN() {
     triggerSetRootIdReaction(TAG_CALL_ROUTINE_FROM_REACTION, TAG_TRANSITIVE_ROUTINE_SN_SN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TransitiveSNRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TRANSITIVE_SN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
-  void testReactionCallsTransitiveImportedRoutine_SN_QN() {
+  void testReactionCallsTransitiveImportedRoutineSNQN() {
     triggerSetRootIdReaction(TAG_CALL_ROUTINE_FROM_REACTION, TAG_TRANSITIVE_ROUTINE_SN_QN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TransitiveRoutinesQNRoutine);
+    expectedExecutions.add(
+        ImportTestsExecutionMonitor.ExecutionType.TRANSITIVE_ROUTINES_QN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
-  void testReactionCallsTransitiveImportedRoutine_QN_SN() {
+  void testReactionCallsTransitiveImportedRoutineQNSN() {
     triggerSetRootIdReaction(TAG_CALL_ROUTINE_FROM_REACTION, TAG_TRANSITIVE_ROUTINE_QN_SN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TransitiveRoutinesSNRoutine);
+    expectedExecutions.add(
+        ImportTestsExecutionMonitor.ExecutionType.TRANSITIVE_ROUTINES_SN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
-  void testReactionCallsTransitiveImportedRoutine_QN_QN() {
+  void testReactionCallsTransitiveImportedRoutineQNQN() {
     triggerSetRootIdReaction(TAG_CALL_ROUTINE_FROM_REACTION, TAG_TRANSITIVE_ROUTINE_QN_QN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TransitiveRoutinesQNRoutine);
+    expectedExecutions.add(
+        ImportTestsExecutionMonitor.ExecutionType.TRANSITIVE_ROUTINES_QN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
@@ -217,84 +220,94 @@ public class ImportTests extends ReactionsExecutionTest {
   void testRoutineCallsRootRoutine() {
     triggerSetRootIdReaction(TAG_CALL_ROUTINE_FROM_ROUTINE, TAG_ROOT_ROUTINE);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootRoutine);
+    expectedExecutions.add(
+        ImportTestsExecutionMonitor.ExecutionType.ROOT_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
-  void testRoutineCallsImportedRoutine_SN() {
+  void testRoutineCallsImportedRoutineSN() {
     triggerSetRootIdReaction(TAG_CALL_ROUTINE_FROM_ROUTINE, TAG_DIRECT_ROUTINE_SN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DirectSNRoutine);
+    expectedExecutions.add(
+        ImportTestsExecutionMonitor.ExecutionType.DIRECT_SN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
-  void testRoutineCallsImportedRoutine_QN() {
+  void testRoutineCallsImportedRoutineQN() {
     triggerSetRootIdReaction(TAG_CALL_ROUTINE_FROM_ROUTINE, TAG_DIRECT_ROUTINE_QN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DirectRoutinesQNRoutine);
+    expectedExecutions.add(
+        ImportTestsExecutionMonitor.ExecutionType.DIRECT_ROUTINES_QN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
-  void testRoutineCallsTransitiveImportedRoutine_SN_SN() {
+  void testRoutineCallsTransitiveImportedRoutineSNSN() {
     triggerSetRootIdReaction(TAG_CALL_ROUTINE_FROM_ROUTINE, TAG_TRANSITIVE_ROUTINE_SN_SN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TransitiveSNRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TRANSITIVE_SN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
-  void testRoutineCallsTransitiveImportedRoutine_SN_QN() {
+  void testRoutineCallsTransitiveImportedRoutineSNQN() {
     triggerSetRootIdReaction(TAG_CALL_ROUTINE_FROM_ROUTINE, TAG_TRANSITIVE_ROUTINE_SN_QN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TransitiveRoutinesQNRoutine);
+    expectedExecutions.add(
+        ImportTestsExecutionMonitor.ExecutionType.TRANSITIVE_ROUTINES_QN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
-  void testRoutineCallsTransitiveImportedRoutine_QN_SN() {
+  void testRoutineCallsTransitiveImportedRoutineQNSN() {
     triggerSetRootIdReaction(TAG_CALL_ROUTINE_FROM_ROUTINE, TAG_TRANSITIVE_ROUTINE_QN_SN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TransitiveRoutinesSNRoutine);
+    expectedExecutions.add(
+        ImportTestsExecutionMonitor.ExecutionType.TRANSITIVE_ROUTINES_SN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
-  void testRoutineCallsTransitiveImportedRoutine_QN_QN() {
+  void testRoutineCallsTransitiveImportedRoutineQNQN() {
     triggerSetRootIdReaction(TAG_CALL_ROUTINE_FROM_ROUTINE, TAG_TRANSITIVE_ROUTINE_QN_QN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TransitiveRoutinesQNRoutine);
+    expectedExecutions.add(
+        ImportTestsExecutionMonitor.ExecutionType.TRANSITIVE_ROUTINES_QN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
   void testMultipleImportedRoutines() {
-    triggerSetRootIdReaction(TAG_CALL_ROUTINE_FROM_REACTION, TAG_ROOT_ROUTINE, TAG_DIRECT_ROUTINE_SN,
+    triggerSetRootIdReaction(
+        TAG_CALL_ROUTINE_FROM_REACTION, TAG_ROOT_ROUTINE, TAG_DIRECT_ROUTINE_SN,
         TAG_DIRECT2_ROUTINE_SN, TAG_TRANSITIVE_ROUTINE_SN_SN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DirectSNRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.Direct2SNRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TransitiveSNRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.ROOT_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DIRECT_SN_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DIRECT_2_SN_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TRANSITIVE_SN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
   void testRoutinesOnlyReactions() {
     triggerSetRootIdReaction(TAG_TEST_ROUTINES_ONLY_REACTIONS);
-    MatcherAssert.assertThat(getExecutionMonitor(), ExecutionMonitor.observedExecutions(rootReactions));
+    MatcherAssert.assertThat(getExecutionMonitor(), observedExecutions(rootReactions));
   }
 
   @Test
   void testRoutinesOnlyRoutines() {
     triggerSetRootIdReaction(TAG_TEST_ROUTINES_ONLY_ROUTINES);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DirectRoutinesQNRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TransitiveRoutinesQNRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TransitiveRoutinesSNRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.Transitive2SNRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DIRECT_ROUTINES_QN_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .TRANSITIVE_ROUTINES_QN_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .TRANSITIVE_ROUTINES_SN_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .TRANSITIVE_2_SN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
@@ -302,10 +315,11 @@ public class ImportTests extends ReactionsExecutionTest {
   void testImportedSegmentsWorking() {
     triggerSetRootIdReaction(TAG_TEST_IMPORTED_SEGMENTS_WORKING);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DirectSNInnerRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TransitiveSNRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TransitiveRoutinesQNRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TransitiveSNInnerRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DIRECT_SN_INNER_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TRANSITIVE_SN_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .TRANSITIVE_ROUTINES_QN_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.TRANSITIVE_SN_INNER_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
@@ -313,8 +327,9 @@ public class ImportTests extends ReactionsExecutionTest {
   void testOverrideReaction() {
     triggerSetRootIdReaction(TAG_TEST_REACTION_OVERRIDE);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootDirectSNOverriddenReaction);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_DIRECT_SN_OVERRIDDEN_REACTION);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.ROOT_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
@@ -322,11 +337,16 @@ public class ImportTests extends ReactionsExecutionTest {
   void testOverrideTransitiveReaction() {
     triggerSetRootIdReaction(TAG_TEST_TRANSITIVE_REACTION_OVERRIDE);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootTransitiveSNOverriddenReaction);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootTransitiveSNOverriddenReaction2);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DirectSNTransitiveSNOverriddenReaction3);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DirectSNRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_TRANSITIVE_SN_OVERRIDDEN_REACTION);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_TRANSITIVE_SN_OVERRIDDEN_REACTION_2);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .DIRECT_SN_TRANSITIVE_SN_OVERRIDDEN_REACTION_3);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .DIRECT_SN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
@@ -334,8 +354,10 @@ public class ImportTests extends ReactionsExecutionTest {
   void testCallOverriddenRoutineFromRoot() {
     triggerSetRootIdReaction(TAG_CALL_OVERRIDDEN_ROUTINE, TAG_FROM_ROOT);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootDirectSNOverriddenRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_DIRECT_SN_OVERRIDDEN_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
@@ -343,8 +365,10 @@ public class ImportTests extends ReactionsExecutionTest {
   void testCallOverriddenRoutineFromOverriddenSegment() {
     triggerSetRootIdReaction(TAG_CALL_OVERRIDDEN_ROUTINE, TAG_FROM_OVERRIDDEN_SEGMENT);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootDirectSNOverriddenRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_DIRECT_SN_OVERRIDDEN_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
@@ -352,8 +376,9 @@ public class ImportTests extends ReactionsExecutionTest {
   void testCallOverriddenTransitiveRoutineFromRoot() {
     triggerSetRootIdReaction(TAG_CALL_OVERRIDDEN_TRANSITIVE_ROUTINE, TAG_FROM_ROOT);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootTransitiveSNOverriddenRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_TRANSITIVE_SN_OVERRIDDEN_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.ROOT_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
@@ -361,8 +386,9 @@ public class ImportTests extends ReactionsExecutionTest {
   void testCallOverriddenTransitiveRoutineFromOverriddenSegment() {
     triggerSetRootIdReaction(TAG_CALL_OVERRIDDEN_TRANSITIVE_ROUTINE, TAG_FROM_OVERRIDDEN_SEGMENT);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootTransitiveSNOverriddenRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_TRANSITIVE_SN_OVERRIDDEN_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.ROOT_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
@@ -370,37 +396,45 @@ public class ImportTests extends ReactionsExecutionTest {
   void testCallOverriddenTransitiveRoutineFromSegmentInBetween() {
     triggerSetRootIdReaction(TAG_CALL_OVERRIDDEN_TRANSITIVE_ROUTINE, TAG_FROM_SEGMENT_IN_BETWEEN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootTransitiveSNOverriddenRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_TRANSITIVE_SN_OVERRIDDEN_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.ROOT_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
   void testCallOverriddenTransitiveRoutineWithSeparateOverrideHierarchyFromRoot() {
-    triggerSetRootIdReaction(TAG_CALL_OVERRIDDEN_TRANSITIVE_ROUTINE_WITH_SEPARATE_OVERRIDE_HIERARCHY, TAG_FROM_ROOT);
+    triggerSetRootIdReaction(
+        TAG_CALL_OVERRIDDEN_TRANSITIVE_ROUTINE_WITH_SEPARATE_OVERRIDE_HIERARCHY,
+        TAG_FROM_ROOT);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootTransitive3SNOverriddenRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_TRANSITIVE_3_SN_OVERRIDDEN_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.ROOT_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
   void testCallOverriddenTransitiveRoutineWithSeparateOverrideHierarchyFromOverriddenSegment() {
-    triggerSetRootIdReaction(TAG_CALL_OVERRIDDEN_TRANSITIVE_ROUTINE_WITH_SEPARATE_OVERRIDE_HIERARCHY,
+    triggerSetRootIdReaction(
+        TAG_CALL_OVERRIDDEN_TRANSITIVE_ROUTINE_WITH_SEPARATE_OVERRIDE_HIERARCHY,
         TAG_FROM_OVERRIDDEN_SEGMENT);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootTransitive3SNOverriddenRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_TRANSITIVE_3_SN_OVERRIDDEN_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.ROOT_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
   void testCallOverriddenTransitiveRoutineWithSeparateOverrideHierarchyFromSegmentInBetween() {
-    triggerSetRootIdReaction(TAG_CALL_OVERRIDDEN_TRANSITIVE_ROUTINE_WITH_SEPARATE_OVERRIDE_HIERARCHY,
+    triggerSetRootIdReaction(
+        TAG_CALL_OVERRIDDEN_TRANSITIVE_ROUTINE_WITH_SEPARATE_OVERRIDE_HIERARCHY,
         TAG_FROM_SEGMENT_IN_BETWEEN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootTransitive3SNOverriddenRoutine);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_TRANSITIVE_3_SN_OVERRIDDEN_ROUTINE);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.ROOT_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
@@ -408,35 +442,45 @@ public class ImportTests extends ReactionsExecutionTest {
   void testCallAlreadyOverriddenTransitiveRoutineFromRoot() {
     triggerSetRootIdReaction(TAG_CALL_ALREADY_OVERRIDDEN_TRANSITIVE_ROUTINE, TAG_FROM_ROOT);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootTransitiveSNOverriddenRoutine2);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_TRANSITIVE_SN_OVERRIDDEN_ROUTINE_2);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.ROOT_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
   void testCallAlreadyOverriddenTransitiveRoutineFromOverriddenSegment() {
-    triggerSetRootIdReaction(TAG_CALL_ALREADY_OVERRIDDEN_TRANSITIVE_ROUTINE, TAG_FROM_OVERRIDDEN_SEGMENT);
+    triggerSetRootIdReaction(
+        TAG_CALL_ALREADY_OVERRIDDEN_TRANSITIVE_ROUTINE,
+        TAG_FROM_OVERRIDDEN_SEGMENT);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootTransitiveSNOverriddenRoutine2);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_TRANSITIVE_SN_OVERRIDDEN_ROUTINE_2);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.ROOT_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
   void testCallAlreadyOverriddenTransitiveRoutineFromSegmentInBetween() {
-    triggerSetRootIdReaction(TAG_CALL_ALREADY_OVERRIDDEN_TRANSITIVE_ROUTINE, TAG_FROM_SEGMENT_IN_BETWEEN);
+    triggerSetRootIdReaction(
+        TAG_CALL_ALREADY_OVERRIDDEN_TRANSITIVE_ROUTINE,
+        TAG_FROM_SEGMENT_IN_BETWEEN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootTransitiveSNOverriddenRoutine2);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_TRANSITIVE_SN_OVERRIDDEN_ROUTINE_2);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.ROOT_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
   @Test
   void testCallTransitiveRoutineOverriddenByImportedSegmentFromRoot() {
-    triggerSetRootIdReaction(TAG_CALL_TRANSITIVE_ROUTINE_OVERRIDDEN_BY_IMPORTED_SEGMENT, TAG_FROM_ROOT);
+    triggerSetRootIdReaction(
+        TAG_CALL_TRANSITIVE_ROUTINE_OVERRIDDEN_BY_IMPORTED_SEGMENT,
+        TAG_FROM_ROOT);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DirectSNTransitiveSNOverriddenRoutine3);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DirectSNRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .DIRECT_SN_TRANSITIVE_SN_OVERRIDDEN_ROUTINE_3);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DIRECT_SN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
@@ -445,8 +489,9 @@ public class ImportTests extends ReactionsExecutionTest {
     triggerSetRootIdReaction(TAG_CALL_TRANSITIVE_ROUTINE_OVERRIDDEN_BY_IMPORTED_SEGMENT,
         TAG_FROM_OVERRIDDEN_SEGMENT);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DirectSNTransitiveSNOverriddenRoutine3);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DirectSNRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .DIRECT_SN_TRANSITIVE_SN_OVERRIDDEN_ROUTINE_3);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DIRECT_SN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
@@ -455,8 +500,9 @@ public class ImportTests extends ReactionsExecutionTest {
     triggerSetRootIdReaction(TAG_CALL_TRANSITIVE_ROUTINE_OVERRIDDEN_BY_IMPORTED_SEGMENT,
         TAG_FROM_SEGMENT_IN_BETWEEN);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DirectSNTransitiveSNOverriddenRoutine3);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DirectSNRoutine);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .DIRECT_SN_TRANSITIVE_SN_OVERRIDDEN_ROUTINE_3);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.DIRECT_SN_ROUTINE);
     assertObservedExecutions(expectedExecutions);
   }
 
@@ -464,19 +510,23 @@ public class ImportTests extends ReactionsExecutionTest {
   void testMultipleImportsOfSameRoutines() {
     triggerSetRootIdReaction(TAG_TEST_MULTIPLE_IMPORTS_OF_SAME_ROUTINES_IMPORT_PATH_1);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions = rootReactions.clone();
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootCommonRoutinesRoutine1);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootCommonRoutinesRoutine2);
-    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType.RootCommonRoutinesRoutine3);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_COMMON_ROUTINES_ROUTINE_1);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_COMMON_ROUTINES_ROUTINE_2);
+    expectedExecutions.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_COMMON_ROUTINES_ROUTINE_3);
     assertObservedExecutions(expectedExecutions);
 
     getExecutionMonitor().reset();
 
     triggerSetRootIdReaction(TAG_TEST_MULTIPLE_IMPORTS_OF_SAME_ROUTINES_IMPORT_PATH_2);
     EnumSet<ImportTestsExecutionMonitor.ExecutionType> expectedExecutions2 = rootReactions.clone();
-    expectedExecutions2.add(ImportTestsExecutionMonitor.ExecutionType.CommonRoutinesRoutine1);
-    expectedExecutions2.add(ImportTestsExecutionMonitor.ExecutionType.CommonRoutinesRoutine2);
-    expectedExecutions2.add(ImportTestsExecutionMonitor.ExecutionType.RootCommonRoutines2Routine3);
-    MatcherAssert.assertThat(getExecutionMonitor(),
-        ExecutionMonitor.observedExecutions(expectedExecutions2));
+    expectedExecutions2.add(ImportTestsExecutionMonitor.ExecutionType.COMMON_ROUTINES_ROUTINE_1);
+    expectedExecutions2.add(ImportTestsExecutionMonitor.ExecutionType.COMMON_ROUTINES_ROUTINE_2);
+    expectedExecutions2.add(ImportTestsExecutionMonitor.ExecutionType
+        .ROOT_COMMON_ROUTINES_2_ROUTINE_3);
+    assertThat(getExecutionMonitor(),
+        observedExecutions(expectedExecutions2));
   }
 }

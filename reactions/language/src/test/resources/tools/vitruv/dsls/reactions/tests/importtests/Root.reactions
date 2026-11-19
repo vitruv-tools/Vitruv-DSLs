@@ -1,7 +1,7 @@
-import tools.vitruv.dsls.^reactions.tests.importTests.ImportTestsExecutionMonitor
-import static tools.vitruv.dsls.^reactions.tests.importTests.ImportTests.*
-import static tools.vitruv.dsls.^reactions.tests.importTests.ImportTestsExecutionMonitor.ExecutionType.*
-import static tools.vitruv.dsls.^reactions.tests.importTests.ImportTestsUtils.*
+import tools.vitruv.dsls.^reactions.tests.importtests.ImportTestsExecutionMonitor
+import static tools.vitruv.dsls.^reactions.tests.importtests.ImportTests.*
+import static tools.vitruv.dsls.^reactions.tests.importtests.ImportTestsExecutionMonitor.ExecutionType.*
+import static tools.vitruv.dsls.^reactions.tests.importtests.ImportTestsUtils.*
 
 import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as minimal
 
@@ -17,7 +17,7 @@ reaction RootReupdate {
 	after attribute replaced at minimal::Root[id]
 	call {
 		val data = newValue
-		ImportTestsExecutionMonitor.instance.set(RootReaction)
+		ImportTestsExecutionMonitor.instance.set(ROOT_REACTION)
 
 		// call routines from reaction:
 		if (containsDataTag(newValue, TAG_CALL_ROUTINE_FROM_REACTION)) {
@@ -100,7 +100,7 @@ reaction RootReupdate {
 
 routine rootRoutine() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(RootRoutine)
+		ImportTestsExecutionMonitor.instance.set(ROOT_ROUTINE)
 	}
 }
 
@@ -137,7 +137,7 @@ reaction importTestsDirectSN::DirectSNOverriddenReupdate {
 	call {
 		val data = newValue;
 		if (containsDataTag(data, TAG_TEST_REACTION_OVERRIDE)) {
-			ImportTestsExecutionMonitor.instance.set(RootDirectSNOverriddenReaction)
+			ImportTestsExecutionMonitor.instance.set(ROOT_DIRECT_SN_OVERRIDDEN_REACTION)
 			rootRoutine()
 		}
 	}
@@ -148,7 +148,7 @@ reaction importTestsTransitiveSN::TransitiveSNOverriddenReupdate {
 	call {
 		val data = newValue;
 		if (containsDataTag(data, TAG_TEST_TRANSITIVE_REACTION_OVERRIDE)) {
-			ImportTestsExecutionMonitor.instance.set(RootTransitiveSNOverriddenReaction)
+			ImportTestsExecutionMonitor.instance.set(ROOT_TRANSITIVE_SN_OVERRIDDEN_REACTION)
 			rootRoutine()
 		}
 	}
@@ -159,7 +159,7 @@ reaction importTestsTransitiveSN::TransitiveSNOverriddenReaction2 {
 	call {
 		val data = newValue;
 		if (containsDataTag(data, TAG_TEST_TRANSITIVE_REACTION_OVERRIDE)) {
-			ImportTestsExecutionMonitor.instance.set(RootTransitiveSNOverriddenReaction2)
+			ImportTestsExecutionMonitor.instance.set(ROOT_TRANSITIVE_SN_OVERRIDDEN_REACTION_2)
 			rootRoutine()
 		}
 	}
@@ -168,28 +168,28 @@ reaction importTestsTransitiveSN::TransitiveSNOverriddenReaction2 {
 // routine overrides:
 routine importTestsDirectSN::directSNOverriddenRoutine() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(RootDirectSNOverriddenRoutine)
+		ImportTestsExecutionMonitor.instance.set(ROOT_DIRECT_SN_OVERRIDDEN_ROUTINE)
 		rootRoutine()
 	}
 }
 
 routine importTestsDirectSN.importTestsTransitiveSN::transitiveSNOverriddenRoutine() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(RootTransitiveSNOverriddenRoutine)
+		ImportTestsExecutionMonitor.instance.set(ROOT_TRANSITIVE_SN_OVERRIDDEN_ROUTINE)
 		rootRoutine()
 	}
 }
 
 routine importTestsDirect2SN.importTestsTransitive3SN::transitive3SNOverriddenRoutine() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(RootTransitive3SNOverriddenRoutine)
+		ImportTestsExecutionMonitor.instance.set(ROOT_TRANSITIVE_3_SN_OVERRIDDEN_ROUTINE)
 		rootRoutine()
 	}
 }
 
 routine importTestsDirectSN.importTestsTransitiveSN::transitiveSNOverriddenRoutine2() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(RootTransitiveSNOverriddenRoutine2)
+		ImportTestsExecutionMonitor.instance.set(ROOT_TRANSITIVE_SN_OVERRIDDEN_ROUTINE_2)
 		rootRoutine()
 	}
 }
@@ -197,25 +197,25 @@ routine importTestsDirectSN.importTestsTransitiveSN::transitiveSNOverriddenRouti
 // test multiple imports of same routines at different import paths:
 routine importTestsDirectSN.importTestsTransitiveSN.importTestsCommonRoutines::commonRoutinesRoutine1() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(RootCommonRoutinesRoutine1)
+		ImportTestsExecutionMonitor.instance.set(ROOT_COMMON_ROUTINES_ROUTINE_1)
 	}
 }
 
 routine importTestsDirectSN.importTestsTransitiveSN.importTestsCommonRoutines::commonRoutinesRoutine2() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(RootCommonRoutinesRoutine2)
+		ImportTestsExecutionMonitor.instance.set(ROOT_COMMON_ROUTINES_ROUTINE_2)
 	}
 }
 
 routine importTestsDirectSN.importTestsTransitiveSN.importTestsCommonRoutines::commonRoutinesRoutine3() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(RootCommonRoutinesRoutine3)
+		ImportTestsExecutionMonitor.instance.set(ROOT_COMMON_ROUTINES_ROUTINE_3)
 	}
 }
 
 // multiple overrides of same routine along different import paths:
 routine importTestsDirectRoutinesQN.importTestsCommonRoutines::commonRoutinesRoutine3() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(RootCommonRoutines2Routine3)
+		ImportTestsExecutionMonitor.instance.set(ROOT_COMMON_ROUTINES_2_ROUTINE_3)
 	}
 }

@@ -38,16 +38,16 @@ class ReactionLanguageFormatterTest {
   @ParameterizedTest(name = "{index} file: {1}")
   @ValueSource(strings = {
       "tools/vitruv/dsls/reactions/tests/AllElementTypesRedundancy.reactions",
-      "tools/vitruv/dsls/reactions/tests/importTests/CommonRoutines.reactions",
-      "tools/vitruv/dsls/reactions/tests/importTests/Direct2SN.reactions",
-      "tools/vitruv/dsls/reactions/tests/importTests/DirectRoutinesQN.reactions",
-      "tools/vitruv/dsls/reactions/tests/importTests/DirectSN.reactions",
-      "tools/vitruv/dsls/reactions/tests/importTests/Root.reactions",
-      "tools/vitruv/dsls/reactions/tests/importTests/Transitive2SN.reactions",
-      "tools/vitruv/dsls/reactions/tests/importTests/Transitive3SN.reactions",
-      "tools/vitruv/dsls/reactions/tests/importTests/TransitiveRoutinesQN.reactions",
-      "tools/vitruv/dsls/reactions/tests/importTests/TransitiveRoutinesSN.reactions",
-      "tools/vitruv/dsls/reactions/tests/importTests/TransitiveSN.reactions"
+      "tools/vitruv/dsls/reactions/tests/importtests/CommonRoutines.reactions",
+      "tools/vitruv/dsls/reactions/tests/importtests/Direct2SN.reactions",
+      "tools/vitruv/dsls/reactions/tests/importtests/DirectRoutinesQN.reactions",
+      "tools/vitruv/dsls/reactions/tests/importtests/DirectSN.reactions",
+      "tools/vitruv/dsls/reactions/tests/importtests/Root.reactions",
+      "tools/vitruv/dsls/reactions/tests/importtests/Transitive2SN.reactions",
+      "tools/vitruv/dsls/reactions/tests/importtests/Transitive3SN.reactions",
+      "tools/vitruv/dsls/reactions/tests/importtests/TransitiveRoutinesQN.reactions",
+      "tools/vitruv/dsls/reactions/tests/importtests/TransitiveRoutinesSN.reactions",
+      "tools/vitruv/dsls/reactions/tests/importtests/TransitiveSN.reactions"
   })
   void testExistingReactionsFilesFormatting(String filePathInSourceFolder) {
     String content = loadJavaFileContents(filePathInSourceFolder);

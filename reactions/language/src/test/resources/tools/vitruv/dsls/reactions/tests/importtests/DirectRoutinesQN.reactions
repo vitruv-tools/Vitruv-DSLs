@@ -1,7 +1,7 @@
-import tools.vitruv.dsls.^reactions.tests.importTests.ImportTestsExecutionMonitor
-import static tools.vitruv.dsls.^reactions.tests.importTests.ImportTests.*
-import static tools.vitruv.dsls.^reactions.tests.importTests.ImportTestsExecutionMonitor.ExecutionType.*
-import static tools.vitruv.dsls.^reactions.tests.importTests.ImportTestsUtils.*
+import tools.vitruv.dsls.^reactions.tests.importtests.ImportTestsExecutionMonitor
+import static tools.vitruv.dsls.^reactions.tests.importtests.ImportTests.*
+import static tools.vitruv.dsls.^reactions.tests.importtests.ImportTestsExecutionMonitor.ExecutionType.*
+import static tools.vitruv.dsls.^reactions.tests.importtests.ImportTestsUtils.*
 
 import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as minimal
 
@@ -19,14 +19,14 @@ reaction DirectRoutinesQNReupdate {
 	call {
 		val data = newValue
 		if (containsDataTag(data, TAG_TEST_ROUTINES_ONLY_REACTIONS)) {
-			ImportTestsExecutionMonitor.instance.set(DirectRoutinesQNReaction)
+			ImportTestsExecutionMonitor.instance.set(DIRECT_ROUTINES_QN_REACTION)
 		}
 	}
 }
 
 routine directRoutinesQNRoutine() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(DirectRoutinesQNRoutine)
+		ImportTestsExecutionMonitor.instance.set(DIRECT_ROUTINES_QN_ROUTINE)
 	}
 }
 

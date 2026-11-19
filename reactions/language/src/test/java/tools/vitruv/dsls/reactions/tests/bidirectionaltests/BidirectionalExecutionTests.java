@@ -1,4 +1,4 @@
-package tools.vitruv.dsls.reactions.tests.complexTests;
+package tools.vitruv.dsls.reactions.tests.bidirectionaltests;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;

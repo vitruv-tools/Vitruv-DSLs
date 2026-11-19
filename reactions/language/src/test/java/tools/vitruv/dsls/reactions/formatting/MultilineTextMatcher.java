@@ -5,11 +5,20 @@ import org.eclipse.xtext.xbase.lib.Pair;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 
+/**
+ * A matcher that compares expected and actual texts line-by-line, and reports
+ * line-wise mismatches.
+ */
 public class MultilineTextMatcher extends TypeSafeMatcher<String> {
   private final String expectedText;
 
   private Consumer<Description> mismatch;
 
+  /**
+   * Creates a new {@link MultilineTextMatcher}.
+   *
+   * @param expectedText {@link String}
+   */
   public MultilineTextMatcher(String expectedText) {
     this.expectedText = expectedText;
   }
@@ -72,6 +81,12 @@ public class MultilineTextMatcher extends TypeSafeMatcher<String> {
     return null;
   }
 
+  /**
+   * Factory method for a text matcher against {@code expected}.
+   *
+   * @param expected {@link String}
+   * @return new {@link MultilineTextMatcher}
+   */
   public static MultilineTextMatcher hasEachLineEqualTo(String expected) {
     return new MultilineTextMatcher(expected);
   }

@@ -27,14 +27,19 @@ import tools.vitruv.change.testutils.TestUserInteraction;
 import tools.vitruv.change.testutils.views.ChangePublishingTestView;
 import tools.vitruv.change.testutils.views.TestView;
 
+/**
+ * Base class for all Reactions test cases.
+ *
+ * <p>Provides methods to compile the reactions for tests, and extends {@link TestView}
+ * so that the compiled reactions can be executed on some set of resources.
+ */
 @ExtendWith(InjectionExtension.class)
 @InjectWith(ReactionsLanguageInjectorProvider.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith({ TestLogging.class, TestProjectManager.class })
-
 public abstract class ReactionsExecutionTest implements TestView {
   /**
-   * Test view used as delegate
+   * Test view used as delegate.
    */
   private TestView testView;
   private Path compilationDir;
@@ -51,6 +56,13 @@ public abstract class ReactionsExecutionTest implements TestView {
    */
   private boolean compilerIsInitialised = false;
 
+  /**
+   * Returns the {@link TestReactionsCompiler} used for this test.
+   * If not configured, calls
+   * {@link ReactionsExecutionTest#createCompiler(TestReactionsCompiler.Factory)} first.
+   *
+   * @return compiler {@link TestReactionsCompiler}
+   */
   public TestReactionsCompiler getCompiler() {
     if (!compilerIsInitialised) {
       try {
@@ -70,31 +82,63 @@ public abstract class ReactionsExecutionTest implements TestView {
     return compiler;
   }
 
+  /**
+   * Sets up the {@code compiler} using the provided {@code factory}.
+   *
+   * <p>Involves the setting of Reactions files and segments to compile.
+   *
+   * @param factory {@link tools.vitruv.dsls.reactions.tests.TestReactionsCompiler.Factory}
+   * @return {@link TestReactionsCompiler}
+   */
   protected abstract TestReactionsCompiler createCompiler(TestReactionsCompiler.Factory factory);
 
+  /**
+   * Sets the target directory for Reactions compilation.
+   *
+   * @param compilationDir {@link Path}
+   */
   @BeforeAll
   public void acquireCompilationTargetDir(
       @TestProject(variant = "reactions compilation") Path compilationDir) {
     this.compilationDir = compilationDir;
   }
 
+  /**
+   * Creates a new test view that stores resources under {@code testProjectPath}
+   * for each test case.
+   * For the first test case, also compiles the reactions that are executed.
+   *
+   * @param testProjectPath {@link Path}
+   */
   @BeforeEach
   public void prepareTestView(@TestProject Path testProjectPath) {
     this.testView =
-        ChangePublishingTestView.createDefaultChangePublishingTestView(testProjectPath, getChangePropagationSpecifications());
+        ChangePublishingTestView.createDefaultChangePublishingTestView(
+            testProjectPath,
+            getChangePropagationSpecifications());
   }
 
+  /**
+   * Assigns and returns the {@link ReactionsExecutionTest#factory}.
+   *
+   * @param factory {@link tools.vitruv.dsls.reactions.tests.TestReactionsCompiler.Factory}
+   * @return factory
+   */
   @Inject
-  public TestReactionsCompiler.Factory setCompilerFactory(final TestReactionsCompiler.Factory factory) {
+  public TestReactionsCompiler.Factory setCompilerFactory(
+      final TestReactionsCompiler.Factory factory) {
     return this.factory = factory;
   }
 
+  /**
+   * Closes the {@link ReactionsExecutionTest#testView} at the end of each test case.
+   */
   @AfterEach
   public void closeTestView() {
     try {
       testView.close();
-    } catch (Throwable _e) {
-      throw Exceptions.sneakyThrow(_e);
+    } catch (Throwable e) {
+      throw Exceptions.sneakyThrow(e);
     }
   }
 
@@ -102,53 +146,91 @@ public abstract class ReactionsExecutionTest implements TestView {
     return getCompiler().getChangePropagationSpecifications();
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public void close() throws Exception {
     testView.close();
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public <T extends EObject> T from(Class<T> clazz, Path path) {
     return testView.from(clazz, path);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public <T extends EObject> T from(Class<T> clazz, Resource resource) {
     return testView.from(clazz, resource);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public <T extends EObject> T from(Class<T> clazz, URI uri) {
     return testView.from(clazz, uri);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public URI getUri(Path path) {
     return testView.getUri(path);
   }
 
+  /**
+   * {@inheritDoc}
+   * Delegates to {@link ReactionsExecutionTest#testView}.
+   */
   public TestUserInteraction getUserInteraction() {
     return testView.getUserInteraction();
   }
 
+  /**
+   * {@inheritDoc}
+   * Delegates to {@link ReactionsExecutionTest#testView}.
+   */
   public void moveTo(Resource resource, Path newViewRelativePath) {
     testView.moveTo(resource, newViewRelativePath);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public void moveTo(Resource resource, URI newUri) {
     testView.moveTo(resource, newUri);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public <T extends Notifier> List<PropagatedChange> propagate(T notifier, Consumer<T> consumer) {
     return testView.propagate(notifier, consumer);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public <T extends Notifier> T record(T notifier, Consumer<T> consumer) {
     return testView.record(notifier, consumer);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Resource resourceAt(Path viewRelativePath) {
     return testView.resourceAt(viewRelativePath);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   public Resource resourceAt(URI modelUri) {
     return testView.resourceAt(modelUri);
   }

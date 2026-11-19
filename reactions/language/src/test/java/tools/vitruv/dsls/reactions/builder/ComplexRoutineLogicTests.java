@@ -50,25 +50,10 @@ class ComplexRoutineLogicTests extends FluentReactionsBuilderTest {
     FluentReactionsSegmentBuilder segmentBuilder = executeActionsIn.operator_add(reactionBuilder);
     final FluentReactionsFileBuilder builder = reactionsFile.operator_add(segmentBuilder);
 
-    String reactionResult = """
-        import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as allElementTypes
-        
-        reactions: simpleChangesRootTests in reaction to changes in allElementTypes
-        execute actions in allElementTypes
-  
-        reaction CreateRootTest {
-          after element allElementTypes::Root created
-          call createRootTestRepair()
-        }
-  
-        routine createRootTestRepair() {
-          update {
-            for ( b : # [ 10 ] ) { b = 20 }	
-          }
-        }
-        """;
+    String complexRoutineLogicReactionText = readReactions("ComplexRoutineLogic.reactions");
 
-    MatcherAssert.<FluentReactionsFileBuilder>assertThat(builder, this.builds(reactionResult));
+    MatcherAssert.<FluentReactionsFileBuilder>assertThat(
+        builder, this.builds(complexRoutineLogicReactionText));
   }
 
 }

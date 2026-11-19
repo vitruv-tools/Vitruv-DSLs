@@ -1,7 +1,7 @@
-import tools.vitruv.dsls.^reactions.tests.importTests.ImportTestsExecutionMonitor
-import static tools.vitruv.dsls.^reactions.tests.importTests.ImportTests.*
-import static tools.vitruv.dsls.^reactions.tests.importTests.ImportTestsExecutionMonitor.ExecutionType.*
-import static tools.vitruv.dsls.^reactions.tests.importTests.ImportTestsUtils.*
+import tools.vitruv.dsls.^reactions.tests.importtests.ImportTestsExecutionMonitor
+import static tools.vitruv.dsls.^reactions.tests.importtests.ImportTests.*
+import static tools.vitruv.dsls.^reactions.tests.importtests.ImportTestsExecutionMonitor.ExecutionType.*
+import static tools.vitruv.dsls.^reactions.tests.importtests.ImportTestsUtils.*
 
 import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as minimal
 
@@ -15,7 +15,7 @@ import routines importTestsTransitiveRoutinesQN using qualified names
 reaction DirectSNReupdate {
 	after attribute replaced at minimal::Root[id]
 	call {
-		ImportTestsExecutionMonitor.instance.set(DirectSNReaction)
+		ImportTestsExecutionMonitor.instance.set(DIRECT_SN_REACTION)
 
 		val data = newValue;
 		if (containsDataTag(data, TAG_TEST_IMPORTED_SEGMENTS_WORKING)) {
@@ -56,13 +56,13 @@ reaction DirectSNReupdate {
 
 routine directSNRoutine() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(DirectSNRoutine)
+		ImportTestsExecutionMonitor.instance.set(DIRECT_SN_ROUTINE)
 	}
 }
 
 routine directSNInnerRoutine() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(DirectSNInnerRoutine)
+		ImportTestsExecutionMonitor.instance.set(DIRECT_SN_INNER_ROUTINE)
 	}
 }
 
@@ -72,7 +72,7 @@ reaction DirectSNOverriddenReupdate {
 	call {
 		val data = newValue;
 		if (containsDataTag(data, TAG_TEST_REACTION_OVERRIDE)) {
-			ImportTestsExecutionMonitor.instance.set(DirectSNOverriddenReaction)
+			ImportTestsExecutionMonitor.instance.set(DIRECT_SN_OVERRIDDEN_REACTION)
 			directSNRoutine()
 		}
 	}
@@ -83,7 +83,7 @@ reaction importTestsTransitiveSN::TransitiveSNOverriddenReaction2 {
 	call {
 		val data = newValue;
 		if (containsDataTag(data, TAG_TEST_TRANSITIVE_REACTION_OVERRIDE)) {
-			ImportTestsExecutionMonitor.instance.set(DirectSNTransitiveSNOverriddenReaction2)
+			ImportTestsExecutionMonitor.instance.set(DIRECT_SN_TRANSITIVE_SN_OVERRIDDEN_REACTION_2)
 			directSNRoutine()
 		}
 	}
@@ -94,7 +94,7 @@ reaction importTestsTransitiveSN::TransitiveSNOverriddenReaction3 {
 	call {
 		val data = newValue;
 		if (containsDataTag(data, TAG_TEST_TRANSITIVE_REACTION_OVERRIDE)) {
-			ImportTestsExecutionMonitor.instance.set(DirectSNTransitiveSNOverriddenReaction3)
+			ImportTestsExecutionMonitor.instance.set(DIRECT_SN_TRANSITIVE_SN_OVERRIDDEN_REACTION_3)
 			directSNRoutine()
 		}
 	}
@@ -103,21 +103,21 @@ reaction importTestsTransitiveSN::TransitiveSNOverriddenReaction3 {
 // routine overrides:
 routine directSNOverriddenRoutine() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(DirectSNOverriddenRoutine)
+		ImportTestsExecutionMonitor.instance.set(DIRECT_SN_OVERRIDDEN_ROUTINE)
 		directSNRoutine()
 	}
 }
 
 routine importTestsTransitiveSN::transitiveSNOverriddenRoutine2() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(DirectSNTransitiveSNOverriddenRoutine2)
+		ImportTestsExecutionMonitor.instance.set(DIRECT_SN_TRANSITIVE_SN_OVERRIDDEN_ROUTINE_2)
 		directSNRoutine()
 	}
 }
 
 routine importTestsTransitiveSN::transitiveSNOverriddenRoutine3() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(DirectSNTransitiveSNOverriddenRoutine3)
+		ImportTestsExecutionMonitor.instance.set(DIRECT_SN_TRANSITIVE_SN_OVERRIDDEN_ROUTINE_3)
 		directSNRoutine()
 	}
 }

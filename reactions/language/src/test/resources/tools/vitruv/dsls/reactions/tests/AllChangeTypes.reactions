@@ -1,5 +1,5 @@
-import tools.vitruv.dsls.^reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor
-import static tools.vitruv.dsls.^reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor.ChangeType.*;
+import tools.vitruv.dsls.^reactions.tests.simplechangetests.SimpleChangesTestsExecutionMonitor
+import static tools.vitruv.dsls.^reactions.tests.simplechangetests.SimpleChangesTestsExecutionMonitor.ChangeType.*;
 import org.eclipse.emf.ecore.change.FeatureChange
 import tools.vitruv.change.atomic.^root.RootEChange
 import tools.vitruv.change.atomic.eobject.EObjectExistenceEChange
@@ -72,7 +72,7 @@ routine replaceSingleValuedPrimitiveTypeEAttribute(minimal::Root rootElement, In
 	}
 	update {
 	  setAttribute(AllElementTypesPackage.eINSTANCE.root_SingleValuedPrimitiveTypeEAttribute, targetElement, value)
-		SimpleChangesTestsExecutionMonitor.instance.set(UpdateSingleValuedPrimitveTypeEAttribute);
+		SimpleChangesTestsExecutionMonitor.instance.set(UPDATE_SINGLE_VALUED_PRIMITVE_TYPE_E_ATTRIBUTE);
 	}
 }
 
@@ -97,7 +97,7 @@ routine replaceSingleValuedEAttribute(minimal::Root rootElement, Integer value) 
 	}
 	update {
 	  setAttribute(AllElementTypesPackage.eINSTANCE.root_SingleValuedEAttribute, targetElement, value)
-		SimpleChangesTestsExecutionMonitor.instance.set(UpdateSingleValuedEAttribute);
+		SimpleChangesTestsExecutionMonitor.instance.set(UPDATE_SINGLE_VALUED_E_ATTRIBUTE);
 	}
 }
 
@@ -137,7 +137,7 @@ routine insertNonRoot(minimal::Root rootElement, minimal::NonRoot insertedNonRoo
 	  setAttribute(AllElementTypesPackage.eINSTANCE.identified_Id, newNonRoot, insertedNonRoot.id)
 	  addReference(AllElementTypesPackage.eINSTANCE.root_MultiValuedContainmentEReference, targetElement, newNonRoot)
 		addCorrespondenceBetween(newNonRoot, insertedNonRoot)
-		SimpleChangesTestsExecutionMonitor.instance.set(CreateNonRootEObjectInList);
+		SimpleChangesTestsExecutionMonitor.instance.set(CREATE_NON_ROOT_E_OBJECT_IN_LIST);
 	}
 }
 
@@ -154,7 +154,7 @@ routine removeNonRoot(minimal::NonRoot removedNonRoot) {
 		val targetElement = retrieve minimal::NonRoot corresponding to removedNonRoot
 	}
 	update {
-		SimpleChangesTestsExecutionMonitor.instance.set(DeleteNonRootEObjectInList);
+		SimpleChangesTestsExecutionMonitor.instance.set(DELETE_NON_ROOT_E_OBJECT_IN_LIST);
 		removeCorrespondenceBetween(targetElement, removedNonRoot)
 		removeReference(AllElementTypesPackage.eINSTANCE.root_MultiValuedContainmentEReference, targetElement.eContainer, targetElement)
 		delete(targetElement)
@@ -186,7 +186,7 @@ routine deleteNonRootEObjectSingle(minimal::Root container, minimal::NonRoot con
 		removeCorrespondenceBetween(containedObject, targetElement)
 		setReference(AllElementTypesPackage.eINSTANCE.root_SingleValuedContainmentEReference, correspondingContainer, null)
 		delete(targetElement)
-		SimpleChangesTestsExecutionMonitor.instance.set(DeleteNonRootEObjectSingle);
+		SimpleChangesTestsExecutionMonitor.instance.set(DELETE_NON_ROOT_E_OBJECT_SINGLE);
 	}
 }
 
@@ -201,7 +201,7 @@ routine createNonRootEObjectSingle(minimal::Root sourceRoot, minimal::NonRoot co
 	  setAttribute(AllElementTypesPackage.eINSTANCE.identified_Id, newNonRoot, containedObject.id);
 		setReference(AllElementTypesPackage.eINSTANCE.root_SingleValuedContainmentEReference, targetElement, newNonRoot)
 		addCorrespondenceBetween(newNonRoot, containedObject)
-		SimpleChangesTestsExecutionMonitor.instance.set(CreateNonRootEObjectSingle);
+		SimpleChangesTestsExecutionMonitor.instance.set(CREATE_NON_ROOT_E_OBJECT_SINGLE);
 	}
 }
 
@@ -220,7 +220,7 @@ routine replaceSingleValuedNonContainmentReference(minimal::Root rootElement, mi
 	}
 	update {
 		setReference(AllElementTypesPackage.eINSTANCE.root_SingleValuedNonContainmentEReference, targetContainer, targetElement)
-		SimpleChangesTestsExecutionMonitor.instance.set(UpdateSingleValuedNonContainmentEReference);
+		SimpleChangesTestsExecutionMonitor.instance.set(UPDATE_SINGLE_VALUED_NON_CONTAINMENT_E_REFERENCE);
 	}
 }
 
@@ -240,7 +240,7 @@ routine insertEAttribute(minimal::Root rootElement, Integer attributeValue) {
 	}
 	update {
 		insertAttributeValue(AllElementTypesPackage.eINSTANCE.root_MultiValuedEAttribute, targetElement, attributeValue)
-		SimpleChangesTestsExecutionMonitor.instance.set(InsertEAttributeValue);
+		SimpleChangesTestsExecutionMonitor.instance.set(INSERT_E_ATTRIBUTE_VALUE);
 	}
 }
 
@@ -259,7 +259,7 @@ routine removeEAttribute(minimal::Root rootElement, Integer removedAttributeValu
 	}
 	update {
 		removeAttributeValue(AllElementTypesPackage.eINSTANCE.root_MultiValuedEAttribute, targetElement, removedAttributeValue)
-		SimpleChangesTestsExecutionMonitor.instance.set(RemoveEAttributeValue);
+		SimpleChangesTestsExecutionMonitor.instance.set(REMOVE_E_ATTRIBUTE_VALUE);
 	}
 }
 
@@ -280,7 +280,7 @@ routine insertNonContainmentReference(minimal::Root rootElement, minimal::NonRoo
 			it.id == insertedNonRoot.id
 		];
 		addReference(AllElementTypesPackage.eINSTANCE.root_MultiValuedNonContainmentEReference, targetElement, addedNonRoot)
-		SimpleChangesTestsExecutionMonitor.instance.set(InsertNonContainmentEReference)
+		SimpleChangesTestsExecutionMonitor.instance.set(INSERT_NON_CONTAINMENT_E_REFERENCE)
 	}
 }
 
@@ -299,7 +299,7 @@ routine removeNonContainmentReference(minimal::Root rootElement, minimal::NonRoo
 	update {
 		val removedTarget = targetRoot.multiValuedNonContainmentEReference.findFirst[it.id == removedNonRoot.id]
 		removeReference(AllElementTypesPackage.eINSTANCE.root_MultiValuedNonContainmentEReference, targetRoot, removedTarget)
-		SimpleChangesTestsExecutionMonitor.instance.set(RemoveNonContainmentEReference);
+		SimpleChangesTestsExecutionMonitor.instance.set(REMOVE_NON_CONTAINMENT_E_REFERENCE);
 	}
 }
 
@@ -366,10 +366,10 @@ routine deleteNonRootFromContainer(minimal::NonRoot removedNonRoot) {
 
 reaction NonRootCreated {
 	after element minimal::NonRoot created
-	call SimpleChangesTestsExecutionMonitor.instance.set(CreateEObject)
+	call SimpleChangesTestsExecutionMonitor.instance.set(CREATE_E_OBJECT)
 }
 
 reaction NonRootDeleted {
 	after element minimal::NonRoot deleted
-	call SimpleChangesTestsExecutionMonitor.instance.set(DeleteEObject)
+	call SimpleChangesTestsExecutionMonitor.instance.set(DELETE_E_OBJECT)
 }

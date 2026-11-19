@@ -1,7 +1,7 @@
-import tools.vitruv.dsls.^reactions.tests.importTests.ImportTestsExecutionMonitor
-import static tools.vitruv.dsls.^reactions.tests.importTests.ImportTests.*
-import static tools.vitruv.dsls.^reactions.tests.importTests.ImportTestsExecutionMonitor.ExecutionType.*
-import static tools.vitruv.dsls.^reactions.tests.importTests.ImportTestsUtils.*
+import tools.vitruv.dsls.^reactions.tests.importtests.ImportTestsExecutionMonitor
+import static tools.vitruv.dsls.^reactions.tests.importtests.ImportTests.*
+import static tools.vitruv.dsls.^reactions.tests.importtests.ImportTestsExecutionMonitor.ExecutionType.*
+import static tools.vitruv.dsls.^reactions.tests.importtests.ImportTestsUtils.*
 
 import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as minimal
 
@@ -12,7 +12,7 @@ execute actions in minimal
 reaction Transitive3SNReupdate {
 	after attribute replaced at minimal::Root[id]
 	call {
-		ImportTestsExecutionMonitor.instance.set(Transitive3SNReaction)
+		ImportTestsExecutionMonitor.instance.set(TRANSITIVE_3_SN_REACTION)
 
 		val data = newValue
 		// test routine overrides:
@@ -26,14 +26,14 @@ reaction Transitive3SNReupdate {
 
 routine transitive3SNRoutine() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(Transitive3SNRoutine)
+		ImportTestsExecutionMonitor.instance.set(TRANSITIVE_3_SN_ROUTINE)
 	}
 }
 
 // routine overrides:
 routine transitive3SNOverriddenRoutine() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(Transitive3SNOverriddenRoutine)
+		ImportTestsExecutionMonitor.instance.set(TRANSITIVE_3_SN_OVERRIDDEN_ROUTINE)
 		transitive3SNRoutine()
 	}
 }

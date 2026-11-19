@@ -111,7 +111,8 @@ class ClasspathGenModelRegistrarTest {
         ecoreDirectory.resolve("test.ecore"),
         """
         <?xml version="1.0" encoding="UTF-8"?>
-        <ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
+        <ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI"
+        xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
             name="ecore" nsURI="%s" nsPrefix="ecore">
           <eSubpackages name="xml" nsURI="%s" nsPrefix="xml">
             <eSubpackages name="type" nsURI="%s" nsPrefix="type"/>
@@ -123,7 +124,8 @@ class ClasspathGenModelRegistrarTest {
         ecoreDirectory.resolve("test.genmodel"),
         """
         <?xml version="1.0" encoding="UTF-8"?>
-        <genmodel:GenModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:genmodel="http://www.eclipse.org/emf/2002/GenModel"
+        <genmodel:GenModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI"
+         xmlns:genmodel="http://www.eclipse.org/emf/2002/GenModel"
             modelName="Test">
           <foreignModel>test.ecore</foreignModel>
           <genPackages prefix="Ecore" basePackage="org.eclipse.emf" ecorePackage="test.ecore#/">
@@ -139,7 +141,8 @@ class ClasspathGenModelRegistrarTest {
         ecoreDirectory.resolve("preregistered.ecore"),
         """
         <?xml version="1.0" encoding="UTF-8"?>
-        <ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
+        <ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI"
+         xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
             name="ecore" nsURI="%s" nsPrefix="ecore"/>
         """
             .formatted(PREREGISTERED_NS_URI));
@@ -147,9 +150,11 @@ class ClasspathGenModelRegistrarTest {
         ecoreDirectory.resolve("preregistered.genmodel"),
         """
         <?xml version="1.0" encoding="UTF-8"?>
-        <genmodel:GenModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:genmodel="http://www.eclipse.org/emf/2002/GenModel"
+        <genmodel:GenModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI"
+         xmlns:genmodel="http://www.eclipse.org/emf/2002/GenModel"
             modelName="Preregistered">
-          <genPackages prefix="Ecore" basePackage="org.eclipse.emf" ecorePackage="preregistered.ecore#/"/>
+          <genPackages prefix="Ecore" basePackage="org.eclipse.emf"
+          ecorePackage="preregistered.ecore#/"/>
         </genmodel:GenModel>
         """);
   }

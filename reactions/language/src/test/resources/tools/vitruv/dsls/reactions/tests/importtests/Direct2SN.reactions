@@ -1,7 +1,7 @@
-import tools.vitruv.dsls.^reactions.tests.importTests.ImportTestsExecutionMonitor
-import static tools.vitruv.dsls.^reactions.tests.importTests.ImportTests.*
-import static tools.vitruv.dsls.^reactions.tests.importTests.ImportTestsExecutionMonitor.ExecutionType.*
-import static tools.vitruv.dsls.^reactions.tests.importTests.ImportTestsUtils.*
+import tools.vitruv.dsls.^reactions.tests.importtests.ImportTestsExecutionMonitor
+import static tools.vitruv.dsls.^reactions.tests.importtests.ImportTests.*
+import static tools.vitruv.dsls.^reactions.tests.importtests.ImportTestsExecutionMonitor.ExecutionType.*
+import static tools.vitruv.dsls.^reactions.tests.importtests.ImportTestsUtils.*
 
 import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as minimal
 
@@ -14,7 +14,7 @@ import importTestsTransitive3SN
 reaction Direct2SNReupdate {
 	after attribute replaced at minimal::Root[id]
 	call {
-		ImportTestsExecutionMonitor.instance.set(Direct2SNReaction)
+		ImportTestsExecutionMonitor.instance.set(DIRECT_2_SN_REACTION)
 
 		val data = newValue;
 		// test routine overrides:
@@ -28,6 +28,6 @@ reaction Direct2SNReupdate {
 
 routine direct2SNRoutine() {
 	update {
-		ImportTestsExecutionMonitor.instance.set(Direct2SNRoutine)
+		ImportTestsExecutionMonitor.instance.set(DIRECT_2_SN_ROUTINE)
 	}
 }
