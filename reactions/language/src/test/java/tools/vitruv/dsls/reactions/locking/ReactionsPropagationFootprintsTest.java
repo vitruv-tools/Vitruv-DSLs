@@ -48,23 +48,31 @@ class ReactionsPropagationFootprintsTest {
       TypeInferringAtomicEChangeFactory.getInstance();
 
   @Inject TestReactionsCompiler.Factory compilerFactory;
-  @TempDir Path compilationDir;
+  @TempDir static Path compilationDir;
 
-  private List<ChangePropagationSpecification> specifications;
-  private ReactionsPropagationFootprints footprints;
+  /**
+   * The compiled reactions and their analysis, shared by all tests of this class: compiling and
+   * analyzing the bytecode take a few seconds each, and the tests only read them (the cache test
+   * uses footprints of its own).
+   */
+  private static List<ChangePropagationSpecification> specifications;
+  private static ReactionsPropagationFootprints footprints;
 
   @BeforeEach
-  void compileReactions() {
-    var compiler = compilerFactory.createCompiler(parameters -> {
-      parameters.setReactionsOwner(this);
-      parameters.setCompilationProjectDir(compilationDir);
-      parameters.setReactions(
-          List.of("/tools/vitruv/dsls/reactions/tests/AllElementTypesRedundancy.reactions"));
-      parameters.setChangePropagationSegments(List.of("simpleChangesTests"));
-    });
-    specifications = new ArrayList<>();
-    compiler.getChangePropagationSpecifications().forEach(specifications::add);
-    footprints = new ReactionsPropagationFootprints(specifications);
+  void compileAndAnalyzeReactionsOnce() {
+    if (specifications == null) {
+      var compiler = compilerFactory.createCompiler(parameters -> {
+        parameters.setReactionsOwner(this);
+        parameters.setCompilationProjectDir(compilationDir);
+        parameters.setReactions(
+            List.of("/tools/vitruv/dsls/reactions/tests/AllElementTypesRedundancy.reactions"));
+        parameters.setChangePropagationSegments(List.of("simpleChangesTests"));
+      });
+      List<ChangePropagationSpecification> compiled = new ArrayList<>();
+      compiler.getChangePropagationSpecifications().forEach(compiled::add);
+      specifications = List.copyOf(compiled);
+      footprints = new ReactionsPropagationFootprints(specifications);
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -90,10 +98,11 @@ class ReactionsPropagationFootprintsTest {
 
   @Test
   void footprintIsCachedPerChangeKind() {
-    footprints.footprintOf(replaceAttribute(AllElementTypesFactory.eINSTANCE.createRoot()));
-    footprints.footprintOf(replaceAttribute(AllElementTypesFactory.eINSTANCE.createRoot()));
-    assertEquals(1, footprints.cacheMisses());
-    assertEquals(1, footprints.cacheHits());
+    var fresh = new ReactionsPropagationFootprints(specifications);
+    fresh.footprintOf(replaceAttribute(AllElementTypesFactory.eINSTANCE.createRoot()));
+    fresh.footprintOf(replaceAttribute(AllElementTypesFactory.eINSTANCE.createRoot()));
+    assertEquals(1, fresh.cacheMisses());
+    assertEquals(1, fresh.cacheHits());
   }
 
   @Test
