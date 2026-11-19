@@ -77,11 +77,12 @@ final class EmfModelIndex {
     if (direct != null) {
       return direct;
     }
-    // implementation class XImpl: its EClass is the one of the generated interface X it implements
+    // generated implementation class (<package>.impl.XImpl): its EClass is the one of the generated
+    // interface <package>.X it implements directly (further supertypes are inherited through X)
     for (Class<?> implemented : javaClass.getInterfaces()) {
       EClass viaInterface = classesByInstanceClass.get(implemented);
       if (viaInterface != null
-          && javaClass.getSimpleName().equals(implemented.getSimpleName() + "Impl")) {
+          && javaClass.getPackageName().equals(implemented.getPackageName() + ".impl")) {
         return viaInterface;
       }
     }
