@@ -1,0 +1,16 @@
+import "http://tools.vitruv.change.testutils.metamodels.allElementTypes" as minimal
+
+reactions: concurrentExecutionTests
+in reaction to changes in minimal
+execute actions in minimal
+
+/*
+ * Copies the new value into the id of the changed element, so that a test can check that the
+ * reaction worked on the change it was called with.
+ */
+reaction ReplacedSingleValuedEAttribute {
+	after attribute replaced at minimal::Root[singleValuedEAttribute]
+	call {
+		affectedEObject.id = "value" + newValue
+	}
+}

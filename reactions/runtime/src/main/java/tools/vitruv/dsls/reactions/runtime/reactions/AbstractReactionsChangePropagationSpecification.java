@@ -10,7 +10,6 @@ import tools.vitruv.change.composite.MetamodelDescriptor;
 import tools.vitruv.change.composite.description.AnnotationSource;
 import tools.vitruv.change.correspondence.Correspondence;
 import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView;
-import tools.vitruv.change.interaction.UserInteractor;
 import tools.vitruv.change.propagation.ChangePropagationSpecification;
 import tools.vitruv.change.propagation.impl.AbstractChangePropagationSpecification;
 import tools.vitruv.change.utils.ResourceAccess;
@@ -98,15 +97,11 @@ public abstract class AbstractReactionsChangePropagationSpecification
         CorrespondenceFactory.eINSTANCE::createReactionsCorrespondence);
   }
 
-  @Override
-  public void setUserInteractor(UserInteractor userInteractor) {
-    super.setUserInteractor(userInteractor);
-    reactions.clear();
-    setup();
-  }
-
   /**
-   * Sets up this {@link ChangePropagationSpecification}.
+   * Sets up this {@link ChangePropagationSpecification}. Called once, by the constructor: the
+   * reactions keep no state between executions, and the change propagator sets the user interactor
+   * before each propagation step, possibly while other propagations execute the reactions of this
+   * specification, so the reactions must not be created anew then.
    */
   protected abstract void setup();
 }
