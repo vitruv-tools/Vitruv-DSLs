@@ -53,6 +53,15 @@ public abstract class AbstractReactionsChangePropagationSpecification
   }
 
   /**
+   * Returns the reactions of this specification (read-only), e.g. to analyze what they access.
+   *
+   * @return the reactions
+   */
+  public List<Reaction> getReactions() {
+    return java.util.Collections.unmodifiableList(reactions);
+  }
+
+  /**
    * {@inheritDoc}
    * By default, an {@link AbstractReactionsChangePropagationSpecification} handles any change.
    */
