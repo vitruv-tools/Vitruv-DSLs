@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,7 +60,7 @@ public final class FootprintReport {
     long start = System.nanoTime();
     var footprints = new ReactionsPropagationFootprints(specifications);
     // specifications that import other segments contain the same reaction classes again
-    Map<Class<?>, Reaction> unique = new java.util.LinkedHashMap<>();
+    Map<Class<?>, Reaction> unique = new LinkedHashMap<>();
     footprints.allReactions().forEach(r -> unique.putIfAbsent(r.getClass(), r));
     List<Reaction> reactions = new ArrayList<>(unique.values());
     Map<String, PropagationFootprint> byReaction = new TreeMap<>();
