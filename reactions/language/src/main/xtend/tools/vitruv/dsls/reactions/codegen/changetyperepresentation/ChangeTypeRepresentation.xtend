@@ -85,8 +85,16 @@ class ChangeTypeRepresentation {
 		#[affectedElementClassCanonicalName, affectedValueClassCanonicalName].filterNull
 	}
 
-	def StringConcatenationClient getSetFieldCode(String parameterName) '''
-		this.«name» = («typedChangeTypeRepresentation») «parameterName»;
+	/**
+	 * Declares the typed change as a local variable, assigned from the untyped change parameter.
+	 * The typed change is deliberately not kept in a field: reactions are instantiated once per
+	 * change propagation specification, which is shared by concurrent change propagations.
+	 * Nothing is declared if the parameter already has the name of the typed change.
+	 */
+	def StringConcatenationClient getLocalVariableCode(String parameterName) '''
+		«IF name != parameterName»
+			«typedChangeTypeRepresentation» «name» = («typedChangeTypeRepresentation») «parameterName»;
+		«ENDIF»
 	'''
 	
 	def AccessibleElement getAccessibleElement() {
@@ -100,7 +108,6 @@ class ChangeTypeRepresentation {
 		
 		«typedChangeTypeRepresentation» «TEMPORARY_TYPED_CHANGE_NAME» = («typedChangeTypeRepresentation») «parameterName»;
 		«TEMPORARY_TYPED_CHANGE_NAME.generateElementChecks»
-		«parameterName.setFieldCode»
 		return true;
 	'''
 	
