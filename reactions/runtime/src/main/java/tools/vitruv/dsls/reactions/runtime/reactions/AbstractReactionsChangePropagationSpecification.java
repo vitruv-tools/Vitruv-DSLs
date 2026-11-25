@@ -1,6 +1,7 @@
 package tools.vitruv.dsls.reactions.runtime.reactions;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,6 +51,15 @@ public abstract class AbstractReactionsChangePropagationSpecification
    */
   protected void addReaction(Reaction reaction) {
     this.reactions.add(reaction);
+  }
+
+  /**
+   * Returns the reactions of this specification (read-only), e.g. to analyze what they access.
+   *
+   * @return the reactions
+   */
+  public List<Reaction> getReactions() {
+    return Collections.unmodifiableList(reactions);
   }
 
   /**
