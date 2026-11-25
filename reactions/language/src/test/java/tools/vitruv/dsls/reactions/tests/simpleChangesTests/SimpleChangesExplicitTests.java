@@ -30,7 +30,8 @@ class SimpleChangesExplicitTests extends ReactionsExecutionTest {
   @Override
   protected TestReactionsCompiler createCompiler(TestReactionsCompiler.Factory factory) {
     return factory.createCompiler(testReactionsCompilerParameters -> {
-      testReactionsCompilerParameters.setReactions(List.of("/tools/vitruv/dsls/reactions/tests/AllChangeTypes.reactions"));
+      testReactionsCompilerParameters.setReactions(
+          List.of("/tools/vitruv/dsls/reactions/tests/AllChangeTypes.reactions"));
       testReactionsCompilerParameters.setChangePropagationSegments(List.of("explicitChangeTests"));
     });
   }
@@ -188,7 +189,8 @@ class SimpleChangesExplicitTests extends ReactionsExecutionTest {
   @Test
   void testSetSingleValuedNonContainmentEReference() {
     String testId = nonContainmentNonRootIds[1];
-    propagate(getRoot(), root -> root.setSingleValuedNonContainmentEReference(nonRootWithId(root, testId)));
+    propagate(getRoot(), root ->
+        root.setSingleValuedNonContainmentEReference(nonRootWithId(root, testId)));
     expectChanges(ChangeType.UpdateSingleValuedNonContainmentEReference);
     assertThat(getRoot().getSingleValuedNonContainmentEReference().getId(), is(testId));
     expectChangeInTargetModel();
@@ -197,11 +199,13 @@ class SimpleChangesExplicitTests extends ReactionsExecutionTest {
   @Test
   void testReplaceSingleValuedNonContainmentEReference() {
     propagate(getRoot(), root ->
-        root.setSingleValuedNonContainmentEReference(nonRootWithId(root, nonContainmentNonRootIds[0])));
+        root.setSingleValuedNonContainmentEReference(
+            nonRootWithId(root, nonContainmentNonRootIds[0])));
     resetExecutionMonitor();
 
     String testId = nonContainmentNonRootIds[1];
-    propagate(getRoot(), root -> root.setSingleValuedNonContainmentEReference(nonRootWithId(root, testId)));
+    propagate(getRoot(), root ->
+        root.setSingleValuedNonContainmentEReference(nonRootWithId(root, testId)));
     expectChanges(ChangeType.UpdateSingleValuedNonContainmentEReference);
     assertThat(getRoot().getSingleValuedNonContainmentEReference().getId(), is(testId));
     expectChangeInTargetModel();
@@ -263,10 +267,14 @@ class SimpleChangesExplicitTests extends ReactionsExecutionTest {
 
     propagate(getRoot(), root -> root.getMultiValuedNonContainmentEReference().set(
         1, nonRootWithId(root, nonContainmentNonRootIds[2])));
-    expectChanges(ChangeType.RemoveNonContainmentEReference, ChangeType.InsertNonContainmentEReference);
+    expectChanges(
+        ChangeType.RemoveNonContainmentEReference,
+        ChangeType.InsertNonContainmentEReference);
     Root from = getRoot();
     assertThat(from.getMultiValuedNonContainmentEReference().size(), is(2));
-    assertThat(from.getMultiValuedNonContainmentEReference().get(1).getId(), is(nonContainmentNonRootIds[2]));
+    assertThat(
+        from.getMultiValuedNonContainmentEReference().get(1).getId(),
+        is(nonContainmentNonRootIds[2]));
     expectChangeInTargetModel();
   }
 

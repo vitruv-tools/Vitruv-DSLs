@@ -22,10 +22,14 @@ import static org.hamcrest.CoreMatchers.is;
 import static tools.vitruv.dsls.reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor.ChangeType;
 
 class SimpleChangesTests extends ReactionsExecutionTest {
-  protected static final Path SOURCE_MODEL = TestMetamodelsPathFactory.allElementTypes("SimpleChangeSource");
-  protected static final Path TARGET_MODEL = TestMetamodelsPathFactory.allElementTypes("SimpleChangeTarget");
-  private static final Path FURTHER_SOURCE_MODEL = TestMetamodelsPathFactory.allElementTypes("FurtherSource");
-  private static final Path FURTHER_TARGET_MODEL = TestMetamodelsPathFactory.allElementTypes("FurtherTarget");
+  protected static final Path SOURCE_MODEL
+      = TestMetamodelsPathFactory.allElementTypes("SimpleChangeSource");
+  protected static final Path TARGET_MODEL
+      = TestMetamodelsPathFactory.allElementTypes("SimpleChangeTarget");
+  private static final Path FURTHER_SOURCE_MODEL
+      = TestMetamodelsPathFactory.allElementTypes("FurtherSource");
+  private static final Path FURTHER_TARGET_MODEL
+      = TestMetamodelsPathFactory.allElementTypes("FurtherTarget");
 
   private final String[] nonContainmentNonRootIds = { "NonRootHelper0", "NonRootHelper1", "NonRootHelper2" };
 

@@ -30,10 +30,10 @@ import tools.vitruv.change.atomic.feature.attribute.RemoveEAttributeValue;
 import tools.vitruv.change.atomic.feature.attribute.ReplaceSingleValuedEAttribute;
 import tools.vitruv.change.atomic.feature.reference.InsertEReference;
 import tools.vitruv.change.atomic.feature.reference.RemoveEReference;
-import tools.vitruv.change.composite.description.AnnotationSource;
 import tools.vitruv.change.atomic.feature.reference.ReplaceSingleValuedEReference;
 import tools.vitruv.change.atomic.root.InsertRootEObject;
 import tools.vitruv.change.atomic.root.RemoveRootEObject;
+import tools.vitruv.change.composite.description.AnnotationSource;
 import tools.vitruv.change.correspondence.view.EditableCorrespondenceModelView;
 import tools.vitruv.change.interaction.UserInteractor;
 import tools.vitruv.dsls.reactions.runtime.correspondence.ReactionsCorrespondence;
@@ -385,7 +385,6 @@ public abstract class AbstractRoutine extends CallHierarchyHaving implements Rou
      * @param change {@link EChange}
      */
     protected void issueEChange(EChange<EObject> change) {
-      System.out.println("Change to process: " + change);
       ApplyEChangeSwitch.applyEChange(change, true);
     }
 
