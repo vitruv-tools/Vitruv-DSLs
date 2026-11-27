@@ -1,5 +1,10 @@
 package tools.vitruv.dsls.reactions.tests.simpleChangesTests;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static tools.vitruv.dsls.reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor.ChangeType;
+
 import allElementTypes.NonRoot;
 import allElementTypes.NonRootObjectContainerHelper;
 import allElementTypes.Root;
@@ -7,31 +12,28 @@ import java.nio.file.Path;
 import java.util.List;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.xtext.xbase.lib.Exceptions;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tools.vitruv.change.testutils.matchers.ModelMatchers;
 import tools.vitruv.change.testutils.metamodels.AllElementTypesCreators;
 import tools.vitruv.change.testutils.metamodels.TestMetamodelsPathFactory;
-import tools.vitruv.dsls.reactions.tests.ExecutionMonitor;
 import tools.vitruv.dsls.reactions.tests.ReactionsExecutionTest;
 import tools.vitruv.dsls.reactions.tests.TestReactionsCompiler;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.is;
-import static tools.vitruv.dsls.reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor.ChangeType;
 
 class SimpleChangesTests extends ReactionsExecutionTest {
   protected static final Path SOURCE_MODEL
       = TestMetamodelsPathFactory.allElementTypes("SimpleChangeSource");
   protected static final Path TARGET_MODEL
       = TestMetamodelsPathFactory.allElementTypes("SimpleChangeTarget");
-  private static final Path FURTHER_SOURCE_MODEL
+  public static final Path FURTHER_SOURCE_MODEL
       = TestMetamodelsPathFactory.allElementTypes("FurtherSource");
-  private static final Path FURTHER_TARGET_MODEL
+  public static final Path FURTHER_TARGET_MODEL
       = TestMetamodelsPathFactory.allElementTypes("FurtherTarget");
 
-  private final String[] nonContainmentNonRootIds = { "NonRootHelper0", "NonRootHelper1", "NonRootHelper2" };
+  private final String[] nonContainmentNonRootIds = { "a", "b", "c" };
 
   private void expectChangeInTargetModel() {
     assertThat(
@@ -42,21 +44,30 @@ class SimpleChangesTests extends ReactionsExecutionTest {
 
   @Override
   protected TestReactionsCompiler createCompiler(TestReactionsCompiler.Factory factory) {
-    return factory.createCompiler((TestReactionsCompiler.TestReactionsCompilerParameters compilerParameters) -> {
-      compilerParameters.setReactions(List.of("/tools/vitruv/dsls/reactions/tests/AllElementTypesRedundancy.reactions"));
+    return factory.createCompiler(compilerParameters -> {
+      compilerParameters.setReactions(
+          List.of("/tools/vitruv/dsls/reactions/tests/AllElementTypesRedundancy.reactions"));
       compilerParameters.setChangePropagationSegments(List.of("simpleChangesTests"));
     });
   }
 
+  @AfterEach
+  void clearEventsFromExecutionMonitor() {
+    // The monitor is a singleton: drop events left over from the previous test
+    resetExecutionMonitor();
+  }
+
   @BeforeEach
   void createRoot() {
+    // Other test classes share the monitor singleton and may leave events behind
+    resetExecutionMonitor();
     propagate(resourceAt(SOURCE_MODEL), resource -> {
       Root root = AllElementTypesCreators.aet.Root();
       root.setId("EachTestModelSource");
       NonRootObjectContainerHelper nonRootObjectContainerHelper
           = AllElementTypesCreators.aet.NonRootObjectContainerHelper();
       nonRootObjectContainerHelper.setId("NonRootObjectContainer");
-      for (var nonContainmentRootId: nonContainmentNonRootIds) {
+      for (var nonContainmentRootId : nonContainmentNonRootIds) {
         NonRoot nonRoot = AllElementTypesCreators.aet.NonRoot();
         nonRoot.setId(nonContainmentRootId);
         nonRootObjectContainerHelper.getNonRootObjectsContainment().add(nonRoot);
@@ -74,7 +85,10 @@ class SimpleChangesTests extends ReactionsExecutionTest {
   }
 
   private static void expectChanges(ChangeType... changes) {
-    assertThat(getExecutionMonitor(), ExecutionMonitor.observedExecutions(changes));
+    assertEquals(
+        List.of(changes),
+        getExecutionMonitor().getOrderedObservedExecutions()
+    );
   }
 
   private static void resetExecutionMonitor() {
@@ -87,7 +101,7 @@ class SimpleChangesTests extends ReactionsExecutionTest {
         .stream()
         .filter(nonRoot -> nonRoot.getId().equals(searchId))
         .findFirst()
-        .orElseGet(null);
+        .orElseThrow();
   }
 
   private Root getRoot() {
@@ -99,20 +113,22 @@ class SimpleChangesTests extends ReactionsExecutionTest {
   void testUnsetSingleValuedEAttribute() {
     propagate(getRoot(),
         root -> root.setSingleValuedEAttribute(null));
-    expectChanges(ChangeType.UnsetEAttribute);
+    expectChanges(ChangeType.UNSET_E_ATTRIBUTE);
     expectChangeInTargetModel();
   }
 
   @Test
-  @Disabled
+  @Disabled("Unset does not produce any change event at the moment")
   void testUnsetSingleValuedNonContainmentEReference() {
     propagate(getRoot(),
-        root -> root.setSingleValuedNonContainmentEReference(nonRootWithId(root, nonContainmentNonRootIds[1])));
+        root ->
+            root.setSingleValuedNonContainmentEReference(
+                nonRootWithId(root, nonContainmentNonRootIds[1])));
     resetExecutionMonitor();
     propagate(getRoot(), root ->
         root.setSingleValuedNonContainmentEReference(null));
 
-    expectChanges(ChangeType.UnsetNonContainmentEReference);
+    expectChanges(ChangeType.UNSET_NON_CONTAINMENT_E_REFERENCE);
     expectChangeInTargetModel();
   }
 
@@ -120,15 +136,19 @@ class SimpleChangesTests extends ReactionsExecutionTest {
   void testUpdateSingleValuedEAttribute() {
     propagate(getRoot(),
         root -> root.setSingleValuedEAttribute(-1));
-    expectChanges(ChangeType.UpdateSingleValuedEAttribute);
+    expectChanges(
+        ChangeType.UPDATE_SINGLE_VALUED_E_ATTRIBUTE,
+        ChangeType.UPDATE_SINGLE_VALUED_E_ATTRIBUTE);
     expectChangeInTargetModel();
   }
 
   @Test
   void testUpdateSingleValuedPrimitiveTypeEAttribute() {
     propagate(getRoot(), root -> root.setSingleValuedPrimitiveTypeEAttribute(-1));
-    expectChanges(ChangeType.UpdateSingleValuedPrimitveTypeEAttribute);
-   expectChangeInTargetModel();
+    expectChanges(
+        ChangeType.UPDATE_SINGLE_VALUED_PRIMITVE_TYPE_E_ATTRIBUTE,
+        ChangeType.UPDATE_SINGLE_VALUED_PRIMITVE_TYPE_E_ATTRIBUTE);
+    expectChangeInTargetModel();
   }
 
   @Test
@@ -138,8 +158,11 @@ class SimpleChangesTests extends ReactionsExecutionTest {
       nonRoot.setId("singleValuedContainmentNonRootTest");
       root.setSingleValuedContainmentEReference(nonRoot);
     });
-    expectChanges(ChangeType.CreateEObject, ChangeType.CreateNonRootEObjectSingle);
-   expectChangeInTargetModel();
+    expectChanges(
+        ChangeType.CREATE_E_OBJECT,
+        ChangeType.CREATE_NON_ROOT_E_OBJECT_SINGLE,
+        ChangeType.CREATE_E_OBJECT);
+    expectChangeInTargetModel();
   }
 
   @Test
@@ -155,7 +178,10 @@ class SimpleChangesTests extends ReactionsExecutionTest {
     propagate(getRoot(), root -> {
       root.setSingleValuedContainmentEReference(null);
     });
-    expectChanges(ChangeType.DeleteEObject, ChangeType.DeleteNonRootEObjectSingle);
+    expectChanges(
+        ChangeType.DELETE_NON_ROOT_E_OBJECT_SINGLE,
+        ChangeType.DELETE_E_OBJECT,
+        ChangeType.DELETE_E_OBJECT);
     expectChangeInTargetModel();
   }
 
@@ -173,18 +199,24 @@ class SimpleChangesTests extends ReactionsExecutionTest {
       root.setSingleValuedContainmentEReference(nonRoot);
     });
     expectChanges(
-        ChangeType.DeleteNonRootEObjectSingle,
-        ChangeType.DeleteEObject,
-        ChangeType.CreateNonRootEObjectSingle,
-        ChangeType.CreateEObject);
+        ChangeType.CREATE_E_OBJECT,
+        ChangeType.DELETE_NON_ROOT_E_OBJECT_SINGLE,
+        ChangeType.CREATE_NON_ROOT_E_OBJECT_SINGLE,
+        ChangeType.DELETE_E_OBJECT,
+        ChangeType.CREATE_E_OBJECT,
+        ChangeType.DELETE_E_OBJECT);
     expectChangeInTargetModel();
   }
 
   @Test
   void testSetSingleValuedNonContainmentEReference() {
     String testId = nonContainmentNonRootIds[1];
-    propagate(getRoot(), root -> root.setSingleValuedNonContainmentEReference(nonRootWithId(root, testId)));
-    expectChanges(ChangeType.UpdateSingleValuedNonContainmentEReference);
+    propagate(getRoot(), root ->
+        root.setSingleValuedNonContainmentEReference(nonRootWithId(root, testId)));
+    expectChanges(
+        ChangeType.UPDATE_SINGLE_VALUED_NON_CONTAINMENT_E_REFERENCE,
+        ChangeType.UPDATE_SINGLE_VALUED_NON_CONTAINMENT_E_REFERENCE
+    );
     assertThat(getRoot().getSingleValuedNonContainmentEReference().getId(), is(testId));
     expectChangeInTargetModel();
   }
@@ -192,14 +224,18 @@ class SimpleChangesTests extends ReactionsExecutionTest {
   @Test
   void testReplaceSingleValuedNonContainmentEReference() {
     propagate(getRoot(), root ->
-        root.setSingleValuedNonContainmentEReference(nonRootWithId(root, nonContainmentNonRootIds[0])));
+        root.setSingleValuedNonContainmentEReference(
+            nonRootWithId(root, nonContainmentNonRootIds[0])));
 
     resetExecutionMonitor();
 
     String testId = nonContainmentNonRootIds[1];
-    propagate(getRoot(), root -> root.setSingleValuedNonContainmentEReference(nonRootWithId(root, testId)));
+    propagate(getRoot(), root ->
+        root.setSingleValuedNonContainmentEReference(nonRootWithId(root, testId)));
 
-    expectChanges(ChangeType.UpdateSingleValuedNonContainmentEReference);
+    expectChanges(
+        ChangeType.UPDATE_SINGLE_VALUED_NON_CONTAINMENT_E_REFERENCE,
+        ChangeType.UPDATE_SINGLE_VALUED_NON_CONTAINMENT_E_REFERENCE);
     assertThat(getRoot().getSingleValuedNonContainmentEReference().getId(), is(testId));
     expectChangeInTargetModel();
   }
@@ -208,7 +244,7 @@ class SimpleChangesTests extends ReactionsExecutionTest {
   void testAddMultiValuedEAttribute() {
     propagate(getRoot(), root -> root.getMultiValuedEAttribute().add(1));
 
-    expectChanges(ChangeType.InsertEAttributeValue);
+    expectChanges(ChangeType.INSERT_E_ATTRIBUTE_VALUE, ChangeType.INSERT_E_ATTRIBUTE_VALUE);
     expectChangeInTargetModel();
   }
 
@@ -217,7 +253,9 @@ class SimpleChangesTests extends ReactionsExecutionTest {
     propagate(getRoot(), root -> root.getMultiValuedEAttribute().addAll(List.of(1, 2)));
     resetExecutionMonitor();
     propagate(getRoot(), root -> root.getMultiValuedEAttribute().removeFirst());
-    expectChanges(ChangeType.RemoveEAttributeValue);
+    expectChanges(
+        ChangeType.REMOVE_E_ATTRIBUTE_VALUE,
+        ChangeType.REMOVE_E_ATTRIBUTE_VALUE);
     assertThat(getRoot()
         .getMultiValuedEAttribute().getFirst(),
         is(2));
@@ -229,7 +267,11 @@ class SimpleChangesTests extends ReactionsExecutionTest {
     propagate(getRoot(), root -> root.getMultiValuedEAttribute().addAll(List.of(1, 2)));
     resetExecutionMonitor();
     propagate(getRoot(), root -> root.getMultiValuedEAttribute().set(1, 3));
-    expectChanges(ChangeType.RemoveEAttributeValue, ChangeType.InsertEAttributeValue);
+    expectChanges(
+        ChangeType.REMOVE_E_ATTRIBUTE_VALUE,
+        ChangeType.INSERT_E_ATTRIBUTE_VALUE,
+        ChangeType.REMOVE_E_ATTRIBUTE_VALUE,
+        ChangeType.INSERT_E_ATTRIBUTE_VALUE);
     assertThat(getRoot().getMultiValuedEAttribute().get(1), is(3));
 
     expectChangeInTargetModel();
@@ -242,7 +284,10 @@ class SimpleChangesTests extends ReactionsExecutionTest {
       nonRoot.setId("multiValuedContainmentNonRootTest");
       root.getMultiValuedContainmentEReference().add(nonRoot);
     });
-    expectChanges(ChangeType.CreateNonRootEObjectInList, ChangeType.CreateEObject);
+    expectChanges(
+        ChangeType.CREATE_E_OBJECT,
+        ChangeType.CREATE_NON_ROOT_E_OBJECT_IN_LIST,
+        ChangeType.CREATE_E_OBJECT);
     expectChangeInTargetModel();
   }
 
@@ -260,7 +305,10 @@ class SimpleChangesTests extends ReactionsExecutionTest {
           (NonRoot nonRoot) -> nonRoot.getId().equals("multiValuedContainmentNonRootTest")
         )
     );
-    expectChanges(ChangeType.DeleteNonRootEObjectInList, ChangeType.DeleteEObject);
+    expectChanges(
+        ChangeType.DELETE_NON_ROOT_E_OBJECT_IN_LIST,
+        ChangeType.DELETE_E_OBJECT,
+        ChangeType.DELETE_E_OBJECT);
     expectChangeInTargetModel();
   }
 
@@ -279,12 +327,14 @@ class SimpleChangesTests extends ReactionsExecutionTest {
       root.getMultiValuedContainmentEReference().set(0, nonRoot);
     });
     expectChanges(
-        ChangeType.DeleteNonRootEObjectInList,
-        ChangeType.DeleteEObject,
-        ChangeType.CreateNonRootEObjectInList,
-        ChangeType.CreateEObject);
+        ChangeType.DELETE_NON_ROOT_E_OBJECT_IN_LIST,
+        ChangeType.CREATE_E_OBJECT,
+        ChangeType.CREATE_NON_ROOT_E_OBJECT_IN_LIST,
+        ChangeType.DELETE_E_OBJECT,
+        ChangeType.CREATE_E_OBJECT,
+        ChangeType.DELETE_E_OBJECT);
     assertThat(getRoot().getMultiValuedContainmentEReference().getLast().getId(),
-      is("multiValuedContainmentNonRootAfter"));
+        is("multiValuedContainmentNonRootAfter"));
     expectChangeInTargetModel();
   }
 
@@ -294,7 +344,9 @@ class SimpleChangesTests extends ReactionsExecutionTest {
       root.getMultiValuedNonContainmentEReference().add(
           nonRootWithId(root, nonContainmentNonRootIds[0]));
     });
-    expectChanges(ChangeType.InsertNonContainmentEReference);
+    expectChanges(
+        ChangeType.INSERT_NON_CONTAINMENT_E_REFERENCE,
+        ChangeType.INSERT_NON_CONTAINMENT_E_REFERENCE);
     expectChangeInTargetModel();
   }
 
@@ -309,8 +361,10 @@ class SimpleChangesTests extends ReactionsExecutionTest {
       root.getMultiValuedNonContainmentEReference().remove(
           nonRootWithId(root, nonContainmentNonRootIds[1]));
     });
-    expectChanges(ChangeType.RemoveNonContainmentEReference);
-   expectChangeInTargetModel();
+    expectChanges(
+        ChangeType.REMOVE_NON_CONTAINMENT_E_REFERENCE,
+        ChangeType.REMOVE_NON_CONTAINMENT_E_REFERENCE);
+    expectChangeInTargetModel();
   }
 
   @Test
@@ -329,11 +383,17 @@ class SimpleChangesTests extends ReactionsExecutionTest {
             )
         ));
 
-    expectChanges(ChangeType.RemoveNonContainmentEReference, ChangeType.InsertNonContainmentEReference);
+    expectChanges(
+        ChangeType.REMOVE_NON_CONTAINMENT_E_REFERENCE,
+        ChangeType.INSERT_NON_CONTAINMENT_E_REFERENCE,
+        ChangeType.REMOVE_NON_CONTAINMENT_E_REFERENCE,
+        ChangeType.INSERT_NON_CONTAINMENT_E_REFERENCE);
     Root from = getRoot();
     assertThat(from.getMultiValuedNonContainmentEReference().size(), is(2));
-    assertThat(from.getMultiValuedNonContainmentEReference().get(0).getId(), is(nonContainmentNonRootIds[0]));
-    assertThat(from.getMultiValuedNonContainmentEReference().get(1).getId(), is(nonContainmentNonRootIds[2]));
+    assertThat(from.getMultiValuedNonContainmentEReference().get(0).getId(),
+        is(nonContainmentNonRootIds[0]));
+    assertThat(from.getMultiValuedNonContainmentEReference().get(1).getId(),
+        is(nonContainmentNonRootIds[2]));
 
     expectChangeInTargetModel();
   }
@@ -353,7 +413,7 @@ class SimpleChangesTests extends ReactionsExecutionTest {
     propagate(getRoot(), root -> {
       root.getMultiValuedNonContainmentEReference().sort((a, b) -> -a.getId().compareTo(b.getId()));
     });
-    expectChanges(ChangeType.PermuteNonContainmentEReference);
+    expectChanges(ChangeType.PERMUTE_NON_CONTAINMENT_E_REFERENCE);
     expectChangeInTargetModel();
   }
 
@@ -365,8 +425,8 @@ class SimpleChangesTests extends ReactionsExecutionTest {
     propagate(resourceAt(SOURCE_MODEL), resource -> {
       try {
         resource.delete(null);
-      } catch (Throwable _e) {
-        throw Exceptions.sneakyThrow(_e);
+      } catch (Throwable e) {
+        throw Exceptions.sneakyThrow(e);
       }
     });
     assertThat(resourceAt(SOURCE_MODEL), ModelMatchers.doesNotExist());
@@ -392,15 +452,16 @@ class SimpleChangesTests extends ReactionsExecutionTest {
     });
 
     assertThat(resourceAt(FURTHER_TARGET_MODEL), ModelMatchers.exists());
-    assertThat(resourceAt(FURTHER_SOURCE_MODEL), ModelMatchers.containsModelOf(resourceAt(FURTHER_TARGET_MODEL)));
+    assertThat(resourceAt(FURTHER_SOURCE_MODEL),
+        ModelMatchers.containsModelOf(resourceAt(FURTHER_TARGET_MODEL)));
     propagate(resourceAt(FURTHER_SOURCE_MODEL),
         resource -> {
-      try {
-        resource.delete(null);
-      } catch (Throwable _e) {
-        throw Exceptions.sneakyThrow(_e);
-      }
-    });
+        try {
+          resource.delete(null);
+        } catch (Throwable e) {
+          throw Exceptions.sneakyThrow(e);
+        }
+      });
     assertThat(resourceAt(FURTHER_SOURCE_MODEL), ModelMatchers.doesNotExist());
     assertThat(resourceAt(FURTHER_TARGET_MODEL), ModelMatchers.doesNotExist());
   }
