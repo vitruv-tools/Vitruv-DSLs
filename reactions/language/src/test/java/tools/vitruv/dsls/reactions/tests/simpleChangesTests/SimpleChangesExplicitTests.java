@@ -112,6 +112,19 @@ class SimpleChangesExplicitTests extends ReactionsExecutionTest {
   }
 
   @Test
+  void testUpdateSingleValuedEAttributeTransitive() {
+    // Setting singleValuedEAttribute to 42 triggers an update to set it to 47
+    propagate(getRoot(), root -> root.setSingleValuedEAttribute(42));
+    expectChanges(
+        ChangeType.UPDATE_SINGLE_VALUED_E_ATTRIBUTE,
+        ChangeType.UPDATE_SINGLE_VALUED_E_ATTRIBUTE,
+        ChangeType.UPDATE_SINGLE_VALUED_E_ATTRIBUTE,
+        ChangeType.UPDATE_SINGLE_VALUED_E_ATTRIBUTE);
+    expectChangeInTargetModel();
+    assertEquals(47, getRoot().getSingleValuedEAttribute());
+  }
+
+  @Test
   void testUpdateSingleValuedPrimitiveTypeEAttribute() {
     propagate(getRoot(), root -> root.setSingleValuedPrimitiveTypeEAttribute(-1));
     expectChanges(

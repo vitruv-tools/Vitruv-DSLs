@@ -98,6 +98,11 @@ routine replaceSingleValuedEAttribute(minimal::Root rootElement, Integer value) 
 	update {
 	  setAttribute(AllElementTypesPackage.eINSTANCE.root_SingleValuedEAttribute, targetElement, value)
 		SimpleChangesTestsExecutionMonitor.instance.set(UPDATE_SINGLE_VALUED_E_ATTRIBUTE);
+
+		// Force a transitive change to happen
+		if (value == 42) {
+		  setAttribute(AllElementTypesPackage.eINSTANCE.root_SingleValuedEAttribute, targetElement, 47)
+		}
 	}
 }
 
