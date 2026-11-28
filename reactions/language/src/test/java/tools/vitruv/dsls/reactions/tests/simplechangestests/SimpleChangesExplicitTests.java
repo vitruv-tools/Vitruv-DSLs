@@ -1,12 +1,12 @@
-package tools.vitruv.dsls.reactions.tests.simpleChangesTests;
+package tools.vitruv.dsls.reactions.tests.simplechangestests;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static tools.vitruv.dsls.reactions.tests.simpleChangesTests.SimpleChangesTests.FURTHER_SOURCE_MODEL;
-import static tools.vitruv.dsls.reactions.tests.simpleChangesTests.SimpleChangesTests.FURTHER_TARGET_MODEL;
-import static tools.vitruv.dsls.reactions.tests.simpleChangesTests.SimpleChangesTests.SOURCE_MODEL;
-import static tools.vitruv.dsls.reactions.tests.simpleChangesTests.SimpleChangesTests.TARGET_MODEL;
+import static tools.vitruv.dsls.reactions.tests.simplechangestests.SimpleChangesTests.FURTHER_SOURCE_MODEL;
+import static tools.vitruv.dsls.reactions.tests.simplechangestests.SimpleChangesTests.FURTHER_TARGET_MODEL;
+import static tools.vitruv.dsls.reactions.tests.simplechangestests.SimpleChangesTests.SOURCE_MODEL;
+import static tools.vitruv.dsls.reactions.tests.simplechangestests.SimpleChangesTests.TARGET_MODEL;
 
 import allElementTypes.NonRoot;
 import allElementTypes.NonRootObjectContainerHelper;
@@ -22,7 +22,7 @@ import tools.vitruv.change.testutils.matchers.ModelMatchers;
 import tools.vitruv.change.testutils.metamodels.AllElementTypesCreators;
 import tools.vitruv.dsls.reactions.tests.ReactionsExecutionTest;
 import tools.vitruv.dsls.reactions.tests.TestReactionsCompiler;
-import tools.vitruv.dsls.reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor.ChangeType;
+import tools.vitruv.dsls.reactions.tests.simplechangestests.SimpleChangesTestsExecutionMonitor.ChangeType;
 
 class SimpleChangesExplicitTests extends ReactionsExecutionTest {
   private static final String [] nonContainmentNonRootIds = {

@@ -1,4 +1,4 @@
-package tools.vitruv.dsls.reactions.tests.simpleChangesTests;
+package tools.vitruv.dsls.reactions.tests.simplechangestests;
 
 import java.util.ArrayList;
 import java.util.HashSet;

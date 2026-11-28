@@ -1,9 +1,9 @@
-package tools.vitruv.dsls.reactions.tests.simpleChangesTests;
+package tools.vitruv.dsls.reactions.tests.simplechangestests;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static tools.vitruv.dsls.reactions.tests.simpleChangesTests.SimpleChangesTestsExecutionMonitor.ChangeType;
+import static tools.vitruv.dsls.reactions.tests.simplechangestests.SimpleChangesTestsExecutionMonitor.ChangeType;
 
 import allElementTypes.NonRoot;
 import allElementTypes.NonRootObjectContainerHelper;
